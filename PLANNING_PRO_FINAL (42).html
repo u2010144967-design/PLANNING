@@ -16625,5 +16625,316 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 13 — CENTRE DE COMMANDEMENT + INTELLIGENCE COLLECTIVE
+   + PROGRESSION SALARIES + ASSISTANT REUNION + PREVISION 6 MOIS
+══════════════════════════════════════════════════ */
+
+/* ══ 1. CENTRE DE COMMANDEMENT ══ */
+function ouvrirCentreCommandement(){
+  var existing=document.getElementById('m-cmd');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-cmd';modal.className='mbg on';
+  var date=ST.cur;
+
+  /* Santé entreprise */
+  var totalMissions=0,faites=0;
+  ST.drivers.forEach(function(dr,di){SL.forEach(function(h){(ST.tasks[gk(date,di,h)]||[]).forEach(function(t){totalMissions++;if(t.confirmed)faites++;});});});
+  var santeEntreprise = totalMissions===0?100:Math.round(faites/totalMissions*100);
+
+  /* Santé salariés (bien-être) */
+  var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  var difficiles=0,totalBE=0;
+  ST.drivers.forEach(function(dr,di){
+    for(var i=0;i<7;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      if(bienetre[ds]&&bienetre[ds][di]){totalBE++;if(bienetre[ds][di]==='difficile')difficiles++;}
+    }
+  });
+  var santeSalaries = totalBE===0?100:Math.round((1-difficiles/totalBE)*100);
+
+  /* Santé financière (basée sur charge raisonnable) */
+  var santeFinanciere = totalMissions>0?Math.min(100,Math.round(70+totalMissions*0.5)):85;
+
+  /* Satisfaction clients (basée sur incidents) */
+  var incidentsClients=JSON.parse(localStorage.getItem('incidents_clients')||'{}');
+  var nbIncidents=Object.values(incidentsClients).reduce(function(a,b){return a+b;},0);
+  var satisfactionClients = Math.max(50,100-nbIncidents*5);
+
+  /* État véhicules (basique - documents expirés) */
+  var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+  var docsExpires=docs.filter(function(d){return new Date(d.dateExpiration)<new Date();}).length;
+  var etatVehicules = Math.max(50,100-docsExpires*15);
+
+  /* Progression insertion */
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+  var nbEvalues=Object.keys(evals).length;
+  var progressionInsertion = ST.drivers.length>0?Math.round(nbEvalues/ST.drivers.length*100):0;
+
+  var indicateurs=[
+    {label:'Sante de l entreprise',val:santeEntreprise,icon:'🏢'},
+    {label:'Sante des salaries',val:santeSalaries,icon:'💚'},
+    {label:'Sante financiere',val:santeFinanciere,icon:'💰'},
+    {label:'Satisfaction clients',val:satisfactionClients,icon:'⭐'},
+    {label:'Etat des vehicules',val:etatVehicules,icon:'🚛'},
+    {label:'Progression insertion',val:progressionInsertion,icon:'🌱'},
+  ];
+
+  function feu(v){return v>=80?'🟢':v>=60?'🟠':'🔴';}
+  function col(v){return v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444';}
+
+  /* Que faire maintenant ? - recommandations agrégées */
+  var actions=[];
+  ST.drivers.forEach(function(dr,di){
+    var nb=0;SL.forEach(function(h){nb+=(ST.tasks[gk(date,di,h)]||[]).length;});
+    if(nb>=7) actions.push('Reaffecter une partie de la tournee de '+dr.name+' (surcharge)');
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) actions.push('Redistribuer les missions de '+dr.name+' (absent)');
+  });
+  ST.drivers.forEach(function(dr,di){
+    var derniereEval=evals[di]?evals[di].derniereDate:null;
+    if(!derniereEval||Math.floor((new Date()-new Date(derniereEval))/(1000*60*60*24))>45){
+      actions.push('Preparer une evaluation pour '+dr.name);
+    }
+  });
+  docs.forEach(function(d){
+    var jr=Math.floor((new Date(d.dateExpiration)-new Date())/(1000*60*60*24));
+    if(jr<=30) actions.push('Renouveler le document : '+d.nom);
+  });
+  /* Reussites à féliciter */
+  var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}');
+  Object.keys(carnets).forEach(function(di){
+    if(carnets[di].reussites && ST.drivers[di]) actions.push('Feliciter '+ST.drivers[di].name+' pour : '+carnets[di].reussites);
+  });
+
+  var html='<div class="mbox" style="max-width:600px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Centre de Commandement <button class="mclose" onclick="document.getElementById(\'m-cmd\').remove()">X</button></h3>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+
+  indicateurs.forEach(function(ind){
+    html+='<div style="background:#0f172a;border:1px solid '+col(ind.val)+';border-radius:10px;padding:12px;text-align:center">'
+      +'<div style="font-size:20px">'+ind.icon+' '+feu(ind.val)+'</div>'
+      +'<div style="font-size:20px;font-weight:900;color:'+col(ind.val)+'">'+ind.val+'%</div>'
+      +'<div style="font-size:10px;color:#64748b">'+ind.label+'</div>'
+      +'</div>';
+  });
+
+  html+='</div>'
+    +'<div style="background:linear-gradient(135deg,#1e3a8a,#7c3aed);border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;text-align:center">'
+    +'<div style="font-size:16px;font-weight:900">Que dois-je faire maintenant ?</div>'
+    +'</div>';
+
+  if(actions.length){
+    html += actions.slice(0,8).map(function(a,idx){
+      return '<div style="background:#0f172a;border-left:3px solid #7c3aed;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#e2e8f0">'+(idx+1)+'. '+a+'</div>';
+    }).join('');
+  } else {
+    html+='<div style="text-align:center;color:#22c55e;padding:20px"><div style="font-size:36px">✓</div>Tout est sous controle. Aucune action urgente.</div>';
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 2. INTELLIGENCE COLLECTIVE — Mémoire des problèmes/solutions ══ */
+function ouvrirMemoireProblemes(){
+  var existing=document.getElementById('m-memoire-pb');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-memoire-pb';modal.className='mbg on';
+  var memoire=JSON.parse(localStorage.getItem('memoire_problemes')||'[]');
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Memoire des solutions <button class="mclose" onclick="document.getElementById(\'m-memoire-pb\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8">'
+    +'Enregistrez les problemes rencontres et les solutions appliquees. La prochaine fois qu une situation similaire se presente, vous pourrez retrouver comment elle a ete resolue.'
+    +'</div>'
+    +'<input type="text" id="mp-search" class="fi" placeholder="Rechercher (ex: vehicule en panne, retard client...)" style="margin-bottom:10px" oninput="rechercherMemoireProbleme()">'
+    +'<div id="mp-resultats"></div>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Ajouter un cas</div>'
+    +'<input type="text" id="mp-probleme" class="fi" placeholder="Probleme rencontre" style="margin-bottom:6px">'
+    +'<textarea id="mp-solution" class="fi" placeholder="Solution appliquee et resultat" style="height:60px;margin-bottom:6px"></textarea>'
+    +'<button onclick="ajouterMemoireProbleme()" style="width:100%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Enregistrer</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+  rechercherMemoireProbleme();
+}
+
+function rechercherMemoireProbleme(){
+  var q=(document.getElementById('mp-search').value||'').toLowerCase();
+  var memoire=JSON.parse(localStorage.getItem('memoire_problemes')||'[]');
+  var resEl=document.getElementById('mp-resultats');
+  var filtres=memoire.filter(function(m){return !q||m.probleme.toLowerCase().indexOf(q)>=0||m.solution.toLowerCase().indexOf(q)>=0;});
+
+  if(!filtres.length){
+    resEl.innerHTML=q?'<div style="text-align:center;color:#64748b;padding:14px;font-size:12px">Aucun cas similaire trouve.</div>':'';
+    return;
+  }
+
+  resEl.innerHTML='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:8px;padding:8px;margin-bottom:8px;font-size:11px;color:#86efac">'+filtres.length+' situation(s) similaire(s) deja resolue(s)</div>'
+    + filtres.slice().reverse().map(function(m){
+    return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;margin-bottom:6px">'
+      +'<div style="font-size:12px;font-weight:700;color:#e2e8f0">'+m.probleme+'</div>'
+      +'<div style="font-size:11px;color:#94a3b8;margin-top:4px">'+m.solution+'</div>'
+      +'<div style="font-size:10px;color:#64748b;margin-top:4px">Le '+m.date+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function ajouterMemoireProbleme(){
+  var probleme=document.getElementById('mp-probleme').value.trim();
+  var solution=document.getElementById('mp-solution').value.trim();
+  if(!probleme||!solution){showT('Remplissez les deux champs','#f59e0b');return;}
+  var memoire=JSON.parse(localStorage.getItem('memoire_problemes')||'[]');
+  memoire.push({probleme:probleme,solution:solution,date:new Date().toLocaleDateString('fr-FR')});
+  localStorage.setItem('memoire_problemes',JSON.stringify(memoire));
+  document.getElementById('mp-probleme').value='';
+  document.getElementById('mp-solution').value='';
+  rechercherMemoireProbleme();
+  showT('Cas enregistre','#16a34a');
+}
+
+/* ══ 3. CARTE DE PROGRESSION DES SALARIÉS (façon jeu video) ══ */
+function ouvrirProgressionSalaries(){
+  var existing=document.getElementById('m-progression');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-progression';modal.className='mbg on';
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Carte de progression <button class="mclose" onclick="document.getElementById(\'m-progression\').remove()">X</button></h3>';
+
+  ST.drivers.forEach(function(dr,di){
+    var carnet=JSON.parse(localStorage.getItem('carnet_salaries')||'{}')[di]||{};
+    var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}')[di]||{};
+    var presence=evals.tauxPresence||0;
+    var reussite=evals.tauxReussite||0;
+
+    var niveau = Math.floor((presence+reussite)/40)+1; /* niveau 1 à 5 */
+    niveau=Math.min(5,Math.max(1,niveau));
+
+    var competences=(carnet.competences||'').split(/[,;\\n]/).map(function(s){return s.trim();}).filter(Boolean);
+    var formations=(carnet.formations||'').split(/[,;\\n]/).map(function(s){return s.trim();}).filter(Boolean);
+
+    html+='<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid #1e293b;border-radius:12px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      +'<div style="font-size:15px;font-weight:900;color:#e2e8f0">'+dr.name+'</div>'
+      +'<div style="background:#7c3aed;color:#fff;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:900">Niveau '+niveau+'</div>'
+      +'</div>'
+      +'<div style="background:#1e293b;border-radius:6px;height:8px;margin-bottom:10px">'
+      +'<div style="height:100%;width:'+(niveau*20)+'%;background:linear-gradient(90deg,#7c3aed,#22c55e);border-radius:6px"></div>'
+      +'</div>';
+
+    if(competences.length){
+      html+='<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Competences debloquees</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">'
+        +competences.map(function(c){return '<span style="background:rgba(34,197,94,.15);color:#86efac;border-radius:6px;padding:3px 8px;font-size:10px">'+c+'</span>';}).join('')
+        +'</div>';
+    }
+    if(formations.length){
+      html+='<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Formations</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:4px">'
+        +formations.map(function(f){return '<span style="background:rgba(96,165,250,.15);color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:10px">'+f+'</span>';}).join('')
+        +'</div>';
+    }
+    html+='</div>';
+  });
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 4. ASSISTANT RÉUNION ══ */
+function ouvrirAssistantReunion(){
+  var existing=document.getElementById('m-reunion');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-reunion';modal.className='mbg on';
+
+  var date=ST.cur;
+  var totalMissions=0,faites=0,absences=0;
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){(ST.tasks[gk(date,di,h)]||[]).forEach(function(t){totalMissions++;if(t.confirmed)faites++;});});
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) absences++;
+  });
+
+  var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}');
+  var reussites=[];
+  Object.keys(carnets).forEach(function(di){if(carnets[di].reussites&&ST.drivers[di]) reussites.push(ST.drivers[di].name+' : '+carnets[di].reussites);});
+
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+  var enRetard=[];
+  ST.drivers.forEach(function(dr,di){
+    var d=evals[di]?evals[di].derniereDate:null;
+    if(!d||Math.floor((new Date()-new Date(d))/(1000*60*60*24))>45) enRetard.push(dr.name);
+  });
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Assistant reunion <button class="mclose" onclick="document.getElementById(\'m-reunion\').remove()">X</button></h3>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Ordre du jour propose</div>'
+    +'<ol style="font-size:12px;color:#e2e8f0;line-height:1.8;padding-left:20px">'
+    +'<li>Bilan de la periode (indicateurs)</li>'
+    +'<li>Points de vigilance</li>'
+    +(enRetard.length?'<li>Evaluations a planifier</li>':'')
+    +'<li>Reussites et felicitations</li>'
+    +'<li>Actions a decider</li>'
+    +'</ol>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Indicateurs</div>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;font-size:12px;color:#94a3b8">'
+    +totalMissions+' missions aujourd hui, '+faites+' realisees. '+absences+' absence(s).'
+    +'</div>';
+
+  if(enRetard.length){
+    html+='<div style="font-size:9px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin:14px 0 8px">A planifier</div>'
+      +'<div style="background:rgba(245,158,11,.1);border-left:3px solid #f59e0b;border-radius:6px;padding:10px;font-size:12px;color:#fbbf24">'
+      +'Evaluations en retard : '+enRetard.join(', ')
+      +'</div>';
+  }
+
+  if(reussites.length){
+    html+='<div style="font-size:9px;font-weight:700;color:#22c55e;text-transform:uppercase;margin:14px 0 8px">Reussites</div>'
+      + reussites.map(function(r){return '<div style="background:rgba(34,197,94,.1);border-left:3px solid #22c55e;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#86efac">'+r+'</div>';}).join('');
+  }
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Notes de reunion / compte-rendu</div>'
+    +'<textarea id="reunion-notes" class="fi" style="height:100px" placeholder="Notez les decisions prises..."></textarea>'
+    +'<button onclick="sauverCompteRenduReunion()" style="width:100%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">Enregistrer le compte-rendu</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function sauverCompteRenduReunion(){
+  var notes=document.getElementById('reunion-notes').value.trim();
+  if(!notes)return;
+  var crs=JSON.parse(localStorage.getItem('comptes_rendus_reunion')||'[]');
+  crs.push({date:new Date().toLocaleString('fr-FR'),notes:notes});
+  localStorage.setItem('comptes_rendus_reunion',JSON.stringify(crs.slice(-50)));
+  showT('Compte-rendu enregistre','#16a34a');
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var tourBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Tour de Controle Responsable')>=0;});
+    if(tourBtn&&tourBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirCentreCommandement();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#7c3aed,#dc2626);color:#fff;font-weight:900;font-size:13px">⭐ Centre de Commandement</button>';
+      tourBtn.parentNode.insertBefore(div,tourBtn);
+    }
+
+    var talentsBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Detection des talents')>=0;});
+    if(talentsBtn&&talentsBtn.parentNode){
+      var div2=document.createElement('div');
+      div2.innerHTML='<button tabindex="0" onclick="ouvrirProgressionSalaries();fermerMenu()" class="menu-item" style="color:#7c3aed;font-weight:700">Carte de progression</button>'
+        +'<button tabindex="0" onclick="ouvrirMemoireProblemes();fermerMenu()" class="menu-item" style="color:#60a5fa;font-weight:700">Memoire des solutions</button>'
+        +'<button tabindex="0" onclick="ouvrirAssistantReunion();fermerMenu()" class="menu-item" style="color:#f59e0b;font-weight:700">Assistant reunion</button>';
+      talentsBtn.parentNode.insertBefore(div2,talentsBtn.nextSibling);
+    }
+  },4100);
+});
+
+</script>
 </body>
 </html>
