@@ -17284,6 +17284,24 @@ function reorganiserMenu(){
   var search = menu.querySelector('#menu-search-input');
   var searchWrapper = search ? search.parentNode : null;
 
+  /* Aplatir : les scripts injectent souvent un <div> wrapper contenant
+     un titre + des boutons. On déplace tous ces enfants directement dans
+     #menu-principal avant de les regrouper. */
+  var topLevel = Array.from(menu.children);
+  topLevel.forEach(function(child){
+    if(child === searchWrapper) return;
+    if(child.tagName==='DIV' && !child.classList.contains('menu-item')
+       && !(child.style && child.style.textTransform==='uppercase')
+       && !(child.style && child.style.borderTop)
+       && child.children && child.children.length){
+      // C'est un wrapper : remonter ses enfants juste avant lui, puis le retirer
+      while(child.firstChild){
+        menu.insertBefore(child.firstChild, child);
+      }
+      child.remove();
+    }
+  });
+
   var children = Array.from(menu.children);
   var newStructure = []; // {title, color, items:[nodes]}
   var current = null;
@@ -17418,7 +17436,7 @@ function insertFavorisBar(menu){
 
 /* Lancer après le chargement complet (laisser tous les autres scripts insérer leurs boutons) */
 window.addEventListener('load',function(){
-  setTimeout(reorganiserMenu, 4400);
+  setTimeout(reorganiserMenu, 5200);
 });
 
 /* Réorganiser à chaque ouverture du menu (au cas où des boutons ont été ajoutés dynamiquement après) */
