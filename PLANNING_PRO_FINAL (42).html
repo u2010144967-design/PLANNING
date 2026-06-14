@@ -13377,5 +13377,611 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   WAW ULTIME
+   1. Dictée vocale - créer une mission en parlant
+   2. Assistant IA - construire le planning en texte libre
+   3. Chat interne avec les chauffeurs
+   4. IA prédictive - anticipation absences/surcharges
+══════════════════════════════════════════════════ */
+
+/* ══ 1. DICTÉE VOCALE - CRÉER MISSION ══ */
+function ouvrirDicteeVocale(){
+  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+    showT('Reconnaissance vocale non supportee sur ce navigateur','#ef4444');
+    return;
+  }
+  var existing=document.getElementById('m-dictee');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-dictee';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:480px;text-align:center">'
+    +'<h3>Dictee vocale <button class="mclose" onclick="document.getElementById(\'m-dictee\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;text-align:left;line-height:1.8">'
+    +'<b style="color:#60a5fa">Exemple :</b><br>'
+    +'"Otmane demain 8 heures Ecole Jean Moulin"<br>'
+    +'"Nicolas mardi 9 heures 30 Creche Arc en Ciel"<br>'
+    +'<br><b style="color:#22c55e">Dites le nom du chauffeur, l heure, et le client.</b>'
+    +'</div>'
+    +'<div id="dictee-status" style="font-size:14px;color:#64748b;margin-bottom:14px;min-height:40px">Cliquez sur le micro pour commencer</div>'
+    +'<button id="btn-micro" onclick="lancerDictee()" style="width:90px;height:90px;border-radius:50%;background:#7c3aed;border:none;font-size:36px;cursor:pointer;color:#fff;margin-bottom:14px">🎤</button>'
+    +'<div id="dictee-resultat" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:13px;color:#e2e8f0;min-height:50px;text-align:left"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function lancerDictee(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var rec=new SR();
+  rec.lang='fr-FR';
+  rec.continuous=false;
+  rec.interimResults=false;
+
+  var status=document.getElementById('dictee-status');
+  var btn=document.getElementById('btn-micro');
+  var resultat=document.getElementById('dictee-resultat');
+
+  status.textContent='Ecoute en cours... Parlez maintenant';
+  btn.style.background='#ef4444';
+  btn.style.animation='pulse-btn 1s infinite';
+
+  rec.onresult=function(e){
+    var texte=e.results[0][0].transcript;
+    resultat.innerHTML='<b style="color:#60a5fa">Vous avez dit :</b><br>"'+texte+'"';
+    status.textContent='Analyse en cours...';
+    setTimeout(function(){analyserDicteeMission(texte);},500);
+  };
+  rec.onerror=function(e){
+    status.textContent='Erreur : '+e.error+'. Reessayez.';
+    btn.style.background='#7c3aed';
+    btn.style.animation='';
+  };
+  rec.onend=function(){
+    btn.style.background='#7c3aed';
+    btn.style.animation='';
+  };
+  rec.start();
+}
+
+function analyserDicteeMission(texte){
+  var status=document.getElementById('dictee-status');
+  var resultat=document.getElementById('dictee-resultat');
+  var t=texte.toLowerCase();
+
+  /* Trouver le chauffeur */
+  var chauffeurTrouve=-1;
+  ST.drivers.forEach(function(dr,di){
+    if(t.indexOf(dr.name.toLowerCase())>=0) chauffeurTrouve=di;
+  });
+
+  /* Trouver l'heure */
+  var heureMatch=t.match(/(\\d{1,2})\\s*(heure|h)\\s*(\\d{1,2})?/);
+  var heure='08:00';
+  if(heureMatch){
+    var hh=heureMatch[1].padStart(2,'0');
+    var mm=heureMatch[3]?heureMatch[3].padStart(2,'0'):'00';
+    /* Arrondir aux 30 min */
+    var mmNum=parseInt(mm);
+    mm = mmNum<15?'00':mmNum<45?'30':'00';
+    if(mmNum>=45) hh=String(parseInt(hh)+1).padStart(2,'0');
+    heure=hh+':'+mm;
+  }
+
+  /* Trouver la date */
+  var date=ST.cur;
+  if(t.indexOf('demain')>=0){
+    var d=new Date(ST.cur+'T12:00:00');d.setDate(d.getDate()+1);
+    date=d.toISOString().slice(0,10);
+  } else if(t.indexOf('apres-demain')>=0||t.indexOf('après-demain')>=0){
+    var d=new Date(ST.cur+'T12:00:00');d.setDate(d.getDate()+2);
+    date=d.toISOString().slice(0,10);
+  } else {
+    var jours={'lundi':1,'mardi':2,'mercredi':3,'jeudi':4,'vendredi':5,'samedi':6,'dimanche':0};
+    Object.keys(jours).forEach(function(j){
+      if(t.indexOf(j)>=0){
+        var d=new Date(ST.cur+'T12:00:00');
+        var diff=(jours[j]-d.getDay()+7)%7||7;
+        d.setDate(d.getDate()+diff);
+        date=d.toISOString().slice(0,10);
+      }
+    });
+  }
+
+  /* Le client = tout ce qui reste après avoir enlevé chauffeur/heure/date */
+  var client=texte;
+  if(chauffeurTrouve>=0) client=client.replace(new RegExp(ST.drivers[chauffeurTrouve].name,'gi'),'');
+  client=client.replace(/demain|apres-demain|après-demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/gi,'');
+  client=client.replace(/\\d{1,2}\\s*(heure|h)\\s*\\d{0,2}/gi,'');
+  client=client.trim().replace(/^\\s+|\\s+$/g,'');
+  /* Capitaliser */
+  client=client.split(' ').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
+
+  if(chauffeurTrouve<0||!client){
+    resultat.innerHTML+='<br><br><span style="color:#ef4444">Impossible d identifier le chauffeur ou le client. Reessayez plus clairement.</span>';
+    status.textContent='Cliquez sur le micro pour reessayer';
+    return;
+  }
+
+  /* Afficher la confirmation */
+  var dr=ST.drivers[chauffeurTrouve];
+  window._dicteeData={di:chauffeurTrouve,date:date,heure:heure,client:client};
+  resultat.innerHTML+='<br><br><div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:8px;padding:10px">'
+    +'<b style="color:#22c55e">Mission detectee :</b><br>'
+    +'Chauffeur : '+dr.name+'<br>'
+    +'Date : '+date+'<br>'
+    +'Heure : '+heure+'<br>'
+    +'Client : '+client
+    +'</div>'
+    +'<button onclick="confirmerDicteeMission()" style="width:100%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">Ajouter cette mission</button>';
+  status.textContent='Verifiez et confirmez';
+}
+
+function confirmerDicteeMission(){
+  var d=window._dicteeData;if(!d)return;
+  var k=gk(d.date,d.di,d.heure);
+  if(!ST.tasks[k]) ST.tasks[k]=[];
+  ST.tasks[k].push({client:d.client,category:'task'});
+  if(typeof save==='function') save();
+  if(d.date===ST.cur && typeof render==='function') render();
+  showT('Mission ajoutee : '+d.client+' pour '+ST.drivers[d.di].name,'#16a34a');
+  document.getElementById('m-dictee').remove();
+}
+
+/* ══ 2. ASSISTANT IA - CONSTRUIRE LE PLANNING ══ */
+function ouvrirAssistantConstruction(){
+  var existing=document.getElementById('m-ia-construct');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-ia-construct';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:560px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Assistant IA - Construire le planning <button class="mclose" onclick="document.getElementById(\'m-ia-construct\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'<b style="color:#60a5fa">Decrivez votre journee en texte libre :</b><br><br>'
+    +'<i>"Demain Karim est absent. 3 missions centre aere a 8h, 9h et 10h. '
+    +'5 livraisons traiteur entre 8h et 12h. 2 collectivites a 9h et 11h."</i><br><br>'
+    +'L IA va repartir automatiquement les missions entre les chauffeurs disponibles.'
+    +'</div>'
+    +'<textarea id="ia-construct-input" class="fi" style="height:100px;font-size:13px" placeholder="Decrivez la journee..."></textarea>'
+    +'<button onclick="analyserConstructionIA()" style="width:100%;padding:11px;background:#7c3aed;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">Generer le planning</button>'
+    +'<div id="ia-construct-resultat" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function analyserConstructionIA(){
+  var inp=document.getElementById('ia-construct-input');
+  var resEl=document.getElementById('ia-construct-resultat');
+  var texte=inp.value.toLowerCase();
+  if(!texte.trim()){showT('Decrivez la journee','#f59e0b');return;}
+
+  var date=ST.cur;
+  if(texte.indexOf('demain')>=0){
+    var d=new Date(ST.cur+'T12:00:00');d.setDate(d.getDate()+1);
+    date=d.toISOString().slice(0,10);
+  }
+
+  /* Détecter les absents */
+  var absents=[];
+  ST.drivers.forEach(function(dr,di){
+    if(texte.indexOf(dr.name.toLowerCase()+' est absent')>=0||texte.indexOf(dr.name.toLowerCase()+' absent')>=0){
+      absents.push(di);
+    }
+  });
+
+  /* Détecter les types de missions et quantités */
+  var typesDetectes=[];
+  var patterns=[
+    {regex:/(\\d+)\\s*(mission|livraison)s?\\s*centre\\s*aere/,cat:'centre',label:'Centre Aere'},
+    {regex:/(\\d+)\\s*(mission|livraison)s?\\s*traiteur/,cat:'traiteur',label:'Traiteur'},
+    {regex:/(\\d+)\\s*(mission|livraison)s?\\s*collectivite/,cat:'collectivite',label:'Collectivite'},
+  ];
+  patterns.forEach(function(p){
+    var m=texte.match(p.regex);
+    if(m) typesDetectes.push({nb:parseInt(m[1]),cat:p.cat,label:p.label});
+  });
+
+  /* Extraire les heures mentionnées */
+  var heuresMatch=texte.match(/\\d{1,2}\\s*h(\\s*\\d{2})?/g)||[];
+  var heuresList=heuresMatch.map(function(h){
+    var m=h.match(/(\\d{1,2})\\s*h(\\s*(\\d{2}))?/);
+    var hh=m[1].padStart(2,'0');
+    var mm=m[3]?m[3]:'00';
+    return hh+':'+mm;
+  });
+
+  if(!typesDetectes.length && !heuresList.length){
+    resEl.innerHTML='<div style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;font-size:12px;color:#fbbf24">'
+      +'Je n ai pas detecte de missions specifiques. Essayez avec des phrases comme "3 missions centre aere" ou des heures precises.'
+      +'</div>';
+    return;
+  }
+
+  /* Chauffeurs disponibles (non absents) */
+  var dispos=ST.drivers.map(function(dr,di){return di;}).filter(function(di){return absents.indexOf(di)===-1;});
+
+  /* Construire les missions à proposer */
+  var missionsAProposer=[];
+  var heureIdx=0;
+  typesDetectes.forEach(function(type){
+    for(var i=0;i<type.nb;i++){
+      var heure=heuresList[heureIdx]||('0'+(8+i)+':00').slice(-5);
+      heureIdx++;
+      var chauffeur=dispos[missionsAProposer.length%dispos.length];
+      missionsAProposer.push({
+        di:chauffeur,
+        h:heure,
+        client:type.label+' '+(i+1),
+        cat:type.cat
+      });
+    }
+  });
+
+  /* Afficher le résultat */
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:12px;margin-bottom:10px">'
+    +'<b style="color:#22c55e">Plan propose pour le '+date+' :</b>'
+    +(absents.length?'<br><span style="color:#ef4444">Absent(s) : '+absents.map(function(di){return ST.drivers[di].name;}).join(', ')+'</span>':'')
+    +'</div>';
+
+  html+=missionsAProposer.map(function(m,idx){
+    return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px">'
+      +'<b style="color:#60a5fa">'+ST.drivers[m.di].name+'</b> — '+m.h+' — '+m.client
+      +'</div>';
+  }).join('');
+
+  window._iaPlanningData={missions:missionsAProposer,date:date};
+  html+='<button onclick="appliquerPlanningIA()" style="width:100%;padding:11px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">Appliquer ce planning</button>';
+
+  resEl.innerHTML=html;
+}
+
+function appliquerPlanningIA(){
+  var d=window._iaPlanningData;if(!d)return;
+  d.missions.forEach(function(m){
+    var k=gk(d.date,m.di,m.h);
+    if(!ST.tasks[k])ST.tasks[k]=[];
+    ST.tasks[k].push({client:m.client,category:m.cat});
+  });
+  if(typeof save==='function')save();
+  if(d.date===ST.cur&&typeof render==='function')render();
+  showT(d.missions.length+' missions ajoutees au planning','#16a34a');
+  document.getElementById('m-ia-construct').remove();
+}
+
+/* ══ 3. CHAT INTERNE AVEC LES CHAUFFEURS ══ */
+function ouvrirChatChauffeurs(){
+  var existing=document.getElementById('m-chat');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-chat';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Chat avec les chauffeurs <button class="mclose" onclick="document.getElementById(\'m-chat\').remove()">X</button></h3>'
+    +'<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
+    +ST.drivers.map(function(dr,di){
+      return '<button onclick="chargerChat('+di+')" id="chat-btn-'+di+'" style="padding:7px 12px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer">'+dr.name+'</button>';
+    }).join('')
+    +'</div>'
+    +'<div id="chat-messages" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;min-height:200px;max-height:300px;overflow-y:auto;margin-bottom:10px;font-size:12px;color:#94a3b8;text-align:center">Selectionnez un chauffeur</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<input type="text" id="chat-input" class="fi" placeholder="Votre message..." style="flex:1">'
+    +'<button onclick="envoyerChatMessage()" style="padding:10px 16px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Envoyer</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+window._chatDi=-1;
+function chargerChat(di){
+  window._chatDi=di;
+  ST.drivers.forEach(function(dr,d){
+    var btn=document.getElementById('chat-btn-'+d);
+    if(btn) btn.style.background=d===di?'#1d4ed8':'#0f172a';
+    if(btn) btn.style.color=d===di?'#fff':'#94a3b8';
+  });
+  var msgsEl=document.getElementById('chat-messages');
+  var historique=JSON.parse(localStorage.getItem('chat_'+di)||'[]');
+  if(!historique.length){
+    msgsEl.innerHTML='<div style="text-align:center;color:#64748b">Aucun message avec '+ST.drivers[di].name+'</div>';
+    return;
+  }
+  msgsEl.innerHTML=historique.map(function(m){
+    var align=m.de==='moi'?'right':'left';
+    var bg=m.de==='moi'?'#1d4ed8':'#1e293b';
+    return '<div style="text-align:'+align+';margin-bottom:8px">'
+      +'<div style="display:inline-block;background:'+bg+';color:#fff;padding:7px 11px;border-radius:10px;font-size:12px;max-width:80%">'+m.texte+'</div>'
+      +'<div style="font-size:9px;color:#475569;margin-top:2px">'+m.heure+'</div>'
+      +'</div>';
+  }).join('');
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+function envoyerChatMessage(){
+  var di=window._chatDi;
+  if(di<0){showT('Choisissez un chauffeur','#f59e0b');return;}
+  var inp=document.getElementById('chat-input');
+  var texte=inp.value.trim();
+  if(!texte)return;
+
+  var ids=getTgIds();
+  var chatId=ids[di];
+  if(!chatId){showT('Aucun ID Telegram pour ce chauffeur','#ef4444');return;}
+
+  /* Envoyer sur Telegram */
+  fetch(TG_API+'/sendMessage',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:chatId,text:'Message du responsable :\\n\\n'+texte})
+  });
+
+  /* Sauvegarder localement */
+  var historique=JSON.parse(localStorage.getItem('chat_'+di)||'[]');
+  historique.push({de:'moi',texte:texte,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem('chat_'+di,JSON.stringify(historique.slice(-50)));
+
+  inp.value='';
+  chargerChat(di);
+  showT('Message envoye','#16a34a');
+}
+
+/* ══ 4. AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var firstItem=menu.firstChild;
+    var div=document.createElement('div');
+    div.innerHTML='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;padding:6px 10px 3px;letter-spacing:.8px">Intelligence Operationnelle</div>'
+      +'<button tabindex="0" onclick="ouvrirDicteeVocale();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-weight:900">Dictee vocale mission</button>'
+      +'<button tabindex="0" onclick="ouvrirAssistantConstruction();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#1d4ed8,#60a5fa);color:#fff;font-weight:900">IA construit le planning</button>'
+      +'<button tabindex="0" onclick="ouvrirChatChauffeurs();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#0088cc,#06b6d4);color:#fff;font-weight:900">Chat avec chauffeurs</button>'
+      +'<div style="border-top:1px solid #1e293b;margin:4px 0"></div>';
+    menu.insertBefore(div,firstItem);
+  },2700);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   OCR BONS DE LIVRAISON + IA PRÉDICTIVE
+   1. Lecture automatique bons de livraison (photo/PDF)
+   2. Tableau de bord prédictif - anticipation absences/surcharges
+══════════════════════════════════════════════════ */
+
+/* ══ 1. OCR BONS DE LIVRAISON ══ */
+function ouvrirImportBon(){
+  var existing=document.getElementById('m-ocr');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-ocr';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Importer un bon de livraison <button class="mclose" onclick="document.getElementById(\'m-ocr\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Prenez une photo ou importez un PDF/image d un bon de livraison. '
+    +'Le logiciel va essayer de detecter automatiquement le client, l adresse, l heure et la quantite.'
+    +'</div>'
+    +'<input type="file" id="ocr-file" accept="image/*,.pdf" capture="environment" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerOCR()" style="width:100%;padding:11px;background:#7c3aed;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Analyser le document</button>'
+    +'<div id="ocr-preview" style="margin-top:12px;text-align:center"></div>'
+    +'<div id="ocr-resultat" style="margin-top:12px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function lancerOCR(){
+  var fileInput=document.getElementById('ocr-file');
+  if(!fileInput.files.length){showT('Choisissez un fichier','#f59e0b');return;}
+  var file=fileInput.files[0];
+  var resEl=document.getElementById('ocr-resultat');
+  var prevEl=document.getElementById('ocr-preview');
+
+  if(file.type.indexOf('image')===0){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      prevEl.innerHTML='<img src="'+e.target.result+'" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #1e293b">';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  resEl.innerHTML='<div style="text-align:center;color:#94a3b8;padding:20px"><div style="font-size:30px">⏳</div>Analyse en cours...</div>';
+
+  /* Utiliser Tesseract.js pour OCR si disponible, sinon analyse simplifiée */
+  if(typeof Tesseract!=='undefined'){
+    Tesseract.recognize(file,'fra').then(function(result){
+      analyserTexteOCR(result.data.text);
+    }).catch(function(){
+      chargerTesseractEtAnalyser(file);
+    });
+  } else {
+    chargerTesseractEtAnalyser(file);
+  }
+}
+
+function chargerTesseractEtAnalyser(file){
+  var script=document.createElement('script');
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+  script.onload=function(){
+    Tesseract.recognize(file,'fra').then(function(result){
+      analyserTexteOCR(result.data.text);
+    }).catch(function(err){
+      document.getElementById('ocr-resultat').innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:12px;font-size:12px;color:#fca5a5">Erreur d analyse. Verifiez votre connexion internet.</div>';
+    });
+  };
+  document.head.appendChild(script);
+}
+
+function analyserTexteOCR(texte){
+  var resEl=document.getElementById('ocr-resultat');
+  var t=texte;
+  var tLower=t.toLowerCase();
+
+  /* Détecter une adresse (numero + mot + rue/avenue/boulevard) */
+  var adresseMatch=t.match(/\\d{1,4}[,\\s]+(?:rue|avenue|boulevard|chemin|impasse|allee|place|cours)[^\\n,]{0,40}/i);
+  var adresse=adresseMatch?adresseMatch[0].trim():'';
+
+  /* Détecter une heure */
+  var heureMatch=t.match(/(\\d{1,2})[h:](\\d{2})/);
+  var heure=heureMatch?heureMatch[1].padStart(2,'0')+':'+heureMatch[2]:'';
+
+  /* Détecter une quantité (nombre suivi de "repas", "couverts", "personnes") */
+  var qteMatch=t.match(/(\\d{1,4})\\s*(repas|couverts|personnes|plateaux)/i);
+  var quantite=qteMatch?qteMatch[1]+' '+qteMatch[2]:'';
+
+  /* Détecter un nom de client (ligne en majuscules, hors mots-clés) */
+  var lignes=t.split('\\n').map(function(l){return l.trim();}).filter(function(l){return l.length>3;});
+  var motsClesIgnorer=['bon','livraison','date','commande','facture','client','adresse','quantite','total','reference'];
+  var clientPossible=lignes.find(function(l){
+    var lw=l.toLowerCase();
+    if(motsClesIgnorer.some(function(m){return lw.indexOf(m)>=0;}))return false;
+    /* Au moins 60% de majuscules ou casse normale avec mots significatifs */
+    return l.length>3 && l.length<50 && /[A-Za-zÀ-ÿ]/.test(l);
+  });
+
+  /* Détecter une date */
+  var dateMatch=t.match(/(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{2,4})/);
+  var date=ST.cur;
+  if(dateMatch){
+    var jj=dateMatch[1].padStart(2,'0'),mm=dateMatch[2].padStart(2,'0'),aa=dateMatch[3];
+    if(aa.length===2)aa='20'+aa;
+    date=aa+'-'+mm+'-'+jj;
+  }
+
+  window._ocrData={client:clientPossible||'',adresse:adresse,heure:heure||'08:00',quantite:quantite,date:date,texteComplet:t};
+
+  resEl.innerHTML='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:12px;margin-bottom:10px">'
+    +'<b style="color:#22c55e">Informations detectees :</b>'
+    +'</div>'
+    +'<label style="font-size:11px;color:#64748b">Client</label>'
+    +'<input type="text" id="ocr-client" class="fi" value="'+(clientPossible||'').replace(/"/g,'&quot;')+'" style="margin-bottom:8px">'
+    +'<label style="font-size:11px;color:#64748b">Adresse</label>'
+    +'<input type="text" id="ocr-adresse" class="fi" value="'+adresse.replace(/"/g,'&quot;')+'" style="margin-bottom:8px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+    +'<div><label style="font-size:11px;color:#64748b">Date</label><input type="date" id="ocr-date" class="fi" value="'+date+'"></div>'
+    +'<div><label style="font-size:11px;color:#64748b">Heure</label><input type="time" id="ocr-heure" class="fi" value="'+(heure||'08:00')+'"></div>'
+    +'</div>'
+    +'<label style="font-size:11px;color:#64748b">Note (quantite)</label>'
+    +'<input type="text" id="ocr-qte" class="fi" value="'+quantite.replace(/"/g,'&quot;')+'" style="margin-bottom:8px">'
+    +'<label style="font-size:11px;color:#64748b">Chauffeur</label>'
+    +'<select id="ocr-chauffeur" class="fi" style="margin-bottom:10px">'
+    +ST.drivers.map(function(dr,di){return '<option value="'+di+'">'+dr.name+'</option>';}).join('')
+    +'</select>'
+    +'<button onclick="creerMissionDepuisOCR()" style="width:100%;padding:11px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Creer la mission</button>'
+    +'<details style="margin-top:10px"><summary style="font-size:11px;color:#64748b;cursor:pointer">Voir le texte brut detecte</summary>'
+    +'<div style="font-size:10px;color:#475569;white-space:pre-wrap;margin-top:6px;max-height:100px;overflow-y:auto">'+t.slice(0,1000)+'</div></details>';
+}
+
+function creerMissionDepuisOCR(){
+  var client=document.getElementById('ocr-client').value.trim();
+  var adresse=document.getElementById('ocr-adresse').value.trim();
+  var date=document.getElementById('ocr-date').value;
+  var heure=document.getElementById('ocr-heure').value;
+  var qte=document.getElementById('ocr-qte').value.trim();
+  var di=parseInt(document.getElementById('ocr-chauffeur').value);
+
+  if(!client){showT('Indiquez un nom de client','#f59e0b');return;}
+
+  /* Arrondir l'heure aux 30 min de la grille */
+  var [hh,mm]=heure.split(':').map(Number);
+  mm = mm<15?0:mm<45?30:0;
+  if(mm===0 && Number(heure.split(':')[1])>=45) hh++;
+  var heureGrille=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+  var k=gk(date,di,heureGrille);
+  if(!ST.tasks[k]) ST.tasks[k]=[];
+  ST.tasks[k].push({client:client,adresse:adresse,note_liv:qte,category:'task'});
+
+  if(typeof save==='function')save();
+  if(date===ST.cur&&typeof render==='function')render();
+  showT('Mission creee depuis le bon de livraison','#16a34a');
+  document.getElementById('m-ocr').remove();
+}
+
+/* ══ 2. TABLEAU DE BORD PRÉDICTIF ══ */
+function ouvrirPredictif(){
+  var existing=document.getElementById('m-predictif');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-predictif';modal.className='mbg on';
+
+  /* Analyser l'historique des absences par chauffeur */
+  var stats=ST.drivers.map(function(dr,di){
+    var absences=Object.values(ST.statuts||{}).filter(function(s){
+      return s.di===di&&(s.type==='absent'||s.type==='maladie');
+    });
+    /* Compter par jour de semaine */
+    var parJour={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+    absences.forEach(function(a){
+      var d=new Date(a.date+'T12:00:00');
+      parJour[d.getDay()]++;
+    });
+    var JNOMS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    var jourRisque=Object.keys(parJour).reduce(function(a,b){return parJour[a]>parJour[b]?a:b;});
+    var nbRisque=parJour[jourRisque];
+
+    return {
+      name:dr.name,
+      totalAbsences:absences.length,
+      jourRisque:nbRisque>1?JNOMS[jourRisque]:null,
+      nbRisque:nbRisque
+    };
+  });
+
+  /* Analyser la charge prévue 7 prochains jours */
+  var chargesParJour=[];
+  var JNOMS2=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  for(var i=0;i<7;i++){
+    var d=new Date();d.setDate(d.getDate()+i);
+    var ds=d.toISOString().slice(0,10);
+    var total=0;
+    ST.drivers.forEach(function(dr,di){SL.forEach(function(h){total+=(ST.tasks[gk(ds,di,h)]||[]).length;});});
+    chargesParJour.push({jour:JNOMS2[d.getDay()],date:ds,total:total});
+  }
+  var moyenneCharge=chargesParJour.reduce(function(a,b){return a+b.total;},0)/7;
+
+  var html='<div class="mbox" style="max-width:580px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Tableau de bord predictif <button class="mclose" onclick="document.getElementById(\'m-predictif\').remove()">X</button></h3>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px;letter-spacing:.8px">Risques d absence detectes</div>';
+
+  var risquesDetectes=stats.filter(function(s){return s.jourRisque;});
+  if(risquesDetectes.length){
+    html+=risquesDetectes.map(function(s){
+      return '<div style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px">'
+        +'<b style="color:#fbbf24">'+s.name+'</b> — Pattern detecte : '+s.nbRisque+' absence(s) le '+s.jourRisque+' sur l historique. Anticiper une redistribution possible.'
+        +'</div>';
+    }).join('');
+  } else {
+    html+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;font-size:12px;color:#64748b">Aucun pattern d absence recurrent detecte pour le moment.</div>';
+  }
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px;letter-spacing:.8px">Charge prevue (7 jours)</div>'
+    +'<div style="display:flex;align-items:flex-end;gap:6px;height:100px;margin-bottom:8px">'
+    +chargesParJour.map(function(c,idx){
+      var max=Math.max.apply(null,chargesParJour.map(function(x){return x.total;}))||1;
+      var pct=Math.round(c.total/max*100);
+      var surcharge=c.total>moyenneCharge*1.3;
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<div style="font-size:10px;color:'+(surcharge?'#ef4444':'#64748b')+'">'+c.total+'</div>'
+        +'<div style="width:100%;height:'+Math.max(pct,3)+'%;background:'+(surcharge?'#ef4444':idx===0?'#1d4ed8':'#334155')+';border-radius:3px 3px 0 0;min-height:3px"></div>'
+        +'<div style="font-size:9px;color:#64748b">'+c.jour+'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+
+  var jourSurcharge=chargesParJour.find(function(c){return c.total>moyenneCharge*1.3;});
+  if(jourSurcharge){
+    html+='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:10px;font-size:12px;color:#fca5a5">'
+      +'Surcharge prevue le '+jourSurcharge.jour+' ('+jourSurcharge.total+' missions vs '+Math.round(moyenneCharge)+' en moyenne). Anticiper une redistribution ou renfort.'
+      +'</div>';
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 3. AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var iaSection=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Chat avec chauffeurs')>=0;});
+    if(iaSection&&iaSection.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportBon();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#f97316,#fb923c);color:#fff;font-weight:900">Importer bon de livraison</button>'
+        +'<button tabindex="0" onclick="ouvrirPredictif();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#dc2626,#f87171);color:#fff;font-weight:900">Tableau de bord predictif</button>';
+      iaSection.parentNode.insertBefore(div,iaSection.nextSibling);
+    }
+  },2900);
+});
+
+</script>
 </body>
 </html>
