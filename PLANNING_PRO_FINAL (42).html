@@ -15843,5 +15843,787 @@ function imprimerTableauDepart(){
 }
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 9 — SCORE BIEN-ÊTRE + TOUR DE CONTRÔLE RESPONSABLE
+══════════════════════════════════════════════════ */
+
+/* ══ 1. SCORE BIEN-ÊTRE — saisie chauffeur (page mobile) ══ */
+/* Côté logiciel : afficher l'historique et les alertes */
+function ouvrirBienEtreEquipe(){
+  var existing=document.getElementById('m-bienetre');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bienetre';modal.className='mbg on';
+  var historique=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  var date=ST.cur;
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Score bien-etre equipe <button class="mclose" onclick="document.getElementById(\'m-bienetre\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Chaque matin, le chauffeur clique sur son ressenti depuis sa page mobile : '
+    +'<span style="font-size:16px">😀</span> Bien, <span style="font-size:16px">😐</span> Moyen, <span style="font-size:16px">😟</span> Difficile. '
+    +'Le systeme detecte les patterns (fatigue, demotivation) et te previent.'
+    +'</div>';
+
+  /* Aujourd'hui */
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Aujourd hui</div>';
+  ST.drivers.forEach(function(dr,di){
+    var rep=historique[date]&&historique[date][di];
+    var emoji = rep==='bien'?'😀':rep==='moyen'?'😐':rep==='difficile'?'😟':'⏳';
+    var label = rep==='bien'?'Bien':rep==='moyen'?'Moyen':rep==='difficile'?'Difficile':'Pas encore repondu';
+    var col = rep==='bien'?'#22c55e':rep==='moyen'?'#f59e0b':rep==='difficile'?'#ef4444':'#475569';
+    html+='<div style="background:#0f172a;border:1px solid '+col+';border-radius:8px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:13px;color:#e2e8f0">'+dr.name+'</span>'
+      +'<span style="font-size:13px;color:'+col+'">'+emoji+' '+label+'</span>'
+      +'</div>';
+  });
+
+  /* Détection patterns sur 14 jours */
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Tendance sur 14 jours</div>';
+  ST.drivers.forEach(function(dr,di){
+    var difficiles=0,total=0;
+    for(var i=0;i<14;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      if(historique[ds]&&historique[ds][di]){
+        total++;
+        if(historique[ds][di]==='difficile') difficiles++;
+      }
+    }
+    if(total>=3 && difficiles/total>=0.4){
+      html+='<div style="background:rgba(239,68,68,.1);border-left:3px solid #ef4444;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#fca5a5">'
+        +'<b>'+dr.name+'</b> : '+difficiles+'/'+total+' jours difficiles ces 2 dernieres semaines. Signe de fatigue ou demotivation possible — envisager un entretien.'
+        +'</div>';
+    }
+  });
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* Réception du score bien-être (via Telegram, traité par sync) */
+function traiterBienEtreTelegram(updates){
+  if(!updates||!updates.result)return;
+  var historique=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  var dejaTraites=JSON.parse(localStorage.getItem('bienetre_updates_traites')||'[]');
+  var nouveaux=0;
+  var date=new Date().toISOString().slice(0,10);
+
+  updates.result.forEach(function(upd){
+    if(!upd.message||!upd.message.text)return;
+    if(dejaTraites.indexOf(upd.update_id)>=0)return;
+    var txt=upd.message.text.toLowerCase();
+    var type=null;
+    if(txt.indexOf('😀')>=0||txt==='bien') type='bien';
+    if(txt.indexOf('😐')>=0||txt==='moyen') type='moyen';
+    if(txt.indexOf('😟')>=0||txt==='difficile') type='difficile';
+    if(!type)return;
+
+    var di=-1;
+    Object.keys(getTgIds()).forEach(function(d){
+      if(String(getTgIds()[d])===String(upd.message.chat.id)) di=parseInt(d);
+    });
+    if(di<0)return;
+
+    if(!historique[date]) historique[date]={};
+    historique[date][di]=type;
+    dejaTraites.push(upd.update_id);
+    nouveaux++;
+  });
+
+  if(nouveaux>0){
+    localStorage.setItem('bienetre_historique',JSON.stringify(historique));
+    localStorage.setItem('bienetre_updates_traites',JSON.stringify(dejaTraites.slice(-200)));
+  }
+}
+
+/* ══ 2. TOUR DE CONTRÔLE RESPONSABLE ══ */
+function ouvrirTourControle(){
+  var existing=document.getElementById('m-tour-controle');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-tour-controle';modal.className='mbg on';
+  var date=ST.cur;
+  var heure=new Date().getHours();
+  var salut=heure<12?'Bonjour':heure<18?'Bon apres-midi':'Bonsoir';
+
+  var totalMissions=0,absences=0,chauffeursActifs=0;
+  var recommandations=[];
+
+  ST.drivers.forEach(function(dr,di){
+    var nb=0;SL.forEach(function(h){nb+=(ST.tasks[gk(date,di,h)]||[]).length;});
+    totalMissions+=nb;
+    if(nb>0)chauffeursActifs++;
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) absences++;
+
+    if(nb>=7){
+      recommandations.push('Affecter une partie de la tournee de '+dr.name+' a un autre chauffeur (surcharge: '+nb+' missions).');
+    }
+  });
+
+  /* Évaluations en retard (>45 jours) */
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+  ST.drivers.forEach(function(dr,di){
+    var derniereEval=evals[di]?evals[di].derniereDate:null;
+    if(!derniereEval){
+      recommandations.push(dr.name+' n a jamais ete evalue. Prevoir une evaluation.');
+    } else {
+      var joursDepuis=Math.floor((new Date()-new Date(derniereEval))/(1000*60*60*24));
+      if(joursDepuis>45){
+        recommandations.push(dr.name+' n a pas ete evalue depuis '+joursDepuis+' jours. Prevoir une evaluation.');
+      }
+    }
+  });
+
+  /* Documents arrivant à expiration */
+  var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+  docs.forEach(function(d){
+    var joursRestants=Math.floor((new Date(d.dateExpiration)-new Date())/(1000*60*60*24));
+    if(joursRestants<=30&&joursRestants>=0){
+      recommandations.push('Document "'+d.nom+'" expire dans '+joursRestants+' jour(s) — a renouveler.');
+    }
+  });
+
+  /* Bien-être en alerte */
+  var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  ST.drivers.forEach(function(dr,di){
+    var difficiles=0,total=0;
+    for(var i=0;i<14;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      if(bienetre[ds]&&bienetre[ds][di]){total++;if(bienetre[ds][di]==='difficile')difficiles++;}
+    }
+    if(total>=3&&difficiles/total>=0.4){
+      recommandations.push(dr.name+' a signale plusieurs journees difficiles recemment — envisager un entretien.');
+    }
+  });
+
+  /* Charge mentale responsable */
+  var nbEvenements = absences + recommandations.length + (totalMissions>40?1:0);
+  var chargeLabel = nbEvenements<=2?'Charge faible':nbEvenements<=5?'Charge elevee':'Risque de surcharge';
+  var chargeCol = nbEvenements<=2?'#22c55e':nbEvenements<=5?'#f59e0b':'#ef4444';
+
+  var JNOMS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  var d=new Date(date+'T12:00:00');
+
+  var html='<div class="mbox" style="max-width:560px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Tour de Controle Responsable <button class="mclose" onclick="document.getElementById(\'m-tour-controle\').remove()">X</button></h3>'
+    +'<div style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8);border-radius:12px;padding:16px;margin-bottom:14px;color:#fff">'
+    +'<div style="font-size:16px;font-weight:900;margin-bottom:8px">'+salut+' !</div>'
+    +'<div style="font-size:13px;line-height:1.8">'
+    +'Aujourd hui ('+JNOMS[d.getDay()]+') : <b>'+totalMissions+' missions</b> prevues avec <b>'+chauffeursActifs+' chauffeur(s)</b> actif(s).'
+    +(absences>0?'<br><b style="color:#fca5a5">'+absences+' absence(s)</b> signalee(s).':'')
+    +'</div>'
+    +'</div>'
+
+    +'<div style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid '+chargeCol+';border-radius:10px;padding:12px;margin-bottom:14px">'
+    +'<div style="font-size:24px">'+(nbEvenements<=2?'🟢':nbEvenements<=5?'🟠':'🔴')+'</div>'
+    +'<div><div style="font-size:13px;font-weight:700;color:'+chargeCol+'">'+chargeLabel+'</div>'
+    +'<div style="font-size:11px;color:#64748b">Indice de charge mentale base sur '+nbEvenements+' element(s) a gerer</div></div>'
+    +'</div>';
+
+  if(recommandations.length){
+    html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Recommandations ('+recommandations.length+')</div>';
+    html += recommandations.slice(0,8).map(function(r,idx){
+      return '<div style="background:#0f172a;border-left:3px solid #7c3aed;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#e2e8f0">'+(idx+1)+'. '+r+'</div>';
+    }).join('');
+  } else {
+    html+='<div style="text-align:center;color:#22c55e;padding:20px"><div style="font-size:36px">✓</div>Aucune urgence critique aujourd hui.</div>';
+  }
+
+  window._tourControleData={total:totalMissions,actifs:chauffeursActifs,absences:absences,charge:chargeLabel};
+  html+='<button onclick="parlerTourControle()" style="width:100%;padding:11px;background:#7c3aed;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">Ecouter le briefing</button>'
+    +'</div>';
+
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function parlerTourControle(){
+  var d=window._tourControleData;if(!d)return;
+  var total=d.total,actifs=d.actifs,absences=d.absences,charge=d.charge;
+  if(!window.speechSynthesis)return;
+  var txt='Aujourd hui, '+total+' missions prevues avec '+actifs+' chauffeurs actifs. ';
+  if(absences>0) txt+=absences+' absence'+(absences>1?'s':'')+' signalee'+(absences>1?'s':'')+'. ';
+  txt+='Indice de charge : '+charge.toLowerCase()+'. Bonne journee !';
+  var u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
+  window.speechSynthesis.speak(u);
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var briefBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Briefing vocal du matin')>=0;});
+    if(briefBtn&&briefBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirTourControle();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#1e3a8a,#7c3aed);color:#fff;font-weight:900">Tour de Controle Responsable</button>'
+        +'<button tabindex="0" onclick="ouvrirBienEtreEquipe();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">Score bien-etre equipe</button>';
+      briefBtn.parentNode.insertBefore(div,briefBtn.nextSibling);
+    }
+  },3700);
+
+  /* Vérifier réponses bien-être via Telegram */
+  setTimeout(function(){
+    setInterval(function(){
+      fetch(TG_API+'/getUpdates?limit=50')
+        .then(function(r){return r.json();})
+        .then(function(updates){traiterBienEtreTelegram(updates);})
+        .catch(function(){});
+    },180000);
+  },6000);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 10 — EVALUATIONS AUTOMATIQUES + CARNET NUMERIQUE
+══════════════════════════════════════════════════ */
+
+/* ══ CARNET NUMÉRIQUE DU SALARIÉ ══ */
+function ouvrirCarnetSalarie(){
+  var existing=document.getElementById('m-carnet-sal');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-carnet-sal';modal.className='mbg on';
+
+  var html='<div class="mbox" style="max-width:480px">'
+    +'<h3>Carnet numerique salarie <button class="mclose" onclick="document.getElementById(\'m-carnet-sal\').remove()">X</button></h3>'
+    +'<label style="font-size:11px;color:#64748b">Choisir un salarie</label>'
+    +'<select id="carnet-sal-select" class="fi" style="margin-bottom:10px" onchange="afficherCarnetSalarie()">'
+    +'<option value="-1">Choisir...</option>'
+    +ST.drivers.map(function(dr,di){return '<option value="'+di+'">'+dr.name+'</option>';}).join('')
+    +'</select>'
+    +'<div id="carnet-sal-contenu"></div>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function afficherCarnetSalarie(){
+  var di=parseInt(document.getElementById('carnet-sal-select').value);
+  var contenu=document.getElementById('carnet-sal-contenu');
+  if(di<0){contenu.innerHTML='';return;}
+  var dr=ST.drivers[di];
+
+  var carnet=JSON.parse(localStorage.getItem('carnet_salaries')||'{}')[di]||{};
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}')[di]||{};
+  var scores=JSON.parse(localStorage.getItem('scores_insertion')||'{}')[di]||{};
+
+  var html='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-top:8px">'
+    +'<div style="font-size:16px;font-weight:900;color:#e2e8f0;margin-bottom:10px">'+dr.name+'</div>';
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:6px">Objectifs</div>'
+    +'<textarea id="carnet-objectifs" class="fi" style="height:60px;font-size:12px;margin-bottom:10px" placeholder="Objectifs en cours...">'+(carnet.objectifs||'')+'</textarea>';
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:6px">Formations</div>'
+    +'<textarea id="carnet-formations" class="fi" style="height:60px;font-size:12px;margin-bottom:10px" placeholder="Formations suivies...">'+(carnet.formations||'')+'</textarea>';
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:6px">Reussites</div>'
+    +'<textarea id="carnet-reussites" class="fi" style="height:60px;font-size:12px;margin-bottom:10px" placeholder="Reussites notables...">'+(carnet.reussites||'')+'</textarea>';
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:6px">Difficultes</div>'
+    +'<textarea id="carnet-difficultes" class="fi" style="height:60px;font-size:12px;margin-bottom:10px" placeholder="Points de vigilance...">'+(carnet.difficultes||'')+'</textarea>';
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:6px">Competences acquises</div>'
+    +'<textarea id="carnet-competences" class="fi" style="height:60px;font-size:12px;margin-bottom:10px" placeholder="Competences validees...">'+(carnet.competences||'')+'</textarea>';
+
+  var derniereEval=evals.derniereDate?new Date(evals.derniereDate).toLocaleDateString('fr-FR'):'Jamais';
+  html+='<div style="background:rgba(124,58,237,.1);border-radius:8px;padding:10px;font-size:12px;color:#c4b5fd;margin-bottom:10px">'
+    +'Derniere evaluation : '+derniereEval
+    +'</div>';
+
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<button onclick="sauverCarnetSalarie('+di+')" style="padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Enregistrer</button>'
+    +'<button onclick="genererEvaluationComplete('+di+')" style="padding:10px;background:#7c3aed;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Generer evaluation</button>'
+    +'</div>';
+
+  html+='</div>';
+  contenu.innerHTML=html;
+}
+
+function sauverCarnetSalarie(di){
+  var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}');
+  carnets[di]={
+    objectifs:document.getElementById('carnet-objectifs').value,
+    formations:document.getElementById('carnet-formations').value,
+    reussites:document.getElementById('carnet-reussites').value,
+    difficultes:document.getElementById('carnet-difficultes').value,
+    competences:document.getElementById('carnet-competences').value
+  };
+  localStorage.setItem('carnet_salaries',JSON.stringify(carnets));
+  showT('Carnet enregistre','#16a34a');
+}
+
+/* ══ GÉNÉRATION AUTOMATIQUE D'ÉVALUATION ══ */
+function genererEvaluationComplete(di){
+  var dr=ST.drivers[di];
+  var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}')[di]||{};
+  var scoresData=JSON.parse(localStorage.getItem('scores_insertion')||'{}')[di]||{};
+
+  /* Calculer les statistiques de présence sur 30 jours */
+  var nbAbsences=0,nbJoursTravailles=0,totalMissions=0,missionsFaites=0;
+  for(var i=0;i<30;i++){
+    var d=new Date();d.setDate(d.getDate()-i);
+    var ds=d.toISOString().slice(0,10);
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===ds;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) nbAbsences++;
+    var nb=0,fait=0;
+    SL.forEach(function(h){(ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){nb++;if(t.confirmed)fait++;});});
+    if(nb>0){nbJoursTravailles++;totalMissions+=nb;missionsFaites+=fait;}
+  }
+  var tauxPresence=Math.round((nbJoursTravailles/(nbJoursTravailles+nbAbsences))*100)||0;
+  var tauxReussite=totalMissions>0?Math.round(missionsFaites/totalMissions*100):0;
+
+  /* Points forts automatiques */
+  var pointsForts=[];
+  if(tauxPresence>=90) pointsForts.push('Tres bonne assiduite ('+tauxPresence+'% de presence sur 30 jours)');
+  if(tauxReussite>=90) pointsForts.push('Excellent taux de realisation des missions ('+tauxReussite+'%)');
+  if(carnets.competences) pointsForts.push('Competences acquises : '+carnets.competences);
+  if(carnets.reussites) pointsForts.push(carnets.reussites);
+
+  /* Points de vigilance automatiques */
+  var pointsVigilance=[];
+  if(tauxPresence<80) pointsVigilance.push('Taux de presence a surveiller ('+tauxPresence+'% sur 30 jours)');
+  if(tauxReussite<70 && totalMissions>0) pointsVigilance.push('Taux de realisation des missions a ameliorer ('+tauxReussite+'%)');
+  if(carnets.difficultes) pointsVigilance.push(carnets.difficultes);
+
+  /* Bien-être */
+  var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  var difficiles=0,totalBE=0;
+  for(var i=0;i<30;i++){
+    var d=new Date();d.setDate(d.getDate()-i);
+    var ds=d.toISOString().slice(0,10);
+    if(bienetre[ds]&&bienetre[ds][di]){totalBE++;if(bienetre[ds][di]==='difficile')difficiles++;}
+  }
+  if(totalBE>=5&&difficiles/totalBE>=0.3) pointsVigilance.push('Plusieurs journees difficiles signalees ces 30 derniers jours');
+
+  if(!pointsForts.length) pointsForts.push('Aucun point fort specifique releve ce mois - poursuivre les efforts');
+  if(!pointsVigilance.length) pointsVigilance.push('Aucun point de vigilance particulier ce mois');
+
+  /* Objectifs du mois suivant */
+  var objectifsSuivants=[];
+  if(tauxPresence<90) objectifsSuivants.push('Ameliorer l assiduite');
+  if(tauxReussite<90&&totalMissions>0) objectifsSuivants.push('Ameliorer le taux de realisation des missions');
+  if(!objectifsSuivants.length) objectifsSuivants.push('Maintenir le niveau actuel et continuer la progression');
+  if(carnets.objectifs) objectifsSuivants.push(carnets.objectifs);
+
+  /* Sauvegarder la date d'évaluation */
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+  evals[di]={derniereDate:new Date().toISOString(),tauxPresence:tauxPresence,tauxReussite:tauxReussite};
+  localStorage.setItem('evaluations_insertion',JSON.stringify(evals));
+
+  /* Ouvrir le document généré */
+  var win=window.open('','_blank');
+  var html='<html><head><title>Evaluation - '+dr.name+'</title><style>'
+    +'body{font-family:Arial;padding:30px;color:#1e293b}'
+    +'h1{color:#1e3a8a;border-bottom:2px solid #1d4ed8;padding-bottom:8px}'
+    +'h2{color:#1d4ed8;margin-top:20px;font-size:16px}'
+    +'.stat{display:inline-block;background:#f1f5f9;border-radius:8px;padding:10px 16px;margin-right:10px;margin-bottom:10px}'
+    +'.statval{font-size:24px;font-weight:900;color:#1d4ed8}'
+    +'.statlbl{font-size:11px;color:#64748b;text-transform:uppercase}'
+    +'ul{line-height:1.8}'
+    +'</style></head><body>'
+    +'<h1>Bilan mensuel - '+dr.name+'</h1>'
+    +'<div style="color:#64748b;margin-bottom:14px">Genere le '+new Date().toLocaleDateString('fr-FR')+'</div>'
+    +'<div class="stat"><div class="statval">'+tauxPresence+'%</div><div class="statlbl">Presence (30j)</div></div>'
+    +'<div class="stat"><div class="statval">'+tauxReussite+'%</div><div class="statlbl">Missions realisees</div></div>'
+    +'<div class="stat"><div class="statval">'+totalMissions+'</div><div class="statlbl">Missions sur 30j</div></div>'
+    +'<h2>Points forts</h2><ul>'+pointsForts.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'
+    +'<h2>Points de vigilance</h2><ul>'+pointsVigilance.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'
+    +'<h2>Objectifs du mois suivant</h2><ul>'+objectifsSuivants.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'
+    +(carnets.formations?'<h2>Formations</h2><p>'+carnets.formations+'</p>':'')
+    +(carnets.competences?'<h2>Competences acquises</h2><p>'+carnets.competences+'</p>':'')
+    +'<h2>Preparation entretien</h2>'
+    +'<p>Points a aborder : assiduite ('+tauxPresence+'%), realisation des missions ('+tauxReussite+'%)'
+    +(carnets.objectifs?', objectifs en cours : '+carnets.objectifs:'')
+    +'. Profiter de l entretien pour faire le point sur le ressenti general et les perspectives.</p>'
+    +'</body></html>';
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+
+  showT('Evaluation generee pour '+dr.name,'#16a34a');
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var scoreBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Score Insertion')>=0;});
+    if(scoreBtn&&scoreBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirCarnetSalarie();fermerMenu()" class="menu-item" style="color:#7c3aed;font-weight:700">Carnet numerique salarie</button>';
+      scoreBtn.parentNode.insertBefore(div,scoreBtn.nextSibling);
+    }
+  },3800);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 11 — DETECTION TALENTS + DOCS + FINANCES + JOURNAL REUSSITES
+══════════════════════════════════════════════════ */
+
+/* ══ 1. DÉTECTION DES TALENTS ══ */
+function ouvrirDetectionTalents(){
+  var existing=document.getElementById('m-talents');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-talents';modal.className='mbg on';
+
+  var stats=ST.drivers.map(function(dr,di){
+    var totalMissions=0,faites=0,nbJours=0,absences=0;
+    for(var i=0;i<30;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      var nb=0,fait=0;
+      SL.forEach(function(h){(ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){nb++;if(t.confirmed)fait++;});});
+      if(nb>0){nbJours++;totalMissions+=nb;faites+=fait;}
+      var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===ds;});
+      if(st&&(st.type==='absent'||st.type==='maladie')) absences++;
+    }
+    var ponctualite=totalMissions>0?Math.round(faites/totalMissions*100):0;
+    var presence=Math.round((nbJours/(nbJours+absences||1))*100);
+    var polyvalence=0;
+    var categories={};
+    for(var i=0;i<30;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      SL.forEach(function(h){(ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){categories[t.category||'task']=true;});});
+    }
+    polyvalence=Object.keys(categories).length;
+
+    return {name:dr.name,di:di,ponctualite:ponctualite,presence:presence,polyvalence:polyvalence,totalMissions:totalMissions};
+  });
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Detection des talents <button class="mclose" onclick="document.getElementById(\'m-talents\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8">'
+    +'Analyse sur les 30 derniers jours : ponctualite, autonomie, presence et polyvalence (variete de missions traitees).'
+    +'</div>';
+
+  /* Plus ponctuel */
+  var plusPonctuel=stats.slice().sort(function(a,b){return b.ponctualite-a.ponctualite;})[0];
+  var plusPresent=stats.slice().sort(function(a,b){return b.presence-a.presence;})[0];
+  var plusPolyvalent=stats.slice().sort(function(a,b){return b.polyvalence-a.polyvalence;})[0];
+  var plusActif=stats.slice().sort(function(a,b){return b.totalMissions-a.totalMissions;})[0];
+
+  var podiums=[
+    {label:'Plus ponctuel',val:plusPonctuel,detail:plusPonctuel.ponctualite+'% de missions menees a bien',icon:'🎯'},
+    {label:'Plus assidu',val:plusPresent,detail:plusPresent.presence+'% de presence',icon:'📅'},
+    {label:'Plus polyvalent',val:plusPolyvalent,detail:plusPolyvalent.polyvalence+' types de missions differents',icon:'🔄'},
+    {label:'Plus actif',val:plusActif,detail:plusActif.totalMissions+' missions sur 30 jours',icon:'⚡'},
+  ];
+
+  podiums.forEach(function(p){
+    html+='<div style="background:rgba(124,58,237,.1);border:1px solid #7c3aed;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">'
+      +'<div style="font-size:24px">'+p.icon+'</div>'
+      +'<div><div style="font-size:11px;color:#a78bfa;text-transform:uppercase;font-weight:700">'+p.label+'</div>'
+      +'<div style="font-size:14px;font-weight:700;color:#e2e8f0">'+p.val.name+'</div>'
+      +'<div style="font-size:11px;color:#64748b">'+p.detail+'</div></div>'
+      +'</div>';
+  });
+
+  /* Suggestion d'évolution */
+  var candidatEvolution=stats.find(function(s){return s.ponctualite>=90&&s.presence>=90&&s.polyvalence>=3;});
+  if(candidatEvolution){
+    html+='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:14px;margin-top:10px;font-size:13px;color:#86efac">'
+      +'<b>'+candidatEvolution.name+'</b> pourrait evoluer vers plus de responsabilites — excellents indicateurs sur ponctualite, presence et polyvalence.'
+      +'</div>';
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 2. CENTRE DOCUMENTAIRE INTELLIGENT ══ */
+function ouvrirCentreDocumentaire(){
+  var existing=document.getElementById('m-docs');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-docs';modal.className='mbg on';
+  var docs=JSON.parse(localStorage.getItem('centre_documentaire')||'[]');
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Centre documentaire <button class="mclose" onclick="document.getElementById(\'m-docs\').remove()">X</button></h3>'
+    +'<input type="text" id="docs-search" class="fi" placeholder="Rechercher un document (ex: assurance Renault)..." style="margin-bottom:10px" oninput="rechercherDocument()">'
+    +'<div id="docs-resultats"></div>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Ajouter un document</div>'
+    +'<input type="text" id="doc-nom" class="fi" placeholder="Nom du document (ex: Assurance camion Renault)" style="margin-bottom:6px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+    +'<select id="doc-categorie" class="fi"><option value="procedure">Procedure HACCP</option><option value="permis">Permis</option><option value="assurance">Assurance</option><option value="carte-grise">Carte grise</option><option value="contrat">Contrat</option><option value="convention">Convention</option></select>'
+    +'<input type="date" id="doc-expiration" class="fi">'
+    +'</div>'
+    +'<textarea id="doc-note" class="fi" placeholder="Note / reference / lien..." style="height:50px;margin-bottom:6px"></textarea>'
+    +'<button onclick="ajouterDocument()" style="width:100%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Ajouter</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+  rechercherDocument();
+}
+
+function rechercherDocument(){
+  var q=(document.getElementById('docs-search').value||'').toLowerCase();
+  var docs=JSON.parse(localStorage.getItem('centre_documentaire')||'[]');
+  var resEl=document.getElementById('docs-resultats');
+  var filtres=docs.filter(function(d){return !q||d.nom.toLowerCase().indexOf(q)>=0||(d.note||'').toLowerCase().indexOf(q)>=0;});
+
+  if(!filtres.length){
+    resEl.innerHTML='<div style="text-align:center;color:#64748b;padding:14px;font-size:12px">Aucun document trouve.</div>';
+    return;
+  }
+
+  var CAT_LABELS={procedure:'Procedure HACCP',permis:'Permis',assurance:'Assurance','carte-grise':'Carte grise',contrat:'Contrat',convention:'Convention'};
+  resEl.innerHTML = filtres.map(function(d,idx){
+    var joursRestants = d.expiration?Math.floor((new Date(d.expiration)-new Date())/(1000*60*60*24)):null;
+    var alerteExp = joursRestants!==null&&joursRestants<=30;
+    return '<div style="background:#0f172a;border:1px solid '+(alerteExp?'#ef4444':'#1e293b')+';border-radius:8px;padding:10px;margin-bottom:6px">'
+      +'<div style="font-size:13px;font-weight:700;color:#e2e8f0">'+d.nom+'</div>'
+      +'<div style="font-size:11px;color:#64748b">'+(CAT_LABELS[d.categorie]||d.categorie)+(d.expiration?' — Expire le '+d.expiration:'')+(alerteExp?' <span style="color:#ef4444">('+joursRestants+'j restants)</span>':'')+'</div>'
+      +(d.note?'<div style="font-size:11px;color:#94a3b8;margin-top:4px">'+d.note+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function ajouterDocument(){
+  var nom=document.getElementById('doc-nom').value.trim();
+  if(!nom){showT('Indiquez un nom','#f59e0b');return;}
+  var docs=JSON.parse(localStorage.getItem('centre_documentaire')||'[]');
+  var doc={
+    nom:nom,
+    categorie:document.getElementById('doc-categorie').value,
+    expiration:document.getElementById('doc-expiration').value,
+    note:document.getElementById('doc-note').value.trim()
+  };
+  docs.push(doc);
+  localStorage.setItem('centre_documentaire',JSON.stringify(docs));
+
+  /* Synchroniser avec les expirations du Tour de Contrôle */
+  if(doc.expiration){
+    var expirations=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+    expirations.push({nom:doc.nom,dateExpiration:doc.expiration});
+    localStorage.setItem('documents_expirations',JSON.stringify(expirations));
+  }
+
+  document.getElementById('doc-nom').value='';
+  document.getElementById('doc-note').value='';
+  document.getElementById('doc-expiration').value='';
+  rechercherDocument();
+  showT('Document ajoute','#16a34a');
+}
+
+/* ══ 3. ANALYSE FINANCIÈRE OPÉRATIONNELLE ══ */
+function ouvrirAnalyseFinanciere(){
+  var existing=document.getElementById('m-finance');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-finance';modal.className='mbg on';
+
+  /* Estimations basées sur les missions du mois en cours */
+  var KM_PAR_MISSION=8,CONSO=9,PRIX_L=1.75,COUT_HORAIRE=18;
+  var mois=new Date().getMonth();
+  var annee=new Date().getFullYear();
+  var daysInMonth=new Date(annee,mois+1,0).getDate();
+
+  var totalMissions=0,parClient={};
+  for(var day=1;day<=daysInMonth;day++){
+    var ds=annee+'-'+String(mois+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    if(new Date(ds)>new Date())continue;
+    ST.drivers.forEach(function(dr,di){
+      SL.forEach(function(h){
+        (ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){
+          totalMissions++;
+          var c=t.client||t.task||'Inconnu';
+          if(!parClient[c]) parClient[c]={nb:0};
+          parClient[c].nb++;
+        });
+      });
+    });
+  }
+
+  var kmTotal=totalMissions*KM_PAR_MISSION;
+  var coutCarburant=kmTotal*CONSO/100*PRIX_L;
+  var heuresEstimees=totalMissions*0.5; /* 30min par mission estimé */
+  var coutMainOeuvre=heuresEstimees*COUT_HORAIRE;
+  var coutTotal=coutCarburant+coutMainOeuvre;
+
+  var topClients=Object.keys(parClient).sort(function(a,b){return parClient[b].nb-parClient[a].nb;}).slice(0,5);
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Analyse financiere operationnelle <button class="mclose" onclick="document.getElementById(\'m-finance\').remove()">X</button></h3>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">Estimations du mois en cours, a titre indicatif</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:900;color:#f97316">'+coutCarburant.toFixed(0)+' €</div><div style="font-size:11px;color:#64748b">Carburant ('+kmTotal+' km)</div></div>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:900;color:#60a5fa">'+coutMainOeuvre.toFixed(0)+' €</div><div style="font-size:11px;color:#64748b">Main d oeuvre (estim.)</div></div>'
+    +'</div>'
+    +'<div style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;color:#fff">'
+    +'<div style="font-size:28px;font-weight:900">'+coutTotal.toFixed(0)+' €</div>'
+    +'<div style="font-size:11px;opacity:.8">Cout operationnel estime ce mois ('+totalMissions+' missions)</div>'
+    +'</div>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Repartition par client (top 5)</div>'
+    +topClients.map(function(c){
+      var pct=Math.round(parClient[c].nb/totalMissions*100);
+      return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#e2e8f0">'+c+'</span><span style="color:#60a5fa">'+parClient[c].nb+' missions ('+pct+'%)</span></div>'
+        +'<div style="background:#1e293b;border-radius:4px;height:6px"><div style="height:100%;width:'+pct+'%;background:#1d4ed8;border-radius:4px"></div></div></div>';
+    }).join('')
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 4. JOURNAL DES RÉUSSITES (HEBDOMADAIRE) ══ */
+function ouvrirJournalReussitesSemaine(){
+  var existing=document.getElementById('m-journal-sem');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-journal-sem';modal.className='mbg on';
+
+  var totalMissions=0,missionsFaites=0,absencesEvitees=0;
+  var lundi=new Date();lundi.setDate(lundi.getDate()-lundi.getDay()+1);
+
+  for(var j=0;j<7;j++){
+    var d=new Date(lundi);d.setDate(lundi.getDate()+j);
+    if(d>new Date())continue;
+    var ds=d.toISOString().slice(0,10);
+    ST.drivers.forEach(function(dr,di){
+      SL.forEach(function(h){(ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){totalMissions++;if(t.confirmed)missionsFaites++;});});
+    });
+  }
+
+  var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}');
+  var progres=[];
+  Object.keys(carnets).forEach(function(di){
+    if(carnets[di].reussites) progres.push(ST.drivers[di]?ST.drivers[di].name+' : '+carnets[di].reussites:'');
+  });
+
+  var JNOMS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var dateDebut=lundi.getDate()+'/'+(lundi.getMonth()+1);
+  var dateFin=new Date(lundi);dateFin.setDate(lundi.getDate()+6);
+
+  var html='<div class="mbox" style="max-width:480px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Journal des reussites <button class="mclose" onclick="document.getElementById(\'m-journal-sem\').remove()">X</button></h3>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">Semaine du '+dateDebut+' au '+dateFin.getDate()+'/'+(dateFin.getMonth()+1)+'</div>'
+    +'<div style="background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;color:#fff">'
+    +'<div style="font-size:28px;font-weight:900">'+missionsFaites+' / '+totalMissions+'</div>'
+    +'<div style="font-size:11px;opacity:.9">livraisons reussies cette semaine</div>'
+    +'</div>';
+
+  if(progres.length){
+    html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Progres des salaries</div>';
+    html += progres.map(function(p){
+      return '<div style="background:rgba(34,197,94,.1);border-left:3px solid #22c55e;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#86efac">'+p+'</div>';
+    }).join('');
+  }
+
+  html+='<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin:14px 0 8px">Felicitations</div>'
+    +'<textarea id="journal-felicitations" class="fi" style="height:60px" placeholder="Notez ici les felicitations clients ou succes de la semaine..."></textarea>'
+    +'<button onclick="sauverFelicitationsSemaine()" style="width:100%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">Enregistrer</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function sauverFelicitationsSemaine(){
+  var txt=document.getElementById('journal-felicitations').value.trim();
+  if(!txt)return;
+  var historique=JSON.parse(localStorage.getItem('journal_felicitations')||'[]');
+  var lundi=new Date();lundi.setDate(lundi.getDate()-lundi.getDay()+1);
+  historique.push({semaine:lundi.toISOString().slice(0,10),texte:txt});
+  localStorage.setItem('journal_felicitations',JSON.stringify(historique.slice(-50)));
+  showT('Enregistre','#16a34a');
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var carnetBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Carnet numerique salarie')>=0;});
+    if(carnetBtn&&carnetBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirDetectionTalents();fermerMenu()" class="menu-item" style="color:#7c3aed;font-weight:700">Detection des talents</button>'
+        +'<button tabindex="0" onclick="ouvrirJournalReussitesSemaine();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">Journal des reussites</button>';
+      carnetBtn.parentNode.insertBefore(div,carnetBtn.nextSibling);
+    }
+
+    /* Centre documentaire + finances dans Données */
+    var statsBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Export comptable mensuel')>=0;});
+    if(statsBtn&&statsBtn.parentNode){
+      var div2=document.createElement('div');
+      div2.innerHTML='<button tabindex="0" onclick="ouvrirCentreDocumentaire();fermerMenu()" class="menu-item">Centre documentaire</button>'
+        +'<button tabindex="0" onclick="ouvrirAnalyseFinanciere();fermerMenu()" class="menu-item">Analyse financiere</button>';
+      statsBtn.parentNode.insertBefore(div2,statsBtn.nextSibling);
+    }
+  },3900);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 12 — STATUT TOURNEE (RETARD) + RESUME GLOBAL
+══════════════════════════════════════════════════ */
+
+/* ══ STATUT TOURNÉE — À l'heure / Risque de retard / Retard confirmé ══ */
+function ouvrirStatutTournees(){
+  var existing=document.getElementById('m-statut-tour');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-statut-tour';modal.className='mbg on';
+  var date=ST.cur;
+  var maintenant=new Date();
+  var heureActu=maintenant.getHours()*60+maintenant.getMinutes();
+  var today=new Date().toISOString().slice(0,10);
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Statut des tournees <button class="mclose" onclick="document.getElementById(\'m-statut-tour\').remove()">X</button></h3>';
+
+  if(date!==today){
+    html+='<div style="text-align:center;color:#64748b;padding:20px">Disponible uniquement pour aujourd hui.</div></div>';
+    modal.innerHTML=html;document.body.appendChild(modal);return;
+  }
+
+  html+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8">'
+    +'Statut calcule selon l heure prevue de chaque mission et l heure actuelle. '
+    +'<span style="color:#22c55e">A l heure</span> = mission a venir ou deja confirmee. '
+    +'<span style="color:#f59e0b">Risque de retard</span> = mission depassee de moins de 30 min sans confirmation. '
+    +'<span style="color:#ef4444">Retard confirme</span> = depassee de plus de 30 min sans confirmation.'
+    +'</div>';
+
+  ST.drivers.forEach(function(dr,di){
+    var missions=[];
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        var [hh,mm]=h.split(':').map(Number);
+        var heureMission=hh*60+mm;
+        var diff=heureActu-heureMission;
+        var statut,col,icone;
+        if(t.confirmed||diff<0){statut='A l heure';col='#22c55e';icone='🟢';}
+        else if(diff<=30){statut='Risque de retard';col='#f59e0b';icone='🟠';}
+        else {statut='Retard confirme';col='#ef4444';icone='🔴';}
+        missions.push({h:h,client:t.client||t.task||'',statut:statut,col:col,icone:icone});
+      });
+    });
+    if(!missions.length)return;
+
+    html+='<div style="font-size:12px;font-weight:700;color:#60a5fa;margin:10px 0 6px">'+dr.name+'</div>';
+    missions.forEach(function(m){
+      html+='<div style="background:#0f172a;border:1px solid '+m.col+';border-radius:8px;padding:8px 10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;font-size:12px">'
+        +'<span style="color:#e2e8f0">'+m.h+' — '+m.client+'</span>'
+        +'<span style="color:'+m.col+'">'+m.icone+' '+m.statut+'</span>'
+        +'</div>';
+    });
+  });
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var trajetBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Verifier temps de trajet')>=0;});
+    if(trajetBtn&&trajetBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirStatutTournees();fermerMenu()" class="menu-item" style="color:#f59e0b;font-weight:700">Statut des tournees (retards)</button>';
+      trajetBtn.parentNode.insertBefore(div,trajetBtn.nextSibling);
+    }
+  },4000);
+});
+
+</script>
 </body>
 </html>
