@@ -13327,21 +13327,59 @@ window.addEventListener('load',function(){
       var items=menu.querySelectorAll('.menu-item');
       var separators=menu.querySelectorAll('div[style*="border-top"]');
       var titres=menu.querySelectorAll('div[style*="text-transform:uppercase"]');
+      var catHeaders=menu.querySelectorAll('.menu-cat-header');
+      var catBodies=menu.querySelectorAll('.menu-cat-body');
+      var favBar=menu.querySelector('.menu-favoris-bar');
 
       if(!q){
         items.forEach(function(it){it.style.display='';});
         separators.forEach(function(s){s.style.display='';});
         titres.forEach(function(t){t.style.display='';});
+        /* Restaurer l'état accordéon (replié/déplié) d'origine */
+        catHeaders.forEach(function(h){
+          var key=h.getAttribute('data-catkey');
+          var cs=JSON.parse(localStorage.getItem('menu_collapsed')||'{}');
+          var collapsed=cs[key]===true;
+          h.style.display='';
+          h.classList.toggle('collapsed',collapsed);
+        });
+        catBodies.forEach(function(b){
+          var key=b.previousElementSibling&&b.previousElementSibling.getAttribute&&b.previousElementSibling.getAttribute('data-catkey');
+          var cs=JSON.parse(localStorage.getItem('menu_collapsed')||'{}');
+          var collapsed=key&&cs[key]===true;
+          b.style.display='';
+          b.classList.toggle('collapsed',collapsed);
+          b.style.maxHeight = collapsed?'0px':(b.scrollHeight+'px');
+        });
+        if(favBar) favBar.style.display='';
         return;
       }
+
+      if(favBar) favBar.style.display='none';
 
       items.forEach(function(it){
         var txt=it.textContent.toLowerCase();
         it.style.display = txt.indexOf(q)>=0 ? '' : 'none';
       });
-      /* Cacher tous les séparateurs et titres pendant la recherche */
       separators.forEach(function(s){s.style.display='none';});
       titres.forEach(function(t){t.style.display='none';});
+
+      /* Pour chaque catégorie : si elle contient un résultat, la déplier et l'afficher, sinon la cacher */
+      catHeaders.forEach(function(h){
+        var body=h.nextElementSibling;
+        if(!body)return;
+        var visibleItems=Array.from(body.querySelectorAll('.menu-item')).filter(function(it){return it.style.display!=='none';});
+        if(visibleItems.length){
+          h.style.display='';
+          body.style.display='';
+          h.classList.remove('collapsed');
+          body.classList.remove('collapsed');
+          body.style.maxHeight=body.scrollHeight+'px';
+        } else {
+          h.style.display='none';
+          body.style.display='none';
+        }
+      });
     });
 
     /* Focus automatique à l'ouverture du menu */
@@ -17147,6 +17185,250 @@ window.addEventListener('load',function(){
       repBtn.parentNode.insertBefore(div,repBtn.nextSibling);
     }
   },4200);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   REFONTE DU MENU — Accordéon coloré, police agrandie,
+   favoris personnalisés, menu plus lisible
+══════════════════════════════════════════════════ */
+
+(function(){
+  var style=document.createElement('style');
+  style.id='refonte-menu-style';
+  style.textContent = `
+    #menu-principal { min-width:300px !important; max-width:380px; font-size:15px; }
+    #menu-principal .menu-item {
+      font-size:14px !important;
+      padding:11px 12px !important;
+      line-height:1.4 !important;
+    }
+    #menu-principal input#menu-search-input {
+      font-size:15px !important;
+      padding:12px 14px !important;
+    }
+    .menu-cat-header {
+      display:flex; align-items:center; justify-content:space-between;
+      cursor:pointer; user-select:none;
+      padding:10px 12px !important;
+      border-radius:8px;
+      font-size:13px !important;
+      font-weight:900 !important;
+      text-transform:none !important;
+      letter-spacing:0 !important;
+      margin-top:6px;
+    }
+    .menu-cat-header .chev { font-size:11px; transition: transform .2s; opacity:.7; }
+    .menu-cat-header.collapsed .chev { transform: rotate(-90deg); }
+    .menu-cat-body { transition: max-height .2s ease; overflow:hidden; }
+    .menu-cat-body.collapsed { max-height:0 !important; }
+    .menu-favoris-bar {
+      display:flex; gap:6px; flex-wrap:wrap; padding:8px 4px 10px;
+      border-bottom:1px solid #1e293b; margin-bottom:6px;
+    }
+    .menu-favori-btn {
+      background:#1e293b; border:1px solid #334155; border-radius:8px;
+      color:#e2e8f0; font-size:12px; font-weight:700; padding:8px 10px;
+      cursor:pointer; flex:1; min-width:80px; text-align:center;
+    }
+    .menu-favori-btn:hover { background:#334155; }
+    .menu-star {
+      position:absolute; right:6px; top:50%; transform:translateY(-50%);
+      font-size:13px; opacity:.25; cursor:pointer; padding:4px;
+    }
+    .menu-star.active { opacity:1; color:#f59e0b; }
+    #menu-principal .menu-item { position:relative; padding-right:32px !important; }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* Couleurs par catégorie (correspond aux 6 sections existantes) */
+var CAT_COLORS = {
+  'Actions rapides': {bg:'rgba(245,158,11,.12)', fg:'#f59e0b'},
+  'Planning': {bg:'rgba(96,165,250,.12)', fg:'#60a5fa'},
+  'Chauffeurs & RH': {bg:'rgba(34,197,94,.12)', fg:'#22c55e'},
+  'Tournées & Clients': {bg:'rgba(249,115,22,.12)', fg:'#f97316'},
+  'Gestion & Direction': {bg:'rgba(124,58,237,.12)', fg:'#a78bfa'},
+  'Données & Outils': {bg:'rgba(6,182,212,.12)', fg:'#06b6d4'},
+  'Intelligence Operationnelle': {bg:'rgba(167,139,250,.12)', fg:'#c4b5fd'},
+  'Cloud Supabase': {bg:'rgba(22,163,74,.12)', fg:'#22c55e'}
+};
+
+function getFavoris(){
+  return JSON.parse(localStorage.getItem('menu_favoris')||'["ouvrirTourControle","ouvrirCarteTournees","ouvrirImportUnifie","voirReponsesTelegram","ouvrirCentreCommandement"]');
+}
+
+function toggleFavori(fnName, label){
+  var favs=getFavoris();
+  var idx=favs.indexOf(fnName);
+  if(idx>=0){favs.splice(idx,1);}
+  else { if(favs.length>=5) favs.shift(); favs.push(fnName); }
+  localStorage.setItem('menu_favoris',JSON.stringify(favs));
+  reorganiserMenu();
+}
+
+/* Réorganise le menu en accordéon coloré + barre de favoris */
+function reorganiserMenu(){
+  var menu=document.getElementById('menu-principal');
+  if(!menu) return;
+  if(menu.getAttribute('data-reorganized')==='1'){
+    /* Juste rafraîchir la barre de favoris */
+    var oldFav=menu.querySelector('.menu-favoris-bar');
+    if(oldFav) oldFav.remove();
+    insertFavorisBar(menu);
+    return;
+  }
+
+  var search = menu.querySelector('#menu-search-input');
+  var searchWrapper = search ? search.parentNode : null;
+
+  var children = Array.from(menu.children);
+  var newStructure = []; // {title, color, items:[nodes]}
+  var current = null;
+
+  children.forEach(function(child){
+    if(child === searchWrapper) return; // garder à part
+    var txt = (child.textContent||'').trim();
+    var isTitleDiv = child.tagName==='DIV' && child.style && child.style.textTransform==='uppercase';
+    var isSeparator = child.tagName==='DIV' && child.style && child.style.borderTop;
+
+    if(isTitleDiv){
+      var clean = txt.replace(/[^A-Za-z0-9 À-ÿ&]/g,'').trim();
+      current = {title: txt, cleanTitle: clean, items: []};
+      newStructure.push(current);
+    } else if(isSeparator){
+      // ignorer les séparateurs, ils servent juste à espacer
+      return;
+    } else {
+      if(!current){ current = {title:'Autres', cleanTitle:'Autres', items:[]}; newStructure.push(current); }
+      current.items.push(child);
+    }
+  });
+
+  // Vider le menu (sauf search) et reconstruire
+  Array.from(menu.children).forEach(function(child){
+    if(child !== searchWrapper) child.remove();
+  });
+
+  // Réinsérer la search en premier
+  if(searchWrapper) menu.appendChild(searchWrapper);
+
+  // Barre de favoris
+  insertFavorisBar(menu);
+
+  // Construire les catégories en accordéon
+  var collapsedState = JSON.parse(localStorage.getItem('menu_collapsed')||'{}');
+  newStructure.forEach(function(sec, secIdx){
+    if(!sec.items.length) return;
+    var key = sec.cleanTitle;
+    var colors = CAT_COLORS[key] || {bg:'rgba(100,116,139,.12)', fg:'#94a3b8'};
+    var isCollapsed = collapsedState[key]===true;
+
+    var header = document.createElement('div');
+    header.className = 'menu-cat-header' + (isCollapsed?' collapsed':'');
+    header.style.background = colors.bg;
+    header.style.color = colors.fg;
+    header.innerHTML = '<span>'+sec.title.replace(/^[📅👤🚛🏢💾⚡]/,'').trim()+'</span><span class="chev">▼</span>';
+    header.setAttribute('data-catkey', key);
+
+    var body = document.createElement('div');
+    body.className = 'menu-cat-body' + (isCollapsed?' collapsed':'');
+    if(isCollapsed) body.style.maxHeight='0px';
+
+    sec.items.forEach(function(item){
+      // Ajouter une étoile favori sur les boutons .menu-item avec onclick
+      if(item.classList && item.classList.contains('menu-item')){
+        var onclickAttr = item.getAttribute('onclick')||'';
+        var fnMatch = onclickAttr.match(/^([A-Za-z0-9_]+)\(/);
+        if(fnMatch){
+          var fnName = fnMatch[1];
+          var favs = getFavoris();
+          var star = document.createElement('span');
+          star.className = 'menu-star' + (favs.indexOf(fnName)>=0?' active':'');
+          star.textContent = '★';
+          star.title = 'Ajouter/retirer des favoris';
+          star.addEventListener('click', function(e){
+            e.stopPropagation();
+            toggleFavori(fnName, item.textContent.trim());
+          });
+          item.style.position='relative';
+          item.appendChild(star);
+        }
+      }
+      body.appendChild(item);
+    });
+
+    header.addEventListener('click', function(){
+      var nowCollapsed = !header.classList.contains('collapsed');
+      header.classList.toggle('collapsed', nowCollapsed);
+      body.classList.toggle('collapsed', nowCollapsed);
+      body.style.maxHeight = nowCollapsed ? '0px' : (body.scrollHeight+'px');
+      var cs=JSON.parse(localStorage.getItem('menu_collapsed')||'{}');
+      cs[key]=nowCollapsed;
+      localStorage.setItem('menu_collapsed',JSON.stringify(cs));
+    });
+
+    menu.appendChild(header);
+    menu.appendChild(body);
+    if(!isCollapsed){
+      setTimeout(function(){ body.style.maxHeight = body.scrollHeight+'px'; }, 50);
+    }
+  });
+
+  menu.setAttribute('data-reorganized','1');
+}
+
+/* Barre de favoris en haut, sous la recherche */
+var FN_LABELS = {
+  ouvrirTourControle: '☀ Tour de Controle',
+  ouvrirCarteTournees: '🗺 Carte tournees',
+  ouvrirImportUnifie: '⭐ Importer bons',
+  voirReponsesTelegram: '✈ Reponses Telegram',
+  ouvrirCentreCommandement: '🎯 Commandement',
+  ouvrirBilanJournee: '✅ Bilan du jour',
+  ouvrirChecklistSoir: '📋 Checklist 17h',
+  ouvrirAideFAQ: '❓ Aide & FAQ'
+};
+
+function insertFavorisBar(menu){
+  var favs = getFavoris();
+  if(!favs.length) return;
+  var bar = document.createElement('div');
+  bar.className = 'menu-favoris-bar';
+  favs.forEach(function(fn){
+    var label = FN_LABELS[fn] || fn;
+    var btn = document.createElement('div');
+    btn.className = 'menu-favori-btn';
+    btn.textContent = label;
+    btn.addEventListener('click', function(){
+      try{ window[fn](); fermerMenu(); }catch(e){}
+    });
+    bar.appendChild(btn);
+  });
+  var search = menu.querySelector('#menu-search-input');
+  var searchWrapper = search ? search.parentNode : null;
+  if(searchWrapper && searchWrapper.nextSibling){
+    menu.insertBefore(bar, searchWrapper.nextSibling);
+  } else {
+    menu.appendChild(bar);
+  }
+}
+
+/* Lancer après le chargement complet (laisser tous les autres scripts insérer leurs boutons) */
+window.addEventListener('load',function(){
+  setTimeout(reorganiserMenu, 4400);
+});
+
+/* Réorganiser à chaque ouverture du menu (au cas où des boutons ont été ajoutés dynamiquement après) */
+window.addEventListener('click', function(e){
+  var menu=document.getElementById('menu-principal');
+  if(menu && menu.style.display!=='none'){
+    setTimeout(function(){
+      if(menu.getAttribute('data-reorganized')!=='1') reorganiserMenu();
+    }, 100);
+  }
 });
 
 </script>
