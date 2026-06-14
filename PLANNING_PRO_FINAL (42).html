@@ -17450,5 +17450,294 @@ window.addEventListener('click', function(e){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 15 — ALERTES PROACTIVES, BADGE MENU, ACTION DU JOUR,
+   COULEURS BIEN-ÊTRE SUR CHAUFFEURS
+══════════════════════════════════════════════════ */
+
+/* ══ 1. CALCUL DES ALERTES ACTIVES ══ */
+function calculerAlertesActives(){
+  var alertes={total:0, parCategorie:{}};
+  var date=ST.cur;
+  var today=new Date().toISOString().slice(0,10);
+
+  function add(cat,n){
+    if(!n)return;
+    alertes.total+=n;
+    alertes.parCategorie[cat]=(alertes.parCategorie[cat]||0)+n;
+  }
+
+  /* Bacs gastro à valider */
+  try{
+    var bacs=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+    add('Tournées & Clients', bacs.filter(function(b){return b.aValider;}).length);
+  }catch(e){}
+
+  /* Documents qui expirent dans 30j */
+  try{
+    var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+    add('Gestion & Direction', docs.filter(function(d){
+      var jr=Math.floor((new Date(d.dateExpiration)-new Date())/(1000*60*60*24));
+      return jr<=30 && jr>=0;
+    }).length);
+  }catch(e){}
+
+  /* Évaluations en retard */
+  try{
+    var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+    var nbRetard=0;
+    ST.drivers.forEach(function(dr,di){
+      var d=evals[di]?evals[di].derniereDate:null;
+      if(!d||Math.floor((new Date()-new Date(d))/(1000*60*60*24))>45) nbRetard++;
+    });
+    add('Chauffeurs & RH', nbRetard);
+  }catch(e){}
+
+  /* Retards confirmés aujourd'hui */
+  if(date===today){
+    try{
+      var maintenant=new Date();
+      var heureActu=maintenant.getHours()*60+maintenant.getMinutes();
+      var nbRetards=0;
+      ST.drivers.forEach(function(dr,di){
+        SL.forEach(function(h){
+          (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+            var parts=h.split(':');var hh=parseInt(parts[0]),mm=parseInt(parts[1]);
+            var diff=heureActu-(hh*60+mm);
+            if(!t.confirmed && diff>30) nbRetards++;
+          });
+        });
+      });
+      add('Planning', nbRetards);
+    }catch(e){}
+  }
+
+  /* Bien-être difficile signalé aujourd'hui */
+  try{
+    var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+    if(bienetre[today]){
+      var nbDiff=Object.values(bienetre[today]).filter(function(v){return v==='difficile';}).length;
+      add('Chauffeurs & RH', nbDiff);
+    }
+  }catch(e){}
+
+  return alertes;
+}
+
+/* ══ 2. BADGE SUR LE BOUTON MENU ══ */
+function majBadgeMenu(){
+  var btn=document.getElementById('btn-menu-principal');
+  if(!btn)return;
+  var alertes=calculerAlertesActives();
+  var badge=document.getElementById('menu-badge-alertes');
+  if(!badge){
+    badge=document.createElement('span');
+    badge.id='menu-badge-alertes';
+    badge.style.cssText='position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #020617';
+    btn.style.position='relative';
+    btn.appendChild(badge);
+  }
+  if(alertes.total>0){
+    badge.textContent=alertes.total>9?'9+':alertes.total;
+    badge.style.display='flex';
+  } else {
+    badge.style.display='none';
+  }
+}
+
+/* ══ 3. AUTO-TRI : catégories avec alertes en haut + couleur ══ */
+function appliquerAlertesSurCategories(){
+  var menu=document.getElementById('menu-principal');
+  if(!menu)return;
+  var alertes=calculerAlertesActives();
+  var headers=menu.querySelectorAll('.menu-cat-header');
+
+  /* Retirer anciens badges de catégorie */
+  headers.forEach(function(h){
+    var old=h.querySelector('.menu-cat-badge');
+    if(old)old.remove();
+  });
+
+  /* Trouver les catégories avec alertes */
+  var headersAvecAlerte=[];
+  headers.forEach(function(h){
+    var titleText=h.querySelector('span')?h.querySelector('span').textContent:h.textContent;
+    Object.keys(alertes.parCategorie).forEach(function(cat){
+      if(titleText.indexOf(cat.split(' ')[0])>=0 || titleText.indexOf(cat)>=0){
+        var n=alertes.parCategorie[cat];
+        var badge=document.createElement('span');
+        badge.className='menu-cat-badge';
+        badge.textContent=n;
+        badge.style.cssText='background:#ef4444;color:#fff;border-radius:10px;font-size:10px;font-weight:900;padding:2px 7px;margin-left:8px';
+        var span=h.querySelector('span');
+        if(span) span.appendChild(badge);
+        h.style.boxShadow='0 0 0 1px #ef4444';
+        headersAvecAlerte.push(h);
+      }
+    });
+  });
+
+  /* Remonter les catégories en alerte en haut du menu (après favoris/recherche) */
+  if(headersAvecAlerte.length){
+    var search=menu.querySelector('#menu-search-input');
+    var searchWrapper=search?search.parentNode:null;
+    var favBar=menu.querySelector('.menu-favoris-bar');
+    var insertAfter = favBar||searchWrapper;
+
+    headersAvecAlerte.reverse().forEach(function(h){
+      var body=h.nextElementSibling;
+      if(insertAfter && insertAfter.nextSibling){
+        menu.insertBefore(h, insertAfter.nextSibling);
+        if(body) menu.insertBefore(body, h.nextSibling);
+      }
+      /* Déplier automatiquement les catégories en alerte */
+      h.classList.remove('collapsed');
+      if(body){
+        body.classList.remove('collapsed');
+        body.style.maxHeight=body.scrollHeight+'px';
+      }
+    });
+  }
+}
+
+/* ══ 4. BOUTON FLOTTANT "ACTION DU JOUR" ══ */
+function ouvrirActionDuJour(){
+  /* Réutilise la logique du Centre de Commandement pour trouver LA priorité numéro 1 */
+  var date=ST.cur;
+  var actions=[];
+
+  ST.drivers.forEach(function(dr,di){
+    var nb=0;SL.forEach(function(h){nb+=(ST.tasks[gk(date,di,h)]||[]).length;});
+    if(nb>=7) actions.push({txt:'Reaffecter une partie de la tournee de '+dr.name+' (surcharge: '+nb+' missions)',action:'ouvrirTransfertMission',priorite:1});
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) actions.push({txt:'Redistribuer les missions de '+dr.name+' (absent aujourd hui)',action:'ouvrirRedistribution',priorite:0});
+  });
+
+  try{
+    var bacs=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+    var nbAValider=bacs.filter(function(b){return b.aValider;}).length;
+    if(nbAValider>0) actions.push({txt:nbAValider+' photo(s) de bacs gastro a valider',action:'ouvrirSuiviBacs',priorite:2});
+  }catch(e){}
+
+  try{
+    var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+    ST.drivers.forEach(function(dr,di){
+      var d=evals[di]?evals[di].derniereDate:null;
+      if(!d||Math.floor((new Date()-new Date(d))/(1000*60*60*24))>45){
+        actions.push({txt:'Preparer une evaluation pour '+dr.name,action:'ouvrirCarnetSalarie',priorite:3});
+      }
+    });
+  }catch(e){}
+
+  try{
+    var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+    docs.forEach(function(d){
+      var jr=Math.floor((new Date(d.dateExpiration)-new Date())/(1000*60*60*24));
+      if(jr<=30&&jr>=0) actions.push({txt:'Renouveler le document : '+d.nom+' (expire dans '+jr+'j)',action:'ouvrirCentreDocumentaire',priorite:1});
+    });
+  }catch(e){}
+
+  actions.sort(function(a,b){return a.priorite-b.priorite;});
+
+  var existing=document.getElementById('m-action-jour');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-action-jour';modal.className='mbg on';
+
+  var html='<div class="mbox" style="max-width:420px;text-align:center">'
+    +'<h3>🎯 Action du jour <button class="mclose" onclick="document.getElementById(\'m-action-jour\').remove()">X</button></h3>';
+
+  if(!actions.length){
+    html+='<div style="padding:30px"><div style="font-size:48px">✓</div>'
+      +'<div style="font-size:15px;color:#22c55e;font-weight:700;margin-top:10px">Tout est sous controle !</div>'
+      +'<div style="font-size:12px;color:#64748b;margin-top:6px">Aucune action prioritaire pour le moment.</div></div>';
+  } else {
+    var top=actions[0];
+    html+='<div style="background:linear-gradient(135deg,#1e3a8a,#7c3aed);border-radius:12px;padding:18px;margin-bottom:14px;color:#fff">'
+      +'<div style="font-size:11px;opacity:.8;margin-bottom:6px">LA PRIORITE DU MOMENT</div>'
+      +'<div style="font-size:15px;font-weight:900">'+top.txt+'</div>'
+      +'</div>'
+      window._actionDuJourFn=top.action;
+      html+='<button onclick="document.getElementById(\'m-action-jour\').remove();window[window._actionDuJourFn]()" style="width:100%;padding:13px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px">Resoudre maintenant</button>';
+
+    if(actions.length>1){
+      html+='<div style="font-size:11px;color:#64748b;margin-top:10px">Et '+(actions.length-1)+' autre(s) point(s) en attente — voir le Centre de Commandement pour le detail.</div>';
+    }
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* Bouton flottant */
+function creerBoutonActionDuJour(){
+  if(document.getElementById('btn-action-jour'))return;
+  var btn=document.createElement('button');
+  btn.id='btn-action-jour';
+  btn.innerHTML='🎯';
+  btn.title='Action du jour';
+  btn.style.cssText='position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1e3a8a,#7c3aed);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:9990';
+  btn.addEventListener('click',ouvrirActionDuJour);
+  document.body.appendChild(btn);
+
+  /* Badge sur le bouton flottant aussi */
+  var alertes=calculerAlertesActives();
+  if(alertes.total>0){
+    var badge=document.createElement('span');
+    badge.style.cssText='position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #020617';
+    badge.textContent=alertes.total>9?'9+':alertes.total;
+    btn.style.position='fixed';
+    btn.appendChild(badge);
+  }
+}
+
+/* ══ 5. COULEURS BIEN-ÊTRE SUR LES NOMS DE CHAUFFEURS ══ */
+function appliquerCouleursBienEtre(){
+  try{
+    var today=new Date().toISOString().slice(0,10);
+    var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+    if(!bienetre[today])return;
+
+    ST.drivers.forEach(function(dr,di){
+      var rep=bienetre[today][di];
+      if(!rep)return;
+      var col = rep==='bien'?'#22c55e':rep==='moyen'?'#f59e0b':'#ef4444';
+
+      /* Trouver les en-têtes de colonne du planning contenant le nom du chauffeur */
+      document.querySelectorAll('*').forEach(function(el){
+        if(el.children.length===0 && el.textContent && el.textContent.trim()===dr.name.toUpperCase()){
+          el.style.borderBottom='3px solid '+col;
+          el.title='Bien-etre du jour : '+rep;
+        }
+      });
+    });
+  }catch(e){}
+}
+
+/* ══ INITIALISATION ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    majBadgeMenu();
+    creerBoutonActionDuJour();
+    appliquerCouleursBienEtre();
+    setInterval(majBadgeMenu,120000);
+  },5500);
+
+  /* Réappliquer les badges de catégories après la réorganisation du menu */
+  window.addEventListener('click',function(e){
+    var menu=document.getElementById('menu-principal');
+    if(menu && menu.style.display!=='none'){
+      setTimeout(function(){
+        if(menu.getAttribute('data-alertes-appliquees')!=='1'){
+          appliquerAlertesSurCategories();
+          menu.setAttribute('data-alertes-appliquees','1');
+        }
+      },300);
+    }
+  });
+});
+
+</script>
 </body>
 </html>
