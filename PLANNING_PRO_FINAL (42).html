@@ -16936,5 +16936,219 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 14 — GALERIE PHOTOS TELEGRAM + TRANSFERT MISSION
+══════════════════════════════════════════════════ */
+
+/* ══ 1. GALERIE PHOTOS TELEGRAM ══ */
+function ouvrirGaleriePhotos(){
+  var existing=document.getElementById('m-galerie');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-galerie';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:560px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Photos recues des chauffeurs <button class="mclose" onclick="document.getElementById(\'m-galerie\').remove()">X</button></h3>'
+    +'<div id="galerie-contenu" style="text-align:center;color:#64748b;padding:20px">Chargement...</div>'
+    +'<button onclick="rafraichirGaleriePhotos()" style="width:100%;padding:10px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px">Rafraichir</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+  rafraichirGaleriePhotos();
+}
+
+function rafraichirGaleriePhotos(){
+  var contenu=document.getElementById('galerie-contenu');
+  contenu.innerHTML='<div style="color:#64748b;padding:20px">Chargement...</div>';
+
+  fetch(TG_API+'/getUpdates?limit=100')
+    .then(function(r){return r.json();})
+    .then(function(updates){
+      if(!updates.ok||!updates.result.length){
+        contenu.innerHTML='<div style="color:#64748b;padding:20px">Aucune photo recue recemment.</div>';
+        return;
+      }
+      var photos=[];
+      updates.result.forEach(function(upd){
+        if(!upd.message||!upd.message.photo)return;
+        var chauffeurNom='Inconnu';
+        Object.keys(getTgIds()).forEach(function(di){
+          if(String(getTgIds()[di])===String(upd.message.chat.id)) chauffeurNom=ST.drivers[di]?ST.drivers[di].name:'Inconnu';
+        });
+        photos.push({
+          fileId:upd.message.photo[upd.message.photo.length-1].file_id,
+          caption:upd.message.caption||'',
+          date:new Date(upd.message.date*1000).toLocaleString('fr-FR'),
+          chauffeur:chauffeurNom
+        });
+      });
+
+      if(!photos.length){
+        contenu.innerHTML='<div style="color:#64748b;padding:20px">Aucune photo recue recemment.</div>';
+        return;
+      }
+
+      contenu.innerHTML='<div style="font-size:11px;color:#64748b;margin-bottom:10px">'+photos.length+' photo(s) recue(s) recemment</div>'
+        +photos.slice().reverse().map(function(p,idx){
+          return '<div id="galerie-photo-'+idx+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;margin-bottom:10px">'
+            +'<div style="font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px">'+p.chauffeur+' — '+p.date+(p.caption?' — "'+p.caption+'"':'')+'</div>'
+            +'<div id="galerie-img-'+idx+'" style="text-align:center;color:#64748b;font-size:11px">Chargement...</div>'
+            +'</div>';
+        }).join('');
+
+      photos.slice().reverse().forEach(function(p,idx){
+        getUrlPhotoTelegram(p.fileId,function(url){
+          var imgEl=document.getElementById('galerie-img-'+idx);
+          if(imgEl&&url){
+            imgEl.innerHTML='<img src="'+url+'" data-url="'+url+'" style="max-width:100%;max-height:300px;border-radius:8px;cursor:pointer" onclick="window.open(this.getAttribute(\'data-url\'),\'_blank\')">';
+          } else if(imgEl){
+            imgEl.textContent='Photo indisponible';
+          }
+        });
+      });
+    })
+    .catch(function(){
+      contenu.innerHTML='<div style="color:#ef4444;padding:20px">Erreur de chargement.</div>';
+    });
+}
+
+/* ══ 2. TRANSFERT / REPORT DE MISSION ══ */
+function ouvrirTransfertMission(){
+  var existing=document.getElementById('m-transfert');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-transfert';modal.className='mbg on';
+  var date=ST.cur;
+
+  var missions=[];
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t,ti){
+        missions.push({di:di,h:h,ti:ti,client:t.client||t.task||'',dr:dr.name});
+      });
+    });
+  });
+  window._transfertMissions=missions;
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Transferer / Reporter une mission <button class="mclose" onclick="document.getElementById(\'m-transfert\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8">'
+    +'Choisissez une mission a transferer vers un autre chauffeur et/ou une autre date. '
+    +'Utile par exemple pour : "Otmane a laisse du materiel chez X, Nicolas doit le recuperer demain."'
+    +'</div>';
+
+  if(!missions.length){
+    html+='<div style="text-align:center;color:#64748b;padding:20px">Aucune mission aujourd hui.</div>';
+  } else {
+    html += '<label style="font-size:11px;color:#64748b">Mission a transferer</label>'
+      +'<select id="tr-mission" class="fi" style="margin-bottom:10px" onchange="majTransfertForm()">'
+      +'<option value="-1">Choisir...</option>'
+      +missions.map(function(m,idx){return '<option value="'+idx+'">'+m.h+' - '+m.client+' ('+m.dr+')</option>';}).join('')
+      +'</select>'
+      +'<div id="tr-form"></div>';
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function majTransfertForm(){
+  var idx=parseInt(document.getElementById('tr-mission').value);
+  var formEl=document.getElementById('tr-form');
+  if(idx<0){formEl.innerHTML='';return;}
+  var m=window._transfertMissions[idx];
+
+  var demain=new Date(ST.cur+'T12:00:00');demain.setDate(demain.getDate()+1);
+  var dateDemain=demain.toISOString().slice(0,10);
+
+  formEl.innerHTML='<label style="font-size:11px;color:#64748b">Type d action</label>'
+    +'<select id="tr-type" class="fi" style="margin-bottom:10px">'
+    +'<option value="transfert">Transferer a un autre chauffeur (meme jour)</option>'
+    +'<option value="report">Reporter a un autre jour (meme chauffeur)</option>'
+    +'<option value="recuperation">Demander a un autre chauffeur de recuperer du materiel</option>'
+    +'</select>'
+    +'<label style="font-size:11px;color:#64748b">Chauffeur destinataire</label>'
+    +'<select id="tr-chauffeur" class="fi" style="margin-bottom:10px">'
+    +ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===m.di?' selected':'')+'>'+dr.name+'</option>';}).join('')
+    +'</select>'
+    +'<label style="font-size:11px;color:#64748b">Date</label>'
+    +'<input type="date" id="tr-date" class="fi" value="'+dateDemain+'" style="margin-bottom:10px">'
+    +'<label style="font-size:11px;color:#64748b">Heure</label>'
+    +'<input type="time" id="tr-heure" class="fi" value="'+m.h+'" style="margin-bottom:10px">'
+    +'<label style="font-size:11px;color:#64748b">Note / Instructions</label>'
+    +'<textarea id="tr-note" class="fi" style="height:60px;margin-bottom:10px" placeholder="Ex: Recuperer les bacs laisses chez '+m.client+' hier">A recuperer/finir : '+m.client+'</textarea>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;margin-bottom:10px;cursor:pointer">'
+    +'<input type="checkbox" id="tr-supprimer-orig"> Retirer la mission d origine du planning'
+    +'</label>'
+    +'<button onclick="executerTransfertMission('+idx+')" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Creer et notifier</button>';
+}
+
+function executerTransfertMission(idx){
+  var m=window._transfertMissions[idx];
+  var type=document.getElementById('tr-type').value;
+  var diDest=parseInt(document.getElementById('tr-chauffeur').value);
+  var date=document.getElementById('tr-date').value;
+  var heure=document.getElementById('tr-heure').value;
+  var note=document.getElementById('tr-note').value.trim();
+  var supprimerOrig=document.getElementById('tr-supprimer-orig').checked;
+
+  var origTask=(ST.tasks[gk(ST.cur,m.di,m.h)]||[])[m.ti];
+  if(!origTask)return;
+
+  /* Créer la nouvelle mission */
+  var nouvelleTache={
+    client:origTask.client||origTask.task||'',
+    adresse:origTask.adresse||'',
+    contact:origTask.contact||'',
+    note_liv:note,
+    category:origTask.category||'task'
+  };
+  var k=gk(date,diDest,heure);
+  if(!ST.tasks[k]) ST.tasks[k]=[];
+  ST.tasks[k].push(nouvelleTache);
+
+  /* Supprimer l'originale si demandé */
+  if(supprimerOrig){
+    var origKey=gk(ST.cur,m.di,m.h);
+    ST.tasks[origKey].splice(m.ti,1);
+    if(!ST.tasks[origKey].length) delete ST.tasks[origKey];
+  }
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+
+  /* Notifier le chauffeur destinataire */
+  var ids=getTgIds();
+  var chatId=ids[diDest];
+  if(chatId){
+    var JNOMS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    var MNOMS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+    var d=new Date(date+'T12:00:00');
+    var dStr=JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
+    var typeLabels={transfert:'NOUVELLE MISSION',report:'MISSION REPORTEE',recuperation:'A RECUPERER'};
+    var msg='/!\\\\ '+typeLabels[type]+' /!\\\\\\n--------------------\\n\\n';
+    msg+='Pour le '+dStr+' a '+heure+'\\n\\n';
+    msg+='Client : '+nouvelleTache.client+'\\n';
+    if(nouvelleTache.adresse) msg+='Adresse : '+nouvelleTache.adresse+'\\n';
+    if(note) msg+='\\nInstructions : '+note+'\\n';
+    msg+='\\n--------------------\\nLa Table de Cana Logistique';
+    fetch(TG_API+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:msg})});
+  }
+
+  showT('Mission creee pour '+ST.drivers[diDest].name+' et notification envoyee','#16a34a');
+  document.getElementById('m-transfert').remove();
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var repBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Reponses chauffeurs')>=0;});
+    if(repBtn&&repBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirGaleriePhotos();fermerMenu()" class="menu-item" style="color:#06b6d4;font-weight:700">Photos recues des chauffeurs</button>'
+        +'<button tabindex="0" onclick="ouvrirTransfertMission();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">Transferer / Reporter mission</button>';
+      repBtn.parentNode.insertBefore(div,repBtn.nextSibling);
+    }
+  },4200);
+});
+
+</script>
 </body>
 </html>
