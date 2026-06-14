@@ -17739,5 +17739,210 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 16 — RENVOYER UNE PHOTO RECUE A UN AUTRE CHAUFFEUR
+══════════════════════════════════════════════════ */
+
+/* Modifier la galerie photos pour ajouter un bouton "Renvoyer" sur chaque photo */
+var _rafraichirGaleriePhotos_orig = rafraichirGaleriePhotos;
+rafraichirGaleriePhotos = function(){
+  var contenu=document.getElementById('galerie-contenu');
+  contenu.innerHTML='<div style="color:#64748b;padding:20px">Chargement...</div>';
+
+  fetch(TG_API+'/getUpdates?limit=100')
+    .then(function(r){return r.json();})
+    .then(function(updates){
+      if(!updates.ok||!updates.result.length){
+        contenu.innerHTML='<div style="color:#64748b;padding:20px">Aucune photo recue recemment.</div>';
+        return;
+      }
+      var photos=[];
+      updates.result.forEach(function(upd){
+        if(!upd.message||!upd.message.photo)return;
+        var chauffeurNom='Inconnu';
+        Object.keys(getTgIds()).forEach(function(di){
+          if(String(getTgIds()[di])===String(upd.message.chat.id)) chauffeurNom=ST.drivers[di]?ST.drivers[di].name:'Inconnu';
+        });
+        photos.push({
+          fileId:upd.message.photo[upd.message.photo.length-1].file_id,
+          caption:upd.message.caption||'',
+          date:new Date(upd.message.date*1000).toLocaleString('fr-FR'),
+          chauffeur:chauffeurNom
+        });
+      });
+
+      if(!photos.length){
+        contenu.innerHTML='<div style="color:#64748b;padding:20px">Aucune photo recue recemment.</div>';
+        return;
+      }
+
+      window._galeriePhotos = photos.slice().reverse();
+
+      contenu.innerHTML='<div style="font-size:11px;color:#64748b;margin-bottom:10px">'+photos.length+' photo(s) recue(s) recemment</div>'
+        +window._galeriePhotos.map(function(p,idx){
+          return '<div id="galerie-photo-'+idx+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px;margin-bottom:10px">'
+            +'<div style="font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px">'+p.chauffeur+' — '+p.date+(p.caption?' — "'+p.caption+'"':'')+'</div>'
+            +'<div id="galerie-img-'+idx+'" style="text-align:center;color:#64748b;font-size:11px;margin-bottom:8px">Chargement...</div>'
+            +'<button onclick="ouvrirRenvoiPhoto('+idx+')" style="width:100%;padding:8px;background:#0088cc;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Renvoyer cette photo a un chauffeur</button>'
+            +'</div>';
+        }).join('');
+
+      window._galeriePhotos.forEach(function(p,idx){
+        getUrlPhotoTelegram(p.fileId,function(url){
+          var imgEl=document.getElementById('galerie-img-'+idx);
+          if(imgEl&&url){
+            imgEl.innerHTML='<img src="'+url+'" data-url="'+url+'" style="max-width:100%;max-height:300px;border-radius:8px;cursor:pointer" onclick="window.open(this.getAttribute(\'data-url\'),\'_blank\')">';
+            window._galeriePhotos[idx].url=url;
+          } else if(imgEl){
+            imgEl.textContent='Photo indisponible';
+          }
+        });
+      });
+    })
+    .catch(function(){
+      contenu.innerHTML='<div style="color:#ef4444;padding:20px">Erreur de chargement.</div>';
+    });
+};
+
+/* ══ MODAL RENVOI PHOTO ══ */
+function ouvrirRenvoiPhoto(idx){
+  var p=window._galeriePhotos[idx];
+  if(!p){showT('Photo non trouvee','#f59e0b');return;}
+
+  var existing=document.getElementById('m-renvoi-photo');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-renvoi-photo';modal.className='mbg on';
+
+  var demain=new Date(ST.cur+'T12:00:00');demain.setDate(demain.getDate()+1);
+  var dateDemain=demain.toISOString().slice(0,10);
+
+  var html='<div class="mbox" style="max-width:480px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Renvoyer cette photo <button class="mclose" onclick="document.getElementById(\'m-renvoi-photo\').remove()">X</button></h3>'
+    +'<div style="text-align:center;margin-bottom:12px">'
+    +(p.url?'<img src="'+p.url+'" style="max-width:100%;max-height:220px;border-radius:8px">':'<div style="color:#64748b">Photo de '+p.chauffeur+'</div>')
+    +'</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:10px">Photo recue de <b style="color:#60a5fa">'+p.chauffeur+'</b> le '+p.date+(p.caption?' — "'+p.caption+'"':'')+'</div>'
+    +'<label style="font-size:11px;color:#64748b">Envoyer a</label>'
+    +'<select id="rp-chauffeur" class="fi" style="margin-bottom:10px">'
+    +ST.drivers.map(function(dr,di){return '<option value="'+di+'">'+dr.name+'</option>';}).join('')
+    +'</select>'
+    +'<label style="font-size:11px;color:#64748b">Message accompagnant la photo</label>'
+    +'<textarea id="rp-message" class="fi" style="height:80px;margin-bottom:10px" placeholder="Ex: Voici ce qu il faut recuperer demain chez ce client">A recuperer / a verifier sur place :</textarea>'
+    +'<label style="font-size:11px;color:#64748b">Date prevue (optionnel, pour planifier)</label>'
+    +'<input type="date" id="rp-date" class="fi" value="'+dateDemain+'" style="margin-bottom:10px">'
+    +'<button onclick="envoyerPhotoAChauffeur('+idx+')" style="width:100%;padding:12px;background:#0088cc;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Envoyer sur Telegram</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function envoyerPhotoAChauffeur(idx){
+  var p=window._galeriePhotos[idx];
+  var diDest=parseInt(document.getElementById('rp-chauffeur').value);
+  var message=document.getElementById('rp-message').value.trim();
+  var dateP=document.getElementById('rp-date').value;
+
+  var ids=getTgIds();
+  var chatId=ids[diDest];
+  if(!chatId){showT('Aucun ID Telegram pour ce chauffeur','#ef4444');return;}
+
+  var JNOMS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  var MNOMS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+  var caption=message;
+  if(dateP){
+    var d=new Date(dateP+'T12:00:00');
+    caption += '\\n\\nPour le '+JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
+  }
+  caption += '\\n(Photo prise par '+p.chauffeur+' le '+p.date+')';
+
+  /* Envoyer la photo via sendPhoto avec le file_id existant (Telegram permet de réutiliser un file_id) */
+  fetch(TG_API+'/sendPhoto',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:chatId,photo:p.fileId,caption:caption})
+  }).then(function(r){return r.json();}).then(function(res){
+    if(res.ok){
+      showT('Photo envoyee a '+ST.drivers[diDest].name,'#16a34a');
+      document.getElementById('m-renvoi-photo').remove();
+    } else {
+      showT('Erreur lors de l envoi','#ef4444');
+    }
+  }).catch(function(){showT('Erreur lors de l envoi','#ef4444');});
+}
+
+/* ══ ENRICHIR LE TRANSFERT DE MISSION : joindre une photo récente ══ */
+var _majTransfertForm_orig = majTransfertForm;
+majTransfertForm = function(){
+  _majTransfertForm_orig();
+  var formEl=document.getElementById('tr-form');
+  if(!formEl||!formEl.innerHTML)return;
+
+  /* Ajouter une option pour joindre une photo récente */
+  var photoSelectHtml = '<label style="font-size:11px;color:#64748b">Joindre une photo recente (optionnel)</label>'
+    +'<select id="tr-photo" class="fi" style="margin-bottom:10px">'
+    +'<option value="-1">Aucune</option>'
+    +'</select>';
+  formEl.insertAdjacentHTML('beforeend', photoSelectHtml);
+
+  /* Charger les photos récentes pour le select */
+  fetch(TG_API+'/getUpdates?limit=50')
+    .then(function(r){return r.json();})
+    .then(function(updates){
+      if(!updates.ok)return;
+      var photos=[];
+      updates.result.forEach(function(upd){
+        if(!upd.message||!upd.message.photo)return;
+        var chauffeurNom='Inconnu';
+        Object.keys(getTgIds()).forEach(function(di){
+          if(String(getTgIds()[di])===String(upd.message.chat.id)) chauffeurNom=ST.drivers[di]?ST.drivers[di].name:'Inconnu';
+        });
+        photos.push({
+          fileId:upd.message.photo[upd.message.photo.length-1].file_id,
+          caption:upd.message.caption||'',
+          date:new Date(upd.message.date*1000).toLocaleString('fr-FR'),
+          chauffeur:chauffeurNom
+        });
+      });
+      window._transfertPhotos = photos.slice().reverse();
+      var sel=document.getElementById('tr-photo');
+      if(sel){
+        window._transfertPhotos.slice(0,10).forEach(function(p,pidx){
+          var opt=document.createElement('option');
+          opt.value=pidx;
+          opt.textContent=p.chauffeur+' - '+p.date+(p.caption?' ('+p.caption+')':'');
+          sel.appendChild(opt);
+        });
+      }
+    }).catch(function(){});
+};
+
+/* Modifier executerTransfertMission pour envoyer la photo jointe si choisie */
+var _executerTransfertMission_orig = executerTransfertMission;
+executerTransfertMission = function(idx){
+  _executerTransfertMission_orig(idx);
+
+  var photoSel=document.getElementById('tr-photo');
+  if(photoSel && photoSel.value!=='-1' && window._transfertPhotos){
+    var photo=window._transfertPhotos[parseInt(photoSel.value)];
+    var diDest=parseInt(document.getElementById('tr-chauffeur').value);
+    var ids=getTgIds();
+    var chatId=ids[diDest];
+    if(photo && chatId){
+      fetch(TG_API+'/sendPhoto',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,photo:photo.fileId,caption:'Photo jointe a la mission - prise par '+photo.chauffeur+' le '+photo.date})
+      });
+    }
+  }
+};
+
+/* Mise à jour de l'aide menu */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    /* rien à ajouter dans le menu, fonctionnalités intégrées aux modules existants */
+  },5600);
+});
+
+</script>
 </body>
 </html>
