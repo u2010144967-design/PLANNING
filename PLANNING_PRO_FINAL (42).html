@@ -13590,9 +13590,9 @@ function analyserConstructionIA(){
   });
 
   /* Extraire les heures mentionnées (corrige bug greedy) */
-  var heuresMatch=texte.match(/\\d{1,2}\\s*h\\s*\\d{0,2}/g)||[];
+  var heuresMatch=texte.match(/\\d{1,2}\\s*h\\d{0,2}/g)||[];
   var heuresList=heuresMatch.map(function(h){
-    var m=h.match(/(\\d{1,2})\\s*h\\s*(\\d{0,2})/);
+    var m=h.match(/(\\d{1,2})\\s*h(\\d{0,2})/);
     var hh=m[1].padStart(2,'0');
     var mm=m[2]?m[2].padStart(2,'0'):'00';
     return hh+':'+mm;
