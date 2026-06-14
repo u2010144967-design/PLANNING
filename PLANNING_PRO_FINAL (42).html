@@ -17944,5 +17944,296 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 17 — ARCHIVE PHOTOS PAR CLIENT + REPRISE FACILE
+══════════════════════════════════════════════════ */
+
+/* ══ 1. ASSOCIER UNE PHOTO A UN CLIENT (depuis la galerie) ══ */
+function ouvrirArchivagePhoto(idx){
+  var p=window._galeriePhotos[idx];
+  if(!p){showT('Photo non trouvee','#f59e0b');return;}
+
+  var existing=document.getElementById('m-archive-photo');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-archive-photo';modal.className='mbg on';
+
+  /* Liste des clients connus (mémoire FTBE/Airtable + missions du jour) */
+  var clientsConnus=Object.keys(getMemoireClients());
+  var date=ST.cur;
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        var c=(t.client||'').toUpperCase().trim();
+        if(c && clientsConnus.indexOf(c)<0) clientsConnus.push(c);
+      });
+    });
+  });
+  clientsConnus.sort();
+
+  var html='<div class="mbox" style="max-width:460px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Archiver cette photo <button class="mclose" onclick="document.getElementById(\'m-archive-photo\').remove()">X</button></h3>'
+    +'<div style="text-align:center;margin-bottom:12px">'
+    +(p.url?'<img src="'+p.url+'" style="max-width:100%;max-height:200px;border-radius:8px">':'')
+    +'</div>'
+    +'<label style="font-size:11px;color:#64748b">Client concerne</label>'
+    +'<input type="text" id="ap-client" class="fi" list="ap-clients-list" placeholder="Nom du client" style="margin-bottom:6px" value="'+(p.caption&&clientsConnus.find(function(c){return p.caption.toUpperCase().indexOf(c)>=0;})||'')+'">'
+    +'<datalist id="ap-clients-list">'+clientsConnus.map(function(c){return '<option value="'+c+'">';}).join('')+'</datalist>'
+    +'<label style="font-size:11px;color:#64748b">Type</label>'
+    +'<select id="ap-type" class="fi" style="margin-bottom:6px">'
+    +'<option value="livraison">Preuve de livraison</option>'
+    +'<option value="reprise">Materiel a recuperer (reprise)</option>'
+    +'<option value="bacs">Bacs gastro</option>'
+    +'<option value="incident">Incident / probleme</option>'
+    +'</select>'
+    +'<textarea id="ap-note" class="fi" style="height:60px;margin-bottom:10px" placeholder="Note (ex: 3 plateaux et 2 bacs laisses sur place)"></textarea>'
+    +'<button onclick="archiverPhotoClient('+idx+')" style="width:100%;padding:11px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Archiver dans la fiche client</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function archiverPhotoClient(idx){
+  var p=window._galeriePhotos[idx];
+  var client=document.getElementById('ap-client').value.trim().toUpperCase();
+  var type=document.getElementById('ap-type').value;
+  var note=document.getElementById('ap-note').value.trim();
+
+  if(!client){showT('Indiquez un client','#f59e0b');return;}
+
+  var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  if(!archives[client]) archives[client]=[];
+  archives[client].push({
+    fileId:p.fileId,
+    url:p.url,
+    type:type,
+    note:note,
+    chauffeur:p.chauffeur,
+    date:p.date,
+    archiveLe:new Date().toLocaleString('fr-FR'),
+    statutReprise: type==='reprise'?'a_faire':null
+  });
+  localStorage.setItem('archives_photos_clients',JSON.stringify(archives));
+
+  showT('Photo archivee pour '+client,'#16a34a');
+  var modal=document.getElementById('m-archive-photo');if(modal)modal.remove();
+}
+
+/* ══ 2. AFFICHER L'ARCHIVE DANS LA FICHE CLIENT (Carnet clients FTBE) ══ */
+/* On enrichit ouvrirHistoriqueClient pour montrer les photos archivées */
+var _ouvrirHistoriqueClient_orig = ouvrirHistoriqueClient;
+ouvrirHistoriqueClient = function(){
+  _ouvrirHistoriqueClient_orig();
+
+  setTimeout(function(){
+    var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+    document.querySelectorAll('.hist-item').forEach(function(item){
+      var nom=(item.getAttribute('data-nom')||'').toUpperCase();
+      if(archives[nom]&&archives[nom].length){
+        var nbReprises=archives[nom].filter(function(a){return a.type==='reprise'&&a.statutReprise==='a_faire';}).length;
+        var badge=document.createElement('div');
+        badge.style.cssText='margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+        badge.innerHTML='<span style="background:rgba(96,165,250,.15);color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:10px">'+archives[nom].length+' photo(s) archivee(s)</span>'
+          +(nbReprises>0?'<span style="background:rgba(239,68,68,.15);color:#fca5a5;border-radius:6px;padding:3px 8px;font-size:10px">'+nbReprises+' reprise(s) en attente</span>':'');
+        var btnVoir=document.createElement('button');
+        btnVoir.textContent='Voir les photos / reprises';
+        btnVoir.style.cssText='margin-top:6px;padding:6px 10px;background:#1d4ed8;border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer';
+        btnVoir.onclick=function(){ouvrirArchiveClient(nom);};
+        item.appendChild(badge);
+        item.appendChild(btnVoir);
+      }
+    });
+  },200);
+};
+
+/* ══ 3. VUE ARCHIVE D'UN CLIENT ══ */
+function ouvrirArchiveClient(nomClient){
+  var existing=document.getElementById('m-archive-client');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-archive-client';modal.className='mbg on';
+  var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  var items=archives[nomClient]||[];
+
+  var TYPE_LABELS={livraison:'Preuve de livraison',reprise:'A recuperer',bacs:'Bacs gastro',incident:'Incident'};
+  var TYPE_COLORS={livraison:'#22c55e',reprise:'#ef4444',bacs:'#f97316',incident:'#fbbf24'};
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>'+nomClient+' - Archive <button class="mclose" onclick="document.getElementById(\'m-archive-client\').remove()">X</button></h3>';
+
+  if(!items.length){
+    html+='<div style="text-align:center;color:#64748b;padding:20px">Aucune archive pour ce client.</div>';
+  } else {
+    items.slice().reverse().forEach(function(it,ridx){
+      var idx=items.length-1-ridx;
+      var col=TYPE_COLORS[it.type]||'#94a3b8';
+      html+='<div id="archive-item-'+idx+'" style="background:#0f172a;border:1px solid '+col+';border-radius:10px;padding:10px;margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+        +'<span style="font-size:10px;font-weight:900;color:'+col+';background:'+col+'22;padding:2px 8px;border-radius:5px">'+(TYPE_LABELS[it.type]||it.type)
+        +(it.statutReprise==='faite'?' - FAIT':(it.type==='reprise'?' - A FAIRE':''))+'</span>'
+        +'<span style="font-size:11px;color:#64748b">'+it.date+'</span>'
+        +'</div>'
+        +(it.url?'<img src="'+it.url+'" style="max-width:100%;max-height:200px;border-radius:8px;margin-bottom:6px">':'')
+        +(it.note?'<div style="font-size:12px;color:#e2e8f0;margin-bottom:6px">'+it.note+'</div>':'')
+        +'<div style="font-size:10px;color:#64748b;margin-bottom:8px">Photo de '+it.chauffeur+'</div>';
+
+      if(it.type==='reprise'){
+        if(it.statutReprise==='a_faire'){
+          html+='<button data-client="'+nomClient+'" data-idx="'+idx+'" class="btn-planifier-reprise" style="width:100%;padding:8px;background:#0088cc;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px">Envoyer a un chauffeur pour reprise</button>'
+            +'<button data-client="'+nomClient+'" data-idx="'+idx+'" class="btn-marquer-fait" style="width:100%;padding:6px;background:#16a34a;border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Marquer comme fait</button>';
+        } else {
+          html+='<div style="text-align:center;color:#22c55e;font-size:11px">✓ Reprise effectuee</div>';
+        }
+      }
+      html+='</div>';
+    });
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+
+  /* Brancher les boutons d'action */
+  modal.querySelectorAll('.btn-planifier-reprise').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      planifierRepriseDepuisArchive(btn.getAttribute('data-client'),parseInt(btn.getAttribute('data-idx')));
+    });
+  });
+  modal.querySelectorAll('.btn-marquer-fait').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      marquerRepriseFaite(btn.getAttribute('data-client'),parseInt(btn.getAttribute('data-idx')));
+    });
+  });
+}
+
+function marquerRepriseFaite(nomClient,idx){
+  var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  if(archives[nomClient]&&archives[nomClient][idx]){
+    archives[nomClient][idx].statutReprise='faite';
+    localStorage.setItem('archives_photos_clients',JSON.stringify(archives));
+    showT('Reprise marquee comme faite','#16a34a');
+    ouvrirArchiveClient(nomClient);
+  }
+}
+
+/* ══ 4. ENVOYER UNE REPRISE A UN CHAUFFEUR DEPUIS L'ARCHIVE ══ */
+function planifierRepriseDepuisArchive(nomClient,idx){
+  var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  var item=archives[nomClient][idx];
+  if(!item)return;
+
+  var existing=document.getElementById('m-reprise-archive');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-reprise-archive';modal.className='mbg on';
+
+  var demain=new Date(ST.cur+'T12:00:00');demain.setDate(demain.getDate()+1);
+  var dateDemain=demain.toISOString().slice(0,10);
+  var mem=getMemoireClients()[nomClient]||{};
+
+  var html='<div class="mbox" style="max-width:460px">'
+    +'<h3>Reprise chez '+nomClient+' <button class="mclose" onclick="document.getElementById(\'m-reprise-archive\').remove()">X</button></h3>'
+    +(item.url?'<div style="text-align:center;margin-bottom:10px"><img src="'+item.url+'" style="max-width:100%;max-height:180px;border-radius:8px"></div>':'')
+    +'<div style="font-size:12px;color:#94a3b8;margin-bottom:10px">'+(item.note||'')+'</div>'
+    +'<label style="font-size:11px;color:#64748b">Chauffeur</label>'
+    +'<select id="rep-chauffeur" class="fi" style="margin-bottom:10px">'
+    +ST.drivers.map(function(dr,di){return '<option value="'+di+'">'+dr.name+'</option>';}).join('')
+    +'</select>'
+    +'<label style="font-size:11px;color:#64748b">Date</label>'
+    +'<input type="date" id="rep-date" class="fi" value="'+dateDemain+'" style="margin-bottom:10px">'
+    +'<label style="font-size:11px;color:#64748b">Heure</label>'
+    +'<input type="time" id="rep-heure" class="fi" value="14:00" style="margin-bottom:10px">'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;margin-bottom:10px;cursor:pointer">'
+    +'<input type="checkbox" id="rep-creer-mission" checked> Creer aussi une mission dans le planning'
+    +'</label>'
+    +'<button id="btn-executer-reprise" data-client="'+nomClient+'" data-idx="'+idx+'" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Envoyer et planifier</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+
+  var execBtn=document.getElementById('btn-executer-reprise');
+  if(execBtn){
+    execBtn.addEventListener('click',function(){
+      executerRepriseArchive(execBtn.getAttribute('data-client'),parseInt(execBtn.getAttribute('data-idx')));
+    });
+  }
+}
+
+function executerRepriseArchive(nomClient,idx){
+  var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  var item=archives[nomClient][idx];
+  if(!item)return;
+
+  var diDest=parseInt(document.getElementById('rep-chauffeur').value);
+  var date=document.getElementById('rep-date').value;
+  var heure=document.getElementById('rep-heure').value;
+  var creerMission=document.getElementById('rep-creer-mission').checked;
+  var mem=getMemoireClients()[nomClient]||{};
+
+  /* Notification Telegram avec photo */
+  var ids=getTgIds();
+  var chatId=ids[diDest];
+  if(chatId){
+    var JNOMS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    var MNOMS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+    var d=new Date(date+'T12:00:00');
+    var dStr=JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
+    var caption='/!\\\\ A RECUPERER /!\\\\\\n--------------------\\n\\n';
+    caption+='Client : '+nomClient+'\\n';
+    if(mem.adresse) caption+='Adresse : '+mem.adresse+'\\n';
+    caption+='Prevu le '+dStr+' a '+heure+'\\n';
+    if(item.note) caption+='\\n'+item.note+'\\n';
+    caption+='\\n--------------------\\nLa Table de Cana Logistique';
+
+    if(item.fileId){
+      fetch(TG_API+'/sendPhoto',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,photo:item.fileId,caption:caption})
+      });
+    } else {
+      fetch(TG_API+'/sendMessage',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,text:caption})
+      });
+    }
+  }
+
+  /* Créer la mission si demandé */
+  if(creerMission){
+    var k=gk(date,diDest,heure);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    ST.tasks[k].push({
+      client:nomClient,
+      adresse:mem.adresse||'',
+      contact:mem.telephone||'',
+      note_liv:'REPRISE : '+(item.note||''),
+      category:'reprise'
+    });
+    if(typeof save==='function')save();
+    if(typeof render==='function')render();
+  }
+
+  showT('Reprise envoyee a '+(ST.drivers[diDest]?ST.drivers[diDest].name:''),'#16a34a');
+  document.getElementById('m-reprise-archive').remove();
+  var archModal=document.getElementById('m-archive-client');if(archModal)archModal.remove();
+}
+
+/* ══ 5. AJOUTER LE BOUTON "ARCHIVER" SUR CHAQUE PHOTO DE LA GALERIE ══ */
+var _rafraichirGaleriePhotos_lot17 = rafraichirGaleriePhotos;
+rafraichirGaleriePhotos = function(){
+  _rafraichirGaleriePhotos_lot17();
+
+  /* Ajouter le bouton "Archiver" après le bouton "Renvoyer" sur chaque photo */
+  setTimeout(function(){
+    if(!window._galeriePhotos)return;
+    window._galeriePhotos.forEach(function(p,idx){
+      var container=document.getElementById('galerie-photo-'+idx);
+      if(!container||container.querySelector('.btn-archiver'))return;
+      var btn=document.createElement('button');
+      btn.className='btn-archiver';
+      btn.textContent='Archiver dans la fiche client (livraison / reprise)';
+      btn.style.cssText='width:100%;padding:8px;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px';
+      btn.onclick=function(){ouvrirArchivagePhoto(idx);};
+      container.appendChild(btn);
+    });
+  },800);
+};
+
+</script>
 </body>
 </html>
