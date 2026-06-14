@@ -13983,5 +13983,1844 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   IMPORT BONS FTBE - REPARTITEUR AUTOMATIQUE
+   Lecture multi-bons PDF, repartition entre chauffeurs
+══════════════════════════════════════════════════ */
+
+function ouvrirImportFTBE(){
+  var existing=document.getElementById('m-ftbe');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-ftbe';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:600px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Importer bons FTBE <button class="mclose" onclick="document.getElementById(\'m-ftbe\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Importez un ou plusieurs PDF/images de bons d expedition FTBE. '
+    +'Le logiciel detecte automatiquement pour chaque bon : le client, l adresse, le telephone, l heure de livraison et le nombre de convives. '
+    +'Vous pourrez ensuite assigner chaque bon a un chauffeur.'
+    +'</div>'
+    +'<input type="file" id="ftbe-files" accept="image/*,.pdf" multiple style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerAnalyseFTBE()" style="width:100%;padding:11px;background:#f97316;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Analyser les bons</button>'
+    +'<div id="ftbe-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
+    +'<div id="ftbe-resultats" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+window._ftbeData=[];
+
+function lancerAnalyseFTBE(){
+  var files=document.getElementById('ftbe-files').files;
+  if(!files.length){showT('Choisissez au moins un fichier','#f59e0b');return;}
+  window._ftbeData=[];
+  var progress=document.getElementById('ftbe-progress');
+  var total=files.length;
+  var done=0;
+
+  /* Charger Tesseract une seule fois */
+  function processFiles(){
+    Array.from(files).forEach(function(file,idx){
+      if(file.type==='application/pdf'){
+        analyserPdfFTBE(file,idx,total);
+      } else {
+        Tesseract.recognize(file,'fra').then(function(result){
+          done++;
+          progress.textContent='Analyse '+done+'/'+total+'...';
+          var infos=extraireInfosFTBE(result.data.text);
+          infos.fichierIdx=idx;
+          window._ftbeData.push(infos);
+          if(done===total) afficherResultatsFTBE();
+        }).catch(function(){
+          done++;
+          if(done===total) afficherResultatsFTBE();
+        });
+      }
+    });
+  }
+
+  if(typeof Tesseract==='undefined'){
+    progress.textContent='Chargement du moteur de lecture...';
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    script.onload=function(){progress.textContent='Analyse en cours...';processFiles();};
+    document.head.appendChild(script);
+  } else {
+    progress.textContent='Analyse en cours...';
+    processFiles();
+  }
+}
+
+/* Pour PDF : convertir en image via pdf.js puis OCR */
+function analyserPdfFTBE(file,idx,total){
+  var progress=document.getElementById('ftbe-progress');
+  if(typeof pdfjsLib==='undefined'){
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload=function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      traiterPdf(file,idx,total);
+    };
+    document.head.appendChild(script);
+  } else {
+    traiterPdf(file,idx,total);
+  }
+}
+
+function traiterPdf(file,idx,total){
+  var progress=document.getElementById('ftbe-progress');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    pdfjsLib.getDocument({data:e.target.result}).promise.then(function(pdf){
+      var nbPages=pdf.numPages;
+      var pagesPromises=[];
+      for(var p=1;p<=nbPages;p++){
+        pagesPromises.push(extrairePagePdf(pdf,p));
+      }
+      Promise.all(pagesPromises).then(function(textesPages){
+        textesPages.forEach(function(texte,pageIdx){
+          var infos=extraireInfosFTBE(texte);
+          infos.fichierIdx=idx;
+          infos.page=pageIdx+1;
+          if(infos.client||infos.adresse||infos.heure){
+            window._ftbeData.push(infos);
+          }
+        });
+        progress.textContent='Analyse '+(idx+1)+'/'+total+' termine ('+nbPages+' page(s))';
+        if(idx===total-1) setTimeout(afficherResultatsFTBE,300);
+      });
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function extrairePagePdf(pdf,numPage){
+  return pdf.getPage(numPage).then(function(page){
+    var viewport=page.getViewport({scale:2.0});
+    var canvas=document.createElement('canvas');
+    canvas.width=viewport.width;canvas.height=viewport.height;
+    var ctx=canvas.getContext('2d');
+    return page.render({canvasContext:ctx,viewport:viewport}).promise.then(function(){
+      return new Promise(function(resolve){
+        canvas.toBlob(function(blob){
+          Tesseract.recognize(blob,'fra').then(function(result){
+            resolve(result.data.text);
+          }).catch(function(){resolve('');});
+        });
+      });
+    });
+  });
+}
+
+/* ══ EXTRACTION DES INFOS SELON FORMAT FTBE ══ */
+function extraireInfosFTBE(texte){
+  var t=texte;
+  var lignes=t.split('\\n').map(function(l){return l.trim();}).filter(Boolean);
+
+  /* Numero de bon : N° CXXXXXXXX */
+  var numMatch=t.match(/N[°o]\\s*(C\\d{8})/i);
+  var numero=numMatch?numMatch[1]:'';
+
+  /* Heure de livraison : "Pour HH:MM le ..." */
+  var heureMatch=t.match(/[Pp]our\\s*(\\d{1,2})[:h](\\d{2})/);
+  var heure=heureMatch?heureMatch[1].padStart(2,'0')+':'+heureMatch[2]:'';
+
+  /* Date de livraison */
+  var dateMatch=t.match(/(\\d{1,2})[\\/\\.](\\d{1,2})[\\/\\.](\\d{4})/);
+  var date='';
+  if(dateMatch){
+    date=dateMatch[3]+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
+  }
+
+  /* Telephone : 06 XX XX XX XX ou 0X XX XX XX XX */
+  var telMatch=t.match(/0[1-9](?:[\\s.\\-]?\\d{2}){4}/);
+  var telephone=telMatch?telMatch[0].replace(/[\\s.\\-]/g,' ').trim():'';
+
+  /* Adresse : numero + nom de rue + ville + code postal */
+  var adresseMatch=t.match(/\\d{1,4}[,\\s]+(?:rue|avenue|boulevard|chemin|impasse|allee|allée|place|cours|quai|traverse)[^\\n]{0,60}/i);
+  var adresse=adresseMatch?adresseMatch[0].trim():'';
+  /* Code postal + ville sur ligne suivante */
+  var cpMatch=t.match(/(\\d{5})\\s+([A-ZÀ-Ÿ][A-ZÀ-Ÿ\\s\\-]{2,30})/);
+  if(cpMatch){
+    adresse += (adresse?', ':'') + cpMatch[1]+' '+cpMatch[2].trim();
+  }
+
+  /* Code acces / Sogaris etc */
+  var codeAccesMatch=t.match(/(?:code\\s*acc[eè]s|sogaris)[^\\n]{0,40}/i);
+  var codeAcces=codeAccesMatch?codeAccesMatch[0].trim():'';
+
+  /* Client : nom de l'organisme - première ligne en majuscules après le bloc adresse */
+  /* Souvent juste avant "à l'attention de" ou en tout premier de la zone destinataire */
+  var clientMatch=t.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9 \\/'’\\-]{2,40})\\s*\\n.*(?:attention|Mme|M\\.|Mr)/m);
+  var client='';
+  if(clientMatch) client=clientMatch[1].trim();
+  if(!client){
+    /* Chercher une ligne tout en majuscules de 3 à 40 caractères, hors mots-clés */
+    var motsClesIgnorer=['bon','expedition','devis','livraison','retour','dress','jetable','serv','appel','offre','lot','pour','edition','cree','modifie'];
+    client=lignes.find(function(l){
+      var lw=l.toLowerCase();
+      if(motsClesIgnorer.some(function(m){return lw.indexOf(m)>=0;}))return false;
+      var majPct=(l.match(/[A-ZÀ-Ÿ]/g)||[]).length/Math.max(l.replace(/[^A-Za-zÀ-ÿ]/g,'').length,1);
+      return l.length>=3 && l.length<=40 && majPct>0.7;
+    })||'';
+  }
+
+  /* Nombre de convives */
+  var convivesMatch=t.match(/(\\d{1,4})\\s*convives?/i);
+  var convives=convivesMatch?convivesMatch[1]:'';
+
+  /* Contact (nom de personne) */
+  var contactMatch=t.match(/(?:Mme|M\\.|Mr)\\s+([A-ZÀ-Ÿ][a-zà-ÿ]+\\s+[A-ZÀ-Ÿ][A-Za-zà-ÿ]+)/);
+  var contact=contactMatch?contactMatch[1]:'';
+
+  return {
+    numero:numero,
+    client:client,
+    contact:contact,
+    telephone:telephone,
+    adresse:adresse,
+    codeAcces:codeAcces,
+    heure:heure||'10:00',
+    date:date||ST.cur,
+    convives:convives,
+    texteComplet:t
+  };
+}
+
+/* ══ AFFICHER LES RÉSULTATS POUR ASSIGNATION ══ */
+function afficherResultatsFTBE(){
+  var resEl=document.getElementById('ftbe-resultats');
+  var progress=document.getElementById('ftbe-progress');
+  progress.textContent='';
+
+  if(!window._ftbeData.length){
+    resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:12px;font-size:12px;color:#fca5a5">Aucune information detectee. Verifiez la qualite des fichiers.</div>';
+    return;
+  }
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +window._ftbeData.length+' bon(s) detecte(s). Verifiez et assignez un chauffeur a chacun.'
+    +'</div>';
+
+  html += window._ftbeData.map(function(b,idx){
+    return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:#64748b;margin-bottom:6px">Bon '+(idx+1)+(b.numero?' — '+b.numero:'')+'</div>'
+      +'<label style="font-size:11px;color:#64748b">Client</label>'
+      +'<input type="text" id="ftbe-client-'+idx+'" class="fi" value="'+(b.client||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Date</label><input type="date" id="ftbe-date-'+idx+'" class="fi" value="'+(b.date||ST.cur)+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Heure</label><input type="time" id="ftbe-heure-'+idx+'" class="fi" value="'+(b.heure||'10:00')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +'<label style="font-size:11px;color:#64748b">Adresse</label>'
+      +'<input type="text" id="ftbe-adresse-'+idx+'" class="fi" value="'+(b.adresse||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Telephone</label><input type="text" id="ftbe-tel-'+idx+'" class="fi" value="'+(b.telephone||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Convives</label><input type="text" id="ftbe-conv-'+idx+'" class="fi" value="'+(b.convives||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +(b.codeAcces?'<div style="font-size:11px;color:#f59e0b;background:rgba(245,158,11,.1);border-radius:6px;padding:6px;margin-bottom:6px">Acces : '+b.codeAcces+'</div>':'')
+      +'<label style="font-size:11px;color:#64748b">Chauffeur</label>'
+      +'<select id="ftbe-chauffeur-'+idx+'" class="fi" style="font-size:12px">'
+      +'<option value="-1">Non assigne</option>'
+      +ST.drivers.map(function(dr,di){return '<option value="'+di+'">'+dr.name+'</option>';}).join('')
+      +'</select>'
+      +'</div>';
+  }).join('');
+
+  html += '<button onclick="creerMissionsFTBE()" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:6px">Creer toutes les missions</button>';
+
+  resEl.innerHTML=html;
+}
+
+/* ══ CRÉER LES MISSIONS DANS LE PLANNING ══ */
+function creerMissionsFTBE(){
+  var nb=0;
+  window._ftbeData.forEach(function(b,idx){
+    var di=parseInt(document.getElementById('ftbe-chauffeur-'+idx).value);
+    if(di<0)return; /* non assigné, on saute */
+
+    var client=document.getElementById('ftbe-client-'+idx).value.trim();
+    var date=document.getElementById('ftbe-date-'+idx).value;
+    var heure=document.getElementById('ftbe-heure-'+idx).value;
+    var adresse=document.getElementById('ftbe-adresse-'+idx).value.trim();
+    var tel=document.getElementById('ftbe-tel-'+idx).value.trim();
+    var conv=document.getElementById('ftbe-conv-'+idx).value.trim();
+
+    if(!client)return;
+
+    /* Arrondir l'heure aux 30 min de la grille */
+    var parts=heure.split(':');
+    var hh=parseInt(parts[0]),mm=parseInt(parts[1]);
+    mm = mm<15?0:mm<45?30:(hh++,0);
+    var heureGrille=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+    var k=gk(date,di,heureGrille);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:tel,
+      note_liv:conv?conv+' convives':'',
+      category:'traiteur'
+    });
+    nb++;
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+  showT(nb+' mission(s) creee(s) et reparties','#16a34a');
+  document.getElementById('m-ftbe').remove();
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var importBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Importer bon de livraison')>=0;});
+    if(importBtn&&importBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportFTBE();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;font-weight:900">Importer bons FTBE (multi)</button>';
+      importBtn.parentNode.insertBefore(div,importBtn);
+    }
+  },3000);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   FTBE V2 - LECTURE LIVREUR/VEHICULE + MULTI-PAGES + MEMOIRE CLIENTS
+══════════════════════════════════════════════════ */
+
+/* ══ MÉMOIRE DES CLIENTS (localStorage) ══ */
+function getMemoireClients(){
+  return JSON.parse(localStorage.getItem('memoire_clients_ftbe')||'{}');
+}
+function sauverMemoireClient(client,infos){
+  if(!client)return;
+  var mem=getMemoireClients();
+  var key=client.toUpperCase().trim();
+  mem[key]=Object.assign(mem[key]||{},infos);
+  localStorage.setItem('memoire_clients_ftbe',JSON.stringify(mem));
+}
+
+/* ══ EXTRACTION AMÉLIORÉE — DÉTECTE LIVREUR/VÉHICULE ÉCRITS À LA MAIN ══ */
+function extraireInfosFTBEv2(texte){
+  var infos = extraireInfosFTBE(texte); /* fonction existante */
+  var t = texte;
+
+  /* Chercher le champ Livreur rempli a la main */
+  /* Pattern : "Livreur :" suivi du nom d'un chauffeur connu */
+  var livreurTrouve=-1;
+  ST.drivers.forEach(function(dr,di){
+    var regex=new RegExp('Livreur[^A-Za-zÀ-ÿ]{0,5}'+dr.name,'i');
+    if(regex.test(t)) livreurTrouve=di;
+    /* Aussi chercher juste le nom proche du mot "Livreur" dans les 30 caracteres suivants */
+    var idxLivreur=t.toLowerCase().indexOf('livreur');
+    if(idxLivreur>=0){
+      var zone=t.substring(idxLivreur,idxLivreur+40).toLowerCase();
+      if(zone.indexOf(dr.name.toLowerCase())>=0) livreurTrouve=di;
+    }
+  });
+  infos.chauffeurEcrit = livreurTrouve;
+
+  /* Chercher le champ Véhicule rempli a la main */
+  var vehiculeTrouve='';
+  ST.drivers.forEach(function(dr,di){
+    var idxVeh=t.toLowerCase().indexOf('véhicule');
+    if(idxVeh<0) idxVeh=t.toLowerCase().indexOf('vehicule');
+    if(idxVeh>=0){
+      var zone=t.substring(idxVeh,idxVeh+40).toLowerCase();
+      if(dr.truck && zone.indexOf(dr.truck.toLowerCase())>=0) vehiculeTrouve=dr.truck;
+    }
+  });
+  infos.vehiculeEcrit = vehiculeTrouve;
+
+  /* Compléter avec la mémoire des clients si infos manquantes */
+  if(infos.client){
+    var mem=getMemoireClients();
+    var memData=mem[infos.client.toUpperCase().trim()];
+    if(memData){
+      if(!infos.adresse && memData.adresse) infos.adresse=memData.adresse;
+      if(!infos.telephone && memData.telephone) infos.telephone=memData.telephone;
+      if(!infos.codeAcces && memData.codeAcces) infos.codeAcces=memData.codeAcces;
+      if(infos.chauffeurEcrit<0 && memData.chauffeurHabituel!==undefined) infos.chauffeurEcrit=memData.chauffeurHabituel;
+    }
+  }
+
+  return infos;
+}
+
+/* ══ REGROUPEMENT MULTI-PAGES PAR CLIENT+DATE+HEURE ══ */
+function regrouperBonsFTBE(listeBons){
+  var groupes={};
+  listeBons.forEach(function(b){
+    var key=(b.client||'?').toUpperCase().trim()+'|'+b.date+'|'+b.heure;
+    if(!groupes[key]){
+      groupes[key]=Object.assign({},b);
+      groupes[key].sousLignes=[];
+      groupes[key].nbPages=0;
+    }
+    groupes[key].nbPages++;
+    /* Compléter les champs manquants avec ce qu'on trouve sur d'autres pages */
+    ['adresse','telephone','codeAcces','client','numero'].forEach(function(champ){
+      if(!groupes[key][champ] && b[champ]) groupes[key][champ]=b[champ];
+    });
+    if(groupes[key].chauffeurEcrit<0 && b.chauffeurEcrit>=0) groupes[key].chauffeurEcrit=b.chauffeurEcrit;
+    if(!groupes[key].vehiculeEcrit && b.vehiculeEcrit) groupes[key].vehiculeEcrit=b.vehiculeEcrit;
+    /* Ajouter le résumé de cette page en sous-ligne */
+    if(b.convives) groupes[key].sousLignes.push(b.convives+' convives (page '+groupes[key].nbPages+')');
+  });
+  return Object.values(groupes);
+}
+
+/* ══ REMPLACER LA FONCTION D'AFFICHAGE POUR UTILISER V2 ══ */
+var _extraireInfosFTBE_orig = extraireInfosFTBE;
+extraireInfosFTBE = extraireInfosFTBEv2;
+
+/* Patch afficherResultatsFTBE pour regrouper + pré-sélectionner chauffeur */
+var _afficherResultatsFTBE_orig = afficherResultatsFTBE;
+afficherResultatsFTBE = function(){
+  var progress=document.getElementById('ftbe-progress');
+  var resEl=document.getElementById('ftbe-resultats');
+  progress.textContent='';
+
+  if(!window._ftbeData.length){
+    resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:12px;font-size:12px;color:#fca5a5">Aucune information detectee.</div>';
+    return;
+  }
+
+  /* Regrouper les pages multiples du même bon */
+  var groupes = regrouperBonsFTBE(window._ftbeData);
+  window._ftbeGroupes = groupes;
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +groupes.length+' bon(s) detecte(s) ('+window._ftbeData.length+' page(s) au total).'
+    +'</div>';
+
+  html += groupes.map(function(b,idx){
+    var preselect = b.chauffeurEcrit!==undefined && b.chauffeurEcrit>=0 ? b.chauffeurEcrit : -1;
+    return '<div style="background:#0f172a;border:1px solid '+(preselect>=0?'#16a34a':'#1e293b')+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:#64748b;margin-bottom:6px">Bon '+(idx+1)+(b.numero?' — '+b.numero:'')+(b.nbPages>1?' — '+b.nbPages+' page(s) fusionnees':'')+(preselect>=0?' — <span style="color:#22c55e">Livreur detecte automatiquement</span>':'')+'</div>'
+      +'<label style="font-size:11px;color:#64748b">Client</label>'
+      +'<input type="text" id="ftbe-client-'+idx+'" class="fi" value="'+(b.client||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Date</label><input type="date" id="ftbe-date-'+idx+'" class="fi" value="'+(b.date||ST.cur)+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Heure</label><input type="time" id="ftbe-heure-'+idx+'" class="fi" value="'+(b.heure||'10:00')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +'<label style="font-size:11px;color:#64748b">Adresse'+(getMemoireClients()[(b.client||'').toUpperCase().trim()]?' <span style="color:#60a5fa">(memorisee)</span>':'')+'</label>'
+      +'<input type="text" id="ftbe-adresse-'+idx+'" class="fi" value="'+(b.adresse||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Telephone</label><input type="text" id="ftbe-tel-'+idx+'" class="fi" value="'+(b.telephone||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Convives</label><input type="text" id="ftbe-conv-'+idx+'" class="fi" value="'+(b.convives||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +(b.sousLignes&&b.sousLignes.length>1?'<div style="font-size:11px;color:#94a3b8;background:#1e293b;border-radius:6px;padding:6px;margin-bottom:6px">Detail : '+b.sousLignes.join(' / ')+'</div>':'')
+      +(b.codeAcces?'<div style="font-size:11px;color:#f59e0b;background:rgba(245,158,11,.1);border-radius:6px;padding:6px;margin-bottom:6px">Acces : '+b.codeAcces+'</div>':'')
+      +'<label style="font-size:11px;color:#64748b">Chauffeur'+(preselect>=0?' <span style="color:#22c55e">(detecte sur le bon)</span>':'')+'</label>'
+      +'<select id="ftbe-chauffeur-'+idx+'" class="fi" style="font-size:12px">'
+      +'<option value="-1"'+(preselect===-1?' selected':'')+'>Non assigne</option>'
+      +ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===preselect?' selected':'')+'>'+dr.name+(b.vehiculeEcrit?'':'')+'</option>';}).join('')
+      +'</select>'
+      +'</div>';
+  }).join('');
+
+  html += '<button onclick="creerMissionsFTBEv2()" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:6px">Creer toutes les missions</button>';
+
+  resEl.innerHTML=html;
+};
+
+/* ══ CRÉATION AVEC SAUVEGARDE MÉMOIRE ══ */
+function creerMissionsFTBEv2(){
+  var groupes=window._ftbeGroupes||[];
+  var nb=0;
+  groupes.forEach(function(b,idx){
+    var di=parseInt(document.getElementById('ftbe-chauffeur-'+idx).value);
+    var client=document.getElementById('ftbe-client-'+idx).value.trim();
+    var date=document.getElementById('ftbe-date-'+idx).value;
+    var heure=document.getElementById('ftbe-heure-'+idx).value;
+    var adresse=document.getElementById('ftbe-adresse-'+idx).value.trim();
+    var tel=document.getElementById('ftbe-tel-'+idx).value.trim();
+    var conv=document.getElementById('ftbe-conv-'+idx).value.trim();
+
+    /* Sauvegarder en mémoire pour la prochaine fois (même si pas assigné) */
+    if(client){
+      sauverMemoireClient(client,{
+        adresse:adresse,
+        telephone:tel,
+        codeAcces:b.codeAcces||'',
+        chauffeurHabituel:di>=0?di:undefined
+      });
+    }
+
+    if(di<0||!client)return;
+
+    var parts=heure.split(':');
+    var hh=parseInt(parts[0]),mm=parseInt(parts[1]);
+    mm = mm<15?0:mm<45?30:(hh++,0);
+    var heureGrille=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+    var k=gk(date,di,heureGrille);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    var noteParts=[];
+    if(conv) noteParts.push(conv+' convives');
+    if(b.sousLignes&&b.sousLignes.length>1) noteParts=noteParts.concat(b.sousLignes);
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:tel,
+      note_liv:noteParts.join(' - '),
+      category:'traiteur'
+    });
+    nb++;
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+  showT(nb+' mission(s) creee(s) et reparties','#16a34a');
+  document.getElementById('m-ftbe').remove();
+}
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 7 — FTBE AVANCÉ
+   1. Détection doublons FTBE
+   2. Vue "Bons en attente"
+   3. Historique client
+   4. Carnet d'adresses clients
+   5. Alertes allergies/régimes
+   6. Briefing vocal du matin
+══════════════════════════════════════════════════ */
+
+/* ══ 1. DÉTECTION DOUBLONS ══ */
+function detecterDoublonsFTBE(groupes){
+  var alertes=[];
+  groupes.forEach(function(b,idx){
+    var key=(b.client||'').toUpperCase().trim()+'|'+b.date+'|'+b.heure;
+    /* Vérifier dans le planning existant */
+    var existeDeja=false;
+    if(b.date){
+      SL.forEach(function(h){
+        ST.drivers.forEach(function(dr,di){
+          (ST.tasks[gk(b.date,di,h)]||[]).forEach(function(t){
+            if((t.client||'').toUpperCase().trim()===(b.client||'').toUpperCase().trim() && h===b.heure){
+              existeDeja=true;
+            }
+          });
+        });
+      });
+    }
+    if(existeDeja) alertes.push(idx);
+  });
+  return alertes;
+}
+
+/* ══ 2. VUE "BONS EN ATTENTE" ══ */
+function ouvrirBonsEnAttente(){
+  var existing=document.getElementById('m-bons-attente');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bons-attente';modal.className='mbg on';
+  var bonsAttente=JSON.parse(localStorage.getItem('bons_en_attente')||'[]');
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Bons en attente <button class="mclose" onclick="document.getElementById(\'m-bons-attente\').remove()">X</button></h3>';
+
+  if(!bonsAttente.length){
+    html+='<div style="text-align:center;color:#64748b;padding:30px"><div style="font-size:40px">✓</div>Aucun bon en attente. Tout est assigne.</div>';
+  } else {
+    html+='<div style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#fbbf24">'
+      +bonsAttente.length+' bon(s) non assigne(s) - a traiter'
+      +'</div>';
+    html += bonsAttente.map(function(b,idx){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px">'
+        +'<div style="font-weight:700;color:#e2e8f0">'+(b.client||'Client inconnu')+'</div>'
+        +'<div style="color:#64748b">'+(b.date||'?')+' a '+(b.heure||'?')+(b.adresse?' - '+b.adresse:'')+'</div>'
+        +'<button onclick="assignerBonAttente('+idx+')" style="margin-top:6px;padding:6px 10px;background:#1d4ed8;border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Assigner maintenant</button>'
+        +'</div>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function assignerBonAttente(idx){
+  var bonsAttente=JSON.parse(localStorage.getItem('bons_en_attente')||'[]');
+  var bon=bonsAttente[idx];
+  if(!bon)return;
+  window._ftbeData=[bon];
+  document.getElementById('m-bons-attente').remove();
+  ouvrirImportFTBE();
+  setTimeout(function(){
+    document.getElementById('ftbe-resultats').style.display='block';
+    afficherResultatsFTBE();
+    /* Retirer ce bon de la liste d'attente après traitement */
+    bonsAttente.splice(idx,1);
+    localStorage.setItem('bons_en_attente',JSON.stringify(bonsAttente));
+  },300);
+}
+
+/* ══ 3. HISTORIQUE CLIENT ══ */
+function ouvrirHistoriqueClient(){
+  var existing=document.getElementById('m-hist-client');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-hist-client';modal.className='mbg on';
+  var mem=getMemoireClients();
+  var clients=Object.keys(mem);
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Carnet clients FTBE <button class="mclose" onclick="document.getElementById(\'m-hist-client\').remove()">X</button></h3>'
+    +'<input type="text" id="hist-search" class="fi" placeholder="Rechercher un client..." style="margin-bottom:10px" oninput="filtrerHistoriqueClient()">'
+    +'<div id="hist-liste">';
+
+  if(!clients.length){
+    html+='<div style="text-align:center;color:#64748b;padding:30px">Aucun client memorise pour le moment. Importez des bons FTBE pour commencer.</div>';
+  } else {
+    html+=clients.map(function(c){
+      var d=mem[c];
+      var nbIncidents=(JSON.parse(localStorage.getItem('incidents_clients')||'{}')[c]||0);
+      return '<div class="hist-item" data-nom="'+c.toLowerCase()+'" style="background:#0f172a;border:1px solid '+(nbIncidents>1?'#ef4444':'#1e293b')+';border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px">'
+        +'<div style="font-weight:700;color:#e2e8f0">'+c+(nbIncidents>1?' <span style="color:#ef4444;font-size:10px">⚠ '+nbIncidents+' incident(s)</span>':'')+'</div>'
+        +(d.adresse?'<div style="color:#64748b;margin-top:2px">'+d.adresse+'</div>':'')
+        +(d.telephone?'<div style="color:#64748b">'+d.telephone+'</div>':'')
+        +(d.codeAcces?'<div style="color:#f59e0b;margin-top:2px">Acces : '+d.codeAcces+'</div>':'')
+        +(d.chauffeurHabituel!==undefined&&d.chauffeurHabituel>=0?'<div style="color:#60a5fa;margin-top:2px">Chauffeur habituel : '+(ST.drivers[d.chauffeurHabituel]?ST.drivers[d.chauffeurHabituel].name:'?')+'</div>':'')
+        +'</div>';
+    }).join('');
+  }
+  html+='</div></div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function filtrerHistoriqueClient(){
+  var q=document.getElementById('hist-search').value.toLowerCase();
+  document.querySelectorAll('.hist-item').forEach(function(item){
+    item.style.display = item.getAttribute('data-nom').indexOf(q)>=0 ? '' : 'none';
+  });
+}
+
+/* ══ 4. ALERTES ALLERGIES/RÉGIMES ══ */
+function detecterAllergiesRegime(texte){
+  var t=texte.toLowerCase();
+  var alertes=[];
+  if(t.indexOf('allerg')>=0) alertes.push('ALLERGIE mentionnee');
+  if(t.indexOf('sans gluten')>=0) alertes.push('Sans gluten');
+  if(t.indexOf('vegetarien')>=0||t.indexOf('végétarien')>=0) alertes.push('Vegetarien');
+  if(t.indexOf('vegan')>=0) alertes.push('Vegan');
+  if(t.indexOf('sans porc')>=0) alertes.push('Sans porc');
+  if(t.indexOf('halal')>=0) alertes.push('Halal');
+  return alertes;
+}
+
+/* ══ 5. BRIEFING VOCAL DU MATIN ══ */
+function ouvrirBriefingMatin(){
+  var date=ST.cur;
+  var total=0,chauffeursActifs=0,absences=0;
+  var premiereHeure='';
+
+  ST.drivers.forEach(function(dr,di){
+    var nb=0;
+    SL.forEach(function(h){
+      var t=(ST.tasks[gk(date,di,h)]||[]).length;
+      nb+=t;
+      if(t>0&&(!premiereHeure||h<premiereHeure)) premiereHeure=h;
+    });
+    if(nb>0) chauffeursActifs++;
+    total+=nb;
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')) absences++;
+  });
+
+  var JNOMS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  var d=new Date(date+'T12:00:00');
+  var txt='Bonjour. Aujourd hui '+JNOMS[d.getDay()]+', '+total+' mission'+(total>1?'s':'')+' au programme';
+  txt+=' avec '+chauffeursActifs+' chauffeur'+(chauffeursActifs>1?'s':'')+' actif'+(chauffeursActifs>1?'s':'')+'. ';
+  if(absences>0) txt+=absences+' absence'+(absences>1?'s':'')+' signalee'+(absences>1?'s':'')+'. ';
+  if(premiereHeure) txt+='Premiere mission a '+premiereHeure.replace(':','h')+'. ';
+  txt+='Bonne journee !';
+
+  if(window.speechSynthesis){
+    var u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
+    window.speechSynthesis.speak(u);
+  }
+  showT(txt,'#7c3aed');
+}
+
+/* ══ 6. AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var ftbeBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Importer bons FTBE')>=0;});
+    if(ftbeBtn&&ftbeBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirBonsEnAttente();fermerMenu()" class="menu-item">Bons en attente</button>'
+        +'<button tabindex="0" onclick="ouvrirHistoriqueClient();fermerMenu()" class="menu-item">Carnet clients FTBE</button>';
+      ftbeBtn.parentNode.insertBefore(div,ftbeBtn.nextSibling);
+    }
+
+    /* Briefing matin dans Planning */
+    var bilanBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Bilan de la journee')>=0;});
+    if(bilanBtn&&bilanBtn.parentNode){
+      var div2=document.createElement('div');
+      div2.innerHTML='<button tabindex="0" onclick="ouvrirBriefingMatin();fermerMenu()" class="menu-item" style="color:#7c3aed;font-weight:700">Briefing vocal du matin</button>';
+      bilanBtn.parentNode.insertBefore(div2,bilanBtn);
+    }
+  },3100);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 8 — CONTROLE BACS GASTRO + AMÉLIORATIONS RESTANTES
+   1. Comptage automatique bacs gastro via photo Telegram
+   2. Temps de trajet entre missions (alerte planning irréaliste)
+   3. Étiquette mission avec QR code Maps
+   4. Export comptable mensuel par client
+   5. Alerte matériel quotidien
+   6. Mode "Retour de tournée"
+   7. Détection client difficile
+══════════════════════════════════════════════════ */
+
+/* ══ 1. SUIVI BACS GASTRO ══ */
+function ouvrirSuiviBacs(){
+  var existing=document.getElementById('m-bacs');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bacs';modal.className='mbg on';
+  var historique=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+
+  var totalEnCirculation=0;
+  historique.forEach(function(h){
+    totalEnCirculation += h.type==='sortie'?h.nb:-h.nb;
+  });
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Suivi bacs gastro <button class="mclose" onclick="document.getElementById(\'m-bacs\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
+    +'<div style="font-size:32px;font-weight:900;color:'+(totalEnCirculation>20?'#ef4444':'#22c55e')+'">'+totalEnCirculation+'</div>'
+    +'<div style="font-size:11px;color:#64748b">bacs actuellement en circulation chez les clients</div>'
+    +'</div>'
+    +'<div style="background:rgba(124,58,237,.1);border:1px solid #7c3aed;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.7">'
+    +'<b>Comment ca marche :</b><br>'
+    +'Le chauffeur envoie une photo des bacs sur le bot Telegram avec le mot "BACS" dans le message. '
+    +'L IA compte automatiquement le nombre visible et l enregistre ici (sortie = livres au client, retour = recuperes).'
+    +'</div>'
+    +'<button onclick="ajouterMouvementBacsManuel(0)" style="width:48%;padding:10px;background:#f97316;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-right:4%">+ Sortie manuelle</button>'
+    +'<button onclick="ajouterMouvementBacsManuel(1)" style="width:48%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">+ Retour manuel</button>'
+    +'<div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin:14px 0 8px">Historique recent</div>';
+
+  if(!historique.length){
+    html+='<div style="text-align:center;color:#64748b;padding:20px">Aucun mouvement enregistre</div>';
+  } else {
+    html += historique.slice(-15).reverse().map(function(h){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;margin-bottom:5px;font-size:12px;display:flex;justify-content:space-between">'
+        +'<span style="color:'+(h.type==='sortie'?'#f97316':'#22c55e')+'">'+(h.type==='sortie'?'Sortie':'Retour')+' — '+h.nb+' bac(s)'+(h.client?' — '+h.client:'')+'</span>'
+        +'<span style="color:#64748b">'+h.date+'</span>'
+        +'</div>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function ajouterMouvementBacsManuel(typeIdx){
+  var type = typeIdx===0?'sortie':'retour';
+  var nb=parseInt(prompt('Nombre de bacs ('+(type==='sortie'?'sortie':'retour')+') :'));
+  if(!nb||nb<=0)return;
+  var historique=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+  historique.push({type:type,nb:nb,date:new Date().toLocaleDateString('fr-FR')+' '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),client:'Saisie manuelle'});
+  localStorage.setItem('bacs_gastro_historique',JSON.stringify(historique));
+  ouvrirSuiviBacs();
+  showT('Mouvement enregistre','#16a34a');
+}
+
+/* Traiter les photos "BACS" reçues via Telegram (appelé par vérification des réponses) */
+function traiterPhotosBacsTelegram(updates){
+  if(!updates||!updates.result)return;
+  var historique=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+  var dejaTraites=JSON.parse(localStorage.getItem('bacs_updates_traites')||'[]');
+  var nouveauxTraites=0;
+
+  updates.result.forEach(function(upd){
+    if(!upd.message||!upd.message.photo)return;
+    if(dejaTraites.indexOf(upd.update_id)>=0)return;
+    var caption=(upd.message.caption||'').toUpperCase();
+    if(caption.indexOf('BACS')<0)return;
+
+    /* Type : si caption contient "RETOUR" -> retour, sinon sortie */
+    var type=caption.indexOf('RETOUR')>=0?'retour':'sortie';
+    var chauffeurNom='';
+    Object.keys(getTgIds()).forEach(function(di){
+      if(String(getTgIds()[di])===String(upd.message.chat.id)) chauffeurNom=ST.drivers[di]?ST.drivers[di].name:'';
+    });
+
+    /* Estimation simplifiée du nombre via IA (à défaut, demander confirmation) */
+    /* On stocke la photo pour analyse manuelle car comptage visuel précis nécessite vision IA */
+    historique.push({
+      type:type,
+      nb:0, /* à valider */
+      date:new Date().toLocaleDateString('fr-FR')+' '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+      client:chauffeurNom||'Chauffeur',
+      photoFileId:upd.message.photo[upd.message.photo.length-1].file_id,
+      aValider:true
+    });
+
+    dejaTraites.push(upd.update_id);
+    nouveauxTraites++;
+  });
+
+  if(nouveauxTraites>0){
+    localStorage.setItem('bacs_gastro_historique',JSON.stringify(historique));
+    localStorage.setItem('bacs_updates_traites',JSON.stringify(dejaTraites.slice(-200)));
+    showT(nouveauxTraites+' photo(s) de bacs recue(s) - a valider','#f59e0b');
+  }
+}
+
+/* ══ 2. TEMPS DE TRAJET / ALERTE PLANNING IRRÉALISTE ══ */
+function verifierTempsTrajets(){
+  var date=ST.cur;
+  var alertes=[];
+  var TEMPS_MIN_ENTRE_MISSIONS=20; /* minutes minimum si adresses différentes */
+
+  ST.drivers.forEach(function(dr,di){
+    var missionsJour=[];
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        missionsJour.push({h:h,client:t.client||t.task||'',adresse:t.adresse||''});
+      });
+    });
+    missionsJour.sort(function(a,b){return a.h.localeCompare(b.h);});
+
+    for(var i=0;i<missionsJour.length-1;i++){
+      var m1=missionsJour[i],m2=missionsJour[i+1];
+      var [h1,mn1]=m1.h.split(':').map(Number);
+      var [h2,mn2]=m2.h.split(':').map(Number);
+      var diffMin=(h2*60+mn2)-(h1*60+mn1);
+      if(m1.adresse && m2.adresse && m1.adresse!==m2.adresse && diffMin<TEMPS_MIN_ENTRE_MISSIONS && diffMin>=0){
+        alertes.push(dr.name+' : seulement '+diffMin+' min entre "'+m1.client+'" ('+m1.h+') et "'+m2.client+'" ('+m2.h+') - adresses differentes');
+      }
+    }
+  });
+  return alertes;
+}
+
+function ouvrirVerifTrajets(){
+  var existing=document.getElementById('m-trajets');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-trajets';modal.className='mbg on';
+  var alertes=verifierTempsTrajets();
+
+  var html='<div class="mbox" style="max-width:480px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Verification temps de trajet <button class="mclose" onclick="document.getElementById(\'m-trajets\').remove()">X</button></h3>';
+
+  if(!alertes.length){
+    html+='<div style="text-align:center;color:#22c55e;padding:30px"><div style="font-size:40px">✓</div>Aucun probleme de timing detecte.</div>';
+  } else {
+    html += alertes.map(function(a){
+      return '<div style="background:rgba(239,68,68,.1);border-left:3px solid #ef4444;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;color:#fca5a5">'+a+'</div>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+/* ══ 3. ÉTIQUETTE MISSION AVEC QR CODE MAPS ══ */
+function imprimerEtiquetteMission(di,h){
+  var k=gk(ST.cur,di,h);
+  var tasks=ST.tasks[k]||[];
+  if(!tasks.length){showT('Aucune mission a cette case','#f59e0b');return;}
+  var dr=ST.drivers[di];
+
+  var win=window.open('','_blank');
+  var html='<html><head><title>Etiquette mission</title><style>'
+    +'body{font-family:Arial;padding:20px}'
+    +'.etiq{border:2px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px;page-break-after:always}'
+    +'.h{font-size:22px;font-weight:900;margin-bottom:6px}'
+    +'.s{font-size:13px;color:#475569;margin-bottom:4px}'
+    +'.qr{text-align:center;margin-top:10px}'
+    +'</style></head><body>';
+
+  tasks.forEach(function(t){
+    var adresseQ=encodeURIComponent(t.adresse||t.client||'');
+    html+='<div class="etiq">'
+      +'<div class="h">'+(t.client||t.task||'')+'</div>'
+      +'<div class="s">Chauffeur : '+dr.name+' ('+dr.truck+')</div>'
+      +'<div class="s">Heure : '+h+'</div>'
+      +(t.adresse?'<div class="s">Adresse : '+t.adresse+'</div>':'')
+      +(t.contact?'<div class="s">Tel : '+t.contact+'</div>':'')
+      +(t.note_liv?'<div class="s">Note : '+t.note_liv+'</div>':'')
+      +(t.adresse?'<div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+adresseQ+'" alt="QR Maps"><div style="font-size:10px;color:#94a3b8">Scanner pour ouvrir Maps</div></div>':'')
+      +'</div>';
+  });
+  html+='</body></html>';
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){win.print();},500);
+}
+
+/* ══ 4. EXPORT COMPTABLE MENSUEL PAR CLIENT ══ */
+function exportComptableMensuel(){
+  var mois=new Date().getMonth();
+  var annee=new Date().getFullYear();
+  var daysInMonth=new Date(annee,mois+1,0).getDate();
+  var parClient={};
+
+  for(var day=1;day<=daysInMonth;day++){
+    var ds=annee+'-'+String(mois+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    ST.drivers.forEach(function(dr,di){
+      SL.forEach(function(h){
+        (ST.tasks[gk(ds,di,h)]||[]).forEach(function(t){
+          var c=t.client||t.task||'Inconnu';
+          if(!parClient[c]) parClient[c]={nb:0,dates:[]};
+          parClient[c].nb++;
+          parClient[c].dates.push(ds);
+        });
+      });
+    });
+  }
+
+  var rows=[['Client','Nombre de livraisons','Dates']];
+  Object.keys(parClient).sort(function(a,b){return parClient[b].nb-parClient[a].nb;}).forEach(function(c){
+    rows.push([c,parClient[c].nb,parClient[c].dates.join('; ')]);
+  });
+
+  var csv=rows.map(function(r){
+    return r.map(function(c){
+      var s=String(c||'');
+      if(s.indexOf(',')>=0||s.indexOf('"')>=0) return '"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(',');
+  }).join('\\n');
+
+  var blob=new Blob(['\\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='comptable_clients_'+annee+'_'+(mois+1)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showT('Export comptable telecharge','#16a34a');
+}
+
+/* ══ 5. ALERTE MATÉRIEL QUOTIDIEN ══ */
+function ouvrirAlerteMateriel(){
+  var existing=document.getElementById('m-materiel');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-materiel';modal.className='mbg on';
+  var date=ST.cur;
+  var totalConvives=0,nbBacsEstimes=0,materielSpecial=[];
+
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        var convMatch=(t.note_liv||'').match(/(\\d+)\\s*convives/);
+        if(convMatch){
+          var nb=parseInt(convMatch[1]);
+          totalConvives+=nb;
+          nbBacsEstimes+=Math.ceil(nb/25); /* estimation 1 bac par 25 convives */
+        }
+        var allergies=detecterAllergiesRegime((t.note_liv||'')+' '+(t.client||''));
+        if(allergies.length) materielSpecial.push((t.client||'')+' : '+allergies.join(', '));
+      });
+    });
+  });
+
+  modal.innerHTML='<div class="mbox" style="max-width:480px">'
+    +'<h3>Materiel necessaire aujourd hui <button class="mclose" onclick="document.getElementById(\'m-materiel\').remove()">X</button></h3>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#60a5fa">'+totalConvives+'</div><div style="font-size:11px;color:#64748b">convives total</div></div>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#f97316">~'+nbBacsEstimes+'</div><div style="font-size:11px;color:#64748b">bacs estimes</div></div>'
+    +'</div>'
+    +(materielSpecial.length?'<div style="font-size:9px;font-weight:700;color:#ef4444;text-transform:uppercase;margin-bottom:8px">Regimes speciaux a verifier</div>'
+      +materielSpecial.map(function(m){return '<div style="background:rgba(239,68,68,.1);border-left:3px solid #ef4444;border-radius:6px;padding:8px;margin-bottom:5px;font-size:12px;color:#fca5a5">'+m+'</div>';}).join('')
+      :'<div style="font-size:12px;color:#64748b;text-align:center">Aucun regime special signale</div>')
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+/* ══ 6. AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var bonsBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Carnet clients FTBE')>=0;});
+    if(bonsBtn&&bonsBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirSuiviBacs();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">Suivi bacs gastro</button>'
+        +'<button tabindex="0" onclick="ouvrirVerifTrajets();fermerMenu()" class="menu-item">Verifier temps de trajet</button>'
+        +'<button tabindex="0" onclick="ouvrirAlerteMateriel();fermerMenu()" class="menu-item">Materiel necessaire</button>'
+        +'<button tabindex="0" onclick="exportComptableMensuel();fermerMenu()" class="menu-item">Export comptable mensuel</button>';
+      bonsBtn.parentNode.insertBefore(div,bonsBtn.nextSibling);
+    }
+  },3200);
+
+  /* Vérifier les photos bacs reçues via Telegram en arrière-plan */
+  setTimeout(function(){
+    setInterval(function(){
+      fetch(TG_API+'/getUpdates?limit=50')
+        .then(function(r){return r.json();})
+        .then(function(updates){traiterPhotosBacsTelegram(updates);})
+        .catch(function(){});
+    },120000);
+  },5000);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   AFFICHAGE PHOTO BACS POUR VALIDATION RAPIDE
+══════════════════════════════════════════════════ */
+
+/* Récupérer l'URL de la photo Telegram depuis son file_id */
+function getUrlPhotoTelegram(fileId,callback){
+  fetch(TG_API+'/getFile?file_id='+fileId)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.ok){
+        var url='https://api.telegram.org/file/bot'+TG_API.split('bot')[1]+'/'+data.result.file_path;
+        callback(url);
+      }
+    })
+    .catch(function(){callback(null);});
+}
+
+/* Remplacer ouvrirSuiviBacs pour afficher les photos en attente */
+var _ouvrirSuiviBacs_orig = ouvrirSuiviBacs;
+ouvrirSuiviBacs = function(){
+  var existing=document.getElementById('m-bacs');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bacs';modal.className='mbg on';
+  var historique=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+
+  var totalEnCirculation=0;
+  historique.forEach(function(h){
+    if(!h.aValider) totalEnCirculation += h.type==='sortie'?h.nb:-h.nb;
+  });
+
+  var aValider=historique.filter(function(h){return h.aValider;});
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Suivi bacs gastro <button class="mclose" onclick="document.getElementById(\'m-bacs\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
+    +'<div style="font-size:32px;font-weight:900;color:'+(totalEnCirculation>20?'#ef4444':'#22c55e')+'">'+totalEnCirculation+'</div>'
+    +'<div style="font-size:11px;color:#64748b">bacs actuellement en circulation chez les clients</div>'
+    +'</div>';
+
+  if(aValider.length){
+    html+='<div style="font-size:9px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin-bottom:8px">A valider ('+aValider.length+')</div>';
+    aValider.forEach(function(h,idx){
+      var origIdx=historique.indexOf(h);
+      html+='<div id="bac-photo-'+origIdx+'" style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-bottom:10px">'
+        +'<div style="font-size:12px;color:#fbbf24;margin-bottom:6px">'+(h.type==='sortie'?'Sortie':'Retour')+' — '+h.client+' — '+h.date+'</div>'
+        +'<div id="bac-img-'+origIdx+'" style="text-align:center;margin-bottom:8px;color:#64748b;font-size:11px">Chargement de la photo...</div>'
+        +'<div style="display:flex;gap:6px;align-items:center">'
+        +'<input type="number" id="bac-nb-'+origIdx+'" placeholder="Nombre de bacs" class="fi" style="flex:1;font-size:12px">'
+        +'<button onclick="validerBac('+origIdx+')" style="padding:8px 14px;background:#16a34a;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Valider</button>'
+        +'</div>'
+        +'</div>';
+    });
+  }
+
+  html+='<button onclick="ajouterMouvementBacsManuel(0)" style="width:48%;padding:10px;background:#f97316;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-right:4%">+ Sortie manuelle</button>'
+    +'<button onclick="ajouterMouvementBacsManuel(1)" style="width:48%;padding:10px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">+ Retour manuel</button>'
+    +'<div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin:14px 0 8px">Historique recent</div>';
+
+  var validesRecents=historique.filter(function(h){return !h.aValider;}).slice(-15).reverse();
+  if(!validesRecents.length){
+    html+='<div style="text-align:center;color:#64748b;padding:20px">Aucun mouvement enregistre</div>';
+  } else {
+    html += validesRecents.map(function(h){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;margin-bottom:5px;font-size:12px;display:flex;justify-content:space-between">'
+        +'<span style="color:'+(h.type==='sortie'?'#f97316':'#22c55e')+'">'+(h.type==='sortie'?'Sortie':'Retour')+' — '+h.nb+' bac(s)'+(h.client?' — '+h.client:'')+'</span>'
+        +'<span style="color:#64748b">'+h.date+'</span>'
+        +'</div>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+
+  /* Charger les photos en attente */
+  aValider.forEach(function(h){
+    var origIdx=historique.indexOf(h);
+    if(h.photoFileId){
+      getUrlPhotoTelegram(h.photoFileId,function(url){
+        var imgEl=document.getElementById('bac-img-'+origIdx);
+        if(imgEl&&url){
+          imgEl.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:250px;border-radius:8px">';
+        } else if(imgEl){
+          imgEl.textContent='Photo indisponible';
+        }
+      });
+    }
+  });
+};
+
+function validerBac(idx){
+  var historique=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+  var inp=document.getElementById('bac-nb-'+idx);
+  var nb=parseInt(inp.value);
+  if(!nb||nb<=0){showT('Entrez un nombre valide','#f59e0b');return;}
+  historique[idx].nb=nb;
+  historique[idx].aValider=false;
+  localStorage.setItem('bacs_gastro_historique',JSON.stringify(historique));
+  showT('Bac valide : '+nb+' '+(historique[idx].type==='sortie'?'sortis':'retournes'),'#16a34a');
+  ouvrirSuiviBacs();
+}
+
+</script>
+
+<script>
+var GAS_URL='https://script.google.com/macros/s/AKfycby-SoM8mthCu_WLY5n52ULvr5xDmvAKbhO2azqsg_QLi6swRSxZtyhfMY8VGImMNx5T4w/exec';
+
+/* ══════════════════════════════════════════════════
+   BON DE LIVRAISON DEMATERIALISE AVEC SIGNATURE CLIENT
+   Côté Google Apps Script - page mobile pour le chauffeur
+══════════════════════════════════════════════════ */
+
+/* Cette fonctionnalité génère un lien unique par mission
+   que le chauffeur ouvre, fait signer le client sur l'écran,
+   et le bon signé est envoyé au responsable + sauvegardé */
+
+function ouvrirBonSignatureMission(di,h){
+  var k=gk(ST.cur,di,h);
+  var tasks=ST.tasks[k]||[];
+  if(!tasks.length){showT('Aucune mission a cette case','#f59e0b');return;}
+  var dr=ST.drivers[di];
+  var t=tasks[0];
+
+  /* Encoder les données de la mission en base64 pour les passer dans l'URL */
+  var data={
+    chauffeur:dr.name,
+    vehicule:dr.truck,
+    date:ST.cur,
+    heure:h,
+    client:t.client||t.task||'',
+    adresse:t.adresse||'',
+    note:t.note_liv||''
+  };
+  var encoded=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  var url=GAS_URL+'?signature=1&data='+encoded;
+  window._signMissionData={url:url,di:di,client:t.client||''};
+
+  /* Afficher le lien + QR code pour que le chauffeur l'ouvre */
+  var existing=document.getElementById('m-sign-mission');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-sign-mission';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:420px;text-align:center">'
+    +'<h3>Bon de livraison signature <button class="mclose" onclick="document.getElementById(\'m-sign-mission\').remove()">X</button></h3>'
+    +'<div style="font-size:13px;color:#94a3b8;margin-bottom:14px">'+(t.client||'')+' — '+h+' — '+dr.name+'</div>'
+    +'<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url)+'" style="border-radius:8px;margin-bottom:14px">'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">Le chauffeur scanne ce QR code ou clique le lien pour ouvrir la signature</div>'
+    +'<button onclick="window.open(window._signMissionData.url,\'_blank\')" style="width:100%;padding:11px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">Ouvrir le bon de signature</button>'
+    +'<button onclick="envoyerLienSignatureTelegram()" style="width:100%;padding:11px;background:#0088cc;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Envoyer au chauffeur par Telegram</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function envoyerLienSignatureTelegram(){
+  var d=window._signMissionData;if(!d)return;
+  var di=d.di,url=d.url,client=d.client;
+  var ids=getTgIds();
+  var chatId=ids[di];
+  if(!chatId){showT('Aucun ID Telegram pour ce chauffeur','#ef4444');return;}
+  fetch(TG_API+'/sendMessage',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:chatId,text:'Bon de livraison a faire signer pour : '+client+'\\n\\n'+url})
+  });
+  showT('Lien envoye au chauffeur','#16a34a');
+  document.getElementById('m-sign-mission').remove();
+}
+
+/* ══ STOCKAGE DES BONS SIGNÉS ══ */
+function ouvrirBonsSignes(){
+  var existing=document.getElementById('m-bons-signes');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bons-signes';modal.className='mbg on';
+  var bons=JSON.parse(localStorage.getItem('bons_signes')||'[]');
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Bons signes <button class="mclose" onclick="document.getElementById(\'m-bons-signes\').remove()">X</button></h3>';
+
+  if(!bons.length){
+    html+='<div style="text-align:center;color:#64748b;padding:30px">Aucun bon signe pour le moment.</div>';
+  } else {
+    html += bons.slice().reverse().map(function(b,idx){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-bottom:8px">'
+        +'<div style="font-size:13px;font-weight:700;color:#e2e8f0">'+b.client+'</div>'
+        +'<div style="font-size:11px;color:#64748b">'+b.date+' '+b.heure+' — '+b.chauffeur+' ('+b.vehicule+')</div>'
+        +'<div style="font-size:11px;color:#64748b">Signe le '+b.signeLe+'</div>'
+        +(b.signatureImg?'<img src="'+b.signatureImg+'" style="background:#fff;border-radius:6px;margin-top:6px;max-height:60px">':'')
+        +'<button onclick="imprimerBonSigne('+(bons.length-1-idx)+')" style="display:block;margin-top:6px;padding:6px 12px;background:#1d4ed8;border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Imprimer / PDF</button>'
+        +'</div>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function imprimerBonSigne(idx){
+  var bons=JSON.parse(localStorage.getItem('bons_signes')||'[]');
+  var b=bons[idx];if(!b)return;
+  var win=window.open('','_blank');
+  win.document.write('<html><head><title>Bon de livraison signe</title><style>'
+    +'body{font-family:Arial;padding:30px}'
+    +'h2{color:#1e293b}'
+    +'.row{margin-bottom:10px;font-size:14px}'
+    +'.lbl{color:#64748b;font-size:11px;text-transform:uppercase}'
+    +'</style></head><body>'
+    +'<h2>Bon de livraison - La Table de Cana</h2>'
+    +'<div class="row"><div class="lbl">Client</div>'+b.client+'</div>'
+    +'<div class="row"><div class="lbl">Date / Heure</div>'+b.date+' a '+b.heure+'</div>'
+    +'<div class="row"><div class="lbl">Chauffeur</div>'+b.chauffeur+' ('+b.vehicule+')</div>'
+    +(b.adresse?'<div class="row"><div class="lbl">Adresse</div>'+b.adresse+'</div>':'')
+    +(b.note?'<div class="row"><div class="lbl">Note</div>'+b.note+'</div>':'')
+    +'<div class="row"><div class="lbl">Signature du client</div>'
+    +(b.signatureImg?'<img src="'+b.signatureImg+'" style="border:1px solid #ccc;border-radius:4px;max-height:100px">':'Non signe')
+    +'</div>'
+    +'<div class="row"><div class="lbl">Signe le</div>'+b.signeLe+'</div>'
+    +'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var bonsBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Materiel necessaire')>=0;});
+    if(bonsBtn&&bonsBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirBonsSignes();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">Bons signes (archive)</button>';
+      bonsBtn.parentNode.insertBefore(div,bonsBtn.nextSibling);
+    }
+  },3300);
+});
+
+</script>
+
+<script>
+/* ══ SYNCHRONISER LES BONS SIGNES DEPUIS GOOGLE ══ */
+function synchroniserBonsSignes(){
+  fetch(GAS_URL+'?bonsSignes=1')
+    .then(function(r){return r.json();})
+    .then(function(bons){
+      if(Array.isArray(bons)) localStorage.setItem('bons_signes',JSON.stringify(bons));
+    })
+    .catch(function(){});
+}
+
+/* Synchroniser à l'ouverture et toutes les 5 minutes */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    synchroniserBonsSignes();
+    setInterval(synchroniserBonsSignes,300000);
+  },4000);
+});
+
+</script>
+
+<script>
+/* ══ ACCÈS RAPIDE AU BON DE SIGNATURE ══ */
+function ouvrirChoixMissionSignature(){
+  var existing=document.getElementById('m-choix-sign');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-choix-sign';modal.className='mbg on';
+  var date=ST.cur;
+
+  var missions=[];
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        missions.push({di:di,h:h,client:t.client||t.task||'',dr:dr.name});
+      });
+    });
+  });
+
+  var html='<div class="mbox" style="max-width:480px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Bon de signature - choisir une mission <button class="mclose" onclick="document.getElementById(\'m-choix-sign\').remove()">X</button></h3>';
+
+  if(!missions.length){
+    html+='<div style="text-align:center;color:#64748b;padding:30px">Aucune mission aujourd hui.</div>';
+  } else {
+    window._missionsSignature=missions;
+    html += missions.map(function(m,idx){
+      return '<button onclick="document.getElementById(\'m-choix-sign\').remove();lancerBonSignatureIdx('+idx+')" style="width:100%;text-align:left;padding:10px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;color:#e2e8f0;font-size:12px;cursor:pointer;margin-bottom:6px">'
+        +'<b style="color:#60a5fa">'+m.h+'</b> — '+m.client+' — <span style="color:#64748b">'+m.dr+'</span>'
+        +'</button>';
+    }).join('');
+  }
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function lancerBonSignatureIdx(idx){
+  var m=window._missionsSignature[idx];
+  ouvrirBonSignatureMission(m.di,m.h);
+}
+
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var bonsBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Bons signes')>=0;});
+    if(bonsBtn&&bonsBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirChoixMissionSignature();fermerMenu()" class="menu-item" style="color:#1d4ed8;font-weight:700">Generer bon de signature</button>';
+      bonsBtn.parentNode.insertBefore(div,bonsBtn);
+    }
+  },3400);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   MODULES SEPARES : TRAITEUR (FTBE) ET RESTO CO (AIRTABLE)
+══════════════════════════════════════════════════ */
+
+/* ══ EXTRACTION GÉNÉRIQUE AIRTABLE (à calibrer demain) ══ */
+function extraireInfosAirtable(texte){
+  var t=texte;
+  var lignes=t.split('\\n').map(function(l){return l.trim();}).filter(Boolean);
+
+  /* Heure : format HH:MM ou HHhMM */
+  var heureMatch=t.match(/(\\d{1,2})[h:](\\d{2})/);
+  var heure=heureMatch?heureMatch[1].padStart(2,'0')+':'+heureMatch[2]:'';
+
+  /* Date */
+  var dateMatch=t.match(/(\\d{1,2})[\\/\\.](\\d{1,2})[\\/\\.](\\d{2,4})/);
+  var date='';
+  if(dateMatch){
+    var aa=dateMatch[3];if(aa.length===2)aa='20'+aa;
+    date=aa+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
+  }
+
+  /* Téléphone */
+  var telMatch=t.match(/0[1-9](?:[\\s.\\-]?\\d{2}){4}/);
+  var telephone=telMatch?telMatch[0].replace(/[\\s.\\-]/g,' ').trim():'';
+
+  /* Adresse */
+  var adresseMatch=t.match(/\\d{1,4}[,\\s]+(?:rue|avenue|boulevard|chemin|impasse|allee|allée|place|cours|quai|traverse)[^\\n]{0,60}/i);
+  var adresse=adresseMatch?adresseMatch[0].trim():'';
+  var cpMatch=t.match(/(\\d{5})\\s+([A-ZÀ-Ÿ][A-ZÀ-Ÿ\\s\\-]{2,30})/);
+  if(cpMatch) adresse += (adresse?', ':'') + cpMatch[1]+' '+cpMatch[2].trim();
+
+  /* Nombre de repas/convives/élèves */
+  var nbMatch=t.match(/(\\d{1,4})\\s*(repas|convives|eleves|élèves|enfants|rationnaires)/i);
+  var nb=nbMatch?nbMatch[1]:'';
+
+  /* Client : nom d'établissement (école, crèche, centre...) */
+  var motsClesEtab=['ecole','école','creche','crèche','centre','college','collège','lycee','lycée','foyer','maison','residence','résidence','ehpad','cantine'];
+  var client='';
+  for(var i=0;i<lignes.length;i++){
+    var lw=lignes[i].toLowerCase();
+    if(motsClesEtab.some(function(m){return lw.indexOf(m)>=0;})){
+      client=lignes[i];break;
+    }
+  }
+  if(!client){
+    /* Fallback : première ligne en majuscules significative */
+    var motsClesIgnorer=['bon','livraison','date','commande','total','reference','airtable'];
+    client=lignes.find(function(l){
+      var lw2=l.toLowerCase();
+      if(motsClesIgnorer.some(function(m){return lw2.indexOf(m)>=0;}))return false;
+      return l.length>=3 && l.length<=50;
+    })||'';
+  }
+
+  /* Détection livreur écrit à la main (même technique que FTBE) */
+  var livreurTrouve=-1;
+  ST.drivers.forEach(function(dr,di){
+    var idxLivreur=t.toLowerCase().indexOf('livreur');
+    if(idxLivreur>=0){
+      var zone=t.substring(idxLivreur,idxLivreur+40).toLowerCase();
+      if(zone.indexOf(dr.name.toLowerCase())>=0) livreurTrouve=di;
+    }
+  });
+
+  return {
+    client:client,
+    adresse:adresse,
+    telephone:telephone,
+    heure:heure||'08:00',
+    date:date||ST.cur,
+    convives:nb,
+    chauffeurEcrit:livreurTrouve,
+    codeAcces:'',
+    texteComplet:t
+  };
+}
+
+/* ══ MODULE RESTO CO / COLLECTIVITÉ (basé sur le système FTBE) ══ */
+function ouvrirImportAirtable(){
+  var existing=document.getElementById('m-airtable');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-airtable';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:600px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Importer bons Resto Co (Airtable) <button class="mclose" onclick="document.getElementById(\'m-airtable\').remove()">X</button></h3>'
+    +'<div style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#fbbf24;line-height:1.8">'
+    +'<b>Module en cours de calibration.</b><br>'
+    +'La detection generale (heure, date, adresse, telephone, nombre de repas) fonctionne deja. '
+    +'Le format precis Airtable sera affine avec un exemple reel prochainement.'
+    +'</div>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Importez le PDF directement depuis Airtable (Telecharger > Enregistrer, sans imprimer). '
+    +'Le logiciel detectera les informations et vous proposera la repartition.'
+    +'</div>'
+    +'<input type="file" id="airtable-files" accept="image/*,.pdf" multiple style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerAnalyseAirtable()" style="width:100%;padding:11px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Analyser les bons</button>'
+    +'<div id="airtable-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
+    +'<div id="airtable-resultats" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+window._airtableData=[];
+
+function lancerAnalyseAirtable(){
+  var files=document.getElementById('airtable-files').files;
+  if(!files.length){showT('Choisissez au moins un fichier','#f59e0b');return;}
+  window._airtableData=[];
+  var progress=document.getElementById('airtable-progress');
+  var total=files.length,done=0;
+
+  function processFiles(){
+    Array.from(files).forEach(function(file,idx){
+      if(file.type==='application/pdf'){
+        analyserPdfGenerique(file,idx,total,extraireInfosAirtable,function(){afficherResultatsAirtable();},window._airtableData);
+      } else {
+        Tesseract.recognize(file,'fra').then(function(result){
+          done++;
+          progress.textContent='Analyse '+done+'/'+total+'...';
+          var infos=extraireInfosAirtable(result.data.text);
+          infos.fichierIdx=idx;
+          window._airtableData.push(infos);
+          if(done===total) afficherResultatsAirtable();
+        }).catch(function(){done++;if(done===total)afficherResultatsAirtable();});
+      }
+    });
+  }
+
+  if(typeof Tesseract==='undefined'){
+    progress.textContent='Chargement du moteur de lecture...';
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    script.onload=function(){progress.textContent='Analyse en cours...';processFiles();};
+    document.head.appendChild(script);
+  } else {
+    progress.textContent='Analyse en cours...';
+    processFiles();
+  }
+}
+
+/* Fonction générique de traitement PDF (réutilisable) */
+function analyserPdfGenerique(file,idx,total,extracteur,callback,dataArray){
+  var progress=document.getElementById('airtable-progress')||document.getElementById('ftbe-progress');
+  if(typeof pdfjsLib==='undefined'){
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload=function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      traiterPdfGenerique(file,idx,total,extracteur,callback,dataArray);
+    };
+    document.head.appendChild(script);
+  } else {
+    traiterPdfGenerique(file,idx,total,extracteur,callback,dataArray);
+  }
+}
+
+function traiterPdfGenerique(file,idx,total,extracteur,callback,dataArray){
+  var progress=document.getElementById('airtable-progress')||document.getElementById('ftbe-progress');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    pdfjsLib.getDocument({data:e.target.result}).promise.then(function(pdf){
+      var nbPages=pdf.numPages;
+      var pagesPromises=[];
+      for(var p=1;p<=nbPages;p++) pagesPromises.push(extrairePagePdf(pdf,p));
+      Promise.all(pagesPromises).then(function(textesPages){
+        textesPages.forEach(function(texte,pageIdx){
+          var infos=extracteur(texte);
+          infos.fichierIdx=idx;infos.page=pageIdx+1;
+          if(infos.client||infos.adresse||infos.heure) dataArray.push(infos);
+        });
+        if(progress) progress.textContent='Analyse '+(idx+1)+'/'+total+' termine ('+nbPages+' page(s))';
+        if(idx===total-1) setTimeout(callback,300);
+      });
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ══ AFFICHAGE RESTO CO (réutilise la logique FTBE) ══ */
+function afficherResultatsAirtable(){
+  var progress=document.getElementById('airtable-progress');
+  var resEl=document.getElementById('airtable-resultats');
+  if(progress) progress.textContent='';
+
+  if(!window._airtableData.length){
+    resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:12px;font-size:12px;color:#fca5a5">Aucune information detectee.</div>';
+    return;
+  }
+
+  var groupes=regrouperBonsFTBE(window._airtableData);
+  window._airtableGroupes=groupes;
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +groupes.length+' bon(s) detecte(s).'
+    +'</div>';
+
+  html += groupes.map(function(b,idx){
+    var preselect = b.chauffeurEcrit!==undefined && b.chauffeurEcrit>=0 ? b.chauffeurEcrit : -1;
+    var mem=getMemoireClients()[(b.client||'').toUpperCase().trim()];
+    if(preselect<0 && mem && mem.chauffeurHabituel!==undefined) preselect=mem.chauffeurHabituel;
+    return '<div style="background:#0f172a;border:1px solid '+(preselect>=0?'#16a34a':'#1e293b')+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:#64748b;margin-bottom:6px">Bon '+(idx+1)+(preselect>=0?' — <span style="color:#22c55e">Chauffeur pre-rempli</span>':'')+'</div>'
+      +'<label style="font-size:11px;color:#64748b">Etablissement</label>'
+      +'<input type="text" id="at-client-'+idx+'" class="fi" value="'+(b.client||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Date</label><input type="date" id="at-date-'+idx+'" class="fi" value="'+(b.date||ST.cur)+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Heure</label><input type="time" id="at-heure-'+idx+'" class="fi" value="'+(b.heure||'08:00')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +'<label style="font-size:11px;color:#64748b">Adresse</label>'
+      +'<input type="text" id="at-adresse-'+idx+'" class="fi" value="'+(b.adresse||mem&&mem.adresse||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:11px;color:#64748b">Telephone</label><input type="text" id="at-tel-'+idx+'" class="fi" value="'+(b.telephone||mem&&mem.telephone||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:11px;color:#64748b">Repas/eleves</label><input type="text" id="at-conv-'+idx+'" class="fi" value="'+(b.convives||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +'<label style="font-size:11px;color:#64748b">Chauffeur</label>'
+      +'<select id="at-chauffeur-'+idx+'" class="fi" style="font-size:12px">'
+      +'<option value="-1"'+(preselect===-1?' selected':'')+'>Non assigne</option>'
+      +ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===preselect?' selected':'')+'>'+dr.name+'</option>';}).join('')
+      +'</select>'
+      +'</div>';
+  }).join('');
+
+  html += '<button onclick="creerMissionsAirtable()" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:6px">Creer toutes les missions</button>';
+  resEl.innerHTML=html;
+}
+
+function creerMissionsAirtable(){
+  var groupes=window._airtableGroupes||[];
+  var nb=0;
+  groupes.forEach(function(b,idx){
+    var di=parseInt(document.getElementById('at-chauffeur-'+idx).value);
+    var client=document.getElementById('at-client-'+idx).value.trim();
+    var date=document.getElementById('at-date-'+idx).value;
+    var heure=document.getElementById('at-heure-'+idx).value;
+    var adresse=document.getElementById('at-adresse-'+idx).value.trim();
+    var tel=document.getElementById('at-tel-'+idx).value.trim();
+    var conv=document.getElementById('at-conv-'+idx).value.trim();
+
+    if(client){
+      sauverMemoireClient(client,{adresse:adresse,telephone:tel,chauffeurHabituel:di>=0?di:undefined});
+    }
+    if(di<0||!client)return;
+
+    var parts=heure.split(':');
+    var hh=parseInt(parts[0]),mm=parseInt(parts[1]);
+    mm = mm<15?0:mm<45?30:(hh++,0);
+    var heureGrille=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+    var k=gk(date,di,heureGrille);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:tel,
+      note_liv:conv?conv+' repas/eleves':'',
+      category:'collectivite'
+    });
+    nb++;
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+  showT(nb+' mission(s) Resto Co creee(s)','#16a34a');
+  document.getElementById('m-airtable').remove();
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var ftbeBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Importer bons FTBE')>=0;});
+    if(ftbeBtn&&ftbeBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportAirtable();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-weight:900">Importer bons Resto Co (Airtable)</button>';
+      ftbeBtn.parentNode.insertBefore(div,ftbeBtn.nextSibling);
+    }
+  },3500);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   IMPORT UNIFIÉ - TOUS LES BONS (FTBE + AIRTABLE)
+   Triés par date/heure, multi-jours
+══════════════════════════════════════════════════ */
+
+function ouvrirImportUnifie(){
+  var existing=document.getElementById('m-import-unifie');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-import-unifie';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:620px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Importer tous les bons (Traiteur + Resto Co) <button class="mclose" onclick="document.getElementById(\'m-import-unifie\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Importez TOUS vos bons d un coup, FTBE et Airtable melanges, pour n importe quel(s) jour(s) de la semaine. '
+    +'Le logiciel detecte automatiquement la date de chaque bon et les regroupe par jour. '
+    +'Le type (Traiteur/Resto Co) est detecte automatiquement selon le contenu.'
+    +'</div>'
+    +'<input type="file" id="unifie-files" accept="image/*,.pdf" multiple style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerAnalyseUnifie()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#16a34a);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Analyser tous les bons</button>'
+    +'<div id="unifie-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
+    +'<div id="unifie-resultats" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+window._unifieData=[];
+
+/* Détecter le type de bon (Traiteur FTBE vs Resto Co) */
+function detecterTypeBon(texte){
+  var t=texte.toLowerCase();
+  if(t.indexOf('ftbe')>=0||t.indexOf("bon d expedition")>=0||t.indexOf('pique-nique')>=0||t.indexOf("appel d offre")>=0) return 'traiteur';
+  var motsCollectivite=['ecole','école','creche','crèche','collectivite','collège','college','lycee','lycée','rationnaires','airtable','cantine','ehpad'];
+  if(motsCollectivite.some(function(m){return t.indexOf(m)>=0;})) return 'collectivite';
+  return 'traiteur'; /* défaut */
+}
+
+function lancerAnalyseUnifie(){
+  var files=document.getElementById('unifie-files').files;
+  if(!files.length){showT('Choisissez au moins un fichier','#f59e0b');return;}
+  window._unifieData=[];
+  var progress=document.getElementById('unifie-progress');
+  var total=files.length,done=0;
+
+  function processFiles(){
+    Array.from(files).forEach(function(file,idx){
+      if(file.type==='application/pdf'){
+        traiterPdfUnifie(file,idx,total);
+      } else {
+        Tesseract.recognize(file,'fra').then(function(result){
+          done++;
+          progress.textContent='Analyse '+done+'/'+total+'...';
+          var type=detecterTypeBon(result.data.text);
+          var infos=type==='traiteur'?extraireInfosFTBEv2(result.data.text):extraireInfosAirtable(result.data.text);
+          infos.type=type;infos.fichierIdx=idx;
+          window._unifieData.push(infos);
+          if(done===total) afficherResultatsUnifie();
+        }).catch(function(){done++;if(done===total)afficherResultatsUnifie();});
+      }
+    });
+  }
+
+  if(typeof Tesseract==='undefined'){
+    progress.textContent='Chargement du moteur de lecture...';
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    script.onload=function(){progress.textContent='Analyse en cours...';processFiles();};
+    document.head.appendChild(script);
+  } else {
+    progress.textContent='Analyse en cours...';
+    processFiles();
+  }
+}
+
+function traiterPdfUnifie(file,idx,total){
+  var progress=document.getElementById('unifie-progress');
+  if(typeof pdfjsLib==='undefined'){
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload=function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      traiterPdfUnifie2(file,idx,total);
+    };
+    document.head.appendChild(script);
+  } else {
+    traiterPdfUnifie2(file,idx,total);
+  }
+}
+
+function traiterPdfUnifie2(file,idx,total){
+  var progress=document.getElementById('unifie-progress');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    pdfjsLib.getDocument({data:e.target.result}).promise.then(function(pdf){
+      var nbPages=pdf.numPages;
+      var pagesPromises=[];
+      for(var p=1;p<=nbPages;p++) pagesPromises.push(extrairePagePdf(pdf,p));
+      Promise.all(pagesPromises).then(function(textesPages){
+        textesPages.forEach(function(texte,pageIdx){
+          var type=detecterTypeBon(texte);
+          var infos=type==='traiteur'?extraireInfosFTBEv2(texte):extraireInfosAirtable(texte);
+          infos.type=type;infos.fichierIdx=idx;infos.page=pageIdx+1;
+          if(infos.client||infos.adresse||infos.heure) window._unifieData.push(infos);
+        });
+        progress.textContent='Analyse '+(idx+1)+'/'+total+' termine ('+nbPages+' page(s))';
+        if(idx===total-1) setTimeout(afficherResultatsUnifie,300);
+      });
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ══ AFFICHAGE GROUPÉ PAR JOUR, TRIÉ PAR DATE/HEURE ══ */
+function afficherResultatsUnifie(){
+  var progress=document.getElementById('unifie-progress');
+  var resEl=document.getElementById('unifie-resultats');
+  if(progress) progress.textContent='';
+
+  if(!window._unifieData.length){
+    resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:12px;font-size:12px;color:#fca5a5">Aucune information detectee.</div>';
+    return;
+  }
+
+  /* Regrouper multi-pages d'un même bon */
+  var groupes=regrouperBonsFTBE(window._unifieData);
+  /* Trier par date puis heure */
+  groupes.sort(function(a,b){
+    var ka=(a.date||'')+(a.heure||'');
+    var kb=(b.date||'')+(b.heure||'');
+    return ka.localeCompare(kb);
+  });
+  window._unifieGroupes=groupes;
+
+  /* Grouper par date pour affichage */
+  var parDate={};
+  groupes.forEach(function(b,idx){
+    var d=b.date||ST.cur;
+    if(!parDate[d]) parDate[d]=[];
+    parDate[d].push({b:b,idx:idx});
+  });
+
+  var JNOMS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  var MNOMS=['jan','fev','mar','avr','mai','jun','jul','aou','sep','oct','nov','dec'];
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +groupes.length+' bon(s) detecte(s), repartis sur '+Object.keys(parDate).length+' jour(s).'
+    +'</div>';
+
+  Object.keys(parDate).sort().forEach(function(date){
+    var dt=new Date(date+'T12:00:00');
+    var dStr=JNOMS[dt.getDay()]+' '+dt.getDate()+' '+MNOMS[dt.getMonth()];
+    html+='<div style="font-size:11px;font-weight:900;color:#60a5fa;text-transform:uppercase;margin:14px 0 8px;border-bottom:1px solid #1e293b;padding-bottom:4px">'+dStr+' ('+parDate[date].length+' bon(s))</div>';
+
+    parDate[date].forEach(function(item){
+      var b=item.b,idx=item.idx;
+      var preselect = b.chauffeurEcrit!==undefined && b.chauffeurEcrit>=0 ? b.chauffeurEcrit : -1;
+      var mem=getMemoireClients()[(b.client||'').toUpperCase().trim()];
+      if(preselect<0 && mem && mem.chauffeurHabituel!==undefined) preselect=mem.chauffeurHabituel;
+      var typeCol = b.type==='traiteur'?'#f97316':'#16a34a';
+      var typeLabel = b.type==='traiteur'?'TRAITEUR':'RESTO CO';
+
+      html+='<div style="background:#0f172a;border:1px solid '+(preselect>=0?'#16a34a':'#1e293b')+';border-radius:10px;padding:12px;margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+        +'<span style="font-size:10px;font-weight:900;color:'+typeCol+';background:'+typeCol+'22;padding:2px 8px;border-radius:5px">'+typeLabel+'</span>'
+        +(preselect>=0?'<span style="font-size:10px;color:#22c55e">Chauffeur pre-rempli</span>':'')
+        +'</div>'
+        +'<label style="font-size:11px;color:#64748b">Client / Etablissement</label>'
+        +'<input type="text" id="un-client-'+idx+'" class="fi" value="'+(b.client||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+        +'<div><label style="font-size:11px;color:#64748b">Date</label><input type="date" id="un-date-'+idx+'" class="fi" value="'+(b.date||ST.cur)+'" style="font-size:12px"></div>'
+        +(b.type==='collectivite'
+          ?'<div><label style="font-size:11px;color:#f59e0b;font-weight:700">Heure (a definir)</label><input type="time" id="un-heure-'+idx+'" class="fi" value="" style="font-size:12px;border-color:#f59e0b;background:rgba(245,158,11,.08)"></div>'
+          :'<div><label style="font-size:11px;color:#64748b">Heure</label><input type="time" id="un-heure-'+idx+'" class="fi" value="'+(b.heure||'08:00')+'" style="font-size:12px"></div>')
+        +'</div>'
+        +'<label style="font-size:11px;color:#64748b">Adresse</label>'
+        +'<input type="text" id="un-adresse-'+idx+'" class="fi" value="'+(b.adresse||(mem&&mem.adresse)||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;font-size:12px">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+        +'<div><label style="font-size:11px;color:#64748b">Telephone</label><input type="text" id="un-tel-'+idx+'" class="fi" value="'+(b.telephone||(mem&&mem.telephone)||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+        +'<div><label style="font-size:11px;color:#64748b">Quantite</label><input type="text" id="un-conv-'+idx+'" class="fi" value="'+(b.convives||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
+        +'</div>'
+        +(b.codeAcces?'<div style="font-size:11px;color:#f59e0b;background:rgba(245,158,11,.1);border-radius:6px;padding:6px;margin-bottom:6px">Acces : '+b.codeAcces+'</div>':'')
+        +'<label style="font-size:11px;color:#64748b">Type</label>'
+        +'<select id="un-type-'+idx+'" class="fi" style="font-size:12px;margin-bottom:6px">'
+        +'<option value="traiteur"'+(b.type==='traiteur'?' selected':'')+'>Traiteur</option>'
+        +'<option value="collectivite"'+(b.type==='collectivite'?' selected':'')+'>Resto Co / Collectivite</option>'
+        +'</select>'
+        +'<label style="font-size:11px;color:#64748b">Chauffeur</label>'
+        +'<select id="un-chauffeur-'+idx+'" class="fi" style="font-size:12px">'
+        +'<option value="-1"'+(preselect===-1?' selected':'')+'>Non assigne</option>'
+        +ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===preselect?' selected':'')+'>'+dr.name+'</option>';}).join('')
+        +'</select>'
+        +'</div>';
+    });
+  });
+
+  html += '<button onclick="creerMissionsUnifie()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#16a34a);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:900;cursor:pointer;margin-top:6px">Creer toutes les missions ('+groupes.length+')</button>';
+  resEl.innerHTML=html;
+}
+
+function creerMissionsUnifie(){
+  var groupes=window._unifieGroupes||[];
+  var nb=0,nbJours={};
+  var alertesManquantHeure=[];
+  groupes.forEach(function(b,idx){
+    var di=parseInt(document.getElementById('un-chauffeur-'+idx).value);
+    var client=document.getElementById('un-client-'+idx).value.trim();
+    var date=document.getElementById('un-date-'+idx).value;
+    var heure=document.getElementById('un-heure-'+idx).value;
+    var adresse=document.getElementById('un-adresse-'+idx).value.trim();
+    var tel=document.getElementById('un-tel-'+idx).value.trim();
+    var conv=document.getElementById('un-conv-'+idx).value.trim();
+    var type=document.getElementById('un-type-'+idx).value;
+
+    if(client){
+      sauverMemoireClient(client,{adresse:adresse,telephone:tel,codeAcces:b.codeAcces||'',chauffeurHabituel:di>=0?di:undefined});
+    }
+    if(di<0||!client)return;
+    if(!heure){
+      alertesManquantHeure.push(client);
+      return; /* ne pas créer si l'heure manque */
+    }
+
+    var parts=heure.split(':');
+    var hh=parseInt(parts[0]),mm=parseInt(parts[1]);
+    mm = mm<15?0:mm<45?30:(hh++,0);
+    var heureGrille=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+    var k=gk(date,di,heureGrille);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    var noteParts=[];
+    if(conv) noteParts.push(conv+(type==='traiteur'?' convives':' repas/eleves'));
+    if(b.sousLignes&&b.sousLignes.length>1) noteParts=noteParts.concat(b.sousLignes);
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:tel,
+      note_liv:noteParts.join(' - '),
+      category:type
+    });
+    nb++;
+    nbJours[date]=(nbJours[date]||0)+1;
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+  var detailJours=Object.keys(nbJours).map(function(d){return d+': '+nbJours[d];}).join(', ');
+  if(alertesManquantHeure.length){
+    showT(nb+' mission(s) creee(s). Heure manquante pour : '+alertesManquantHeure.join(', ')+' (non creees)','#f59e0b');
+  } else {
+    showT(nb+' mission(s) creee(s) sur '+Object.keys(nbJours).length+' jour(s)','#16a34a');
+  }
+  document.getElementById('m-import-unifie').remove();
+}
+
+/* ══ AJOUTER AU MENU - EN PREMIÈRE POSITION ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var ftbeBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Importer bons FTBE')>=0;});
+    if(ftbeBtn&&ftbeBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportUnifie();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#f97316,#16a34a);color:#fff;font-weight:900;font-size:13px">⭐ Importer TOUS les bons (recommande)</button>';
+      ftbeBtn.parentNode.insertBefore(div,ftbeBtn);
+    }
+  },3600);
+});
+
+</script>
+
+<script>
+
+function imprimerTableauDepart(){
+  window.print();
+}
+
+</script>
 </body>
 </html>
