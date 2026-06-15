@@ -11934,6 +11934,8 @@ window.addEventListener('load',function(){
       if(active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT')) return;
       /* Ne pas recharger si un modal est ouvert */
       if(document.querySelector('.mbg.on')) return;
+      /* Ne pas recharger si une modification locale vient d'avoir lieu (laisser le temps a la synchro de partir) */
+      if(window._derniereSauvegardeLocale && (Date.now()-window._derniereSauvegardeLocale)<12000) return;
       if(document.getElementById('m-presentation')||document.getElementById('m-cockpit-dir')||document.getElementById('m-cockpit-ins')||document.getElementById('m-centre-op')||document.getElementById('m-tv')) return;
 
       /* Vérifier si une mise à jour existe dans Supabase */
@@ -18512,6 +18514,33 @@ window.addEventListener('load',function(){
   },5700);
 });
 
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CORRECTIF — Eviter la perte de donnees due au conflit
+   entre sauvegarde locale et rechargement cloud automatique
+══════════════════════════════════════════════════ */
+
+(function(){
+  var _syncTimeout=null;
+  var _origSave = window.save;
+  window._derniereSauvegardeLocale = 0;
+
+  if(typeof _origSave==='function'){
+    window.save = function(){
+      _origSave.apply(this, arguments);
+      window._derniereSauvegardeLocale = Date.now();
+      /* Pousser vers Supabase rapidement apres toute modification (debounce 3s) */
+      if(_syncTimeout) clearTimeout(_syncTimeout);
+      _syncTimeout = setTimeout(function(){
+        if(typeof sauverDansSupabase==='function'){
+          sauverDansSupabase();
+        }
+      }, 3000);
+    };
+  }
+})();
 </script>
 </body>
 </html>
