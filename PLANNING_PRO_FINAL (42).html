@@ -19965,5 +19965,108 @@ executerImportExcel365 = function(){
 };
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 23 — BLINDAGE GLOBAL
+   1. Gestionnaire d'erreurs global (affiche toute erreur JS visible)
+   2. Try/catch defensif sur les fonctions Excel/Import critiques
+   3. Bouton "Copier le rapport d'erreurs" pour diagnostic a distance
+══════════════════════════════════════════════════ */
+
+/* ══ 1. GESTIONNAIRE D'ERREURS GLOBAL ══ */
+window._erreursJS = [];
+
+window.addEventListener('error', function(e){
+  var msg = (e.message||'Erreur inconnue')+' ('+(e.filename||'?')+':'+(e.lineno||'?')+')';
+  window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
+  if(window._erreursJS.length>30) window._erreursJS.shift();
+  if(typeof showT==='function'){
+    showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
+  }
+});
+
+window.addEventListener('unhandledrejection', function(e){
+  var msg = 'Promesse rejetee : '+(e.reason&&e.reason.message?e.reason.message:String(e.reason));
+  window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
+  if(window._erreursJS.length>30) window._erreursJS.shift();
+  if(typeof showT==='function'){
+    showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
+  }
+});
+
+/* ══ 2. AFFICHAGE DU RAPPORT D'ERREURS ══ */
+function ouvrirRapportErreurs(){
+  var existing=document.getElementById('m-rapport-err');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-rapport-err';modal.className='mbg on';
+
+  var html='<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Rapport d erreurs techniques <button class="mclose" onclick="document.getElementById(\'m-rapport-err\').remove()">X</button></h3>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:10px">Si quelque chose ne fonctionne pas, copiez ce rapport et envoyez-le pour diagnostic.</div>';
+
+  if(!window._erreursJS.length){
+    html+='<div style="text-align:center;color:#22c55e;padding:30px"><div style="font-size:40px">✓</div>Aucune erreur technique detectee depuis l ouverture.</div>';
+  } else {
+    html += window._erreursJS.slice().reverse().map(function(e){
+      return '<div style="background:rgba(239,68,68,.1);border-left:3px solid #ef4444;border-radius:6px;padding:10px;margin-bottom:6px;font-size:11px;color:#fca5a5;font-family:monospace">'+e.date+' — '+e.msg+'</div>';
+    }).join('');
+    html+='<button onclick="copierRapportErreurs()" style="width:100%;padding:11px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">Copier le rapport</button>';
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function copierRapportErreurs(){
+  var txt = window._erreursJS.map(function(e){return e.date+' - '+e.msg;}).join('\\n');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(function(){showT('Rapport copie','#16a34a');});
+  } else {
+    showT('Copie non supportee sur ce navigateur','#f59e0b');
+  }
+}
+
+/* ══ 3. BLINDAGE DES FONCTIONS EXCEL CRITIQUES (try/catch defensif) ══ */
+function blinderFonction(nomFonction){
+  var orig = window[nomFonction];
+  if(typeof orig !== 'function')return;
+  window[nomFonction] = function(){
+    try{
+      return orig.apply(this, arguments);
+    }catch(err){
+      console.log('Erreur dans '+nomFonction+':', err);
+      window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:nomFonction+' : '+(err.message||err)});
+      var resEl=document.getElementById('excel365-resultats')||document.getElementById('unifie-resultats');
+      if(resEl){
+        resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px;font-size:12px;color:#fca5a5">'
+          +'<b>Erreur dans '+nomFonction+'</b><br>'+(err.message||err)
+          +'<br><br>Ouvrez "Aide & FAQ > Rapport d erreurs" pour le detail complet.'
+          +'</div>';
+      }
+      showT('Erreur dans '+nomFonction+' - voir le detail affiche','#ef4444');
+    }
+  };
+}
+
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    ['lancerAnalyseExcel365','analyserClasseurExcel365','afficherMappingExcel365','apercuImportExcel365','executerImportExcel365',
+     'lancerAnalyseUnifie','afficherResultatsUnifie','creerMissionsUnifie'].forEach(blinderFonction);
+
+    /* Ajouter le bouton "Rapport d'erreurs" dans le menu Aide */
+    var menu=document.getElementById('menu-principal');
+    if(menu){
+      var aideBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Aide')>=0 && b.textContent.indexOf('FAQ')>=0;});
+      if(aideBtn&&aideBtn.parentNode){
+        var div=document.createElement('div');
+        div.innerHTML='<button tabindex="0" onclick="ouvrirRapportErreurs();fermerMenu()" class="menu-item" style="color:#ef4444;font-weight:700">Rapport d erreurs techniques</button>';
+        aideBtn.parentNode.insertBefore(div,aideBtn.nextSibling);
+      }
+    }
+  },6200);
+});
+
+</script>
 </body>
 </html>
