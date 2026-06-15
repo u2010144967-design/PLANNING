@@ -19708,7 +19708,7 @@ function redimensionnerImage(file,maxDim){
       var ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
       URL.revokeObjectURL(url);
-      canvas.toBlob(function(blob){resolve(blob||file);},'image/jpeg',0.85);
+      canvas.toBlob(function(blob){resolve(blob||file);},'image/jpeg',0.92);
     };
     img.onerror=function(){URL.revokeObjectURL(url);resolve(file);};
     img.src=url;
@@ -19750,7 +19750,7 @@ lancerAnalyseUnifie = function(){
 
   /* Traiter une image (photo) : redimensionner puis OCR */
   function traiterImage(file){
-    return redimensionnerImage(file,1600).then(function(blob){
+    return redimensionnerImage(file,2000).then(function(blob){
       return Tesseract.recognize(blob,'fra').then(function(result){
         var type=detecterTypeBon(result.data.text);
         var infos=type==='traiteur'?extraireInfosFTBEv2(result.data.text):extraireInfosAirtable(result.data.text);
@@ -19770,7 +19770,7 @@ lancerAnalyseUnifie = function(){
           function traiterPage(p){
             if(p>nbPages){resolveFile();return;}
             pdf.getPage(p).then(function(page){
-              var viewport=page.getViewport({scale:1.5});
+              var viewport=page.getViewport({scale:2.0});
               var canvas=document.createElement('canvas');
               canvas.width=viewport.width;canvas.height=viewport.height;
               var ctx=canvas.getContext('2d');
@@ -19787,7 +19787,7 @@ lancerAnalyseUnifie = function(){
                     progress.textContent='Page '+p+'/'+nbPages+' du fichier en cours...';
                     setTimeout(function(){traiterPage(p+1);},50);
                   }).catch(function(){setTimeout(function(){traiterPage(p+1);},50);});
-                },'image/jpeg',0.85);
+                },'image/png');
               });
             });
           }
@@ -19844,6 +19844,109 @@ function verifierVolumeUnifie(){
     warnEl.innerHTML='<span style="color:#ef4444">'+n+' fichier(s) selectionne(s) - environ '+estimMin+' min, risque de ralentissement. Conseil : importez par lots de 20-30 fichiers (ex: un jour a la fois).</span>';
   }
 }
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CORRECTIF — Import Excel 365 : traitement par lots
+   asynchrone (evite le gel du navigateur) + retour
+   visible en cas d'erreur de sauvegarde (quota).
+══════════════════════════════════════════════════ */
+
+executerImportExcel365 = function(){
+  var data=window._excelImportData;
+  var mapping=window._excel365Mapping;
+  var dateDebut=document.getElementById('excel365-date-debut').value;
+  var dateFin=document.getElementById('excel365-date-fin').value;
+  var remplacer=document.getElementById('excel365-remplacer').checked;
+
+  var feuillesAImporter=data.feuillesDate.filter(function(s){return s>=dateDebut && s<=dateFin;});
+  var nbMissions=0,nbJours=0;
+  var totalFeuilles=feuillesAImporter.length;
+
+  var resEl=document.getElementById('excel365-resultats');
+  resEl.innerHTML='<div id="excel365-import-progress" style="text-align:center;padding:30px;color:#94a3b8;font-size:13px">Import en cours... 0/'+totalFeuilles+' jour(s)</div>';
+
+  /* Traiter une feuille à la fois, avec une pause pour ne pas geler le navigateur */
+  function traiterFeuille(idx){
+    if(idx>=feuillesAImporter.length){
+      finImport();
+      return;
+    }
+    var sheetName=feuillesAImporter[idx];
+    var f=data.donneesParFeuille[sheetName];
+    if(f){
+      if(remplacer){
+        SL.forEach(function(h){
+          ST.drivers.forEach(function(dr,di){
+            var k=gk(sheetName,di,h);
+            if(ST.tasks[k]) delete ST.tasks[k];
+          });
+        });
+      }
+      var nbJour=0;
+      f.lignes.forEach(function(ligne){
+        f.colChauffeurs.forEach(function(cc){
+          var val=ligne.row[cc.col];
+          if(!val || !String(val).trim())return;
+          var norm=normaliserNomChauffeur(cc.nom);
+          var di=mapping[norm];
+          if(di===undefined||di<0)return;
+          var texte=String(val).trim();
+          var k=gk(sheetName,di,ligne.heure);
+          if(!ST.tasks[k]) ST.tasks[k]=[];
+          ST.tasks[k].push({client:texte,task:texte,category:'task',importeExcel:true});
+          nbJour++;
+        });
+      });
+      if(nbJour>0){nbJours++;nbMissions+=nbJour;}
+    }
+
+    var progEl=document.getElementById('excel365-import-progress');
+    if(progEl) progEl.textContent='Import en cours... '+(idx+1)+'/'+totalFeuilles+' jour(s) - '+nbMissions+' element(s)';
+
+    /* Pause toutes les 10 feuilles pour laisser le navigateur respirer */
+    if((idx+1)%10===0){
+      setTimeout(function(){traiterFeuille(idx+1);},0);
+    } else {
+      traiterFeuille(idx+1);
+    }
+  }
+
+  function finImport(){
+    /* Tenter la sauvegarde et detecter une erreur de quota */
+    var saveOk=true;
+    var saveError='';
+    try{
+      localStorage.setItem('plprov2',JSON.stringify(ST));
+    }catch(e){
+      saveOk=false;
+      saveError=e.message||String(e);
+    }
+
+    if(typeof render==='function'){
+      try{render();}catch(e){console.log('Erreur render:',e);}
+    }
+
+    if(saveOk){
+      showT(nbMissions+' element(s) importes sur '+nbJours+' jour(s)','#16a34a');
+      if(typeof enregistrerDecision==='function') enregistrerDecision('Import du planning Excel ('+nbMissions+' elements sur '+nbJours+' jours)');
+      var modal=document.getElementById('m-excel365');if(modal)modal.remove();
+    } else {
+      /* Stockage local plein : proposer de continuer via Supabase uniquement (sync cloud) */
+      resEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px;font-size:12px;color:#fca5a5;line-height:1.8">'
+        +'<b>Import effectue ('+nbMissions+' elements sur '+nbJours+' jours) mais la sauvegarde locale a echoue</b> (memoire du navigateur pleine : '+saveError+').'
+        +'<br><br>Solution : reduisez la periode importee (par exemple 1-2 mois a la fois au lieu de l annee complete), '
+        +'ou synchronisez immediatement vers le cloud Supabase pour liberer la pression locale.'
+        +'</div>'
+        +'<button onclick="syncVersGoogle();document.getElementById(\'m-excel365\').remove()" style="width:100%;padding:11px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px">Synchroniser vers le cloud maintenant</button>'
+        +'<button onclick="document.getElementById(\'m-excel365\').remove()" style="width:100%;padding:9px;background:#334155;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">Fermer</button>';
+    }
+  }
+
+  traiterFeuille(0);
+};
 
 </script>
 </body>
