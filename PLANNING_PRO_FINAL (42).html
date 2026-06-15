@@ -19373,5 +19373,317 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 22 — IMPORT DU PLANNING EXCEL 365 JOURS (.xlsm)
+   Format : 1 feuille par date (YYYY-MM-DD), grille
+   HEURE LIV en colonne A, chauffeurs en colonnes suivantes
+══════════════════════════════════════════════════ */
+
+window._excelImportData = null;
+
+function ouvrirImportExcel365(){
+  var existing=document.getElementById('m-excel365');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-excel365';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:600px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Importer mon ancien planning Excel <button class="mclose" onclick="document.getElementById(\'m-excel365\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;line-height:1.8">'
+    +'Importez votre fichier .xlsx/.xlsm contenant une feuille par jour (format AAAA-MM-JJ). '
+    +'Le logiciel lit toutes les feuilles, detecte les chauffeurs et repartit automatiquement le contenu sur les memes colonnes/heures dans le nouveau planning. '
+    +'Vous pourrez verifier et corriger avant validation.'
+    +'</div>'
+    +'<input type="file" id="excel365-file" accept=".xlsx,.xlsm,.xls" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerAnalyseExcel365()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Analyser le fichier</button>'
+    +'<div id="excel365-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
+    +'<div id="excel365-resultats" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function lancerAnalyseExcel365(){
+  var fileInput=document.getElementById('excel365-file');
+  if(!fileInput.files.length){showT('Choisissez un fichier','#f59e0b');return;}
+  var file=fileInput.files[0];
+  var progress=document.getElementById('excel365-progress');
+
+  function process(){
+    progress.textContent='Lecture du fichier...';
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'array'});
+        progress.textContent='Analyse de '+wb.SheetNames.length+' feuille(s)...';
+        setTimeout(function(){analyserClasseurExcel365(wb);},100);
+      }catch(err){
+        progress.textContent='';
+        showT('Erreur de lecture du fichier','#ef4444');
+        console.log(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  if(typeof XLSX==='undefined'){
+    progress.textContent='Chargement du moteur Excel...';
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload=process;
+    document.head.appendChild(script);
+  } else {
+    process();
+  }
+}
+
+/* Heures de la grille du logiciel (SL est déjà défini globalement : ['06:30','07:00',...]) */
+function analyserClasseurExcel365(wb){
+  var progress=document.getElementById('excel365-progress');
+  var dateRegex=/^\d{4}-\d{2}-\d{2}$/;
+  var feuillesDate = wb.SheetNames.filter(function(n){return dateRegex.test(n);});
+
+  /* 1. Collecter tous les noms de chauffeurs/colonnes rencontrés */
+  var nomsRencontres={}; /* nom normalisé -> {original, count} */
+  var donneesParFeuille={};
+
+  feuillesDate.forEach(function(sheetName){
+    var ws=wb.Sheets[sheetName];
+    var data=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+    if(!data.length)return;
+
+    /* Trouver la ligne d'en-tête "HEURE LIV" (généralement ligne 3, index 2) */
+    var headerRowIdx=-1;
+    for(var i=0;i<Math.min(6,data.length);i++){
+      if(data[i][0] && String(data[i][0]).toUpperCase().indexOf('HEURE LIV')>=0){
+        headerRowIdx=i;break;
+      }
+    }
+    if(headerRowIdx<0)return;
+
+    var headers=data[headerRowIdx];
+    var colChauffeurs=[]; /* {col, nom} */
+    for(var c=1;c<headers.length;c++){
+      var h=String(headers[c]||'').trim();
+      if(!h)continue;
+      if(/^M\/?H/i.test(h))continue; /* exclure colonne M/H */
+      colChauffeurs.push({col:c,nom:h});
+      var norm=normaliserNomChauffeur(h);
+      if(!nomsRencontres[norm]) nomsRencontres[norm]={original:h,count:0};
+      nomsRencontres[norm].count++;
+    }
+
+    /* Lignes de données : de headerRowIdx+1 jusqu'à la fin de grille horaire
+       (on s'arrête à la ligne vide après les heures ou a "HEURE DEBUT") */
+    var lignes=[];
+    for(var r=headerRowIdx+1;r<data.length;r++){
+      var heureCell=String(data[r][0]||'').trim();
+      if(/^heure debut/i.test(heureCell)||/^total/i.test(heureCell))break;
+      if(!heureCell)continue;
+      /* Normaliser l'heure (peut être "6:00:00" ou "06:30") */
+      var heureNorm=normaliserHeureExcel(heureCell);
+      if(!heureNorm)continue;
+      lignes.push({heure:heureNorm,row:data[r]});
+    }
+
+    donneesParFeuille[sheetName]={colChauffeurs:colChauffeurs,lignes:lignes};
+  });
+
+  /* 2. Proposer un mapping nom Excel -> chauffeur actuel du logiciel */
+  var nomsUniques=Object.keys(nomsRencontres).sort(function(a,b){return nomsRencontres[b].count-nomsRencontres[a].count;});
+  window._excelImportData={wb:wb,feuillesDate:feuillesDate,donneesParFeuille:donneesParFeuille,nomsUniques:nomsUniques,nomsRencontres:nomsRencontres};
+
+  progress.textContent='';
+  afficherMappingExcel365();
+}
+
+/* Normaliser un nom de chauffeur Excel pour le matching (gère "ABDOU/RIYAD", "OTMANE 7H", etc.) */
+function normaliserNomChauffeur(nom){
+  return String(nom).toUpperCase().replace(/\d+H?/g,'').replace(/[^A-Z\/]/g,'').trim();
+}
+
+/* Normaliser une heure Excel (peut être '6:00:00', '06:30', objet Date sérialisé, etc.) vers 'HH:MM' aligné sur la grille SL */
+function normaliserHeureExcel(val){
+  var s=String(val).trim();
+  /* Format HH:MM ou HH:MM:SS */
+  var m=s.match(/^(\d{1,2}):(\d{2})/);
+  if(m){
+    var hh=m[1].padStart(2,'0');
+    var mm=m[2];
+    /* Arrondir aux demi-heures de la grille */
+    var totalMin=parseInt(hh)*60+parseInt(mm);
+    totalMin = Math.round(totalMin/30)*30;
+    var h2=Math.floor(totalMin/60)%24;
+    var m2=totalMin%60;
+    return String(h2).padStart(2,'0')+':'+String(m2).padStart(2,'0');
+  }
+  return null;
+}
+
+/* ══ AFFICHAGE : MAPPING DES CHAUFFEURS ══ */
+function afficherMappingExcel365(){
+  var data=window._excelImportData;
+  var resEl=document.getElementById('excel365-resultats');
+
+  var totalCellules=0;
+  Object.keys(data.donneesParFeuille).forEach(function(s){
+    var f=data.donneesParFeuille[s];
+    f.lignes.forEach(function(l){
+      f.colChauffeurs.forEach(function(cc){
+        var v=l.row[cc.col];
+        if(v && String(v).trim()) totalCellules++;
+      });
+    });
+  });
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +Object.keys(data.donneesParFeuille).length+' jour(s) trouve(s) dans le fichier, '+totalCellules+' element(s) au total.'
+    +'</div>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Correspondance des chauffeurs</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-bottom:10px">Le fichier Excel contient ces noms de colonnes. Associez chacun a un chauffeur actuel (ou "Ignorer" pour ne pas importer cette colonne).</div>';
+
+  data.nomsUniques.forEach(function(norm,idx){
+    var info=data.nomsRencontres[norm];
+    /* Pré-sélection : chercher un chauffeur actuel dont le nom est contenu dans le nom Excel ou vice-versa */
+    var preselect=-1;
+    ST.drivers.forEach(function(dr,di){
+      var drNorm=normaliserNomChauffeur(dr.name);
+      if(norm.indexOf(drNorm)>=0 || drNorm.indexOf(norm)>=0) preselect=di;
+    });
+    html+='<div style="background:#0f172a;border:1px solid '+(preselect>=0?'#16a34a':'#1e293b')+';border-radius:8px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px">'
+      +'<div style="flex:1;font-size:13px;color:#e2e8f0">'+info.original+' <span style="color:#64748b;font-size:10px">('+info.count+' jour(s))</span></div>'
+      +'<select id="excel365-map-'+idx+'" class="fi" style="width:160px;font-size:12px">'
+      +'<option value="-1">Ignorer</option>'
+      +ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===preselect?' selected':'')+'>'+dr.name+'</option>';}).join('')
+      +'</select>'
+      +'</div>';
+  });
+
+  html+='<div style="font-size:9px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin:14px 0 8px">Periode a importer</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
+    +'<div><label style="font-size:11px;color:#64748b">Du</label><input type="date" id="excel365-date-debut" class="fi" value="'+data.feuillesDate[0]+'"></div>'
+    +'<div><label style="font-size:11px;color:#64748b">Au</label><input type="date" id="excel365-date-fin" class="fi" value="'+data.feuillesDate[data.feuillesDate.length-1]+'"></div>'
+    +'</div>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;margin-bottom:10px;cursor:pointer">'
+    +'<input type="checkbox" id="excel365-remplacer" checked> Remplacer les missions existantes sur ces jours (sinon, ajouter)'
+    +'</label>'
+    +'<button onclick="apercuImportExcel365()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Voir l aperçu</button>';
+
+  resEl.innerHTML=html;
+}
+
+/* ══ APERÇU AVANT IMPORT ══ */
+function apercuImportExcel365(){
+  var data=window._excelImportData;
+  var mapping={}; /* norm -> chauffeur index */
+  data.nomsUniques.forEach(function(norm,idx){
+    var sel=document.getElementById('excel365-map-'+idx);
+    mapping[norm]=parseInt(sel.value);
+  });
+  window._excel365Mapping=mapping;
+
+  var dateDebut=document.getElementById('excel365-date-debut').value;
+  var dateFin=document.getElementById('excel365-date-fin').value;
+
+  var feuillesAImporter=data.feuillesDate.filter(function(s){return s>=dateDebut && s<=dateFin;});
+  var nbMissions=0,nbJours=0;
+  var exemples=[];
+
+  feuillesAImporter.forEach(function(sheetName){
+    var f=data.donneesParFeuille[sheetName];
+    if(!f)return;
+    var nbJour=0;
+    f.lignes.forEach(function(ligne){
+      f.colChauffeurs.forEach(function(cc){
+        var val=ligne.row[cc.col];
+        if(!val || !String(val).trim())return;
+        var norm=normaliserNomChauffeur(cc.nom);
+        var di=mapping[norm];
+        if(di===undefined||di<0)return;
+        nbJour++;
+        if(exemples.length<5) exemples.push({date:sheetName,heure:ligne.heure,chauffeur:ST.drivers[di].name,texte:String(val).trim()});
+      });
+    });
+    if(nbJour>0){nbJours++;nbMissions+=nbJour;}
+  });
+
+  var resEl=document.getElementById('excel365-resultats');
+  var html='<div style="background:rgba(96,165,250,.1);border:1px solid #60a5fa;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
+    +'<div style="font-size:24px;font-weight:900;color:#60a5fa">'+nbMissions+'</div>'
+    +'<div style="font-size:11px;color:#93c5fd">element(s) seront importes sur '+nbJours+' jour(s)</div>'
+    +'</div>'
+    +'<div style="font-size:9px;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">Exemples</div>'
+    + exemples.map(function(e){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;margin-bottom:5px;font-size:12px;color:#e2e8f0">'+e.date+' '+e.heure+' — <b>'+e.chauffeur+'</b> : '+e.texte+'</div>';
+    }).join('')
+    +'<button onclick="executerImportExcel365()" style="width:100%;padding:13px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:10px">Importer ces '+nbMissions+' element(s)</button>'
+    +'<button onclick="afficherMappingExcel365()" style="width:100%;padding:9px;background:#334155;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">Retour</button>';
+  resEl.innerHTML=html;
+}
+
+/* ══ EXÉCUTION DE L'IMPORT ══ */
+function executerImportExcel365(){
+  var data=window._excelImportData;
+  var mapping=window._excel365Mapping;
+  var dateDebut=document.getElementById('excel365-date-debut').value;
+  var dateFin=document.getElementById('excel365-date-fin').value;
+  var remplacer=document.getElementById('excel365-remplacer').checked;
+
+  var feuillesAImporter=data.feuillesDate.filter(function(s){return s>=dateDebut && s<=dateFin;});
+  var nbMissions=0,nbJours=0;
+
+  feuillesAImporter.forEach(function(sheetName){
+    var f=data.donneesParFeuille[sheetName];
+    if(!f)return;
+
+    /* Si remplacer : vider toutes les taches de ce jour pour les chauffeurs concernés */
+    if(remplacer){
+      SL.forEach(function(h){
+        ST.drivers.forEach(function(dr,di){
+          var k=gk(sheetName,di,h);
+          if(ST.tasks[k]) delete ST.tasks[k];
+        });
+      });
+    }
+
+    var nbJour=0;
+    f.lignes.forEach(function(ligne){
+      f.colChauffeurs.forEach(function(cc){
+        var val=ligne.row[cc.col];
+        if(!val || !String(val).trim())return;
+        var norm=normaliserNomChauffeur(cc.nom);
+        var di=mapping[norm];
+        if(di===undefined||di<0)return;
+
+        var texte=String(val).trim();
+        var k=gk(sheetName,di,ligne.heure);
+        if(!ST.tasks[k]) ST.tasks[k]=[];
+        ST.tasks[k].push({client:texte,task:texte,category:'task',importeExcel:true});
+        nbJour++;
+      });
+    });
+    if(nbJour>0){nbJours++;nbMissions+=nbJour;}
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+
+  showT(nbMissions+' element(s) importes sur '+nbJours+' jour(s)','#16a34a');
+  document.getElementById('m-excel365').remove();
+  enregistrerDecision('Import du planning Excel ('+nbMissions+' elements sur '+nbJours+' jours)');
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var unifBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){return b.textContent.indexOf('Importer TOUS les bons')>=0;});
+    if(unifBtn&&unifBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportExcel365();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;font-weight:900">📊 Importer mon ancien planning Excel</button>';
+      unifBtn.parentNode.insertBefore(div,unifBtn.nextSibling);
+    }
+  },6000);
+});
+
+</script>
 </body>
 </html>
