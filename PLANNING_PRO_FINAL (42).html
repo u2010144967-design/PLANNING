@@ -19524,6 +19524,14 @@ function afficherMappingExcel365(){
   var data=window._excelImportData;
   var resEl=document.getElementById('excel365-resultats');
 
+  /* Par defaut : limiter au mois en cours (plus sur pour un premier test) */
+  var aujourdhui=new Date();
+  var moisDebut=aujourdhui.getFullYear()+'-'+String(aujourdhui.getMonth()+1).padStart(2,'0')+'-01';
+  var finMois=new Date(aujourdhui.getFullYear(),aujourdhui.getMonth()+1,0);
+  var moisFin=finMois.toISOString().slice(0,10);
+  var defautDebut = (moisDebut>=data.feuillesDate[0] && moisDebut<=data.feuillesDate[data.feuillesDate.length-1]) ? moisDebut : data.feuillesDate[0];
+  var defautFin = (moisFin>=data.feuillesDate[0] && moisFin<=data.feuillesDate[data.feuillesDate.length-1]) ? moisFin : data.feuillesDate[data.feuillesDate.length-1];
+
   var totalCellules=0;
   Object.keys(data.donneesParFeuille).forEach(function(s){
     var f=data.donneesParFeuille[s];
@@ -19560,8 +19568,8 @@ function afficherMappingExcel365(){
 
   html+='<div style="font-size:9px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin:14px 0 8px">Periode a importer</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
-    +'<div><label style="font-size:11px;color:#64748b">Du</label><input type="date" id="excel365-date-debut" class="fi" value="'+data.feuillesDate[0]+'"></div>'
-    +'<div><label style="font-size:11px;color:#64748b">Au</label><input type="date" id="excel365-date-fin" class="fi" value="'+data.feuillesDate[data.feuillesDate.length-1]+'"></div>'
+    +'<div><label style="font-size:11px;color:#64748b">Du</label><input type="date" id="excel365-date-debut" class="fi" value="'+(defautDebut||data.feuillesDate[0])+'" min="'+data.feuillesDate[0]+'" max="'+data.feuillesDate[data.feuillesDate.length-1]+'"></div>'
+    +'<div><label style="font-size:11px;color:#64748b">Au</label><input type="date" id="excel365-date-fin" class="fi" value="'+(defautFin||data.feuillesDate[data.feuillesDate.length-1])+'" min="'+data.feuillesDate[0]+'" max="'+data.feuillesDate[data.feuillesDate.length-1]+'"></div>'
     +'</div>'
     +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;margin-bottom:10px;cursor:pointer">'
     +'<input type="checkbox" id="excel365-remplacer" checked> Remplacer les missions existantes sur ces jours (sinon, ajouter)'
@@ -19855,7 +19863,9 @@ function verifierVolumeUnifie(){
 ══════════════════════════════════════════════════ */
 
 executerImportExcel365 = function(){
+ try {
   var data=window._excelImportData;
+  if(!data){ showT('Erreur : donnees d import perdues, recommencez l analyse','#ef4444'); return; }
   var mapping=window._excel365Mapping;
   var dateDebut=document.getElementById('excel365-date-debut').value;
   var dateFin=document.getElementById('excel365-date-fin').value;
@@ -19946,6 +19956,12 @@ executerImportExcel365 = function(){
   }
 
   traiterFeuille(0);
+ } catch(errGlobal){
+   console.log('Erreur import Excel:', errGlobal);
+   var resEl2=document.getElementById('excel365-resultats');
+   if(resEl2) resEl2.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px;font-size:12px;color:#fca5a5">Erreur lors de l import : '+(errGlobal.message||errGlobal)+'</div>';
+   showT('Erreur lors de l import (voir details)','#ef4444');
+ }
 };
 
 </script>
