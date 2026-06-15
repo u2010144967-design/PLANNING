@@ -3,6 +3,24 @@
 <head>
 <script>
 /* ══════════════════════════════════════════════════
+   MIGRATION AUTOMATIQUE — ancien systeme sessionStorage
+   vers le nouveau localStorage pour mode_admin
+══════════════════════════════════════════════════ */
+(function(){
+  try{
+    var oldVal = sessionStorage.getItem('mode_admin');
+    var newVal = localStorage.getItem('mode_admin');
+    /* Si l'ancien systeme avait enregistre "false" (utilisateur passe en invite)
+       et que le nouveau systeme n'a encore rien, on migre la valeur */
+    if(oldVal==='false' && newVal===null){
+      localStorage.setItem('mode_admin','false');
+    }
+  }catch(e){}
+})();
+
+</script>
+<script>
+/* ══════════════════════════════════════════════════
    PROTECTION PAR MOT DE PASSE
 ══════════════════════════════════════════════════ */
 (function(){
@@ -10443,18 +10461,19 @@ function envoyerModificationTelegram(){
     var chatId=ids[di]; if(!chatId)return;
     var taches=[];
     SL.forEach(function(h){(ST.tasks[gk(date,di,h)]||[]).forEach(function(t){taches.push({h:h,c:t.client||t.task||''});});});
-    var msg='/!\\ MODIFICATION DE TOURNEE /!\\\n';
-    msg+='--------------------\n\n';
-    msg+='Bonjour '+dr.name+',\n';
-    msg+='Votre planning du '+dStr+' a ete modifie.\n\n';
-    msg+='VOTRE NOUVELLE TOURNEE :\n';
+    var msg='\u26A0\uFE0F *MODIFICATION DE TOURNEE*\n';
     msg+='--------------------\n';
-    if(!taches.length){msg+='\nAucune mission ce jour.';}
-    else{taches.forEach(function(t,i){msg+='\n'+(i+1)+'. '+t.h+' - '+t.c;});}
-    msg+='\n\n--------------------\n';
+    msg+='\uD83D\uDC64 *'+dr.name.toUpperCase()+'*\n';
+    msg+='\uD83D\uDCC5 *'+dStr.toUpperCase()+'*\n';
+    msg+='--------------------\n\n';
+    msg+='Bonjour '+dr.name+', votre planning a ete modifie.\n\n';
+    msg+='\uD83D\uDD22 *VOTRE NOUVELLE TOURNEE*\n';
+    if(!taches.length){msg+='Aucune mission ce jour.';}
+    else{taches.forEach(function(t,i){msg+='\u25AB\uFE0F *'+t.h+'* \u2014 '+t.c+'\n';});}
+    msg+='\n--------------------\n';
     msg+='Merci de prendre en compte ce changement.\n';
-    msg+='La Table de Cana Logistique';
-    fetch(TG_API+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:msg})});
+    msg+='_La Table de Cana Logistique_';
+    fetch(TG_API+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:msg,parse_mode:'Markdown'})});
     envoyes++;
   });
 
@@ -12539,7 +12558,7 @@ var SECTIONS_RESTREIGNABLES = {
 
 /* Mode admin par défaut = ON, stocké en session */
 function estAdmin(){
-  return sessionStorage.getItem('mode_admin')!=='false';
+  return localStorage.getItem('mode_admin')!=='false';
 }
 
 function getRestrictions(){
@@ -12646,7 +12665,7 @@ function ouvrirChoixRole(){
     +'<h3 style="justify-content:center">Mode d acces <button class="mclose" onclick="document.getElementById(\'m-role\').remove()" style="position:absolute;right:14px;top:14px">X</button></h3>'
     +'<div style="font-size:12px;color:#94a3b8;margin-bottom:16px">Statut actuel : <b style="color:'+(estAdmin()?'#22c55e':'#f59e0b')+'">'+(estAdmin()?'ADMINISTRATEUR':'UTILISATEUR LIMITE')+'</b></div>'
     +(estAdmin()
-      ?'<button onclick="sessionStorage.setItem(\'mode_admin\',\'false\');location.reload()" style="width:100%;padding:11px;background:#f59e0b;border:none;border-radius:9px;color:#000;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">Passer en mode utilisateur (apercu)</button>'
+      ?'<button onclick="localStorage.setItem(\'mode_admin\',\'false\');location.reload()" style="width:100%;padding:11px;background:#f59e0b;border:none;border-radius:9px;color:#000;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">Passer en mode utilisateur (apercu)</button>'
       :'<input type="password" id="admin-pwd" placeholder="Code administrateur" class="fi" style="margin-bottom:10px;text-align:center">'
        +'<button onclick="verifierCodeAdmin()" style="width:100%;padding:11px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Devenir administrateur</button>')
     +'</div>';
@@ -12657,7 +12676,7 @@ function verifierCodeAdmin(){
   var inp=document.getElementById('admin-pwd');
   var code=localStorage.getItem('code_admin')||'admin2026';
   if(inp&&inp.value===code){
-    sessionStorage.setItem('mode_admin','true');
+    localStorage.setItem('mode_admin','true');
     location.reload();
   } else {
     showT('Code incorrect','#ef4444');
@@ -15182,7 +15201,7 @@ function envoyerLienSignatureTelegram(){
   if(!chatId){showT('Aucun ID Telegram pour ce chauffeur','#ef4444');return;}
   fetch(TG_API+'/sendMessage',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:chatId,text:'Bon de livraison a faire signer pour : '+client+'\\n\\n'+url})
+    body:JSON.stringify({chat_id:chatId,text:'\u270D\uFE0F *BON A FAIRE SIGNER*\n--------------------\n\uD83C\uDFE2 Client : *'+client+'*\n--------------------\n\n'+url,parse_mode:'Markdown'})
   });
   showT('Lien envoye au chauffeur','#16a34a');
   document.getElementById('m-sign-mission').remove();
@@ -15335,56 +15354,148 @@ window.addEventListener('load',function(){
 ══════════════════════════════════════════════════ */
 
 /* ══ EXTRACTION GÉNÉRIQUE AIRTABLE (à calibrer demain) ══ */
+/* ══════════════════════════════════════════════════
+   CALIBRATION AIRTABLE/RESTO CO — Format reel "BON DE LIVRAISON"
+   CHRS LA MINOTERIE - SOIR / Tournee ROSE / Gastro
+══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   CALIBRATION AIRTABLE/RESTO CO — Format reel "BON DE LIVRAISON"
+   CHRS LA MINOTERIE - SOIR / Tournee ROSE / Gastro
+══════════════════════════════════════════════════ */
+
 function extraireInfosAirtable(texte){
   var t=texte;
-  var lignes=t.split('\\n').map(function(l){return l.trim();}).filter(Boolean);
+  var lignes=t.split('\n').map(function(l){return l.trim();}).filter(Boolean);
 
-  /* Heure : format HH:MM ou HHhMM */
-  var heureMatch=t.match(/(\\d{1,2})[h:](\\d{2})/);
-  var heure=heureMatch?heureMatch[1].padStart(2,'0')+':'+heureMatch[2]:'';
-
-  /* Date */
-  var dateMatch=t.match(/(\\d{1,2})[\\/\\.](\\d{1,2})[\\/\\.](\\d{2,4})/);
-  var date='';
-  if(dateMatch){
-    var aa=dateMatch[3];if(aa.length===2)aa='20'+aa;
-    date=aa+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
-  }
-
-  /* Téléphone */
-  var telMatch=t.match(/0[1-9](?:[\\s.\\-]?\\d{2}){4}/);
-  var telephone=telMatch?telMatch[0].replace(/[\\s.\\-]/g,' ').trim():'';
-
-  /* Adresse */
-  var adresseMatch=t.match(/\\d{1,4}[,\\s]+(?:rue|avenue|boulevard|chemin|impasse|allee|allée|place|cours|quai|traverse)[^\\n]{0,60}/i);
-  var adresse=adresseMatch?adresseMatch[0].trim():'';
-  var cpMatch=t.match(/(\\d{5})\\s+([A-ZÀ-Ÿ][A-ZÀ-Ÿ\\s\\-]{2,30})/);
-  if(cpMatch) adresse += (adresse?', ':'') + cpMatch[1]+' '+cpMatch[2].trim();
-
-  /* Nombre de repas/convives/élèves */
-  var nbMatch=t.match(/(\\d{1,4})\\s*(repas|convives|eleves|élèves|enfants|rationnaires)/i);
-  var nb=nbMatch?nbMatch[1]:'';
-
-  /* Client : nom d'établissement (école, crèche, centre...) */
-  var motsClesEtab=['ecole','école','creche','crèche','centre','college','collège','lycee','lycée','foyer','maison','residence','résidence','ehpad','cantine'];
+  /* ══ NOM CLIENT ══ */
+  /* Format : "Nom client :" suivi du nom (souvent sur 1-2 lignes, en gros)
+     Ex: "CHRS LA MINOTERIE - SOIR" */
   var client='';
-  for(var i=0;i<lignes.length;i++){
-    var lw=lignes[i].toLowerCase();
-    if(motsClesEtab.some(function(m){return lw.indexOf(m)>=0;})){
-      client=lignes[i];break;
+  var idxNomClient = lignes.findIndex(function(l){return /nom\s*client/i.test(l);});
+  if(idxNomClient>=0){
+    /* Le nom peut être sur la même ligne après ":" ou sur la/les lignes suivantes */
+    var apres = lignes[idxNomClient].replace(/nom\s*client\s*:?/i,'').trim();
+    if(apres) client=apres;
+    /* Chercher les lignes suivantes qui ressemblent à un nom (majuscules, pas de mot-clé champ) */
+    var j=idxNomClient+1;
+    while(j<lignes.length && j<idxNomClient+4){
+      var l=lignes[j];
+      if(/adresse|tel\s*:|tournee|liaison|^\d/i.test(l)) break;
+      if(l.length>=2 && l.length<=60 && !/^bon de livraison$/i.test(l)){
+        client = client ? client+' '+l : l;
+      }
+      j++;
     }
   }
-  if(!client){
-    /* Fallback : première ligne en majuscules significative */
-    var motsClesIgnorer=['bon','livraison','date','commande','total','reference','airtable'];
-    client=lignes.find(function(l){
-      var lw2=l.toLowerCase();
-      if(motsClesIgnorer.some(function(m){return lw2.indexOf(m)>=0;}))return false;
-      return l.length>=3 && l.length<=50;
-    })||'';
+  /* Nettoyage */
+  client = client.replace(/\s+/g,' ').trim();
+
+  /* ══ ADRESSE ══ */
+  var adresse='';
+  var idxAdresse = lignes.findIndex(function(l){return /adresse\s*de\s*livraison/i.test(l);});
+  if(idxAdresse>=0){
+    var apres = lignes[idxAdresse].replace(/adresse\s*de\s*livraison\s*:?/i,'').trim();
+    if(apres) adresse=apres;
+    else if(lignes[idxAdresse+1]) adresse=lignes[idxAdresse+1];
+  }
+  if(!adresse){
+    var adresseMatch=t.match(/\d{1,4}[,\s]+(?:rue|avenue|boulevard|bd|chemin|impasse|allee|allée|place|cours|quai|traverse)[^\n]{0,60}/i);
+    if(adresseMatch) adresse=adresseMatch[0].trim();
   }
 
-  /* Détection livreur écrit à la main (même technique que FTBE) */
+  /* ══ TÉLÉPHONE ══ */
+  /* Format : "Tel :" suivi d'un ou plusieurs numeros separes par / */
+  var telephone='';
+  var idxTel = lignes.findIndex(function(l){return /^tel\s*:/i.test(l);});
+  if(idxTel>=0){
+    var telLigne = lignes[idxTel].replace(/^tel\s*:?/i,'').trim();
+    if(!telLigne && lignes[idxTel+1]) telLigne=lignes[idxTel+1];
+    /* Prendre le premier numero trouvé */
+    var telMatch=telLigne.match(/0[1-9](?:[\s.\-]?\d{2}){4}/);
+    if(telMatch) telephone=telMatch[0].replace(/[\s.\-]/g,' ').trim();
+  }
+  if(!telephone){
+    var telMatch2=t.match(/0[1-9](?:[\s.\-]?\d{2}){4}/);
+    if(telMatch2) telephone=telMatch2[0].replace(/[\s.\-]/g,' ').trim();
+  }
+
+  /* ══ TOURNÉE (info utile pour regroupement / chauffeur) ══ */
+  var tournee='';
+  var idxTournee = lignes.findIndex(function(l){return /^tournee\s*:/i.test(l);});
+  if(idxTournee>=0){
+    tournee = lignes[idxTournee].replace(/^tournee\s*:?/i,'').trim();
+    if(!tournee && lignes[idxTournee+1]) tournee=lignes[idxTournee+1].trim();
+  }
+
+  /* ══ DATE (Date du Menu) ══ */
+  /* Format : "Date du Menu :" suivi de "lundi 15 juin" */
+  var date='';
+  var idxDateMenu = lignes.findIndex(function(l){return /date\s*du\s*menu/i.test(l);});
+  var ligneDate='';
+  if(idxDateMenu>=0){
+    ligneDate = lignes[idxDateMenu].replace(/date\s*du\s*menu\s*:?/i,'').trim();
+    if(!ligneDate && lignes[idxDateMenu+1]) ligneDate=lignes[idxDateMenu+1];
+  }
+  if(!ligneDate){
+    /* Chercher un jour de semaine + jour + mois n'importe où */
+    var dateMatch2=t.match(/(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)/i);
+    if(dateMatch2) ligneDate=dateMatch2[0];
+  }
+  if(ligneDate){
+    var MOIS={janvier:0,fevrier:1,février:1,mars:2,avril:3,mai:4,juin:5,juillet:6,aout:7,août:7,septembre:8,octobre:9,novembre:10,decembre:11,décembre:11};
+    var dm=ligneDate.match(/(\d{1,2})\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)/i);
+    if(dm){
+      var jour=parseInt(dm[1]);
+      var moisNom=dm[2].toLowerCase();
+      var moisIdx=MOIS[moisNom];
+      var aujourdhui=new Date();
+      var annee=aujourdhui.getFullYear();
+      var dateCandidate=new Date(annee,moisIdx,jour,12,0,0);
+      /* Si la date semble être passée de plus de 60 jours, prendre l'année suivante */
+      if((aujourdhui-dateCandidate)>60*24*3600*1000) annee++;
+      date=annee+'-'+String(moisIdx+1).padStart(2,'0')+'-'+String(jour).padStart(2,'0');
+    }
+  }
+  if(!date){
+    var dateMatch=t.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})/);
+    if(dateMatch){
+      var aa=dateMatch[3];if(aa.length===2)aa='20'+aa;
+      date=aa+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0');
+    }
+  }
+
+  /* ══ MOMENT DE LIVRAISON (Matin/Midi/Soir) — sert à choisir une heure approximative ══ */
+  var moment='';
+  if(/\bsoir\b/i.test(t)) moment='soir';
+  else if(/\bmidi\b/i.test(t)) moment='midi';
+  else if(/\bmatin\b/i.test(t)) moment='matin';
+
+  /* ══ NOMBRE DE REPAS/CONVIVES (Quantité dans le tableau composantes) ══ */
+  /* Chercher les nombres dans la colonne "Quantite" - prendre la valeur la plus frequente/elevee */
+  var quantites=[];
+  var qtyMatches=t.match(/\b(\d{1,4})\b/g)||[];
+  /* Filtrer : on cherche des nombres répétés (la quantité de repas est répétée pour chaque ligne du tableau) */
+  var freq={};
+  qtyMatches.forEach(function(q){
+    var n=parseInt(q);
+    if(n>=1 && n<=999) freq[n]=(freq[n]||0)+1;
+  });
+  var convives='';
+  var maxFreq=0;
+  Object.keys(freq).forEach(function(n){
+    if(freq[n]>maxFreq && freq[n]>=2){ maxFreq=freq[n]; convives=n; }
+  });
+
+  /* ══ CODE ACCÈS (rarement présent sur ce format, mais on garde la détection) ══ */
+  var codeAcces='';
+  var codeMatch=t.match(/code\s*(?:d.?acces|acces)?\s*:?\s*([A-Z0-9]{3,8})/i);
+  if(codeMatch) codeAcces=codeMatch[1];
+
+  /* ══ DÉTECTION ALLERGIES/RÉGIMES (depuis la composition) ══ */
+  var allergiesEtRegimes = (typeof detecterAllergiesRegime==='function') ? detecterAllergiesRegime(t) : [];
+
+  /* ══ CHAUFFEUR ÉCRIT À LA MAIN (champ Livreur) ══ */
   var livreurTrouve=-1;
   ST.drivers.forEach(function(dr,di){
     var idxLivreur=t.toLowerCase().indexOf('livreur');
@@ -15395,15 +15506,18 @@ function extraireInfosAirtable(texte){
   });
 
   return {
-    client:client,
-    adresse:adresse,
-    telephone:telephone,
-    heure:heure||'08:00',
-    date:date||ST.cur,
-    convives:nb,
-    chauffeurEcrit:livreurTrouve,
-    codeAcces:'',
-    texteComplet:t
+    client: client || 'Client inconnu',
+    adresse: adresse,
+    telephone: telephone,
+    heure: '', /* Toujours vide pour Resto Co - a definir manuellement */
+    date: date || ST.cur,
+    convives: convives,
+    tournee: tournee,
+    moment: moment,
+    allergies: allergiesEtRegimes,
+    chauffeurEcrit: livreurTrouve,
+    codeAcces: codeAcces,
+    texteComplet: t
   };
 }
 
@@ -15788,6 +15902,8 @@ function afficherResultatsUnifie(){
         +'<div><label style="font-size:11px;color:#64748b">Quantite</label><input type="text" id="un-conv-'+idx+'" class="fi" value="'+(b.convives||'').replace(/"/g,'&quot;')+'" style="font-size:12px"></div>'
         +'</div>'
         +(b.codeAcces?'<div style="font-size:11px;color:#f59e0b;background:rgba(245,158,11,.1);border-radius:6px;padding:6px;margin-bottom:6px">Acces : '+b.codeAcces+'</div>':'')
+        +((b.moment||b.tournee)?'<div style="font-size:11px;color:#93c5fd;background:rgba(96,165,250,.1);border-radius:6px;padding:6px;margin-bottom:6px">'+(b.moment?'Moment : '+b.moment.charAt(0).toUpperCase()+b.moment.slice(1):'')+(b.moment&&b.tournee?' - ':'')+(b.tournee?'Tournee : '+b.tournee:'')+'</div>':'')
+        +(b.allergies&&b.allergies.length?'<div style="font-size:11px;color:#fca5a5;background:rgba(239,68,68,.1);border-radius:6px;padding:6px;margin-bottom:6px">'+b.allergies.join(', ')+'</div>':'')
         +'<label style="font-size:11px;color:#64748b">Type</label>'
         +'<select id="un-type-'+idx+'" class="fi" style="font-size:12px;margin-bottom:6px">'
         +'<option value="traiteur"'+(b.type==='traiteur'?' selected':'')+'>Traiteur</option>'
@@ -17162,13 +17278,17 @@ function executerTransfertMission(idx){
     var d=new Date(date+'T12:00:00');
     var dStr=JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
     var typeLabels={transfert:'NOUVELLE MISSION',report:'MISSION REPORTEE',recuperation:'A RECUPERER'};
-    var msg='/!\\\\ '+typeLabels[type]+' /!\\\\\\n--------------------\\n\\n';
-    msg+='Pour le '+dStr+' a '+heure+'\\n\\n';
-    msg+='Client : '+nouvelleTache.client+'\\n';
-    if(nouvelleTache.adresse) msg+='Adresse : '+nouvelleTache.adresse+'\\n';
-    if(note) msg+='\\nInstructions : '+note+'\\n';
-    msg+='\\n--------------------\\nLa Table de Cana Logistique';
-    fetch(TG_API+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:msg})});
+    var typeIcons={transfert:'\uD83D\uDD04',report:'\uD83D\uDCC6',recuperation:'\uD83D\uDCE6'};
+    var msg=typeIcons[type]+' *'+typeLabels[type]+'*\n';
+    msg+='--------------------\n';
+    msg+='\uD83D\uDC64 *'+ST.drivers[diDest].name.toUpperCase()+'*\n';
+    msg+='\uD83D\uDCC5 *'+dStr.toUpperCase()+'* a *'+heure+'*\n';
+    msg+='--------------------\n\n';
+    msg+='\uD83C\uDFE2 Client : *'+nouvelleTache.client+'*\n';
+    if(nouvelleTache.adresse) msg+='\uD83D\uDCCD '+nouvelleTache.adresse+'\n';
+    if(note) msg+='\n\uD83D\uDCDD '+note+'\n';
+    msg+='\n--------------------\n_La Table de Cana Logistique_';
+    fetch(TG_API+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:msg,parse_mode:'Markdown'})});
   }
 
   showT('Mission creee pour '+ST.drivers[diDest].name+' et notification envoyee','#16a34a');
@@ -18175,22 +18295,24 @@ function executerRepriseArchive(nomClient,idx){
     var MNOMS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
     var d=new Date(date+'T12:00:00');
     var dStr=JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
-    var caption='/!\\\\ A RECUPERER /!\\\\\\n--------------------\\n\\n';
-    caption+='Client : '+nomClient+'\\n';
-    if(mem.adresse) caption+='Adresse : '+mem.adresse+'\\n';
-    caption+='Prevu le '+dStr+' a '+heure+'\\n';
-    if(item.note) caption+='\\n'+item.note+'\\n';
-    caption+='\\n--------------------\\nLa Table de Cana Logistique';
+    var caption='\uD83D\uDCE6 *A RECUPERER*\n';
+    caption+='--------------------\n';
+    caption+='\uD83C\uDFE2 Client : *'+nomClient+'*\n';
+    if(mem.adresse) caption+='\uD83D\uDCCD '+mem.adresse+'\n';
+    caption+='\uD83D\uDCC5 Prevu le *'+dStr.toUpperCase()+'* a *'+heure+'*\n';
+    caption+='--------------------\n';
+    if(item.note) caption+='\uD83D\uDCDD '+item.note+'\n';
+    caption+='_La Table de Cana Logistique_';
 
     if(item.fileId){
       fetch(TG_API+'/sendPhoto',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:chatId,photo:item.fileId,caption:caption})
+        body:JSON.stringify({chat_id:chatId,photo:item.fileId,caption:caption,parse_mode:'Markdown'})
       });
     } else {
       fetch(TG_API+'/sendMessage',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:chatId,text:caption})
+        body:JSON.stringify({chat_id:chatId,text:caption,parse_mode:'Markdown'})
       });
     }
   }
@@ -18541,6 +18663,280 @@ window.addEventListener('load',function(){
     };
   }
 })();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 19 — RECOMMANDATIONS CLIQUABLES (Centre de Commandement)
+══════════════════════════════════════════════════ */
+
+/* Fonction utilitaire : génère une recommandation avec action associée */
+function genererRecommandationsCommandement(){
+  var date=ST.cur;
+  var recos=[];
+
+  /* Surcharges chauffeurs */
+  ST.drivers.forEach(function(dr,di){
+    var nb=0;SL.forEach(function(h){nb+=(ST.tasks[gk(date,di,h)]||[]).length;});
+    if(nb>=7){
+      recos.push({
+        txt:'Reaffecter une partie de la tournee de '+dr.name+' (surcharge: '+nb+' missions)',
+        action:'ouvrirTransfertMission',
+        params:null,
+        priorite:1,
+        icone:'🚛'
+      });
+    }
+    var st=Object.values(ST.statuts||{}).find(function(s){return s.di===di&&s.date===date;});
+    if(st&&(st.type==='absent'||st.type==='maladie')){
+      recos.push({
+        txt:'Redistribuer les missions de '+dr.name+' (absent aujourd hui)',
+        action:'ouvrirRedistribution',
+        params:null,
+        priorite:0,
+        icone:'⚠️'
+      });
+    }
+  });
+
+  /* Évaluations en retard */
+  try{
+    var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+    ST.drivers.forEach(function(dr,di){
+      var d=evals[di]?evals[di].derniereDate:null;
+      if(!d||Math.floor((new Date()-new Date(d))/(1000*60*60*24))>45){
+        recos.push({
+          txt:'Preparer une evaluation pour '+dr.name,
+          action:'ouvrirCarnetSalarieFor',
+          params:di,
+          priorite:3,
+          icone:'📋'
+        });
+      }
+    });
+  }catch(e){}
+
+  /* Documents qui expirent */
+  try{
+    var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+    docs.forEach(function(d){
+      var jr=Math.floor((new Date(d.dateExpiration)-new Date())/(1000*60*60*24));
+      if(jr<=30&&jr>=0){
+        recos.push({
+          txt:'Renouveler le document : '+d.nom+' (expire dans '+jr+'j)',
+          action:'ouvrirCentreDocumentaire',
+          params:null,
+          priorite:1,
+          icone:'📄'
+        });
+      }
+    });
+  }catch(e){}
+
+  /* Bien-être difficile */
+  try{
+    var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+    ST.drivers.forEach(function(dr,di){
+      var difficiles=0,total=0;
+      for(var i=0;i<14;i++){
+        var d=new Date();d.setDate(d.getDate()-i);
+        var ds=d.toISOString().slice(0,10);
+        if(bienetre[ds]&&bienetre[ds][di]){total++;if(bienetre[ds][di]==='difficile')difficiles++;}
+      }
+      if(total>=3&&difficiles/total>=0.4){
+        recos.push({
+          txt:dr.name+' a signale plusieurs journees difficiles - envisager un entretien',
+          action:'ouvrirCarnetSalarieFor',
+          params:di,
+          priorite:2,
+          icone:'💚'
+        });
+      }
+    });
+  }catch(e){}
+
+  /* Reprises en attente */
+  try{
+    var archives=JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+    Object.keys(archives).forEach(function(client){
+      archives[client].forEach(function(item,idx){
+        if(item.type==='reprise'&&item.statutReprise==='a_faire'){
+          recos.push({
+            txt:'Reprise en attente chez '+client+(item.note?' : '+item.note:''),
+            action:'ouvrirArchiveClient',
+            params:client,
+            priorite:1,
+            icone:'📦'
+          });
+        }
+      });
+    });
+  }catch(e){}
+
+  /* Bacs gastro à valider */
+  try{
+    var bacs=JSON.parse(localStorage.getItem('bacs_gastro_historique')||'[]');
+    var nbAValider=bacs.filter(function(b){return b.aValider;}).length;
+    if(nbAValider>0){
+      recos.push({
+        txt:nbAValider+' photo(s) de bacs gastro a valider',
+        action:'ouvrirSuiviBacs',
+        params:null,
+        priorite:2,
+        icone:'📦'
+      });
+    }
+  }catch(e){}
+
+  /* Bons FTBE en attente */
+  try{
+    var bonsAttente=JSON.parse(localStorage.getItem('bons_en_attente')||'[]');
+    if(bonsAttente.length>0){
+      recos.push({
+        txt:bonsAttente.length+' bon(s) en attente d assignation',
+        action:'ouvrirBonsEnAttente',
+        params:null,
+        priorite:2,
+        icone:'📥'
+      });
+    }
+  }catch(e){}
+
+  /* Reussites à féliciter */
+  try{
+    var carnets=JSON.parse(localStorage.getItem('carnet_salaries')||'{}');
+    Object.keys(carnets).forEach(function(di){
+      if(carnets[di].reussites && ST.drivers[di]){
+        recos.push({
+          txt:'Feliciter '+ST.drivers[di].name+' pour : '+carnets[di].reussites,
+          action:'ouvrirCarnetSalarieFor',
+          params:parseInt(di),
+          priorite:4,
+          icone:'🎉'
+        });
+      }
+    });
+  }catch(e){}
+
+  recos.sort(function(a,b){return a.priorite-b.priorite;});
+  return recos;
+}
+
+/* Helper : ouvrir le carnet salarié directement sur un chauffeur précis */
+function ouvrirCarnetSalarieFor(di){
+  ouvrirCarnetSalarie();
+  setTimeout(function(){
+    var sel=document.getElementById('carnet-sal-select');
+    if(sel){
+      sel.value=di;
+      afficherCarnetSalarie();
+    }
+  },150);
+}
+
+/* ══ REMPLACER ouvrirCentreCommandement pour rendre les recos cliquables ══ */
+var _ouvrirCentreCommandement_orig = ouvrirCentreCommandement;
+ouvrirCentreCommandement = function(){
+  var existing=document.getElementById('m-cmd');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-cmd';modal.className='mbg on';
+  var date=ST.cur;
+
+  /* Santé entreprise */
+  var totalMissions=0,faites=0;
+  ST.drivers.forEach(function(dr,di){SL.forEach(function(h){(ST.tasks[gk(date,di,h)]||[]).forEach(function(t){totalMissions++;if(t.confirmed)faites++;});});});
+  var santeEntreprise = totalMissions===0?100:Math.round(faites/totalMissions*100);
+
+  var bienetre=JSON.parse(localStorage.getItem('bienetre_historique')||'{}');
+  var difficiles=0,totalBE=0;
+  ST.drivers.forEach(function(dr,di){
+    for(var i=0;i<7;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var ds=d.toISOString().slice(0,10);
+      if(bienetre[ds]&&bienetre[ds][di]){totalBE++;if(bienetre[ds][di]==='difficile')difficiles++;}
+    }
+  });
+  var santeSalaries = totalBE===0?100:Math.round((1-difficiles/totalBE)*100);
+  var santeFinanciere = totalMissions>0?Math.min(100,Math.round(70+totalMissions*0.5)):85;
+
+  var incidentsClients=JSON.parse(localStorage.getItem('incidents_clients')||'{}');
+  var nbIncidents=Object.values(incidentsClients).reduce(function(a,b){return a+b;},0);
+  var satisfactionClients = Math.max(50,100-nbIncidents*5);
+
+  var docs=JSON.parse(localStorage.getItem('documents_expirations')||'[]');
+  var docsExpires=docs.filter(function(d){return new Date(d.dateExpiration)<new Date();}).length;
+  var etatVehicules = Math.max(50,100-docsExpires*15);
+
+  var evals=JSON.parse(localStorage.getItem('evaluations_insertion')||'{}');
+  var nbEvalues=Object.keys(evals).length;
+  var progressionInsertion = ST.drivers.length>0?Math.round(nbEvalues/ST.drivers.length*100):0;
+
+  var indicateurs=[
+    {label:'Sante de l entreprise',val:santeEntreprise,icon:'🏢'},
+    {label:'Sante des salaries',val:santeSalaries,icon:'💚'},
+    {label:'Sante financiere',val:santeFinanciere,icon:'💰'},
+    {label:'Satisfaction clients',val:satisfactionClients,icon:'⭐'},
+    {label:'Etat des vehicules',val:etatVehicules,icon:'🚛'},
+    {label:'Progression insertion',val:progressionInsertion,icon:'🌱'},
+  ];
+
+  function feu(v){return v>=80?'🟢':v>=60?'🟠':'🔴';}
+  function col(v){return v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444';}
+
+  var actions = genererRecommandationsCommandement();
+  window._cmdActions = actions;
+
+  var html='<div class="mbox" style="max-width:600px;max-height:92vh;overflow-y:auto">'
+    +'<h3>Centre de Commandement <button class="mclose" onclick="document.getElementById(\'m-cmd\').remove()">X</button></h3>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+
+  indicateurs.forEach(function(ind){
+    html+='<div style="background:#0f172a;border:1px solid '+col(ind.val)+';border-radius:10px;padding:12px;text-align:center">'
+      +'<div style="font-size:20px">'+ind.icon+' '+feu(ind.val)+'</div>'
+      +'<div style="font-size:20px;font-weight:900;color:'+col(ind.val)+'">'+ind.val+'%</div>'
+      +'<div style="font-size:10px;color:#64748b">'+ind.label+'</div>'
+      +'</div>';
+  });
+
+  html+='</div>'
+    +'<div style="background:linear-gradient(135deg,#1e3a8a,#7c3aed);border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;text-align:center">'
+    +'<div style="font-size:16px;font-weight:900">Que dois-je faire maintenant ?</div>'
+    +'<div style="font-size:11px;opacity:.8;margin-top:4px">Cliquez sur une action pour la traiter directement</div>'
+    +'</div>';
+
+  if(actions.length){
+    html += actions.slice(0,10).map(function(a,idx){
+      return '<button class="btn-cmd-action" data-idx="'+idx+'" style="width:100%;text-align:left;background:#0f172a;border:1px solid #7c3aed;border-left:4px solid #7c3aed;border-radius:8px;padding:12px;margin-bottom:6px;font-size:13px;color:#e2e8f0;cursor:pointer;display:flex;align-items:center;gap:10px">'
+        +'<span style="font-size:18px">'+a.icone+'</span>'
+        +'<span style="flex:1">'+a.txt+'</span>'
+        +'<span style="color:#a78bfa;font-size:11px">▶</span>'
+        +'</button>';
+    }).join('');
+  } else {
+    html+='<div style="text-align:center;color:#22c55e;padding:20px"><div style="font-size:36px">✓</div>Tout est sous controle. Aucune action urgente.</div>';
+  }
+
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+
+  /* Brancher les clics */
+  modal.querySelectorAll('.btn-cmd-action').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var idx=parseInt(btn.getAttribute('data-idx'));
+      var a=window._cmdActions[idx];
+      if(!a)return;
+      document.getElementById('m-cmd').remove();
+      try{
+        if(a.params!==null && a.params!==undefined){
+          window[a.action](a.params);
+        } else {
+          window[a.action]();
+        }
+      }catch(e){console.log('Erreur action:',e);}
+    });
+  });
+};
+
 </script>
 </body>
 </html>
