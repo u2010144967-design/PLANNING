@@ -15739,7 +15739,8 @@ function ouvrirImportUnifie(){
     +'Le logiciel detecte automatiquement la date de chaque bon et les regroupe par jour. '
     +'Le type (Traiteur/Resto Co) est detecte automatiquement selon le contenu.'
     +'</div>'
-    +'<input type="file" id="unifie-files" accept="image/*,.pdf" multiple style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<input type="file" id="unifie-files" accept="image/*,.pdf" multiple style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:6px" onchange="verifierVolumeUnifie()">'
+    +'<div id="unifie-volume-warning" style="font-size:11px;color:#94a3b8;margin-bottom:10px;text-align:center"></div>'
     +'<button onclick="lancerAnalyseUnifie()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#16a34a);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Analyser tous les bons</button>'
     +'<div id="unifie-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
     +'<div id="unifie-resultats" style="margin-top:14px"></div>'
@@ -19683,6 +19684,166 @@ window.addEventListener('load',function(){
     }
   },6000);
 });
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CORRECTIF — Traitement SEQUENTIEL (un par un) pour
+   eviter le crash "Out of Memory" avec beaucoup de bons.
+   + Redimensionnement des images avant OCR.
+══════════════════════════════════════════════════ */
+
+/* Redimensionner une image (File/Blob) avant OCR, pour limiter la memoire */
+function redimensionnerImage(file,maxDim){
+  return new Promise(function(resolve){
+    var img=new Image();
+    var url=URL.createObjectURL(file);
+    img.onload=function(){
+      var w=img.width,h=img.height;
+      var scale=Math.min(1,maxDim/Math.max(w,h));
+      var canvas=document.createElement('canvas');
+      canvas.width=Math.round(w*scale);
+      canvas.height=Math.round(h*scale);
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(blob){resolve(blob||file);},'image/jpeg',0.85);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);resolve(file);};
+    img.src=url;
+  });
+}
+
+/* Remplace lancerAnalyseUnifie : traitement strictement sequentiel */
+lancerAnalyseUnifie = function(){
+  var files=document.getElementById('unifie-files').files;
+  if(!files.length){showT('Choisissez au moins un fichier','#f59e0b');return;}
+  window._unifieData=[];
+  var progress=document.getElementById('unifie-progress');
+  var fileList=Array.from(files);
+  var total=fileList.length;
+
+  function ensureTesseract(){
+    return new Promise(function(resolve){
+      if(typeof Tesseract!=='undefined'){resolve();return;}
+      progress.textContent='Chargement du moteur de lecture...';
+      var script=document.createElement('script');
+      script.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+      script.onload=resolve;
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensurePdfJs(){
+    return new Promise(function(resolve){
+      if(typeof pdfjsLib!=='undefined'){resolve();return;}
+      var script=document.createElement('script');
+      script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload=function(){
+        pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve();
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  /* Traiter une image (photo) : redimensionner puis OCR */
+  function traiterImage(file){
+    return redimensionnerImage(file,1600).then(function(blob){
+      return Tesseract.recognize(blob,'fra').then(function(result){
+        var type=detecterTypeBon(result.data.text);
+        var infos=type==='traiteur'?extraireInfosFTBEv2(result.data.text):extraireInfosAirtable(result.data.text);
+        infos.type=type;
+        window._unifieData.push(infos);
+      }).catch(function(){});
+    });
+  }
+
+  /* Traiter un PDF : page par page, sequentiellement */
+  function traiterPdf(file){
+    return new Promise(function(resolveFile){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        pdfjsLib.getDocument({data:e.target.result}).promise.then(function(pdf){
+          var nbPages=pdf.numPages;
+          function traiterPage(p){
+            if(p>nbPages){resolveFile();return;}
+            pdf.getPage(p).then(function(page){
+              var viewport=page.getViewport({scale:1.5});
+              var canvas=document.createElement('canvas');
+              canvas.width=viewport.width;canvas.height=viewport.height;
+              var ctx=canvas.getContext('2d');
+              page.render({canvasContext:ctx,viewport:viewport}).promise.then(function(){
+                canvas.toBlob(function(blob){
+                  Tesseract.recognize(blob,'fra').then(function(result){
+                    var texte=result.data.text;
+                    var type=detecterTypeBon(texte);
+                    var infos=type==='traiteur'?extraireInfosFTBEv2(texte):extraireInfosAirtable(texte);
+                    infos.type=type;infos.page=p;
+                    if(infos.client||infos.adresse||infos.heure) window._unifieData.push(infos);
+                    /* Libérer la mémoire du canvas */
+                    canvas.width=0;canvas.height=0;
+                    progress.textContent='Page '+p+'/'+nbPages+' du fichier en cours...';
+                    setTimeout(function(){traiterPage(p+1);},50);
+                  }).catch(function(){setTimeout(function(){traiterPage(p+1);},50);});
+                },'image/jpeg',0.85);
+              });
+            });
+          }
+          traiterPage(1);
+        }).catch(function(){resolveFile();});
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  /* Boucle séquentielle sur tous les fichiers */
+  function traiterFichier(idx){
+    if(idx>=total){
+      progress.textContent='';
+      afficherResultatsUnifie();
+      return;
+    }
+    var file=fileList[idx];
+    progress.textContent='Analyse '+(idx+1)+'/'+total+'...';
+    var p;
+    if(file.type==='application/pdf'){
+      p=traiterPdf(file);
+    } else {
+      p=traiterImage(file);
+    }
+    p.then(function(){
+      setTimeout(function(){traiterFichier(idx+1);},50);
+    });
+  }
+
+  Promise.all([ensureTesseract(),ensurePdfJs()]).then(function(){
+    traiterFichier(0);
+  });
+};
+
+</script>
+
+<script>
+/* ══ AVERTISSEMENT VOLUME DE FICHIERS ══ */
+function verifierVolumeUnifie(){
+  var files=document.getElementById('unifie-files').files;
+  var warnEl=document.getElementById('unifie-volume-warning');
+  if(!warnEl)return;
+  var n=files.length;
+  if(n===0){warnEl.textContent='';return;}
+
+  /* Estimer le nombre de pages total (PDF multi-pages comptent plus) */
+  var estimMin = Math.ceil(n*6/60);
+  if(n<=15){
+    warnEl.innerHTML='<span style="color:#22c55e">'+n+' fichier(s) selectionne(s) - environ '+estimMin+' min</span>';
+  } else if(n<=40){
+    warnEl.innerHTML='<span style="color:#f59e0b">'+n+' fichier(s) selectionne(s) - environ '+estimMin+' min. Cela peut prendre un moment.</span>';
+  } else {
+    warnEl.innerHTML='<span style="color:#ef4444">'+n+' fichier(s) selectionne(s) - environ '+estimMin+' min, risque de ralentissement. Conseil : importez par lots de 20-30 fichiers (ex: un jour a la fois).</span>';
+  }
+}
 
 </script>
 </body>
