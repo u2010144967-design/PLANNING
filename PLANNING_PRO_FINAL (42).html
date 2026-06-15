@@ -7302,7 +7302,7 @@ function imprimerToutesFeuillesRoute(){
 ══ */
 
 /* URL du serveur Google — à remplir après déploiement */
-var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzW5IeEZzDxIupJDuAhl08wkHL5GJARnLLlaX5uKf1n84HN8jULBmVDEyrBk9_436Yt/exec';
+var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYIKcNnd6sxl7KFIZOXeCQIDYd_EQ1rg8tUWFZdIpOScp2S3HDaqfqTpKSwKrS7gCQvg/exec';
 
 function ouvrirConfigSync(){
   var existing = document.getElementById('m-config-sync');
@@ -15147,7 +15147,7 @@ function validerBac(idx){
 </script>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycbzW5IeEZzDxIupJDuAhl08wkHL5GJARnLLlaX5uKf1n84HN8jULBmVDEyrBk9_436Yt/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycbwYIKcNnd6sxl7KFIZOXeCQIDYd_EQ1rg8tUWFZdIpOScp2S3HDaqfqTpKSwKrS7gCQvg/exec';
 
 /* ══════════════════════════════════════════════════
    BON DE LIVRAISON DEMATERIALISE AVEC SIGNATURE CLIENT
@@ -20175,6 +20175,93 @@ function voirPreuveLivraison(key){
       var container=document.getElementById('preuve-img-container');
       if(container) container.textContent='Impossible de charger la photo.';
     });
+}
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 25 — GESTION DES IDs TELEGRAM DES CHAUFFEURS
+   depuis le logiciel, sans toucher a Apps Script
+══════════════════════════════════════════════════ */
+
+/* Enrichir le modal de config sync avec la gestion des IDs Telegram */
+var _ouvrirConfigSync_lot25 = ouvrirConfigSync;
+ouvrirConfigSync = function(){
+  _ouvrirConfigSync_lot25();
+
+  setTimeout(function(){
+    var modal=document.getElementById('m-config-sync');
+    if(!modal)return;
+    var box=modal.querySelector('.mbox');
+    if(!box || box.querySelector('#tg-ids-section'))return;
+
+    var idsConnus=JSON.parse(localStorage.getItem('telegram_ids_chauffeurs')||'{}');
+
+    var div=document.createElement('div');
+    div.id='tg-ids-section';
+    div.innerHTML='<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:14px 0 8px;border-top:1px solid #1e293b;padding-top:14px">📱 IDs Telegram des chauffeurs</div>'
+      +'<div style="font-size:11px;color:#94a3b8;margin-bottom:10px">Pour obtenir l ID d un chauffeur : il envoie un message au bot @PlanningTableCana_bot, puis demandez-lui l ID via le bot @userinfobot (envoyer /start a ce bot).</div>'
+      +ST.drivers.map(function(dr,di){
+        return '<div style="margin-bottom:8px"><label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">'+dr.name+'</label>'
+          +'<input type="text" id="tgid-'+di+'" class="fi" placeholder="ID Telegram (nombre)" value="'+(idsConnus[di]||'')+'" style="font-size:12px">'
+          +'</div>';
+      }).join('')
+      +'<button onclick="sauverEtEnvoyerIdsTelegram()" style="width:100%;padding:11px;background:#0088cc;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px">💾 Sauvegarder et envoyer aux chauffeurs</button>'
+      +'<div id="tgids-status" style="font-size:11px;color:#64748b;margin-top:8px;text-align:center"></div>';
+
+    box.appendChild(div);
+  },100);
+};
+
+/* Sauvegarder localement ET envoyer à Google Apps Script via syncVersGoogle (enrichi) */
+function sauverEtEnvoyerIdsTelegram(){
+  var ids={};
+  ST.drivers.forEach(function(dr,di){
+    var val=document.getElementById('tgid-'+di).value.trim();
+    if(val) ids[di]=val;
+  });
+  localStorage.setItem('telegram_ids_chauffeurs',JSON.stringify(ids));
+
+  var url = GOOGLE_SCRIPT_URL || localStorage.getItem('google_script_url');
+  if(!url){showT('Configurez d abord l URL Google','#f59e0b');return;}
+
+  var statusEl=document.getElementById('tgids-status');
+  statusEl.textContent='Envoi en cours...';
+
+  var payload={type:'telegram_ids',ids:ids};
+
+  fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.ok){
+        statusEl.innerHTML='<span style="color:#22c55e">✅ IDs enregistres et envoyes</span>';
+        showT('IDs Telegram mis a jour','#16a34a');
+      } else {
+        _envoyerIdsViaForm(url,payload,statusEl);
+      }
+    })
+    .catch(function(){
+      _envoyerIdsViaForm(url,payload,statusEl);
+    });
+}
+
+function _envoyerIdsViaForm(url,payload,statusEl){
+  var form=document.createElement('form');
+  form.method='POST';form.action=url;form.target='_tgids_frame';form.style.display='none';
+  var input=document.createElement('input');
+  input.type='hidden';input.name='data';input.value=JSON.stringify(payload);
+  form.appendChild(input);
+  var frame=document.createElement('iframe');
+  frame.name='_tgids_frame';frame.style.display='none';
+  document.body.appendChild(frame);
+  document.body.appendChild(form);
+  frame.onload=function(){
+    statusEl.innerHTML='<span style="color:#22c55e">✅ IDs enregistres et envoyes</span>';
+    showT('IDs Telegram mis a jour','#16a34a');
+    setTimeout(function(){document.body.removeChild(form);document.body.removeChild(frame);},1000);
+  };
+  form.submit();
 }
 
 </script>
