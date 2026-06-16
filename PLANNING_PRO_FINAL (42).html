@@ -19965,8 +19965,10 @@ executerImportExcel365 = function(){
   traiterFeuille(0);
  } catch(errGlobal){
    console.log('Erreur import Excel:', errGlobal);
+   console.log('Stack:', errGlobal.stack);
    var resEl2=document.getElementById('excel365-resultats');
-   if(resEl2) resEl2.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px;font-size:12px;color:#fca5a5">Erreur lors de l import : '+(errGlobal.message||errGlobal)+'</div>';
+   var stackInfo=(errGlobal.stack||'').split('\n').slice(0,5).join(' | ');
+   if(resEl2) resEl2.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px;font-size:11px;color:#fca5a5">Erreur : '+(errGlobal.message||errGlobal)+'<br><br>'+stackInfo+'</div>';
    showT('Erreur lors de l import (voir details)','#ef4444');
  }
 };
