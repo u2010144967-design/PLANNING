@@ -19591,6 +19591,10 @@ function apercuImportExcel365(){
 
   var dateDebut=document.getElementById('excel365-date-debut').value;
   var dateFin=document.getElementById('excel365-date-fin').value;
+  var remplacerVal=document.getElementById('excel365-remplacer')?document.getElementById('excel365-remplacer').checked:true;
+
+  /* Sauvegarder pour utilisation dans executerImportExcel365 (les champs auront disparu) */
+  window._excel365Params={dateDebut:dateDebut,dateFin:dateFin,remplacer:remplacerVal};
 
   var feuillesAImporter=data.feuillesDate.filter(function(s){return s>=dateDebut && s<=dateFin;});
   var nbMissions=0,nbJours=0;
@@ -19632,9 +19636,11 @@ function apercuImportExcel365(){
 function executerImportExcel365(){
   var data=window._excelImportData;
   var mapping=window._excel365Mapping;
-  var dateDebut=document.getElementById('excel365-date-debut').value;
-  var dateFin=document.getElementById('excel365-date-fin').value;
-  var remplacer=document.getElementById('excel365-remplacer').checked;
+  /* Utiliser les paramètres sauvegardés (les champs DOM n'existent plus à ce stade) */
+  var params=window._excel365Params||{};
+  var dateDebut=params.dateDebut||data.feuillesDate[0];
+  var dateFin=params.dateFin||data.feuillesDate[data.feuillesDate.length-1];
+  var remplacer=params.remplacer!==undefined?params.remplacer:true;
 
   var feuillesAImporter=data.feuillesDate.filter(function(s){return s>=dateDebut && s<=dateFin;});
   var nbMissions=0,nbJours=0;
