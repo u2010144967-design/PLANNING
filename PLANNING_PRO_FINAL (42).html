@@ -7302,7 +7302,7 @@ function imprimerToutesFeuillesRoute(){
 ══ */
 
 /* URL du serveur Google — à remplir après déploiement */
-var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYIKcNnd6sxl7KFIZOXeCQIDYd_EQ1rg8tUWFZdIpOScp2S3HDaqfqTpKSwKrS7gCQvg/exec';
+var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJQEe7Iw9pZ-HHR8V2qxwBoeLP4kth0G1kGHglqcaEAcD7AlIdWwWsTjhRLbz6oQTaVg/exec';
 
 function ouvrirConfigSync(){
   var existing = document.getElementById('m-config-sync');
@@ -15147,7 +15147,7 @@ function validerBac(idx){
 </script>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycbwYIKcNnd6sxl7KFIZOXeCQIDYd_EQ1rg8tUWFZdIpOScp2S3HDaqfqTpKSwKrS7gCQvg/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycbyJQEe7Iw9pZ-HHR8V2qxwBoeLP4kth0G1kGHglqcaEAcD7AlIdWwWsTjhRLbz6oQTaVg/exec';
 
 /* ══════════════════════════════════════════════════
    BON DE LIVRAISON DEMATERIALISE AVEC SIGNATURE CLIENT
@@ -20829,6 +20829,352 @@ window.addEventListener('load', function(){
       aideBtn.parentNode.insertBefore(div, aideBtn);
     }
   }, 6300);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 28 — AMÉLIORATIONS MAJEURES
+   1. Tableau FTBE amélioré (camion, note, auto-update)
+   2. Tableau Airtable amélioré (même logique)
+   3. Détection conflits horaires à l'import
+   4. Reprise matériel automatique depuis FTBE
+   5. Mini-app Telegram (/planning, /mission, /sos)
+   6. Gestion véhicules (km, révisions, alertes)
+   7. Rapport hebdomadaire Telegram
+══════════════════════════════════════════════════ */
+
+/* ══ LISTE DES VÉHICULES DISPONIBLES ══ */
+var VEHICULES_DISPO = ['JUMPY','VIVARO 1','VIVARO 2','IVECO','VIVARO LOCATION','CAMION 5'];
+
+/* Retourner le camion habituel d'un chauffeur */
+function getCamionChauffeur(di){
+  if(typeof ST==='undefined'||!ST.drivers||!ST.drivers[di]) return '';
+  return ST.drivers[di].truck||'';
+}
+
+/* ══ 1. TABLEAU FTBE AMÉLIORÉ ══ */
+afficherApercuFTBE = function(missions){
+  var resEl=document.getElementById('ftbe-resultats');
+  if(!resEl)return;
+
+  /* Détecter les conflits horaires */
+  var conflits={};
+  missions.forEach(function(m,idx){
+    if(m.chauffeurIdx<0||!m.heure||!m.date)return;
+    var cle=m.date+'|'+m.chauffeurIdx+'|'+m.heure;
+    if(!conflits[cle]) conflits[cle]=[];
+    conflits[cle].push(idx);
+  });
+
+  var nbConflits=Object.values(conflits).filter(function(v){return v.length>1;}).length;
+  var html='';
+
+  if(nbConflits>0){
+    html+='<div style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#fca5a5">'
+      +'⚠️ '+nbConflits+' conflit(s) horaire(s) détecté(s) — vérifiez les missions en orange.'
+      +'</div>';
+  }
+
+  html+='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;color:#86efac">'
+    +'✅ '+missions.length+' bon(s) détecté(s) — vérifiez et corrigez avant d\'importer.'
+    +'</div>';
+
+  missions.forEach(function(m,idx){
+    /* Vérifier conflit */
+    var cle=m.date+'|'+m.chauffeurIdx+'|'+m.heure;
+    var enConflit=conflits[cle]&&conflits[cle].length>1;
+    var col=enConflit?'#ef4444':(m.chauffeurIdx>=0?'#22c55e':'#f59e0b');
+
+    /* Camion par défaut : celui du chauffeur détecté */
+    var camionDefaut=m.vehicule||getCamionChauffeur(m.chauffeurIdx);
+
+    /* Vérifier reprise dans le bon */
+    var hasReprise=m.texteComplet&&(m.texteComplet.toLowerCase().indexOf('retour')>=0);
+    var dateRetour='';
+    if(hasReprise && m.texteComplet){
+      var retourMatch=m.texteComplet.match(/retour[^:]*:?[^l]*le[^0-9]*(\d{2}\/\d{2}\/\d{4})/i);
+      if(retourMatch){
+        var p=retourMatch[1].split('/');
+        dateRetour=p[2]+'-'+p[1]+'-'+p[0];
+      }
+    }
+
+    html+='<div style="background:#0f172a;border:2px solid '+col+';border-radius:12px;padding:14px;margin-bottom:12px">'
+      /* En-tête du bon */
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<span style="font-size:13px;font-weight:900;color:'+col+'">BON '+(idx+1)+'</span>'
+      +(enConflit?'<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">⚠️ CONFLIT HORAIRE</span>':'')
+      +(m.convives?'<span style="background:#1e293b;color:#94a3b8;font-size:10px;padding:3px 8px;border-radius:5px">'+m.convives+' convives</span>':'')
+      +'</div>'
+
+      /* Ligne 1 : Client + Heure */
+      +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Client</label>'
+      +'<input type="text" class="fi" id="ftbe-client-'+idx+'" value="'+m.client+'" style="font-size:13px;font-weight:700"></div>'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Heure livraison</label>'
+      +'<input type="text" class="fi" id="ftbe-heure-'+idx+'" value="'+m.heure+'" placeholder="HH:MM" style="font-size:13px"></div>'
+      +'</div>'
+
+      /* Ligne 2 : Date + Chauffeur */
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Date</label>'
+      +'<input type="date" class="fi" id="ftbe-date-'+idx+'" value="'+m.date+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Chauffeur</label>'
+      +'<select class="fi" id="ftbe-chauffeur-'+idx+'" data-idx="'+idx+'" style="font-size:12px">'
+      +'<option value="-1">-- Non assigné --</option>'
+      +(typeof ST!=='undefined'&&ST.drivers?ST.drivers.map(function(dr,di){
+        return '<option value="'+di+'"'+(di===m.chauffeurIdx?' selected':'')+'>'+dr.name+'</option>';
+      }).join(''):'')
+      +'</select></div>'
+      +'</div>'
+
+      /* Ligne 3 : Camion + Adresse */
+      +'<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:8px">'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">🚛 Camion</label>'
+      +'<select class="fi" id="ftbe-camion-'+idx+'" style="font-size:12px">'
+      +'<option value="">-- Choisir --</option>'
+      +VEHICULES_DISPO.map(function(v){
+        return '<option value="'+v+'"'+(v===camionDefaut?' selected':'')+'>'+v+'</option>';
+      }).join('')
+      +'</select></div>'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">📍 Adresse</label>'
+      +'<input type="text" class="fi" id="ftbe-adresse-'+idx+'" value="'+m.adresse+'" placeholder="Adresse de livraison" style="font-size:12px"></div>'
+      +'</div>'
+
+      /* Ligne 4 : Téléphone + Note */
+      +'<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:8px">'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">📞 Téléphone</label>'
+      +'<input type="text" class="fi" id="ftbe-tel-'+idx+'" value="'+(m.tel||'')+'" placeholder="0X XX XX XX XX" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">📝 Note pour le chauffeur</label>'
+      +'<input type="text" class="fi" id="ftbe-note-'+idx+'" placeholder="Instructions spéciales..." style="font-size:12px"></div>'
+      +'</div>'
+
+      /* Reprise matériel détectée automatiquement */
+      +(hasReprise?'<div style="background:rgba(249,115,22,.1);border:1px solid #f97316;border-radius:8px;padding:8px;margin-bottom:8px;font-size:11px;color:#fdba74">'
+        +'📦 Reprise matériel détectée'+(dateRetour?' le '+dateRetour:'')
+        +' <label style="margin-left:10px"><input type="checkbox" id="ftbe-reprise-'+idx+'" checked> Créer tâche de reprise automatiquement</label>'
+        +'</div>':'')
+
+      /* Info FTBE originale */
+      +'<div style="font-size:10px;color:#475569;border-top:1px solid #1e293b;padding-top:6px">'
+      +'Livreur FTBE : <b>'+m.livreur+'</b> | Véhicule FTBE : <b>'+m.vehicule+'</b>'
+      +'</div>'
+      +'</div>';
+  });
+
+  html+='<button onclick="confirmerImportFTBE()" style="width:100%;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:900;cursor:pointer;margin-top:8px">✅ Valider et importer '+missions.length+' mission(s)</button>';
+  resEl.innerHTML=html;
+
+  /* Brancher la mise à jour automatique camion quand on change le chauffeur */
+  missions.forEach(function(m,idx){
+    var selChauffeur=document.getElementById('ftbe-chauffeur-'+idx);
+    if(selChauffeur){
+      selChauffeur.addEventListener('change',function(){
+        var di=parseInt(this.value);
+        var selCamion=document.getElementById('ftbe-camion-'+idx);
+        if(selCamion && di>=0){
+          var camion=getCamionChauffeur(di);
+          if(camion) selCamion.value=camion;
+        }
+      });
+    }
+  });
+};
+
+/* ══ 1b. CONFIRMER IMPORT FTBE AMÉLIORÉ ══ */
+confirmerImportFTBE = function(){
+  var data=window._ftbeImportData;
+  if(!data)return;
+  var nb=0, nbReprises=0;
+
+  data.forEach(function(m,idx){
+    var client=document.getElementById('ftbe-client-'+idx).value.trim();
+    var heure=document.getElementById('ftbe-heure-'+idx).value.trim();
+    var date=document.getElementById('ftbe-date-'+idx).value;
+    var di=parseInt(document.getElementById('ftbe-chauffeur-'+idx).value);
+    var adresse=document.getElementById('ftbe-adresse-'+idx).value.trim();
+    var camion=document.getElementById('ftbe-camion-'+idx).value;
+    var tel=document.getElementById('ftbe-tel-'+idx).value.trim();
+    var note=document.getElementById('ftbe-note-'+idx).value.trim();
+
+    if(!client||!heure||!date||di<0)return;
+
+    var heureNorm=heure;
+    if(typeof nSl==='function') heureNorm=nSl(heure)||heure;
+
+    var k=gk(date,di,heureNorm);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:tel,
+      note_liv:note,
+      category:'traiteur',
+      convives:m.convives||'',
+      truck:camion,
+      livreurFTBE:m.livreur,
+      vehiculeFTBE:m.vehicule,
+      importeFTBE:true
+    });
+    nb++;
+
+    /* Créer tâche de reprise si cochée */
+    var repriseChk=document.getElementById('ftbe-reprise-'+idx);
+    if(repriseChk && repriseChk.checked && m.texteComplet){
+      var retourMatch=m.texteComplet.match(/retour[^:]*:?[^l]*le[^0-9]*(\d{2}\/\d{2}\/\d{4})/i);
+      if(retourMatch){
+        var p=retourMatch[1].split('/');
+        var dateRetour=p[2]+'-'+p[1]+'-'+p[0];
+        var kRetour=gk(dateRetour,di,'08:00');
+        if(!ST.tasks[kRetour]) ST.tasks[kRetour]=[];
+        ST.tasks[kRetour].push({
+          client:'REPRISE MATÉRIEL — '+client,
+          adresse:adresse,
+          contact:tel,
+          category:'task',
+          truck:camion,
+          note_liv:'Reprise du matériel après prestation',
+          importeFTBE:true
+        });
+        nbReprises++;
+      }
+    }
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+
+  var msg=nb+' mission(s) importée(s)';
+  if(nbReprises>0) msg+=' + '+nbReprises+' reprise(s) de matériel créée(s)';
+  showT(msg,'#16a34a');
+  if(typeof enregistrerDecision==='function') enregistrerDecision('Import FTBE : '+msg);
+  var modal=document.getElementById('m-ftbe-texte');if(modal)modal.remove();
+};
+
+/* ══ 2. GESTION DES VÉHICULES ══ */
+function ouvrirGestionVehicules(){
+  var existing=document.getElementById('m-vehicules');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-vehicules';modal.className='mbg on';
+
+  var vehicules=JSON.parse(localStorage.getItem('gestion_vehicules')||'{}');
+  VEHICULES_DISPO.forEach(function(v){
+    if(!vehicules[v]) vehicules[v]={km:0,revision:'',ct:'',assurance:'',notes:''};
+  });
+
+  var today=new Date().toISOString().slice(0,10);
+
+  var html='<div class="mbox" style="max-width:580px;max-height:92vh;overflow-y:auto">'
+    +'<h3>🚛 Gestion des véhicules <button class="mclose" onclick="document.getElementById(\'m-vehicules\').remove()">X</button></h3>';
+
+  VEHICULES_DISPO.forEach(function(v){
+    var info=vehicules[v];
+    /* Alertes */
+    var alertes=[];
+    if(info.revision && info.revision<today) alertes.push('Révision dépassée');
+    if(info.ct && info.ct<today) alertes.push('CT dépassé');
+    if(info.assurance && info.assurance<today) alertes.push('Assurance expirée');
+    var col=alertes.length>0?'#ef4444':'#1e293b';
+
+    html+='<div style="background:#0f172a;border:1px solid '+col+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      +'<span style="font-size:14px;font-weight:900;color:#e2e8f0">🚛 '+v+'</span>'
+      +(alertes.length?'<span style="background:#ef4444;color:#fff;font-size:10px;padding:3px 8px;border-radius:5px">⚠️ '+alertes.join(' | ')+'</span>':'<span style="background:#16a34a;color:#fff;font-size:10px;padding:3px 8px;border-radius:5px">✅ OK</span>')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      +'<div><label style="font-size:10px;color:#64748b">Km actuels</label>'
+      +'<input type="number" class="fi" id="veh-km-'+v+'" value="'+(info.km||'')+'" placeholder="0" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Prochaine révision</label>'
+      +'<input type="date" class="fi" id="veh-rev-'+v+'" value="'+(info.revision||'')+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Contrôle technique</label>'
+      +'<input type="date" class="fi" id="veh-ct-'+v+'" value="'+(info.ct||'')+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Assurance</label>'
+      +'<input type="date" class="fi" id="veh-ass-'+v+'" value="'+(info.assurance||'')+'" style="font-size:12px"></div>'
+      +'</div>'
+      +'<input type="text" class="fi" id="veh-note-'+v+'" value="'+(info.notes||'')+'" placeholder="Notes..." style="font-size:11px">'
+      +'</div>';
+  });
+
+  html+='<button onclick="sauverVehicules()" style="width:100%;padding:12px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 Sauvegarder</button>'
+    +'</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+
+function sauverVehicules(){
+  var vehicules={};
+  VEHICULES_DISPO.forEach(function(v){
+    vehicules[v]={
+      km:document.getElementById('veh-km-'+v).value,
+      revision:document.getElementById('veh-rev-'+v).value,
+      ct:document.getElementById('veh-ct-'+v).value,
+      assurance:document.getElementById('veh-ass-'+v).value,
+      notes:document.getElementById('veh-note-'+v).value
+    };
+  });
+  localStorage.setItem('gestion_vehicules',JSON.stringify(vehicules));
+  showT('Véhicules sauvegardés','#16a34a');
+  /* Vérifier alertes */
+  verifierAlertesVehicules();
+}
+
+function verifierAlertesVehicules(){
+  var vehicules=JSON.parse(localStorage.getItem('gestion_vehicules')||'{}');
+  var today=new Date().toISOString().slice(0,10);
+  var alertes=[];
+  Object.keys(vehicules).forEach(function(v){
+    var info=vehicules[v];
+    if(info.revision && info.revision<=today) alertes.push(v+' : révision dépassée');
+    if(info.ct && info.ct<=today) alertes.push(v+' : CT dépassé');
+    if(info.assurance && info.assurance<=today) alertes.push(v+' : assurance expirée');
+    /* Alerte 30 jours avant */
+    var dans30=new Date();dans30.setDate(dans30.getDate()+30);
+    var d30=dans30.toISOString().slice(0,10);
+    if(info.revision && info.revision>today && info.revision<=d30) alertes.push(v+' : révision dans moins de 30 jours');
+    if(info.ct && info.ct>today && info.ct<=d30) alertes.push(v+' : CT dans moins de 30 jours');
+  });
+  return alertes;
+}
+
+/* Intégrer les alertes véhicules dans calculerAlertesActives */
+var _calculerAlertesActives_v28=calculerAlertesActives;
+calculerAlertesActives=function(){
+  var alertes=_calculerAlertesActives_v28();
+  try{
+    var alertesVeh=verifierAlertesVehicules();
+    if(alertesVeh.length){
+      alertes.total+=alertesVeh.length;
+      alertes.parCategorie['Véhicules']=(alertes.parCategorie['Véhicules']||0)+alertesVeh.length;
+    }
+  }catch(e){}
+  return alertes;
+};
+
+/* ══ 3. MINI-APP TELEGRAM — commandes /planning /mission /sos ══ */
+/* Ces commandes sont gérées côté GAS (doPost) — on stocke ici les données nécessaires */
+/* Le planning en temps réel est déjà pushé vers GAS via syncVersGoogle */
+/* On ajoute juste la config dans localStorage pour que GAS sache quoi répondre */
+function configurerMiniAppTelegram(){
+  localStorage.setItem('miniapp_telegram_active','1');
+  showT('Mini-app Telegram activée — les chauffeurs peuvent taper /planning','#16a34a');
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+
+    /* Gestion véhicules */
+    var heuresBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){
+      return b.textContent.indexOf('Heures du mois')>=0;
+    });
+    if(heuresBtn&&heuresBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item" style="color:#06b6d4;font-weight:700">🚛 Gestion des véhicules</button>';
+      heuresBtn.parentNode.insertBefore(div,heuresBtn.nextSibling);
+    }
+  },6400);
 });
 
 </script>
