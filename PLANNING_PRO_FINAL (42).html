@@ -20561,5 +20561,276 @@ window.addEventListener('load',function(){
 });
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 27 — INTERFACE SAUVEGARDE & RESTAURATION
+   1. Export complet en JSON (toutes les données)
+   2. Sauvegarde automatique (quotidienne/hebdo)
+   3. Import/restauration depuis un fichier JSON
+   4. Historique des sauvegardes
+══════════════════════════════════════════════════ */
+
+var CLES_SAUVEGARDE = [
+  'plprov2',                    /* Planning principal (tâches, chauffeurs, statuts) */
+  'memoire_clients_ftbe',       /* Mémoire des clients FTBE */
+  'bacs_gastro_historique',     /* Suivi bacs gastro */
+  'bons_signes',                /* Bons signés */
+  'carnet_salaries',            /* Carnets numériques salariés */
+  'evaluations_insertion',      /* Évaluations d'insertion */
+  'bienetre_historique',        /* Bien-être équipe */
+  'documents_expirations',      /* Documents qui expirent */
+  'centre_documentaire',        /* Centre documentaire */
+  'memoire_problemes',          /* Mémoire des solutions */
+  'archives_photos_clients',    /* Archives photos par client */
+  'journal_felicitations',      /* Journal des réussites */
+  'comptes_rendus_reunion',     /* Comptes-rendus réunions */
+  'menu_favoris',               /* Favoris du menu */
+  'notes_agenda',               /* Agenda & pense-bête */
+  'historique_decisions',       /* Historique des décisions */
+  'telegram_ids_chauffeurs',    /* IDs Telegram */
+  'statuts_missions_local',     /* Statuts missions (cache local) */
+  'bons_en_attente',            /* Bons en attente */
+];
+
+/* ══ COLLECTE DE TOUTES LES DONNÉES ══ */
+function collecterDonnees(){
+  var data = {
+    version: '1.0',
+    logiciel: 'Planning La Table de Cana',
+    date_export: new Date().toISOString(),
+    date_lisible: new Date().toLocaleString('fr-FR'),
+    planning: null,
+    localStorage: {}
+  };
+
+  /* Planning principal */
+  try { data.planning = JSON.parse(localStorage.getItem('plprov2')||'{}'); } catch(e){}
+
+  /* Toutes les autres clés */
+  CLES_SAUVEGARDE.forEach(function(cle){
+    var val = localStorage.getItem(cle);
+    if(val) {
+      try { data.localStorage[cle] = JSON.parse(val); }
+      catch(e) { data.localStorage[cle] = val; }
+    }
+  });
+
+  return data;
+}
+
+/* ══ EXPORT / TÉLÉCHARGEMENT ══ */
+function exporterSauvegardeJSON(silencieux){
+  var data = collecterDonnees();
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type: 'application/json'});
+  var url = URL.createObjectURL(blob);
+  var date = new Date().toISOString().slice(0,10);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sauvegarde_cana_' + date + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  /* Enregistrer l'historique */
+  var hist = JSON.parse(localStorage.getItem('historique_sauvegardes')||'[]');
+  hist.unshift({date: new Date().toLocaleString('fr-FR'), taille: Math.round(json.length/1024)+'Ko', auto: !!silencieux});
+  hist = hist.slice(0, 20); /* Garder les 20 dernières */
+  localStorage.setItem('historique_sauvegardes', JSON.stringify(hist));
+
+  if(!silencieux) showT('Sauvegarde téléchargée avec succès','#16a34a');
+}
+
+/* ══ SAUVEGARDE AUTOMATIQUE ══ */
+function configurerSauvegardeAuto(){
+  var config = JSON.parse(localStorage.getItem('config_sauvegarde_auto')||'{"active":false,"frequence":"quotidienne","heure":"18"}');
+  return config;
+}
+
+function demarrerSauvegardeAuto(){
+  var config = configurerSauvegardeAuto();
+  if(!config.active) return;
+
+  var derniere = localStorage.getItem('derniere_sauvegarde_auto');
+  var maintenant = new Date();
+  var heureCible = parseInt(config.heure)||18;
+
+  if(maintenant.getHours() >= heureCible){
+    var dateAujourdhui = maintenant.toISOString().slice(0,10);
+    if(derniere !== dateAujourdhui){
+      if(config.frequence==='quotidienne' || (config.frequence==='hebdomadaire' && maintenant.getDay()===5)){
+        exporterSauvegardeJSON(true);
+        localStorage.setItem('derniere_sauvegarde_auto', dateAujourdhui);
+        showT('Sauvegarde automatique effectuée','#16a34a');
+      }
+    }
+  }
+}
+
+/* Vérifier la sauvegarde auto toutes les heures */
+setInterval(demarrerSauvegardeAuto, 3600000);
+window.addEventListener('load', function(){ setTimeout(demarrerSauvegardeAuto, 5000); });
+
+/* ══ INTERFACE PRINCIPALE ══ */
+function ouvrirSauvegardeRestauration(){
+  var existing = document.getElementById('m-sauvegarde');if(existing)existing.remove();
+  var modal = document.createElement('div');modal.id='m-sauvegarde';modal.className='mbg on';
+
+  var config = configurerSauvegardeAuto();
+  var hist = JSON.parse(localStorage.getItem('historique_sauvegardes')||'[]');
+  var data = collecterDonnees();
+  var taille = Math.round(JSON.stringify(data).length/1024);
+
+  var html = '<div class="mbox" style="max-width:520px;max-height:92vh;overflow-y:auto">'
+    + '<h3>💾 Sauvegarde & Restauration <button class="mclose" onclick="document.getElementById(\'m-sauvegarde\').remove()">X</button></h3>'
+
+    /* Stats */
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
+    + '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:20px;font-weight:900;color:#60a5fa">'+taille+'Ko</div>'
+    + '<div style="font-size:10px;color:#64748b">Taille données</div></div>'
+    + '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:20px;font-weight:900;color:#22c55e">'+CLES_SAUVEGARDE.filter(function(c){return localStorage.getItem(c);}).length+'</div>'
+    + '<div style="font-size:10px;color:#64748b">Modules actifs</div></div>'
+    + '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">'
+    + '<div style="font-size:20px;font-weight:900;color:#f59e0b">'+hist.length+'</div>'
+    + '<div style="font-size:10px;color:#64748b">Sauvegardes</div></div>'
+    + '</div>'
+
+    /* Export manuel */
+    + '<div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;margin-bottom:8px">📥 Exporter mes données</div>'
+    + '<button onclick="exporterSauvegardeJSON()" style="width:100%;padding:12px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px">Télécharger la sauvegarde complète (.json)</button>'
+
+    /* Sauvegarde auto */
+    + '<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;margin-bottom:8px">⏰ Sauvegarde automatique</div>'
+    + '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-bottom:14px">'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:#e2e8f0;cursor:pointer;margin-bottom:10px">'
+    + '<input type="checkbox" id="sav-active"'+(config.active?' checked':'')+'> Activer la sauvegarde automatique'
+    + '</label>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div><label style="font-size:11px;color:#64748b">Fréquence</label>'
+    + '<select id="sav-frequence" class="fi" style="font-size:12px">'
+    + '<option value="quotidienne"'+(config.frequence==='quotidienne'?' selected':'')+'>Tous les jours</option>'
+    + '<option value="hebdomadaire"'+(config.frequence==='hebdomadaire'?' selected':'')+'>Chaque vendredi</option>'
+    + '</select></div>'
+    + '<div><label style="font-size:11px;color:#64748b">Heure déclenchement</label>'
+    + '<select id="sav-heure" class="fi" style="font-size:12px">'
+    + ['08','12','17','18','19','20'].map(function(h){return '<option value="'+h+'"'+(config.heure===h?' selected':'')+'>'+h+'h00</option>';}).join('')
+    + '</select></div>'
+    + '</div>'
+    + '<button onclick="sauverConfigSauvegardeAuto()" style="width:100%;padding:9px;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px">Enregistrer la configuration</button>'
+    + '</div>'
+
+    /* Restauration */
+    + '<div style="font-size:11px;font-weight:700;color:#22c55e;text-transform:uppercase;margin-bottom:8px">🔄 Restaurer une sauvegarde</div>'
+    + '<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:10px;font-size:11px;color:#fca5a5;margin-bottom:8px">'
+    + '⚠️ La restauration remplace TOUTES les données actuelles. Faites d abord une sauvegarde si nécessaire.'
+    + '</div>'
+    + '<input type="file" id="sav-fichier" accept=".json" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:8px">'
+    + '<button onclick="restaurerSauvegarde()" style="width:100%;padding:11px;background:#dc2626;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px">Restaurer depuis ce fichier</button>'
+
+    /* Historique */
+    + (hist.length ? '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">📋 Historique des sauvegardes</div>'
+    + hist.slice(0,5).map(function(h){
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:8px;margin-bottom:4px;display:flex;justify-content:space-between;font-size:11px">'
+        + '<span style="color:#e2e8f0">'+h.date+'</span>'
+        + '<span style="color:#64748b">'+h.taille+(h.auto?' · Auto':' · Manuelle')+'</span>'
+        + '</div>';
+      }).join('') : '')
+
+    + '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+}
+
+function sauverConfigSauvegardeAuto(){
+  var config = {
+    active: document.getElementById('sav-active').checked,
+    frequence: document.getElementById('sav-frequence').value,
+    heure: document.getElementById('sav-heure').value
+  };
+  localStorage.setItem('config_sauvegarde_auto', JSON.stringify(config));
+  showT('Configuration sauvegardée','#16a34a');
+  demarrerSauvegardeAuto();
+}
+
+/* ══ RESTAURATION ══ */
+function restaurerSauvegarde(){
+  var fileInput = document.getElementById('sav-fichier');
+  if(!fileInput || !fileInput.files.length){
+    showT('Choisissez un fichier de sauvegarde','#f59e0b');
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+
+      if(!data.version || !data.logiciel){
+        showT('Fichier invalide — ce n est pas une sauvegarde Planning Cana','#ef4444');
+        return;
+      }
+
+      /* Confirmation */
+      if(!confirm('Restaurer la sauvegarde du '+data.date_lisible+' ?\n\nCela va remplacer TOUTES vos données actuelles.\n\nContinuer ?')){
+        return;
+      }
+
+      /* Restaurer le planning principal */
+      if(data.planning){
+        localStorage.setItem('plprov2', JSON.stringify(data.planning));
+        /* Recharger ST en mémoire */
+        try{
+          var st = data.planning;
+          if(st.drivers) ST.drivers = st.drivers;
+          if(st.tasks) ST.tasks = st.tasks;
+          if(st.statuts) ST.statuts = st.statuts;
+          if(st.cur) ST.cur = st.cur;
+        }catch(e){}
+      }
+
+      /* Restaurer toutes les autres clés */
+      if(data.localStorage){
+        Object.keys(data.localStorage).forEach(function(cle){
+          try{
+            localStorage.setItem(cle, JSON.stringify(data.localStorage[cle]));
+          }catch(e){}
+        });
+      }
+
+      if(typeof save==='function') save();
+      if(typeof render==='function') render();
+
+      showT('Restauration réussie ! Fermeture dans 3s...','#16a34a');
+      setTimeout(function(){ location.reload(); }, 3000);
+
+    }catch(err){
+      showT('Erreur de restauration : fichier corrompu','#ef4444');
+      console.log('Erreur restauration:', err);
+    }
+  };
+  reader.readAsText(fileInput.files[0]);
+}
+
+/* Ajouter au menu */
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    var menu = document.getElementById('menu-principal');if(!menu)return;
+    var aideBtn = Array.from(menu.querySelectorAll('.menu-item')).find(function(b){
+      return b.textContent.indexOf('Aide')>=0 && b.textContent.indexOf('FAQ')>=0;
+    });
+    if(aideBtn && aideBtn.parentNode){
+      var div = document.createElement('div');
+      div.innerHTML = '<button tabindex="0" onclick="ouvrirSauvegardeRestauration();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;font-weight:900">💾 Sauvegarde & Restauration</button>';
+      aideBtn.parentNode.insertBefore(div, aideBtn);
+    }
+  }, 6300);
+});
+
+</script>
 </body>
 </html>
