@@ -20274,5 +20274,292 @@ function _envoyerIdsViaForm(url,payload,statusEl){
 }
 
 </script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 26 — IMPORT FTBE PAR LECTURE TEXTE PDF (sans OCR)
+   Ultra-rapide : lit le texte natif du PDF directement
+   Format : 1 fichier PDF avec N bons de livraison
+   Chaque bon commence par "BON D'EXPEDITION"
+══════════════════════════════════════════════════ */
+
+window._ftbeImportData = null;
+
+function ouvrirImportFTBETexte(){
+  var existing=document.getElementById('m-ftbe-texte');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-ftbe-texte';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:580px;max-height:92vh;overflow-y:auto">'
+    +'<h3>📄 Importer les bons FTBE (PDF) <button class="mclose" onclick="document.getElementById(\'m-ftbe-texte\').remove()">X</button></h3>'
+    +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;color:#94a3b8">'
+    +'Selectionnez votre fichier PDF des bons d expedition FTBE. Le logiciel lit directement le texte (ultra-rapide, moins d 1 seconde par bon).'
+    +'</div>'
+    +'<input type="file" id="ftbe-file" accept=".pdf" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;font-size:12px;margin-bottom:10px">'
+    +'<button onclick="lancerLectureFTBE()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#dc2626);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">Lire et analyser le PDF</button>'
+    +'<div id="ftbe-progress" style="margin-top:10px;font-size:12px;color:#64748b;text-align:center"></div>'
+    +'<div id="ftbe-resultats" style="margin-top:14px"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function lancerLectureFTBE(){
+  var fileInput=document.getElementById('ftbe-file');
+  if(!fileInput||!fileInput.files.length){showT('Choisissez un fichier PDF','#f59e0b');return;}
+  var file=fileInput.files[0];
+  var progress=document.getElementById('ftbe-progress');
+  progress.textContent='Chargement du moteur PDF...';
+
+  function lirePDF(){
+    progress.textContent='Lecture du PDF...';
+    var reader=new FileReader();
+    reader.onload=function(e){
+      pdfjsLib.getDocument({data:e.target.result}).promise.then(function(pdf){
+        progress.textContent='Analyse de '+pdf.numPages+' pages...';
+        extraireTextePDF(pdf);
+      }).catch(function(err){
+        progress.textContent='';
+        showT('Erreur lecture PDF : '+err.message,'#ef4444');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  if(typeof pdfjsLib==='undefined'){
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload=function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      lirePDF();
+    };
+    document.head.appendChild(script);
+  } else {
+    lirePDF();
+  }
+}
+
+function extraireTextePDF(pdf){
+  var nbPages=pdf.numPages;
+  var toutesLesPages=[];
+  var progress=document.getElementById('ftbe-progress');
+
+  function lirePage(n){
+    if(n>nbPages){
+      /* Toutes les pages lues : analyser */
+      analyserBonsFTBE(toutesLesPages);
+      return;
+    }
+    pdf.getPage(n).then(function(page){
+      page.getTextContent().then(function(content){
+        var texte=content.items.map(function(item){return item.str;}).join('\n');
+        toutesLesPages.push(texte);
+        progress.textContent='Page '+n+'/'+nbPages+'...';
+        lirePage(n+1);
+      });
+    });
+  }
+  lirePage(1);
+}
+
+function analyserBonsFTBE(pages){
+  var progress=document.getElementById('ftbe-progress');
+
+  /* Regrouper les pages par bon (chaque bon commence par "BON D'EXPEDITION") */
+  var bons=[];
+  var bonCourant=null;
+
+  pages.forEach(function(texte,i){
+    if(texte.indexOf("BON D'EXPEDITION")>=0 || texte.indexOf("BON D'EXPÉDITION")>=0){
+      if(bonCourant!==null) bons.push(bonCourant);
+      bonCourant=texte;
+    } else if(bonCourant!==null){
+      bonCourant+='\n'+texte;
+    }
+  });
+  if(bonCourant!==null) bons.push(bonCourant);
+
+  progress.textContent='';
+
+  /* Extraire les infos de chaque bon */
+  var missions=bons.map(function(texte){
+    return extraireInfosBonFTBE(texte);
+  }).filter(function(m){return m.client||m.heure;});
+
+  window._ftbeImportData=missions;
+  afficherApercuFTBE(missions);
+}
+
+function extraireInfosBonFTBE(texte){
+  var lignes=texte.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+
+  /* Client : première ligne non vide après "BON D'EXPEDITION" qui n'est pas "Edition du" ou "N°" */
+  var client='';
+  var inBon=false;
+  for(var i=0;i<lignes.length;i++){
+    if(lignes[i].indexOf("BON D'EXPEDITION")>=0||lignes[i].indexOf("BON D'EXPÉDITION")>=0){
+      inBon=true;continue;
+    }
+    if(inBon && client===''){
+      if(!/^(Edition du|N°|Bon d)/i.test(lignes[i])){
+        client=lignes[i].replace(/\/$/, '').trim();
+        break;
+      }
+    }
+  }
+
+  /* Heure et date : "Pour HH:MM le jour JJ/MM/YYYY" */
+  var heure='',dateIso='';
+  var heureMatch=texte.match(/Pour (\d{1,2}:\d{2}) le \w+ (\d{2}\/\d{2}\/\d{4})/);
+  if(heureMatch){
+    heure=heureMatch[1];
+    var p=heureMatch[2].split('/');
+    dateIso=p[2]+'-'+p[1]+'-'+p[0];
+  }
+
+  /* Adresse */
+  var adresse='';
+  var attnIdx=texte.indexOf("l'attention de");
+  if(attnIdx<0) attnIdx=texte.indexOf("à l'attention");
+  if(attnIdx>=0){
+    var apresAttn=texte.substring(attnIdx);
+    var lignesApres=apresAttn.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    for(var j=1;j<Math.min(8,lignesApres.length);j++){
+      if(/^\d{1,4}[\s,]/.test(lignesApres[j]) && lignesApres[j].length>5){
+        adresse=lignesApres[j];
+        break;
+      }
+    }
+  }
+
+  /* Téléphone */
+  var tel='';
+  var telMatch=texte.match(/(?:0[1-9])(?:\s?\d{2}){4}/);
+  if(telMatch) tel=telMatch[0];
+
+  /* Livreur et Véhicule */
+  var livreur='',vehicule='';
+  for(var k=0;k<lignes.length;k++){
+    if(lignes[k]==='Livreur :'&&lignes[k+1]) livreur=lignes[k+1].trim();
+    if((lignes[k]==='Véhicule :'||lignes[k]==='Vehicule :')&&lignes[k+1]) vehicule=lignes[k+1].trim();
+  }
+
+  /* Convives */
+  var convives='';
+  var convMatch=texte.match(/pour (\d+) convives/i);
+  if(convMatch) convives=convMatch[1];
+
+  /* Chauffeur index : mapper le nom du livreur vers un index ST.drivers */
+  var chauffeurIdx=-1;
+  if(livreur && typeof ST!=='undefined' && ST.drivers){
+    ST.drivers.forEach(function(dr,di){
+      if(livreur.toUpperCase().indexOf(dr.name.toUpperCase())>=0||
+         dr.name.toUpperCase().indexOf(livreur.toUpperCase())>=0){
+        chauffeurIdx=di;
+      }
+    });
+  }
+
+  return {
+    client:client,
+    heure:heure,
+    date:dateIso,
+    adresse:adresse,
+    tel:tel,
+    livreur:livreur,
+    vehicule:vehicule,
+    convives:convives,
+    chauffeurIdx:chauffeurIdx
+  };
+}
+
+function afficherApercuFTBE(missions){
+  var resEl=document.getElementById('ftbe-resultats');
+  if(!resEl)return;
+
+  var html='<div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#86efac">'
+    +missions.length+' bon(s) detecte(s) — verifiez et corrigez si besoin avant d importer.'
+    +'</div>';
+
+  missions.forEach(function(m,idx){
+    var col=m.chauffeurIdx>=0?'#22c55e':'#f59e0b';
+    html+='<div style="background:#0f172a;border:1px solid '+col+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      +'<div><label style="font-size:10px;color:#64748b">Client</label>'
+      +'<input type="text" class="fi" id="ftbe-client-'+idx+'" value="'+m.client+'" style="font-size:12px;font-weight:700"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Heure</label>'
+      +'<input type="text" class="fi" id="ftbe-heure-'+idx+'" value="'+m.heure+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Date</label>'
+      +'<input type="date" class="fi" id="ftbe-date-'+idx+'" value="'+m.date+'" style="font-size:12px"></div>'
+      +'<div><label style="font-size:10px;color:#64748b">Chauffeur</label>'
+      +'<select class="fi" id="ftbe-chauffeur-'+idx+'" style="font-size:12px">'
+      +'<option value="-1">-- Non assigne --</option>'
+      +(typeof ST!=='undefined'&&ST.drivers?ST.drivers.map(function(dr,di){return '<option value="'+di+'"'+(di===m.chauffeurIdx?' selected':'')+'>'+dr.name+'</option>';}).join(''):'')
+      +'</select></div>'
+      +'</div>'
+      +'<div><label style="font-size:10px;color:#64748b">Adresse</label>'
+      +'<input type="text" class="fi" id="ftbe-adresse-'+idx+'" value="'+m.adresse+'" style="font-size:12px;margin-bottom:4px"></div>'
+      +'<div style="font-size:10px;color:#64748b">Livreur FTBE : '+m.livreur+' '+m.vehicule+(m.convives?' | '+m.convives+' convives':'')+'</div>'
+      +'</div>';
+  });
+
+  html+='<button onclick="confirmerImportFTBE()" style="width:100%;padding:13px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px">Importer '+missions.length+' mission(s) dans le planning</button>';
+  resEl.innerHTML=html;
+}
+
+function confirmerImportFTBE(){
+  var data=window._ftbeImportData;
+  if(!data)return;
+  var nb=0;
+
+  data.forEach(function(m,idx){
+    var client=document.getElementById('ftbe-client-'+idx).value.trim();
+    var heure=document.getElementById('ftbe-heure-'+idx).value.trim();
+    var date=document.getElementById('ftbe-date-'+idx).value;
+    var di=parseInt(document.getElementById('ftbe-chauffeur-'+idx).value);
+    var adresse=document.getElementById('ftbe-adresse-'+idx).value.trim();
+
+    if(!client||!heure||!date||di<0)return;
+
+    /* Normaliser l'heure vers la grille SL */
+    var heureNorm=heure;
+    if(typeof nSl==='function') heureNorm=nSl(heure)||heure;
+
+    var k=gk(date,di,heureNorm);
+    if(!ST.tasks[k]) ST.tasks[k]=[];
+    ST.tasks[k].push({
+      client:client,
+      adresse:adresse,
+      contact:m.tel||'',
+      category:'traiteur',
+      convives:m.convives||'',
+      livreurFTBE:m.livreur,
+      vehiculeFTBE:m.vehicule,
+      importeFTBE:true
+    });
+    nb++;
+  });
+
+  if(typeof save==='function')save();
+  if(typeof render==='function')render();
+
+  showT(nb+' mission(s) FTBE importees dans le planning','#16a34a');
+  if(typeof enregistrerDecision==='function') enregistrerDecision('Import FTBE : '+nb+' missions');
+  document.getElementById('m-ftbe-texte').remove();
+}
+
+/* Ajouter au menu */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var menu=document.getElementById('menu-principal');if(!menu)return;
+    var unifBtn=Array.from(menu.querySelectorAll('.menu-item')).find(function(b){
+      return b.textContent.indexOf('Importer TOUS les bons')>=0||b.textContent.indexOf('Importer mon ancien planning')>=0;
+    });
+    if(unifBtn&&unifBtn.parentNode){
+      var div=document.createElement('div');
+      div.innerHTML='<button tabindex="0" onclick="ouvrirImportFTBETexte();fermerMenu()" class="menu-item" style="background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;font-weight:900">⚡ Importer bons FTBE (ultra-rapide)</button>';
+      unifBtn.parentNode.insertBefore(div,unifBtn);
+    }
+  },6100);
+});
+
+</script>
 </body>
 </html>
