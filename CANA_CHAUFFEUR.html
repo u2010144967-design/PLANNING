@@ -12,9 +12,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;--hover:#1e2d45;
+  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;
   --orange:#f97316;--blue:#3b82f6;--green:#22c55e;
   --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;--teal:#14b8a6;
   --text:#f1f5f9;--muted:#64748b;--dim:#374151;
@@ -22,104 +22,63 @@
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;font-size:14px}
-.screen{height:100%;display:flex;flex-direction:column;position:relative}
-button{cursor:pointer;font-family:inherit;border:none;outline:none;-webkit-user-select:none;user-select:none}
+html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+.screen{height:100%;display:flex;flex-direction:column}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
 input,textarea,select{font-family:inherit;outline:none;-webkit-appearance:none}
 ::-webkit-scrollbar{display:none}
-.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
 .mono{font-family:'SF Mono','Consolas',monospace}
-
-/* ══ UTILITAIRES ══ */
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px}
-.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.pill-green{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:var(--green)}
-.pill-orange{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);color:var(--orange)}
-.pill-amber{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:var(--amber)}
-.pill-red{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--red)}
-.pill-blue{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:var(--blue)}
-.pill-muted{background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.25);color:var(--muted)}
-.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.dot-green{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.5)}
-.dot-amber{background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.5)}
-.dot-red{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,.5)}
-.dot-gray{background:var(--dim)}
 
-/* ══ LOGIN ══ */
+/* LOGIN */
 .login-screen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 120% 60% at 50% 0%,#1a2234,var(--bg) 70%);overflow-y:auto}
 .login-logo{width:76px;height:76px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 20px 40px rgba(249,115,22,.35)}
 .ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-bottom:24px}
 .ch-btn{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s}
 .ch-btn:active{transform:scale(.95)}
 .ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.08)}
-.av{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.av{border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
 .code-dots{display:flex;gap:14px;margin:16px 0}
 .code-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--dim);transition:all .25s}
 .code-dot.filled{background:var(--orange);border-color:var(--orange);transform:scale(1.1)}
 .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:290px}
 .num-key{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:17px;font-size:22px;font-weight:600;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;aspect-ratio:1}
 .num-key:active{background:var(--raised);transform:scale(.92)}
-.num-key.del-key{font-size:18px;color:var(--muted)}
-.err-msg{color:var(--red);font-size:12px;min-height:18px;margin-bottom:6px;font-weight:500}
 
-/* ══ APP HEADER ══ */
+/* HEADER */
 .app-top{padding:calc(var(--safe-top) + 48px) 16px 12px;flex-shrink:0}
-.driver-row{display:flex;align-items:center;justify-content:space-between}
-.driver-info .greeting{font-size:12px;color:var(--muted)}
-.driver-info .dname{font-size:22px;font-weight:800;line-height:1.1}
-.driver-info .dtruck{font-size:11px;color:var(--muted);margin-top:2px}
-.header-actions{display:flex;gap:8px;align-items:center}
-.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.icon-btn:active{background:var(--raised)}
 
-/* ══ STATUT JOURNÉE ══ */
-.day-status-bar{margin:10px 16px 0;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
-.dsb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.dsb-info{flex:1}
-.dsb-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.dsb-val{font-size:13px;font-weight:600;margin-top:1px}
-.dsb-hours{font-size:11px;color:var(--muted);margin-top:1px}
-
-/* ══ PROGRESS BAR ══ */
-.progress-card{margin:12px 16px 0;padding:12px 14px;display:flex;align-items:center;gap:12px}
-.prog-bar-wrap{flex:1}
-.prog-label{font-size:10px;color:var(--muted);margin-bottom:5px}
-.prog-bar{height:6px;background:var(--raised);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.prog-count{text-align:right;flex-shrink:0}
-.prog-num{font-size:20px;font-weight:800;line-height:1}
-.prog-sub{font-size:10px;color:var(--muted)}
-
-/* ══ BOTTOM NAV ══ */
-.bnav{position:absolute;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(var(--safe-bottom) + 8px);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);z-index:100}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(var(--safe-bottom) + 8px);backdrop-filter:blur(24px);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;background:transparent;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
 .nav-btn.active{color:var(--orange)}
-.nav-btn svg{width:24px;height:24px;stroke-width:1.8;transition:transform .2s}
-.nav-btn.active svg{transform:scale(1.1)}
+.nav-btn svg{width:22px;height:22px;stroke-width:1.8}
 .nav-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--red);border-radius:20px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
 
-/* ══ MAIN CONTENT ══ */
-.main-content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(60px + var(--safe-bottom))}
+/* CONTENT */
+.main-content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(64px + var(--safe-bottom))}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px}
 
-/* ══ MISSIONS ══ */
-.missions-list{flex:1;overflow-y:auto;padding:12px 16px 0}
-.mc{border-radius:20px;margin-bottom:14px;overflow:hidden;transition:transform .15s}
-.mc:active{transform:scale(.99)}
-.mc-top{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
-.mc-time-block .mc-time{font-size:26px;font-weight:800;letter-spacing:-1.5px;line-height:1}
-.mc-time-block .mc-type{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+/* MISSION CARD */
+.mc{border-radius:20px;margin-bottom:14px;overflow:hidden;background:var(--card);border:1px solid var(--border)}
+.mc:active{transform:scale(.995)}
+.mc-head{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+.mc-time{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.mc-time-sub{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+.mc-truck{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--raised)}
 .mc-client{padding:0 16px 10px}
-.mc-cname{font-size:18px;font-weight:700;line-height:1.2;margin-bottom:5px}
-.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
-.allerg{margin:0 16px 10px;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:7px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
-.mc-divider{height:1px;background:var(--border);margin:0 16px}
+.mc-name{font-size:18px;font-weight:800;line-height:1.2;margin-bottom:5px}
+.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start;line-height:1.5;cursor:pointer}
+.mc-addr:active{color:var(--blue)}
+.allerg-bar{margin:0 16px 10px;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:7px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
+.mc-div{height:1px;background:var(--border);margin:0 16px}
 .mc-meta{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
 .mt{background:var(--raised);border-radius:9px;padding:5px 10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .mt b{color:var(--text)}
 .mt.full{width:100%}
 .mc-btns{padding:12px 16px;display:grid;gap:8px}
 .ab{border-radius:13px;padding:13px 8px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid transparent;transition:all .15s}
-.ab:active{transform:scale(.94)}
+.ab:active{transform:scale(.93)}
 .ab svg{width:22px;height:22px}
 .ab-maps{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:var(--blue)}
 .ab-call{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
@@ -127,93 +86,112 @@ input,textarea,select{font-family:inherit;outline:none;-webkit-appearance:none}
 .ab-done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
 .ab-photo{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.3);color:var(--purple)}
 .ab-sign{background:rgba(20,184,166,.12);border-color:rgba(20,184,166,.3);color:var(--teal)}
-.ab-msg{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3);color:#818cf8}
+.ab-voice{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:var(--red)}
 
-/* ══ EMPTY / LOADER ══ */
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;color:var(--muted)}
-.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.25;stroke-width:1.2}
-.empty-state p{font-size:14px;line-height:1.7}
-.loader-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:13px}
-.spin{width:34px;height:34px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .75s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* MODE CONDUITE */
+.drive-mode{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.drive-time{font-size:64px;font-weight:900;letter-spacing:-3px;line-height:1}
+.drive-client{font-size:22px;font-weight:700;text-align:center;margin:8px 0 4px}
+.drive-addr{font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.6}
+.drive-timer{font-size:16px;color:var(--amber);font-weight:600;margin-bottom:32px}
+.drive-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px}
+.drive-btn{border-radius:16px;padding:20px 12px;font-size:14px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:8px;border:none;transition:transform .15s}
+.drive-btn:active{transform:scale(.95)}
+.drive-btn svg{width:28px;height:28px}
 
-/* ══ CALENDRIER ══ */
+/* ASSISTANT VOCAL */
+.voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;backdrop-filter:blur(10px)}
+.voice-circle{width:140px;height:140px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:24px}
+.voice-circle-bg{position:absolute;inset:0;border-radius:50%;border:3px solid var(--red);animation:voicePulse 1.5s ease-in-out infinite}
+.voice-icon{width:64px;height:64px;color:var(--red)}
+.voice-text{font-size:20px;font-weight:700;text-align:center;margin-bottom:8px}
+.voice-result{font-size:14px;color:var(--muted);text-align:center;min-height:20px;margin-bottom:24px;line-height:1.5}
+.voice-action{font-size:16px;font-weight:700;color:var(--green);text-align:center;min-height:24px}
+@keyframes voicePulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.15);opacity:1}}
+
+/* SIGNATURE */
+.sig-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0}
+.sig-box{background:var(--card);border-radius:24px 24px 0 0;padding:20px;width:100%}
+.sig-canvas{background:#fff;border-radius:12px;width:100%;touch-action:none;display:block}
+.sig-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+
+/* FICHE CLIENT */
+.client-sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;flex-direction:column;justify-content:flex-end}
+.client-box{background:var(--card);border-radius:24px 24px 0 0;padding:20px;max-height:80vh;overflow-y:auto}
+.client-history-item{background:var(--raised);border-radius:10px;padding:10px 12px;margin-bottom:6px;font-size:12px}
+
+/* CALENDRIER */
 .cal-wrap{flex:1;overflow-y:auto;padding:12px 16px 0}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .cal-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.cal-nav-btn:active{background:var(--raised)}
-.cal-month-title{font-size:16px;font-weight:700;text-align:center}
-.cal-month-sub{font-size:11px;color:var(--muted);text-align:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
 .cal-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:700;padding:4px 0}
 .cal-d{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;cursor:pointer;position:relative;border:1.5px solid transparent;transition:all .15s;font-weight:500}
-.cal-d:active{transform:scale(.9)}
 .cal-d.today{border-color:var(--orange);color:var(--orange);font-weight:800}
 .cal-d.has-m::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
 .cal-d.sel{background:var(--orange);color:#fff;font-weight:800}
 .cal-d.sel::after{background:#fff}
 .cal-d.off{color:var(--dim);background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.15)}
 .cal-d.rest{color:var(--muted);background:rgba(100,116,139,.06)}
-.day-list .di{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
-.di .dt{font-family:monospace;font-size:14px;font-weight:800;color:var(--orange);flex-shrink:0;width:46px}
-.di .dc{flex:1}
-.di .dn{font-size:13px;font-weight:600}
-.di .ds{font-size:11px;color:var(--muted);margin-top:1px}
-.status-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
-
-/* ══ HEURES DU MOIS ══ */
-.hours-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
-.hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.hg-item{background:var(--raised);border-radius:12px;padding:12px;text-align:center}
+.hours-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.hg{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
 .hg-val{font-size:24px;font-weight:800;line-height:1}
 .hg-lbl{font-size:10px;color:var(--muted);margin-top:3px}
 
-/* ══ MESSAGES ══ */
+/* MESSAGES */
 .msg-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.msg-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .msg-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
 .mb{max-width:88%}
 .mb.me{align-self:flex-end}
 .mb.them{align-self:flex-start}
 .mb-inner{padding:11px 15px;border-radius:20px;font-size:14px;line-height:1.5}
-.mb.them .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+.mb.them .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
 .mb.me .mb-inner{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
 .mb-meta{font-size:10px;color:var(--muted);margin-top:4px;padding:0 4px}
 .mb.me .mb-meta{text-align:right}
 .msg-bar{padding:10px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:calc(10px + var(--safe-bottom))}
-.msg-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:11px 16px;font-size:14px;color:var(--text);resize:none;max-height:100px;line-height:1.4}
-.msg-input:focus{border-color:var(--orange)}
-.send-btn{background:var(--orange);border-radius:50%;width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .15s}
-.send-btn:active{transform:scale(.9)}
+.msg-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:11px 16px;font-size:14px;color:var(--text);resize:none;max-height:100px}
+.send-btn{background:var(--orange);border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
 
-/* ══ SIGNATURE ══ */
-.sig-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-.sig-box{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:400px}
-.sig-canvas{background:#fff;border-radius:12px;width:100%;touch-action:none;cursor:crosshair;display:block}
-.sig-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.sig-btn{border-radius:12px;padding:12px;font-size:13px;font-weight:700;transition:transform .15s}
-.sig-btn:active{transform:scale(.96)}
+/* RECAP FIN JOURNEE */
+.recap-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.recap-box{background:var(--card);border-radius:24px;padding:24px;width:100%;max-width:360px}
 
-/* ══ TOAST ══ */
+/* TOAST */
 .toast{position:fixed;top:calc(var(--safe-top) + 16px);left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tIn .25s ease;max-width:90vw;text-align:center}
 @keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ══ PHOTO INPUT ══ */
-.photo-input{position:absolute;width:0;height:0;opacity:0}
+/* LOADER */
+.spin{border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:13px}
+
+/* STATUT BARRE */
+.status-bar{margin:0 16px 12px;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2)}
+.sb-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-info{flex:1}
+.sb-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sb-val{font-size:14px;font-weight:700;margin-top:1px}
+.sb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.prog-bar-wrap{margin:0 16px 12px}
+.prog-bar{height:6px;background:var(--raised);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+.prog-row{display:flex;justify-content:space-between;margin-bottom:5px}
+
+/* GEO DOT */
+.geo-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:geoPulse 2s infinite}
+@keyframes geoPulse{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.2)}50%{box-shadow:0 0 0 8px rgba(34,197,94,.05)}}
 </style>
 </head>
 <body>
 <div id="root"></div>
-<input type="file" id="photo-input" class="photo-input" accept="image/*" capture="environment"/>
+<input type="file" id="photo-cap" accept="image/*" capture="environment" style="position:absolute;width:0;height:0;opacity:0"/>
 <script type="text/babel">
 const {useState,useEffect,useRef,useCallback} = React;
 
 /* ══ CONFIG ══ */
 const SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
 const SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-const TG_TOKEN='8477045091:AAFiQhOh8MPvbi8auzW8y_s2doKrRnyF2ys';
-const RESP_ID='7551397917';
-const TG_API=`https://api.telegram.org/bot${TG_TOKEN}`;
 
 const CHAUFFEURS=[
   {id:0,name:'Otmane',initial:'O',color:'#3b82f6',code:'1111',truck:'JUMPY',start:'06:00',end:'14:00'},
@@ -227,32 +205,62 @@ const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
 
-/* ══ API ══ */
+/* ══ SUPABASE ══ */
 async function supaFetch(path,opts={}){
-  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-    ...opts
-  });
-  return r.json();
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      ...opts
+    });
+    return r.json();
+  }catch(e){return null;}
 }
 
 async function chargerPlanning(date){
   const d=date||new Date().toISOString().slice(0,10);
-  try{
-    const rows=await supaFetch('planning?date=eq.'+d+'&select=donnees&order=updated_at.desc&limit=1');
-    if(rows&&rows.length) return rows[0].donnees;
-  }catch(e){}
+  const rows=await supaFetch('planning?date=eq.'+d+'&select=donnees&order=updated_at.desc&limit=1');
+  if(rows&&rows.length)return rows[0].donnees;
   return null;
 }
 
-async function tg(method,body){
+async function sauverPosition(chauffeurId,lat,lng){
+  const key=`position_${chauffeurId}`;
+  const val=JSON.stringify({lat,lng,t:new Date().toISOString(),di:chauffeurId});
+  await supaFetch('planning?date=eq.GEO_'+chauffeurId,{method:'DELETE'});
+  await supaFetch('planning',{method:'POST',body:JSON.stringify({date:'GEO_'+chauffeurId,donnees:val})});
+}
+
+async function sauverEvenement(ev){
   try{
-    await fetch(`${TG_API}/${method}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const existing=await supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1');
+    let events=[];
+    if(existing&&existing.length){try{events=JSON.parse(existing[0].donnees)||[];}catch(e){}}
+    events.unshift({...ev,ts:new Date().toISOString()});
+    events=events.slice(0,200);
+    if(existing&&existing.length){
+      await supaFetch('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:JSON.stringify(events)})});
+    }else{
+      await supaFetch('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:JSON.stringify(events)})});
+    }
+  }catch(e){}
+}
+
+async function sauverMessage(msg){
+  try{
+    const existing=await supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1');
+    let msgs=[];
+    if(existing&&existing.length){try{msgs=JSON.parse(existing[0].donnees)||[];}catch(e){}}
+    msgs.push(msg);msgs=msgs.slice(-500);
+    if(existing&&existing.length){
+      await supaFetch('planning?date=eq.MESSAGES',{method:'PATCH',body:JSON.stringify({donnees:JSON.stringify(msgs)})});
+    }else{
+      await supaFetch('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:JSON.stringify(msgs)})});
+    }
   }catch(e){}
 }
 
 function getMissions(planning,di,date){
-  if(!planning||!planning.tasks) return [];
+  if(!planning||!planning.tasks)return[];
   const ms=[];
   SL.forEach(h=>{
     const k=date+'|'+di+'|'+h;
@@ -264,31 +272,28 @@ function getMissions(planning,di,date){
 }
 
 function getStatut(planning,di,date){
-  if(!planning||!planning.statuts) return null;
+  if(!planning||!planning.statuts)return null;
   return Object.values(planning.statuts).find(s=>s.di===di&&s.date===date)||null;
 }
 
-function calcHeuresMois(planning,di,mois,annee){
-  let jours=0,absences=0,totalMin=0;
-  const daysInMonth=new Date(annee,mois+1,0).getDate();
-  for(let day=1;day<=daysInMonth;day++){
-    const d=new Date(annee,mois,day);
-    if(d>new Date()) break;
-    const ds=`${annee}-${String(mois+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+function calcHeures(planning,di,mois,annee){
+  let jours=0,absences=0,min=0;
+  const days=new Date(annee,mois+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const now=new Date();
+    if(new Date(annee,mois,d)>now)break;
+    const ds=`${annee}-${String(mois+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const st=getStatut(planning,di,ds);
-    if(st&&(st.type==='absent'||st.type==='maladie'||st.type==='conge'||st.type==='repos')){
-      absences++;continue;
-    }
-    const ms=getMissions(planning,di,ds);
-    if(ms.length>0){jours++;totalMin+=7*60-45;}
+    if(st&&(st.type==='absent'||st.type==='maladie'||st.type==='conge'||st.type==='repos')){absences++;continue;}
+    if(getMissions(planning,di,ds).length>0){jours++;min+=7*60-45;}
   }
-  return {jours,absences,heures:Math.floor(totalMin/60),minutes:totalMin%60};
+  return{jours,absences,h:Math.floor(min/60),m:min%60,hBrut:jours*7};
 }
 
 /* ══ TOAST ══ */
-function Toast({msg,color,bg}){
+function Toast({msg,color}){
   if(!msg)return null;
-  return<div className="toast" style={{background:bg||'#1e293b',border:`1px solid ${color}44`,color}}>{msg}</div>;
+  return<div className="toast" style={{background:'#1e293b',border:`1px solid ${color}44`,color}}>{msg}</div>;
 }
 
 /* ══ LOGIN ══ */
@@ -297,32 +302,30 @@ function Login({onLogin}){
   const [code,setCode]=useState('');
   const [err,setErr]=useState('');
 
-  const addDigit=d=>{
+  const add=d=>{
     if(code.length>=4)return;
-    const nc=code+d;
-    setCode(nc);setErr('');
+    const nc=code+d;setCode(nc);setErr('');
     if(nc.length===4){
       const ch=CHAUFFEURS.find(c=>c.id===sel);
-      if(nc===ch.code||nc==='0000'){setTimeout(()=>onLogin(ch),100);}
-      else{setTimeout(()=>{setCode('');setErr('Code incorrect, réessayez');},300);}
+      if(nc===ch.code||nc==='0000'){setTimeout(()=>onLogin(ch),80);}
+      else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
     }
   };
+
+  const speak=(txt)=>{if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';window.speechSynthesis.speak(u);}};
 
   return(
     <div className="login-screen">
       <div className="login-logo">
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="white">
-          <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/>
-          <circle cx="5.5" cy="18.5" r="2.5"/>
-          <circle cx="18.5" cy="18.5" r="2.5"/>
-        </svg>
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
       <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
       <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
       <div className="ch-grid">
         {CHAUFFEURS.map(ch=>(
-          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
-            <div className="av" style={{background:ch.color+'20',border:`2px solid ${sel===ch.id?ch.color:ch.color+'40'}`,color:ch.color}}>{ch.initial}</div>
+          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`}
+            onClick={()=>{setSel(ch.id);setCode('');setErr('');speak('Bonjour '+ch.name+', entrez votre code');}}>
+            <div className="av" style={{width:46,height:46,fontSize:18,background:ch.color+'20',border:`2px solid ${sel===ch.id?ch.color:ch.color+'40'}`,color:ch.color}}>{ch.initial}</div>
             <span style={{fontSize:12,fontWeight:700,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.name}</span>
             <span style={{fontSize:10,color:'var(--dim)'}}>{ch.truck}</span>
           </button>
@@ -330,219 +333,379 @@ function Login({onLogin}){
       </div>
       {sel!==null&&(
         <>
-          <div className="code-dots">
-            {[0,1,2,3].map(i=><div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>)}
-          </div>
-          <div className="err-msg">{err}</div>
+          <div className="code-dots">{[0,1,2,3].map(i=><div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>)}</div>
+          <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:6}}>{err}</div>
           <div className="numpad">
             {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
               k===''?<div key={i}/>:
-              <button key={i} className={`num-key ${k==='⌫'?'del-key':''}`}
-                onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):addDigit(String(k))}>
+              <button key={i} className="num-key" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
+                onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):add(String(k))}>
                 {k}
               </button>
             )}
           </div>
-          <p style={{fontSize:10,color:'var(--dim)',marginTop:14,textAlign:'center'}}>Code provisoire : 0000</p>
+          <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>Code provisoire : 0000</p>
         </>
       )}
     </div>
   );
 }
 
-/* ══ STATUT BARRE ══ */
-function DayStatusBar({statut,chauffeur}){
-  const today=new Date();
-  const startH=parseInt(chauffeur.start.split(':')[0]);
-  const endH=parseInt(chauffeur.end.split(':')[0]);
-  const nowH=today.getHours()+(today.getMinutes()/60);
-  const pct=Math.max(0,Math.min(100,((nowH-startH)/(endH-startH))*100));
+/* ══ ASSISTANT VOCAL ══ */
+function VoiceAssistant({chauffeur,mission,onClose,onCommand}){
+  const [listening,setListening]=useState(false);
+  const [transcript,setTranscript]=useState('');
+  const [action,setAction]=useState('');
+  const recRef=useRef(null);
 
-  let bg='var(--raised)',iconBg='rgba(34,197,94,.15)',iconColor='var(--green)',label='En service',sublabel=chauffeur.start+' → '+chauffeur.end;
-  if(statut){
-    const t=statut.type;
-    if(t==='absent'||t==='maladie'){bg='rgba(239,68,68,.08)';iconBg='rgba(239,68,68,.15)';iconColor='var(--red)';label=t==='maladie'?'Arrêt maladie':'Absent';}
-    else if(t==='conge'){bg='rgba(59,130,246,.08)';iconBg='rgba(59,130,246,.15)';iconColor='var(--blue)';label='En congé';}
-    else if(t==='repos'){bg='rgba(100,116,139,.08)';iconBg='rgba(100,116,139,.15)';iconColor='var(--muted)';label='Jour de repos';}
-  }
+  const speak=(txt)=>{
+    if(!window.speechSynthesis)return;
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
+    window.speechSynthesis.speak(u);
+  };
+
+  const parseCommand=(txt)=>{
+    const t=txt.toLowerCase();
+    if(t.includes('terminé')||t.includes('livré')||t.includes('mission terminée')||t.includes('livraison terminée')){
+      speak('Mission marquée comme terminée.');onCommand('done');return'✅ Mission marquée comme terminée';
+    }
+    if(t.includes('en route')||t.includes('je pars')||t.includes('je démarre')){
+      speak('Bon trajet !');onCommand('enroute');return'🚗 Statut En route enregistré';
+    }
+    if(t.includes('client absent')||t.includes('personne')||t.includes('absent')){
+      speak('Client absent noté.');onCommand('absent');return'⚠️ Client absent enregistré';
+    }
+    if(t.includes('retard')){
+      const m=t.match(/(\d+)\s*minute/);
+      const min=m?m[1]:'';
+      speak('Retard signalé.');onCommand('retard',min);return`⏰ Retard ${min?'de '+min+' min':''} signalé`;
+    }
+    const bacs=t.match(/(\d+)\s*(bac|caisse|plateau|carton)/);
+    if(bacs){
+      speak(`${bacs[1]} ${bacs[2]} enregistrés.`);onCommand('materiel',bacs[1]+' '+bacs[2]);
+      return`📦 ${bacs[1]} ${bacs[2]} enregistrés`;
+    }
+    if(t.includes('photo')){speak('Prenez la photo.');onCommand('photo');return'📷 Ouverture photo';}
+    if(t.includes('appel')||t.includes('appeler')){speak('Appel du client.');onCommand('call');return'📞 Appel du client';}
+    if(t.includes('navigation')||t.includes('maps')||t.includes('itinéraire')){speak('Ouverture de la navigation.');onCommand('maps');return'📍 Ouverture Maps';}
+    speak('Je n\'ai pas compris. Réessayez.');
+    return'❓ Non reconnu — réessayez';
+  };
+
+  const startListen=()=>{
+    if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){
+      speak('Reconnaissance vocale non disponible sur ce navigateur.');
+      setAction('Non disponible sur ce navigateur');return;
+    }
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const rec=new SR();recRef.current=rec;
+    rec.lang='fr-FR';rec.continuous=false;rec.interimResults=true;
+    rec.onstart=()=>{setListening(true);setTranscript('');setAction('');speak('Je vous écoute');};
+    rec.onresult=e=>{
+      const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+      setTranscript(t);
+      if(e.results[e.results.length-1].isFinal){
+        const result=parseCommand(t);
+        setAction(result);setListening(false);
+      }
+    };
+    rec.onerror=()=>{setListening(false);speak('Erreur, réessayez.');};
+    rec.onend=()=>setListening(false);
+    rec.start();
+  };
+
+  useEffect(()=>{
+    speak(`Que dois-je faire pour la livraison ${mission?mission.client:'en cours'} ?`);
+    setTimeout(startListen,1500);
+  },[]);
+
+  const stop=()=>{if(recRef.current){recRef.current.stop();}};
 
   return(
-    <div className="day-status-bar" style={{background:bg}}>
-      <div className="dsb-icon" style={{background:iconBg}}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2">
-          {label==='En service'?<><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>:
-          <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
+    <div className="voice-overlay" onClick={!listening?onClose:undefined}>
+      <div className="voice-circle" style={{background:listening?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'}}>
+        <div className="voice-circle-bg" style={{borderColor:listening?'var(--red)':'var(--green)',animationDuration:listening?'1s':'2s'}}/>
+        <svg className="voice-icon" style={{color:listening?'var(--red)':'var(--green)'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
       </div>
-      <div className="dsb-info">
-        <div className="dsb-label">Statut du jour</div>
-        <div className="dsb-val" style={{color:iconColor}}>{label}</div>
-        <div className="dsb-hours">{sublabel}</div>
+      <div className="voice-text">{listening?'Je vous écoute...':'En attente'}</div>
+      <div className="voice-result" style={{color:'var(--text)'}}>{transcript||'Parlez maintenant'}</div>
+      <div className="voice-action">{action}</div>
+      <div style={{display:'flex',gap:12,marginTop:24}}>
+        {listening?(
+          <button onClick={stop} style={{background:'var(--red)',color:'#fff',border:'none',borderRadius:50,padding:'14px 28px',fontSize:14,fontWeight:700}}>Stop</button>
+        ):(
+          <button onClick={startListen} style={{background:'var(--green)',color:'#fff',border:'none',borderRadius:50,padding:'14px 28px',fontSize:14,fontWeight:700}}>🎤 Reparler</button>
+        )}
+        <button onClick={onClose} style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border2)',borderRadius:50,padding:'14px 28px',fontSize:14,fontWeight:700}}>Fermer</button>
       </div>
-      {label==='En service'&&(
-        <div style={{width:40,height:40,position:'relative',flex:'none'}}>
-          <svg viewBox="0 0 36 36" style={{width:'100%',height:'100%',transform:'rotate(-90deg)'}}>
-            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--raised)" strokeWidth="3"/>
-            <circle cx="18" cy="18" r="15" fill="none" stroke={chauffeur.color} strokeWidth="3"
-              strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
-          </svg>
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:chauffeur.color}}>{Math.round(pct)}%</div>
+      <p style={{fontSize:11,color:'var(--dim)',marginTop:16,textAlign:'center',maxWidth:280,lineHeight:1.6}}>
+        Dites : "Mission terminée" · "En route" · "Client absent" · "Retard 10 minutes" · "3 bacs récupérés" · "Photo" · "Appeler"
+      </p>
+    </div>
+  );
+}
+
+/* ══ FICHE CLIENT ══ */
+function ClientSheet({mission,planning,chauffeur,onClose}){
+  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mission.adresse||mission.client||'')}`;
+  const today=new Date().toISOString().slice(0,10);
+
+  /* Historique : chercher ce client dans toutes les dates */
+  const historique=[];
+  if(planning&&planning.tasks){
+    Object.entries(planning.tasks).forEach(([k,tasks])=>{
+      tasks.forEach(t=>{
+        if((t.client||'').toLowerCase().includes((mission.client||'').toLowerCase().substring(0,6))&&k.split('|')[0]!==today){
+          historique.push({date:k.split('|')[0],heure:k.split('|')[2],client:t.client,chauffeurId:parseInt(k.split('|')[1])});
+        }
+      });
+    });
+  }
+  historique.sort((a,b)=>b.date.localeCompare(a.date));
+
+  const speak=(txt)=>{if(window.speechSynthesis){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';window.speechSynthesis.speak(u);}};
+
+  const readAloud=()=>{
+    let txt=`Client : ${mission.client}. `;
+    if(mission.adresse)txt+=`Adresse : ${mission.adresse}. `;
+    if(mission.contact)txt+=`Téléphone : ${mission.contact}. `;
+    if(mission.convives)txt+=`${mission.convives} convives. `;
+    if(mission.note_liv)txt+=`Note : ${mission.note_liv}. `;
+    if(mission.allergenes&&mission.allergenes.length)txt+=`Attention allergènes : ${mission.allergenes.join(', ')}.`;
+    speak(txt);
+  };
+
+  return(
+    <div className="client-sheet" onClick={onClose}>
+      <div className="client-box" onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div>
+            <div style={{fontSize:11,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.05}}>Fiche client</div>
+            <div style={{fontSize:18,fontWeight:800,color:chauffeur.color}}>{mission.client}</div>
+          </div>
+          <button onClick={onClose} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:50,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>✕</button>
         </div>
-      )}
+
+        {/* Infos */}
+        {[
+          {icon:'🕐',label:'Heure',val:mission.heure,big:true},
+          {icon:'📍',label:'Adresse',val:mission.adresse,link:mapsUrl},
+          {icon:'📞',label:'Téléphone',val:mission.contact,tel:true},
+          {icon:'👥',label:'Convives',val:mission.convives?mission.convives+' personnes':null},
+          {icon:'🚛',label:'Camion',val:mission.truck||chauffeur.truck},
+          {icon:'📝',label:'Note',val:mission.note_liv},
+        ].filter(r=>r.val).map((row,i)=>(
+          <div key={i} style={{display:'flex',gap:10,padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+            <span style={{fontSize:18,flexShrink:0}}>{row.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,color:'var(--muted)'}}>{row.label}</div>
+              {row.link?(
+                <a href={row.link} target="_blank" style={{fontSize:14,color:'var(--blue)',fontWeight:600,textDecoration:'none'}}>{row.val}</a>
+              ):row.tel?(
+                <a href={`tel:${row.val}`} style={{fontSize:14,color:'var(--green)',fontWeight:600,textDecoration:'none'}}>{row.val}</a>
+              ):(
+                <div style={{fontSize:14,fontWeight:row.big?700:400,color:row.big?chauffeur.color:'var(--text)'}}>{row.val}</div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Allergènes */}
+        {mission.allergenes&&mission.allergenes.length>0&&(
+          <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.2)',borderRadius:10,padding:'10px 12px',margin:'10px 0',fontSize:12,color:'var(--red)',fontWeight:700}}>
+            🚨 ALLERGÈNES : {mission.allergenes.join(', ')}
+          </div>
+        )}
+
+        {/* Boutons */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,margin:'12px 0'}}>
+          <button onClick={readAloud} style={{background:'rgba(168,85,247,.12)',border:'1px solid rgba(168,85,247,.3)',color:'var(--purple)',borderRadius:12,padding:12,fontSize:12,fontWeight:700,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+            <span style={{fontSize:20}}>🔊</span>Lire à voix haute
+          </button>
+          {mission.contact&&(
+            <a href={`tel:${mission.contact}`} style={{textDecoration:'none'}}>
+              <button style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.3)',color:'var(--green)',borderRadius:12,padding:12,fontSize:12,fontWeight:700,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                <span style={{fontSize:20}}>📞</span>Appeler
+              </button>
+            </a>
+          )}
+        </div>
+
+        {/* Historique */}
+        {historique.length>0&&(
+          <>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,textTransform:'uppercase',margin:'12px 0 8px'}}>Historique ({historique.length} livraisons)</div>
+            {historique.slice(0,3).map((h,i)=>(
+              <div key={i} className="client-history-item">
+                <div style={{display:'flex',justifyContent:'space-between'}}>
+                  <span style={{fontWeight:600}}>{h.date}</span>
+                  <span style={{color:'var(--muted)'}}>{h.heure} · {CHAUFFEURS[h.chauffeurId]?.name}</span>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ══ CARTE MISSION ══ */
-function MissionCard({m,chauffeur,onAction}){
+function MissionCard({m,chauffeur,onAction,onClientClick,driveMode}){
   const stConf={
-    pending:{pill:'pill-blue',dot:'dot-gray',lbl:'En attente'},
-    enroute:{pill:'pill-amber',dot:'dot-amber',lbl:'🚗 En route'},
-    done:{pill:'pill-green',dot:'dot-green',lbl:'✓ Livré'},
-    retard:{pill:'pill-red',dot:'dot-red',lbl:'⚠ Retard'},
-  }[m._statut||'pending']||{pill:'pill-blue',dot:'dot-gray',lbl:'En attente'};
+    pending:{col:'var(--blue)',lbl:'En attente',dot:'var(--dim)'},
+    enroute:{col:'var(--amber)',lbl:'🚗 En route',dot:'var(--amber)'},
+    done:{col:'var(--green)',lbl:'✓ Livré',dot:'var(--green)'},
+    retard:{col:'var(--red)',lbl:'⚠ Retard',dot:'var(--red)'},
+    absent:{col:'var(--red)',lbl:'Client absent',dot:'var(--red)'},
+  }[m._statut]||{col:'var(--blue)',lbl:'En attente',dot:'var(--dim)'};
 
-  const borderColor=m._statut==='done'?'rgba(34,197,94,.2)':m._statut==='retard'?'rgba(239,68,68,.35)':m._statut==='enroute'?`${chauffeur.color}30`:'var(--border)';
-  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((m.adresse||m.client||''))}`;
-  const ncols=m._statut==='done'?2:m._statut==='enroute'?3:3;
+  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
+  const ncols=m._statut==='done'?2:3;
+
+  if(driveMode&&m._statut==='enroute') return null;
 
   return(
-    <div className="card mc" style={{borderColor,opacity:m._statut==='done'?.75:1}}>
-      <div className="mc-top">
-        <div className="mc-time-block">
+    <div className="mc" style={{borderColor:m._statut==='retard'||m._statut==='absent'?'rgba(239,68,68,.35)':m._statut==='done'?'rgba(34,197,94,.2)':m._statut==='enroute'?`${chauffeur.color}30`:'var(--border)',opacity:m._statut==='done'?.75:1}}>
+      <div className="mc-head">
+        <div>
           <div className="mc-time mono" style={{color:chauffeur.color}}>{m.heure}</div>
-          <div className="mc-type">
-            <div className={`dot ${stConf.dot}`}/>
+          <div className="mc-time-sub">
+            <div style={{width:7,height:7,borderRadius:'50%',background:stConf.dot,flexShrink:0}}/>
             {stConf.lbl}
           </div>
         </div>
-        <div className={`pill ${stConf.pill}`}>{m.convives?m.convives+' conv.':m.category==='traiteur'?'Traiteur':'Mission'}</div>
+        <div className="mc-truck" style={{color:chauffeur.color,background:chauffeur.color+'15'}}>{m.truck||chauffeur.truck}</div>
       </div>
 
       <div className="mc-client">
-        <div className="mc-cname">{m.client||m.task||'Livraison'}</div>
+        <div className="mc-name" onClick={()=>onClientClick(m)} style={{cursor:'pointer'}}>{m.client||m.task||'Livraison'} <span style={{fontSize:12,color:'var(--muted)'}}>›</span></div>
         {m.adresse&&(
-          <div className="mc-addr">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}>
-              <path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/>
-            </svg>
+          <div className="mc-addr" onClick={()=>window.open(mapsUrl,'_blank')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>
             {m.adresse}
           </div>
         )}
       </div>
 
       {m.allergenes&&m.allergenes.length>0&&(
-        <div className="allerg">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}>
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
+        <div className="allerg-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           ALLERGÈNES : {m.allergenes.join(', ')}
         </div>
       )}
 
-      <div className="mc-divider"/>
+      <div className="mc-div"/>
       <div className="mc-meta">
-        {m.contact&&<div className="mt">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <b>{m.contact}</b>
-        </div>}
-        {m.truck&&<div className="mt">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          <b>{m.truck}</b>
-        </div>}
-        {m.note_liv&&<div className="mt full">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span style={{color:'var(--text)'}}>{m.note_liv}</span>
-        </div>}
+        {m.convives&&<div className="mt"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><b>{m.convives}</b> conv.</div>}
+        {m.contact&&<div className="mt"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><b>{m.contact}</b></div>}
+        {m.note_liv&&<div className="mt full"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
       </div>
 
-      <div className="mc-divider"/>
+      <div className="mc-div"/>
       <div className="mc-btns" style={{gridTemplateColumns:`repeat(${ncols},1fr)`}}>
         <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
-          <button className="ab ab-maps" style={{width:'100%'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-            Maps
+          <button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button>
+        </a>
+        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}><button className="ab ab-call" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler</button></a>}
+        {m._statut==='pending'&&<button className="ab ab-go" onClick={()=>onAction(m,'enroute')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En route</button>}
+        {m._statut==='enroute'&&<button className="ab ab-done" onClick={()=>onAction(m,'done')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>Livré !</button>}
+        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo</button>
+        {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature</button>}
+        <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══ MODE CONDUITE ══ */
+function DriveMode({mission,chauffeur,onClose,onDone}){
+  const [elapsed,setElapsed]=useState(0);
+  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mission.adresse||mission.client||'')}`;
+
+  useEffect(()=>{
+    const iv=setInterval(()=>setElapsed(e=>e+1),1000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  const fmt=(s)=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const speak=(txt)=>{if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';window.speechSynthesis.speak(u);}};
+
+  useEffect(()=>{speak(`En route pour ${mission.client}. ${mission.adresse||''}`);},[]);
+
+  return(
+    <div className="drive-mode">
+      <div style={{position:'absolute',top:24,right:24,display:'flex',alignItems:'center',gap:6}}>
+        <div style={{width:8,height:8,borderRadius:'50%',background:'var(--green)',animation:'geoPulse 2s infinite'}}/>
+        <span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>GPS actif</span>
+      </div>
+      <div style={{fontSize:12,color:'var(--muted)',marginBottom:8,textTransform:'uppercase',letterSpacing:.08}}>En route vers</div>
+      <div className="drive-time mono" style={{color:chauffeur.color}}>{mission.heure}</div>
+      <div className="drive-client">{mission.client}</div>
+      <div className="drive-addr">{mission.adresse}</div>
+      {mission.allergenes&&mission.allergenes.length>0&&(
+        <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:12,padding:'8px 16px',marginBottom:16,fontSize:12,color:'var(--red)',fontWeight:700}}>
+          🚨 {mission.allergenes.join(', ')}
+        </div>
+      )}
+      <div className="drive-timer">⏱ {fmt(elapsed)}</div>
+
+      <div className="drive-btns">
+        <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
+          <button className="drive-btn" style={{background:'var(--blue)',color:'#fff',width:'100%'}}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Navigation
           </button>
         </a>
-        {m.contact&&(
-          <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
-            <button className="ab ab-call" style={{width:'100%'}}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              Appeler
+        {mission.contact&&(
+          <a href={`tel:${mission.contact}`} style={{textDecoration:'none'}}>
+            <button className="drive-btn" style={{background:'var(--green)',color:'#fff',width:'100%'}}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Appeler client
             </button>
           </a>
         )}
-        {m._statut==='pending'&&(
-          <button className="ab ab-go" onClick={()=>onAction(m,'enroute')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            En route
-          </button>
-        )}
-        {m._statut==='enroute'&&(
-          <button className="ab ab-done" onClick={()=>onAction(m,'done')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
-            Livré !
-          </button>
-        )}
-        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Photo
+        <button className="drive-btn" style={{background:'var(--green)',color:'#fff'}} onClick={onDone}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
+          Livré !
         </button>
-        {m._statut!=='done'&&(
-          <button className="ab ab-sign" onClick={()=>onAction(m,'sign')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Signature
-          </button>
-        )}
+        <button className="drive-btn" style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border)'}} onClick={onClose}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Quitter
+        </button>
       </div>
     </div>
   );
 }
 
 /* ══ SIGNATURE ══ */
-function SignatureModal({mission,chauffeur,onClose,onDone}){
-  const canvasRef=useRef();
-  const drawing=useRef(false);
-  const lastPos=useRef({x:0,y:0});
-
+function SigModal({mission,chauffeur,onClose,onDone}){
+  const canvasRef=useRef();const drawing=useRef(false);const last=useRef({x:0,y:0});
   useEffect(()=>{
-    const canvas=canvasRef.current;
-    const ctx=canvas.getContext('2d');
-    canvas.width=canvas.offsetWidth*window.devicePixelRatio;
-    canvas.height=canvas.offsetHeight*window.devicePixelRatio;
+    const c=canvasRef.current;const ctx=c.getContext('2d');
+    c.width=c.offsetWidth*window.devicePixelRatio;c.height=c.offsetHeight*window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
     ctx.strokeStyle='#1e293b';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
   },[]);
-
-  const getPos=(e,canvas)=>{
-    const r=canvas.getBoundingClientRect();
-    const src=e.touches?e.touches[0]:e;
-    return{x:src.clientX-r.left,y:src.clientY-r.top};
-  };
-
-  const start=e=>{drawing.current=true;lastPos.current=getPos(e,canvasRef.current);e.preventDefault();};
+  const pos=(e,c)=>{const r=c.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};};
+  const start=e=>{drawing.current=true;last.current=pos(e,canvasRef.current);e.preventDefault();};
   const move=e=>{
     if(!drawing.current)return;e.preventDefault();
-    const canvas=canvasRef.current;const ctx=canvas.getContext('2d');
-    const pos=getPos(e,canvas);
-    ctx.beginPath();ctx.moveTo(lastPos.current.x,lastPos.current.y);
-    ctx.lineTo(pos.x,pos.y);ctx.stroke();lastPos.current=pos;
+    const c=canvasRef.current;const ctx=c.getContext('2d');const p=pos(e,c);
+    ctx.beginPath();ctx.moveTo(last.current.x,last.current.y);ctx.lineTo(p.x,p.y);ctx.stroke();last.current=p;
   };
   const end=()=>drawing.current=false;
-
-  const clear=()=>{
-    const canvas=canvasRef.current;const ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.offsetWidth,canvas.offsetHeight);
-  };
-
+  const clear=()=>{const c=canvasRef.current;c.getContext('2d').clearRect(0,0,c.offsetWidth,c.offsetHeight);};
   const save=async()=>{
-    const canvas=canvasRef.current;
-    const dataUrl=canvas.toDataURL('image/png');
-    await tg('sendPhoto',{chat_id:RESP_ID,photo:dataUrl,caption:`✍️ *Signature client*\n${chauffeur.name} — ${mission.client} (${mission.heure})`});
+    const dataUrl=canvasRef.current.toDataURL('image/png');
+    await sauverEvenement({type:'signature',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure,dataUrl});
     onDone();
   };
-
   return(
     <div className="sig-modal" onClick={onClose}>
       <div className="sig-box" onClick={e=>e.stopPropagation()}>
@@ -551,63 +714,131 @@ function SignatureModal({mission,chauffeur,onClose,onDone}){
         <canvas ref={canvasRef} className="sig-canvas" style={{height:180}}
           onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
           onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
-        <div className="sig-actions">
-          <button className="sig-btn" style={{background:'var(--raised)',color:'var(--muted)'}} onClick={clear}>Effacer</button>
-          <button className="sig-btn" style={{background:'var(--green)',color:'#fff'}} onClick={save}>Valider ✓</button>
+        <div className="sig-btns">
+          <button style={{background:'var(--raised)',color:'var(--muted)',borderRadius:12,padding:12,fontSize:13,fontWeight:700,border:'1px solid var(--border)'}} onClick={clear}>Effacer</button>
+          <button style={{background:'var(--green)',color:'#fff',borderRadius:12,padding:12,fontSize:13,fontWeight:700}} onClick={save}>Valider ✓</button>
         </div>
-        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:10,background:'transparent',color:'var(--muted)',fontSize:12}}>Annuler</button>
+        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:10,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══ RECAP FIN JOURNEE ══ */
+function RecapModal({missions,chauffeur,onClose}){
+  const done=missions.filter(m=>m._statut==='done').length;
+  const total=missions.length;
+  const pct=total?Math.round(done/total*100):0;
+  const speak=(txt)=>{if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';window.speechSynthesis.speak(u);}};
+  useEffect(()=>{speak(`Bilan de votre journée : ${done} livraisons sur ${total} effectuées. ${pct===100?'Excellent travail !':''}`);},[]);
+  return(
+    <div className="recap-modal">
+      <div className="recap-box">
+        <div style={{textAlign:'center',marginBottom:20}}>
+          <div style={{fontSize:48}}>🎉</div>
+          <div style={{fontSize:18,fontWeight:800,marginTop:8}}>Bilan de la journée</div>
+          <div style={{fontSize:13,color:'var(--muted)',marginTop:4}}>{chauffeur.name} — {new Date().toLocaleDateString('fr-FR')}</div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+          <div style={{background:'var(--raised)',borderRadius:12,padding:14,textAlign:'center'}}>
+            <div style={{fontSize:32,fontWeight:800,color:'var(--green)'}}>{done}</div>
+            <div style={{fontSize:11,color:'var(--muted)'}}>Livrées</div>
+          </div>
+          <div style={{background:'var(--raised)',borderRadius:12,padding:14,textAlign:'center'}}>
+            <div style={{fontSize:32,fontWeight:800,color:chauffeur.color}}>{total}</div>
+            <div style={{fontSize:11,color:'var(--muted)'}}>Total</div>
+          </div>
+        </div>
+        <div style={{background:'var(--raised)',borderRadius:10,overflow:'hidden',marginBottom:16}}>
+          <div style={{height:8,background:`linear-gradient(90deg,${chauffeur.color},var(--green))`,width:pct+'%',transition:'width .5s'}}/>
+        </div>
+        <div style={{fontSize:24,fontWeight:800,textAlign:'center',color:pct===100?'var(--green)':chauffeur.color,marginBottom:16}}>
+          {pct===100?'✅ Parfait !':pct+'% accompli'}
+        </div>
+        <button onClick={onClose} style={{width:'100%',background:chauffeur.color,color:'#fff',borderRadius:14,padding:14,fontSize:14,fontWeight:700}}>Fermer</button>
       </div>
     </div>
   );
 }
 
 /* ══ VUE AUJOURD'HUI ══ */
-function TodayView({chauffeur,planning,onAction}){
-  if(!planning)return<div className="loader-wrap"><div className="spin"/><span>Chargement...</span></div>;
-
+function TodayView({chauffeur,planning,onAction,onClientClick}){
   const today=new Date().toISOString().slice(0,10);
-  const missions=getMissions(planning,chauffeur.id,today);
-  const statut=getStatut(planning,chauffeur.id,today);
+  const missions=planning?getMissions(planning,chauffeur.id,today):[];
+  const statut=planning?getStatut(planning,chauffeur.id,today):null;
   const done=missions.filter(m=>m._statut==='done').length;
   const total=missions.length;
+  const now=new Date();
+  const startH=parseInt(chauffeur.start.split(':')[0]);
+  const endH=parseInt(chauffeur.end.split(':')[0]);
+  const pct=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60-startH)/(endH-startH))*100));
+
+  let sbBg='var(--raised)',sbCol='var(--green)',sbLbl='En service',sbSub=chauffeur.start+' → '+chauffeur.end;
+  if(statut){
+    if(statut.type==='absent'||statut.type==='maladie'){sbBg='rgba(239,68,68,.08)';sbCol='var(--red)';sbLbl=statut.type==='maladie'?'Arrêt maladie':'Absent';}
+    else if(statut.type==='conge'){sbBg='rgba(59,130,246,.08)';sbCol='var(--blue)';sbLbl='Congé';}
+    else if(statut.type==='repos'){sbBg='rgba(100,116,139,.08)';sbCol='var(--muted)';sbLbl='Repos';}
+  }
 
   return(
     <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
-      <DayStatusBar statut={statut} chauffeur={chauffeur}/>
+      {/* Statut */}
+      <div className="status-bar" style={{background:sbBg}}>
+        <div className="sb-icon" style={{background:sbCol+'15'}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2">
+            <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </div>
+        <div className="sb-info">
+          <div className="sb-label">Statut du jour</div>
+          <div className="sb-val" style={{color:sbCol}}>{sbLbl}</div>
+          <div className="sb-sub">{sbSub}</div>
+        </div>
+        <div style={{width:42,height:42,position:'relative',flexShrink:0}}>
+          <svg viewBox="0 0 36 36" style={{width:'100%',height:'100%',transform:'rotate(-90deg)'}}>
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--raised)" strokeWidth="3"/>
+            <circle cx="18" cy="18" r="15" fill="none" stroke={chauffeur.color} strokeWidth="3"
+              strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
+          </svg>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:chauffeur.color}}>{Math.round(pct)}%</div>
+        </div>
+      </div>
+
+      {/* Progress */}
       {total>0&&(
-        <div className="card progress-card" style={{margin:'10px 16px 0'}}>
-          <div className="prog-bar-wrap">
-            <div className="prog-label">Progression du jour</div>
-            <div className="prog-bar">
-              <div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${chauffeur.color},var(--green))`}}/>
-            </div>
+        <div className="prog-bar-wrap">
+          <div className="prog-row">
+            <span style={{fontSize:11,color:'var(--muted)'}}>Progression</span>
+            <span style={{fontSize:11,fontWeight:700,color:chauffeur.color}}>{done}/{total} livrées</span>
           </div>
-          <div className="prog-count">
-            <div className="prog-num" style={{color:chauffeur.color}}>{done}/{total}</div>
-            <div className="prog-sub">livrées</div>
+          <div className="prog-bar">
+            <div className="prog-fill" style={{width:total?`${Math.round(done/total*100)}%`:'0%',background:`linear-gradient(90deg,${chauffeur.color},var(--green))`}}/>
           </div>
         </div>
       )}
-      <div className="missions-list" style={{marginTop:12}}>
-        {missions.length===0?(
-          <div className="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <p>{statut?'Vous êtes noté(e) '+statut.type+' aujourd\'hui.':'Aucune mission planifiée pour aujourd\'hui.\nRestez disponible.'}</p>
+
+      <div className="scroll-area" style={{paddingTop:12,paddingBottom:0}}>
+        {!planning&&<div className="loader-wrap"><div className="spin" style={{width:34,height:34}}/><span>Chargement...</span></div>}
+        {planning&&missions.length===0&&(
+          <div style={{textAlign:'center',padding:'60px 24px',color:'var(--muted)'}}>
+            <div style={{fontSize:48,marginBottom:12}}>🌟</div>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>{statut?'Statut : '+statut.type:'Aucune mission'}</div>
+            <div style={{fontSize:13,lineHeight:1.6}}>{statut?'Bonne journée !':'Restez disponible.'}</div>
           </div>
-        ):(
-          missions.map((m,i)=><MissionCard key={i} m={m} chauffeur={chauffeur} onAction={onAction}/>)
         )}
+        {missions.map((m,i)=><MissionCard key={i} m={m} chauffeur={chauffeur} onAction={onAction} onClientClick={onClientClick}/>)}
       </div>
     </div>
   );
 }
 
-/* ══ VUE CALENDRIER + HEURES ══ */
+/* ══ CALENDRIER ══ */
 function CalendarView({chauffeur,planning}){
   const today=new Date();
   const [month,setMonth]=useState(today.getMonth());
   const [year,setYear]=useState(today.getFullYear());
-  const [selDay,setSelDay]=useState(today.getDate());
+  const [sel,setSel]=useState(today.getDate());
 
   const daysInMonth=new Date(year,month+1,0).getDate();
   const firstDay=new Date(year,month,1).getDay();
@@ -617,96 +848,73 @@ function CalendarView({chauffeur,planning}){
     const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     return planning?getMissions(planning,chauffeur.id,ds):[];
   };
-
   const getSt=d=>{
     const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     return planning?getStatut(planning,chauffeur.id,ds):null;
   };
-
-  const heures=planning?calcHeuresMois(planning,chauffeur.id,month,year):{jours:0,absences:0,heures:0,minutes:0};
-  const selMs=getMs(selDay);
-  const selSt=getSt(selDay);
-
+  const heures=planning?calcHeures(planning,chauffeur.id,month,year):{jours:0,absences:0,h:0,m:0,hBrut:0};
+  const selMs=getMs(sel);const selSt=getSt(sel);
   const days=[];
   for(let i=0;i<offset;i++)days.push(null);
   for(let d=1;d<=daysInMonth;d++)days.push(d);
 
   return(
     <div className="cal-wrap">
-      {/* Bilan mensuel */}
-      <div className="hours-card">
-        <div style={{fontSize:12,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.05}}>Bilan {MOIS[month]}</div>
-        <div className="hours-grid">
-          <div className="hg-item">
-            <div className="hg-val" style={{color:chauffeur.color}}>{heures.jours}</div>
-            <div className="hg-lbl">Jours travaillés</div>
+      <div className="hours-grid">
+        {[
+          {val:heures.jours,lbl:'Jours travaillés',col:chauffeur.color},
+          {val:`${heures.h}h${heures.m>0?heures.m+'m':''}`,lbl:'Heures nettes',col:'var(--green)'},
+          {val:heures.absences,lbl:'Absences',col:'var(--amber)'},
+          {val:`${heures.hBrut}h`,lbl:'Heures brutes',col:'var(--blue)'},
+        ].map((item,i)=>(
+          <div key={i} className="hg">
+            <div className="hg-val" style={{color:item.col}}>{item.val}</div>
+            <div className="hg-lbl">{item.lbl}</div>
           </div>
-          <div className="hg-item">
-            <div className="hg-val" style={{color:'var(--green)'}}>{heures.heures}h{heures.minutes>0?heures.minutes+'m':''}</div>
-            <div className="hg-lbl">Heures nettes (-45min/j)</div>
-          </div>
-          <div className="hg-item">
-            <div className="hg-val" style={{color:'var(--amber)'}}>{heures.absences}</div>
-            <div className="hg-lbl">Absences / Repos</div>
-          </div>
-          <div className="hg-item">
-            <div className="hg-val" style={{color:'var(--blue)'}}>{heures.jours*7}h</div>
-            <div className="hg-lbl">Heures brutes</div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Navigation */}
       <div className="cal-nav">
         <button className="cal-nav-btn" onClick={()=>month===0?(setMonth(11),setYear(y=>y-1)):setMonth(m=>m-1)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div>
-          <div className="cal-month-title">{MOIS[month]} {year}</div>
-          <div className="cal-month-sub">{chauffeur.name}</div>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:16,fontWeight:700}}>{MOIS[month]} {year}</div>
+          <div style={{fontSize:11,color:'var(--muted)'}}>{chauffeur.name}</div>
         </div>
         <button className="cal-nav-btn" onClick={()=>month===11?(setMonth(0),setYear(y=>y+1)):setMonth(m=>m+1)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 
-      {/* Grille */}
       <div className="cal-grid">
         {JOURS.map(j=><div key={j} className="cal-hd">{j}</div>)}
         {days.map((d,i)=>{
           if(!d)return<div key={`e${i}`}/>;
-          const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-          const hasMiss=getMs(d).length>0;
-          const st=getSt(d);
-          const isSel=d===selDay;
+          const isT=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+          const hasMiss=getMs(d).length>0;const st=getSt(d);const isSel=d===sel;
           const isOff=st&&(st.type==='absent'||st.type==='maladie'||st.type==='conge');
           const isRest=st&&st.type==='repos';
-          return(
-            <div key={d} className={`cal-d ${isToday?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isToday?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`}
-              onClick={()=>setSelDay(d)}>{d}</div>
-          );
+          return<div key={d} className={`cal-d ${isT?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isT?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`} onClick={()=>setSel(d)}>{d}</div>;
         })}
       </div>
 
-      {/* Missions du jour sélectionné */}
-      <div className="day-list">
+      <div style={{marginTop:4}}>
         <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:10,textTransform:'uppercase'}}>
-          {JOURS[new Date(year,month,selDay).getDay()]} {selDay} {MOIS[month]}
-          {selSt&&<span className="status-chip" style={{marginLeft:8,background:selSt.type==='repos'?'var(--raised)':'rgba(239,68,68,.1)',color:selSt.type==='repos'?'var(--muted)':'var(--red)'}}>{selSt.type}</span>}
+          {JOURS[new Date(year,month,sel).getDay()]} {sel} {MOIS[month]}
+          {selSt&&<span style={{marginLeft:8,background:'var(--raised)',borderRadius:20,padding:'2px 8px',fontSize:10,color:'var(--muted)'}}>{selSt.type}</span>}
         </div>
         {selMs.length===0?(
-          <div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:13}}>
-            {selSt?'Statut : '+selSt.type:'Aucune mission'}
-          </div>
+          <div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:13}}>{selSt?'Statut : '+selSt.type:'Aucune mission'}</div>
         ):(
           selMs.map((m,i)=>(
-            <div key={i} className="di">
-              <div className="dt">{m.heure}</div>
-              <div className="dc">
-                <div className="dn">{m.client||m.task}</div>
-                <div className="ds">{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
+            <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${chauffeur.color}`,borderRadius:12,padding:'11px 13px',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{fontFamily:'monospace',fontSize:14,fontWeight:800,color:chauffeur.color,flexShrink:0,width:46}}>{m.heure}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600}}>{m.client||m.task}</div>
+                <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
               </div>
-              <div className={`dot ${m._statut==='done'?'dot-green':m._statut==='enroute'?'dot-amber':'dot-gray'}`}/>
+              <div style={{width:8,height:8,borderRadius:'50%',background:m._statut==='done'?'var(--green)':m._statut==='enroute'?'var(--amber)':'var(--dim)',flexShrink:0}}/>
             </div>
           ))
         )}
@@ -715,42 +923,57 @@ function CalendarView({chauffeur,planning}){
   );
 }
 
-/* ══ VUE MESSAGES ══ */
+/* ══ MESSAGES ══ */
 function MessagesView({chauffeur}){
   const [msgs,setMsgs]=useState([
     {id:1,from:'resp',text:'Bonjour à tous ! Bonne journée 💪',time:'07:00'},
-    {id:2,from:'resp',text:'N\'oubliez pas de confirmer chaque livraison directement dans l\'app.',time:'07:05'},
+    {id:2,from:'resp',text:'Confirmez chaque livraison directement dans l\'app.',time:'07:05'},
   ]);
   const [text,setText]=useState('');
   const listRef=useRef();
-  useEffect(()=>{if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;},[msgs]);
+
+  useEffect(()=>{
+    if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;
+  },[msgs]);
+
+  useEffect(()=>{
+    /* Charger messages depuis Supabase */
+    const load=async()=>{
+      const rows=await supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1');
+      if(rows&&rows.length){
+        try{const ms=JSON.parse(rows[0].donnees)||[];setMsgs(m=>{const ids=new Set(m.map(x=>x.id));return[...m,...ms.filter(x=>!ids.has(x.id))];});}catch(e){}
+      }
+    };
+    load();const iv=setInterval(load,15000);return()=>clearInterval(iv);
+  },[]);
 
   const send=async()=>{
     if(!text.trim())return;
     const t=text.trim();setText('');
     const time=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    setMsgs(m=>[...m,{id:Date.now(),from:'me',text:t,time}]);
-    await tg('sendMessage',{chat_id:RESP_ID,text:`💬 *${chauffeur.name}* :\n${t}`,parse_mode:'Markdown'});
+    const msg={id:Date.now(),from:'chauffeur',fromName:chauffeur.name,chauffeurId:chauffeur.id,text:t,time};
+    setMsgs(m=>[...m,{...msg,from:'me'}]);
+    await sauverMessage(msg);
   };
 
   return(
     <div className="msg-wrap">
-      <div className="msg-header">
+      <div style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
         <div style={{width:38,height:38,borderRadius:11,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
         <div>
           <div style={{fontSize:14,fontWeight:700}}>Responsable</div>
           <div style={{fontSize:11,color:'var(--green)',display:'flex',alignItems:'center',gap:5}}>
-            <div className="dot dot-green"/>En ligne
+            <div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne
           </div>
         </div>
       </div>
       <div ref={listRef} className="msg-list">
         {msgs.map(m=>(
-          <div key={m.id} className={`mb ${m.from==='me'?'me':'them'}`}>
+          <div key={m.id} className={`mb ${m.from==='me'||m.from==='chauffeur'&&m.chauffeurId===chauffeur.id?'me':'them'}`}>
             <div className="mb-inner">{m.text}</div>
-            <div className="mb-meta">{m.from==='me'?'Moi':m.from==='resp'?'Responsable':m.from} · {m.time}</div>
+            <div className="mb-meta">{m.from==='me'?'Moi':m.fromName||'Responsable'} · {m.time}</div>
           </div>
         ))}
       </div>
@@ -770,99 +993,157 @@ function MessagesView({chauffeur}){
 function ChaufApp({chauffeur,onLogout}){
   const [tab,setTab]=useState('today');
   const [planning,setPlanning]=useState(null);
-  const [loading,setLoading]=useState(true);
   const [toast,setToast]=useState(null);
+  const [voiceMission,setVoiceMission]=useState(null);
   const [sigMission,setSigMission]=useState(null);
-  const photoInputRef=useRef();
-  const pendingPhotoMission=useRef(null);
+  const [clientMission,setClientMission]=useState(null);
+  const [driveMission,setDriveMission]=useState(null);
+  const [showRecap,setShowRecap]=useState(false);
+  const pendingPhoto=useRef(null);
+  const geoInterval=useRef(null);
 
-  const showToast=(msg,color='var(--green)',bg)=>{
-    setToast({msg,color,bg});
-    setTimeout(()=>setToast(null),3000);
+  const showToast=(msg,color='var(--green)')=>{
+    setToast({msg,color});setTimeout(()=>setToast(null),3000);
   };
 
-  /* Chargement planning + rafraîchissement 30s */
+  const speak=(txt)=>{
+    if(!window.speechSynthesis)return;
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
+    window.speechSynthesis.speak(u);
+  };
+
+  /* Charger planning + auto-refresh 30s */
   useEffect(()=>{
-    const load=()=>chargerPlanning().then(p=>{if(p)setPlanning(p);setLoading(false);}).catch(()=>setLoading(false));
-    load();
-    const iv=setInterval(load,30000);
-    return()=>clearInterval(iv);
+    const load=()=>chargerPlanning().then(p=>{if(p)setPlanning(p);}).catch(()=>{});
+    load();const iv=setInterval(load,30000);return()=>clearInterval(iv);
   },[]);
+
+  /* Géolocalisation */
+  useEffect(()=>{
+    if(!navigator.geolocation)return;
+    geoInterval.current=setInterval(()=>{
+      navigator.geolocation.getCurrentPosition(pos=>{
+        sauverPosition(chauffeur.id,pos.coords.latitude,pos.coords.longitude);
+      },()=>{},{enableHighAccuracy:true,timeout:10000});
+    },30000);
+    return()=>clearInterval(geoInterval.current);
+  },[chauffeur.id]);
 
   /* Photo */
   useEffect(()=>{
-    const input=document.getElementById('photo-input');
-    if(!input)return;
+    const input=document.getElementById('photo-cap');if(!input)return;
     const handler=async e=>{
-      const file=e.target.files[0];
-      if(!file)return;
-      const m=pendingPhotoMission.current;
-      const caption=`📷 *PHOTO DE LIVRAISON*\n--------------------\n👤 *${chauffeur.name.toUpperCase()}*\n🏢 ${m?m.client:''} (${m?m.heure:''})\n--------------------\n_La Table de Cana_`;
-      const formData=new FormData();
-      formData.append('chat_id',RESP_ID);
-      formData.append('photo',file);
-      formData.append('caption',caption);
-      formData.append('parse_mode','Markdown');
-      try{
-        await fetch(`${TG_API}/sendPhoto`,{method:'POST',body:formData});
+      const file=e.target.files[0];if(!file)return;
+      const m=pendingPhoto.current;
+      const reader=new FileReader();
+      reader.onload=async ev=>{
+        const dataUrl=ev.target.result;
+        await sauverEvenement({type:'photo',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:m?m.client:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
         showToast('📷 Photo envoyée au responsable !','var(--purple)');
-      }catch(e){showToast('Erreur envoi photo','var(--red)');}
+        if(navigator.vibrate)navigator.vibrate([100,50,100]);
+      };
+      reader.readAsDataURL(file);
       input.value='';
     };
-    input.addEventListener('change',handler);
-    return()=>input.removeEventListener('change',handler);
+    input.addEventListener('change',handler);return()=>input.removeEventListener('change',handler);
   },[chauffeur]);
 
+  /* Vibration */
+  const vibrate=(pattern)=>{if(navigator.vibrate)navigator.vibrate(pattern);};
+
   const handleAction=async(mission,action)=>{
-    if(action==='photo'){
-      pendingPhotoMission.current=mission;
-      document.getElementById('photo-input').click();
-      return;
-    }
+    if(action==='voice'){setVoiceMission(mission);return;}
     if(action==='sign'){setSigMission(mission);return;}
+    if(action==='photo'){pendingPhoto.current=mission;document.getElementById('photo-cap').click();return;}
     if(action==='enroute'){
-      showToast('🚗 En route !','var(--amber)');
-      await tg('sendMessage',{chat_id:RESP_ID,text:`🚗 *${chauffeur.name.toUpperCase()}* est en route\n📅 *${mission.heure}* — ${mission.client}`,parse_mode:'Markdown'});
+      vibrate([50,30,50]);showToast('🚗 En route !','var(--amber)');
+      await sauverEvenement({type:'enroute',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
+      setDriveMission(mission);
     }
     if(action==='done'){
-      showToast('✅ Livraison confirmée !','var(--green)');
-      await tg('sendMessage',{chat_id:RESP_ID,text:`✅ *${chauffeur.name.toUpperCase()}* a terminé\n📅 *${mission.heure}* — *${mission.client}*`,parse_mode:'Markdown'});
+      vibrate([100,50,200]);showToast('✅ Livraison confirmée !','var(--green)');
+      await sauverEvenement({type:'done',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure,date:new Date().toISOString().slice(0,10)});
+      speak('Livraison confirmée. Excellent travail !');
+      setDriveMission(null);
     }
+    if(action==='absent'){
+      showToast('⚠️ Client absent enregistré','var(--red)');
+      await sauverEvenement({type:'absent',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
+    }
+    if(action==='retard'){
+      showToast('⏰ Retard signalé','var(--amber)');
+      await sauverEvenement({type:'retard',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
+    }
+    if(action==='materiel'){
+      showToast('📦 Matériel enregistré','var(--blue)');
+    }
+  };
+
+  const handleVoiceCommand=async(cmd,data)=>{
+    const m=voiceMission;
+    if(cmd==='done')await handleAction(m,'done');
+    if(cmd==='enroute')await handleAction(m,'enroute');
+    if(cmd==='photo')await handleAction(m,'photo');
+    if(cmd==='absent')await handleAction(m,'absent');
+    if(cmd==='retard')await handleAction(m,'retard');
+    if(cmd==='materiel')await sauverEvenement({type:'materiel',detail:data,chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:m?.client||''});
+    if(cmd==='call'&&m?.contact)window.open('tel:'+m.contact);
+    if(cmd==='maps'&&m)window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`, '_blank');
+    setVoiceMission(null);
   };
 
   const today=new Date().toISOString().slice(0,10);
   const myMissions=planning?getMissions(planning,chauffeur.id,today):[];
   const pending=myMissions.filter(m=>m._statut!=='done').length;
+  const allDone=myMissions.length>0&&myMissions.every(m=>m._statut==='done');
+
+  /* Alerter si tout est fait */
+  useEffect(()=>{
+    if(allDone){setTimeout(()=>setShowRecap(true),1000);}
+  },[allDone]);
 
   return(
     <div className="screen">
+      {/* Header */}
       <div className="app-top">
-        <div className="driver-row">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div className="av" style={{width:46,height:46,background:chauffeur.color+'20',border:`2px solid ${chauffeur.color}60`,color:chauffeur.color}}>
+            <div className="av" style={{width:46,height:46,fontSize:18,background:chauffeur.color+'20',border:`2px solid ${chauffeur.color}60`,color:chauffeur.color}}>
               {chauffeur.initial}
             </div>
-            <div className="driver-info">
-              <div className="greeting">Bonjour 👋</div>
-              <div className="dname" style={{color:chauffeur.color}}>{chauffeur.name}</div>
-              <div className="dtruck">{chauffeur.truck} · {chauffeur.start}–{chauffeur.end}</div>
+            <div>
+              <div style={{fontSize:12,color:'var(--muted)'}}>Bonjour 👋</div>
+              <div style={{fontSize:20,fontWeight:800,color:chauffeur.color,lineHeight:1.1}}>{chauffeur.name}</div>
+              <div style={{fontSize:10,color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                <span>{chauffeur.truck}</span>
+                <span>·</span>
+                <span>{chauffeur.start}–{chauffeur.end}</span>
+                <div className="geo-dot" style={{width:6,height:6}}/>
+              </div>
             </div>
           </div>
-          <div className="header-actions">
-            {loading&&<div className="spin" style={{width:20,height:20,borderWidth:2}}/>}
-            <button className="icon-btn" onClick={onLogout}>
+          <div style={{display:'flex',gap:8}}>
+            {myMissions.length>0&&(
+              <button onClick={()=>setShowRecap(true)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </button>
+            )}
+            <button onClick={onLogout} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
         </div>
       </div>
 
+      {/* Contenu */}
       <div className="main-content">
-        {tab==='today'&&<TodayView chauffeur={chauffeur} planning={planning} onAction={handleAction}/>}
+        {tab==='today'&&<TodayView chauffeur={chauffeur} planning={planning} onAction={handleAction} onClientClick={setClientMission}/>}
         {tab==='calendar'&&<CalendarView chauffeur={chauffeur} planning={planning}/>}
         {tab==='messages'&&<MessagesView chauffeur={chauffeur}/>}
       </div>
 
+      {/* Nav */}
       <nav className="bnav">
         {[
           {id:'today',lbl:"Aujourd'hui",badge:pending,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
@@ -870,20 +1151,19 @@ function ChaufApp({chauffeur,onLogout}){
           {id:'messages',lbl:'Messages',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>},
         ].map(n=>(
           <button key={n.id} className={`nav-btn ${tab===n.id?'active':''}`} onClick={()=>setTab(n.id)}>
-            {n.svg}
-            <span>{n.lbl}</span>
+            {n.svg}<span>{n.lbl}</span>
             {n.badge>0&&<div className="nav-badge" style={{background:tab===n.id?chauffeur.color:'var(--red)'}}>{n.badge}</div>}
           </button>
         ))}
       </nav>
 
-      {sigMission&&(
-        <SignatureModal mission={sigMission} chauffeur={chauffeur}
-          onClose={()=>setSigMission(null)}
-          onDone={()=>{setSigMission(null);showToast('✍️ Signature envoyée !','var(--teal)');}}/>
-      )}
-
-      {toast&&<Toast msg={toast.msg} color={toast.color} bg={toast.bg}/>}
+      {/* Overlays */}
+      {driveMission&&<DriveMode mission={driveMission} chauffeur={chauffeur} onClose={()=>setDriveMission(null)} onDone={()=>handleAction(driveMission,'done')}/>}
+      {voiceMission&&<VoiceAssistant chauffeur={chauffeur} mission={voiceMission} onClose={()=>setVoiceMission(null)} onCommand={handleVoiceCommand}/>}
+      {sigMission&&<SigModal mission={sigMission} chauffeur={chauffeur} onClose={()=>setSigMission(null)} onDone={()=>{setSigMission(null);showToast('✍️ Signature enregistrée !','var(--teal)');}}/>}
+      {clientMission&&<ClientSheet mission={clientMission} planning={planning} chauffeur={chauffeur} onClose={()=>setClientMission(null)}/>}
+      {showRecap&&<RecapModal missions={myMissions} chauffeur={chauffeur} onClose={()=>setShowRecap(false)}/>}
+      {toast&&<Toast msg={toast.msg} color={toast.color}/>}
     </div>
   );
 }
@@ -892,7 +1172,6 @@ function App(){
   const [ch,setCh]=useState(null);
   return ch?<ChaufApp chauffeur={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
-
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
