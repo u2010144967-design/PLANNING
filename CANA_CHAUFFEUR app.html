@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>La Table de Cana — Chauffeur</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;
+  --orange:#f97316;--blue:#3b82f6;--green:#22c55e;
+  --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;
+  --text:#f1f5f9;--muted:#64748b;--border:rgba(255,255,255,0.08);
+}
+html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+.screen{height:100%;display:flex;flex-direction:column}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,textarea{font-family:inherit;outline:none}
+::-webkit-scrollbar{display:none}
+
+/* LOGIN */
+.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:radial-gradient(ellipse at top,#1a2234 0%,#0a0f1e 60%);overflow-y:auto}
+.login-logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 16px 32px rgba(249,115,22,.3)}
+.chauffeur-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:300px;margin-bottom:20px}
+.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .2s}
+.ch-btn:active{transform:scale(.96)}
+.ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.1)}
+.avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
+.code-wrap{width:100%;max-width:300px;margin-bottom:12px}
+.code-dots{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
+.code-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);transition:all .2s}
+.code-dot.filled{background:var(--orange);border-color:var(--orange)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:280px}
+.num-btn{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;font-size:20px;font-weight:600;color:var(--text);transition:all .15s;display:flex;align-items:center;justify-content:center}
+.num-btn:active{background:var(--raised);transform:scale(.94)}
+.num-btn.del{font-size:16px;color:var(--muted)}
+.num-btn.empty{visibility:hidden}
+.btn-connect{background:linear-gradient(135deg,var(--orange),#ef4444);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%;max-width:280px;box-shadow:0 8px 20px rgba(249,115,22,.3);margin-top:8px}
+.btn-connect:disabled{opacity:.4}
+.btn-connect:active:not(:disabled){transform:scale(.98)}
+.error-msg{color:var(--red);font-size:12px;margin-bottom:8px;min-height:18px}
+
+/* HEADER */
+.app-header{padding:48px 16px 0 16px;flex-shrink:0}
+.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+
+/* TABS */
+.scroll-area{flex:1;overflow-y:auto;padding:0 0 90px}
+
+/* MISSION CARD */
+.mission-card{background:var(--card);border:1px solid var(--border);border-radius:18px;margin:0 16px 14px;overflow:hidden}
+.mission-card.done{opacity:.7}
+.mc-head{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+.mc-time{font-family:'SF Mono','Consolas',monospace;font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1}
+.mc-time small{font-size:10px;color:var(--muted);font-family:inherit;display:block;margin-top:3px;font-weight:400;letter-spacing:0}
+.mc-badge{border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600}
+.mc-client{padding:0 16px 10px}
+.mc-name{font-size:17px;font-weight:700;margin-bottom:5px;line-height:1.2}
+.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:flex-start;line-height:1.4}
+.allerg-bar{margin:0 16px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:9px;padding:7px 11px;font-size:11px;color:var(--red);display:flex;align-items:center;gap:6px}
+.mc-divider{height:1px;background:var(--border);margin:0 16px}
+.mc-meta{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.meta-tag{background:var(--raised);border-radius:8px;padding:5px 9px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.meta-tag b{color:var(--text)}
+.mc-actions{padding:12px 16px;display:grid;gap:8px}
+.act-btn{border-radius:12px;padding:12px 8px;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid transparent;transition:all .15s}
+.act-btn:active{transform:scale(.95)}
+.act-btn svg{width:20px;height:20px}
+.btn-maps{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.3);color:var(--blue)}
+.btn-call{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:var(--green)}
+.btn-go{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3);color:var(--amber)}
+.btn-done{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:var(--green)}
+.btn-photo{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3);color:var(--purple)}
+
+/* CALENDRIER */
+.cal-wrap{padding:0 16px 90px}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;padding:12px 0 16px}
+.cal-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:600;padding:4px 0}
+.cal-day{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;cursor:pointer;position:relative;border:1px solid transparent;transition:all .15s}
+.cal-day:active{transform:scale(.93)}
+.cal-day.today{border-color:var(--orange);color:var(--orange);font-weight:700}
+.cal-day.has-m::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
+.cal-day.sel{background:var(--orange);color:#fff;font-weight:700}
+.cal-day.sel::after{background:#fff}
+.day-list{margin-top:14px}
+.day-item{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.day-item .t{font-family:monospace;font-size:14px;font-weight:700;color:var(--orange);flex-shrink:0}
+.day-item .i{flex:1}
+.day-item .cn{font-size:13px;font-weight:600}
+.day-item .cs{font-size:11px;color:var(--muted)}
+
+/* MESSAGES */
+.msg-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.msg-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column}
+.mb{max-width:85%;margin-bottom:10px}
+.mb.me{margin-left:auto}
+.mb-inner{padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.5}
+.mb:not(.me) .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.mb.me .mb-inner{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
+.mb-time{font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px}
+.mb.me .mb-time{text-align:right}
+.msg-bar{padding:10px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.msg-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-size:13px;color:var(--text);resize:none;max-height:80px}
+.msg-send{background:var(--orange);border-radius:50%;width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff}
+.msg-send:active{transform:scale(.93)}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.96);border-top:1px solid var(--border);display:flex;padding:6px 0 max(6px,env(safe-area-inset-bottom));backdrop-filter:blur(20px);z-index:50}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:500;position:relative}
+.bnav-item.active{color:var(--orange)}
+.bnav-item svg{width:22px;height:22px;stroke-width:1.8}
+.bnav-badge{position:absolute;top:3px;right:calc(50% - 16px);background:var(--red);border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;padding:0 4px}
+
+/* TOAST */
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid var(--border);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:999;white-space:nowrap;animation:tIn .25s ease}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* LOADER */
+.loader{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:13px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+/* ══ SUPABASE ══ */
+const SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
+const SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+const TG_TOKEN = '8477045091:AAFiQhOh8MPvbi8auzW8y_s2doKrRnyF2ys';
+const RESP_ID = '7551397917';
+
+async function supaFetch(path, opts={}) {
+  const r = await fetch(SUPA_URL+'/rest/v1/'+path, {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
+    ...opts
+  });
+  return r.json();
+}
+
+async function chargerPlanning() {
+  const today = new Date().toISOString().slice(0,10);
+  const rows = await supaFetch('planning?date=eq.'+today+'&select=donnees&order=updated_at.desc&limit=1');
+  if(rows&&rows.length) return rows[0].donnees;
+  return null;
+}
+
+async function sendTelegram(text) {
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:RESP_ID,text,parse_mode:'Markdown'})
+    });
+  } catch(e){}
+}
+
+/* ══ CONFIG CHAUFFEURS ══ */
+const CHAUFFEURS_CONFIG = [
+  {id:0,name:'Otmane',initial:'O',color:'#3b82f6',code:'1111'},
+  {id:1,name:'Nicolas',initial:'N',color:'#22c55e',code:'2222'},
+  {id:2,name:'Mickaël',initial:'M',color:'#f97316',code:'3333'},
+  {id:3,name:'Karim',initial:'K',color:'#a855f7',code:'4444'},
+  {id:4,name:"Maître d'H.",initial:'H',color:'#f59e0b',code:'5555'},
+];
+
+const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const JOURS_COURTS = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+
+/* ══ TOAST ══ */
+function Toast({msg,color}) {
+  if(!msg) return null;
+  return <div className="toast" style={{borderColor:color+'44',color}}>{msg}</div>;
+}
+
+/* ══ LOGIN ══ */
+function Login({onLogin}) {
+  const [sel,setSel] = useState(null);
+  const [code,setCode] = useState('');
+  const [err,setErr] = useState('');
+
+  const addDigit = d => {
+    if(code.length>=4) return;
+    const nc = code+d;
+    setCode(nc);
+    setErr('');
+    if(nc.length===4) {
+      const ch = CHAUFFEURS_CONFIG.find(c=>c.id===sel);
+      if(nc===ch.code||nc==='0000') { setTimeout(()=>onLogin(ch),100); }
+      else { setTimeout(()=>{setCode('');setErr('Code incorrect');},300); }
+    }
+  };
+
+  const del = () => { setCode(c=>c.slice(0,-1)); setErr(''); };
+
+  return (
+    <div className="login">
+      <div className="login-logo">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="white">
+          <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:700,marginBottom:4}}>La Table de Cana</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24}}>Sélectionnez votre nom</p>
+
+      <div className="chauffeur-grid">
+        {CHAUFFEURS_CONFIG.map(ch=>(
+          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`}
+            onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
+            <div className="avatar" style={{background:ch.color+'22',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>
+              {ch.initial}
+            </div>
+            <span style={{fontSize:11,fontWeight:600,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {sel!==null&&(
+        <>
+          <div className="code-dots" style={{margin:'8px 0 16px'}}>
+            {[0,1,2,3].map(i=>(
+              <div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>
+            ))}
+          </div>
+          <div className="error-msg">{err}</div>
+          <div className="numpad">
+            {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>(
+              k===''?<div key={i} className="num-btn empty"/>:
+              k==='⌫'?<button key={i} className="num-btn del" onClick={del}>{k}</button>:
+              <button key={i} className="num-btn" onClick={()=>addDigit(String(k))}>{k}</button>
+            ))}
+          </div>
+          <p style={{fontSize:10,color:'var(--muted)',marginTop:12}}>Code provisoire : 0000</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ══ CARTE MISSION ══ */
+function MissionCard({m, chauffeur, onAction}) {
+  const statConf = {
+    pending:{cls:'rgba(59,130,246,.15)',bord:'rgba(59,130,246,.3)',col:'var(--blue)',lbl:'En attente'},
+    enroute:{cls:'rgba(245,158,11,.15)',bord:'rgba(245,158,11,.3)',col:'var(--amber)',lbl:'🚗 En route'},
+    done:{cls:'rgba(34,197,94,.15)',bord:'rgba(34,197,94,.3)',col:'var(--green)',lbl:'✓ Livré'},
+    retard:{cls:'rgba(239,68,68,.15)',bord:'rgba(239,68,68,.3)',col:'var(--red)',lbl:'⚠ Retard'},
+  }[m.statut]||{cls:'rgba(59,130,246,.15)',bord:'rgba(59,130,246,.3)',col:'var(--blue)',lbl:'En attente'};
+
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client)}`;
+
+  const nbCols = m.statut==='done'?2:m.statut==='enroute'?3:3;
+
+  return (
+    <div className={`mission-card ${m.statut==='done'?'done':''}`}
+      style={{borderColor:m.statut==='retard'?'rgba(239,68,68,.4)':m.statut==='done'?'rgba(34,197,94,.2)':'var(--border)'}}>
+
+      <div className="mc-head">
+        <div className="mc-time" style={{color:chauffeur.color}}>
+          {m.heure}
+          <small>{m.statut==='done'?'Livraison terminée':m.statut==='enroute'?'En cours...':'Livraison'}</small>
+        </div>
+        <div className="mc-badge" style={{background:statConf.cls,border:`1px solid ${statConf.bord}`,color:statConf.col}}>
+          {statConf.lbl}
+        </div>
+      </div>
+
+      <div className="mc-client">
+        <div className="mc-name">{m.client||m.task||'Livraison'}</div>
+        {m.adresse&&(
+          <div className="mc-addr">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:1}}>
+              <path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/>
+            </svg>
+            {m.adresse}
+          </div>
+        )}
+      </div>
+
+      {m.allergenes&&m.allergenes.length>0&&(
+        <div className="allerg-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <b>ALLERGÈNES :</b>&nbsp;{m.allergenes.join(', ')}
+        </div>
+      )}
+
+      <div className="mc-divider"/>
+
+      <div className="mc-meta">
+        {m.convives&&<div className="meta-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          <b>{m.convives}</b> convives
+        </div>}
+        {m.contact&&<div className="meta-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <b>{m.contact}</b>
+        </div>}
+        {m.note_liv&&<div className="meta-tag" style={{width:'100%'}}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span style={{color:'var(--text)'}}>{m.note_liv}</span>
+        </div>}
+      </div>
+
+      <div className="mc-actions" style={{gridTemplateColumns:`repeat(${nbCols},1fr)`}}>
+        <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
+          <button className="act-btn btn-maps" style={{width:'100%'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Maps
+          </button>
+        </a>
+        {m.contact&&(
+          <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
+            <button className="act-btn btn-call" style={{width:'100%'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Appeler
+            </button>
+          </a>
+        )}
+        {m.statut==='pending'&&(
+          <button className="act-btn btn-go" onClick={()=>onAction(m,'enroute')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            En route
+          </button>
+        )}
+        {m.statut==='enroute'&&(
+          <button className="act-btn btn-done" onClick={()=>onAction(m,'done')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
+            Livré !
+          </button>
+        )}
+        <button className="act-btn btn-photo" onClick={()=>onAction(m,'photo')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Photo
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══ VUE AUJOURD'HUI ══ */
+function TodayView({chauffeur, planning, onAction}) {
+  if(!planning) return (
+    <div className="loader">
+      <div className="spinner"/>
+      Chargement du planning...
+    </div>
+  );
+
+  const today = new Date().toISOString().slice(0,10);
+  const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+
+  const missions = [];
+  SL.forEach(h=>{
+    const key = today+'|'+chauffeur.id+'|'+h;
+    (planning.tasks[key]||[]).forEach((t,ti)=>{
+      missions.push({...t,heure:h,_key:key,_ti:ti,statut:t.statut||'pending'});
+    });
+  });
+
+  const done = missions.filter(m=>m.statut==='done').length;
+
+  return (
+    <div className="scroll-area">
+      <div style={{padding:'12px 16px 0'}}>
+        {missions.length>0&&(
+          <div style={{background:'var(--card)',borderRadius:14,padding:'10px 14px',marginBottom:14,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,color:'var(--muted)',marginBottom:4}}>Progression du jour</div>
+              <div style={{height:5,background:'var(--raised)',borderRadius:3,overflow:'hidden'}}>
+                <div style={{height:'100%',background:`linear-gradient(90deg,${chauffeur.color},var(--green))`,width:`${missions.length?Math.round(done/missions.length*100):0}%`,borderRadius:3,transition:'width .4s'}}/>
+              </div>
+            </div>
+            <div style={{textAlign:'right',flexShrink:0}}>
+              <div style={{fontSize:22,fontWeight:700,color:chauffeur.color,lineHeight:1}}>{done}/{missions.length}</div>
+              <div style={{fontSize:10,color:'var(--muted)'}}>livrées</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {missions.length===0?(
+        <div className="loader" style={{flex:1,marginTop:60}}>
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{opacity:.3,strokeWidth:1.5}}>
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <p style={{textAlign:'center',lineHeight:1.6}}>Aucune mission planifiée<br/>pour aujourd'hui.</p>
+        </div>
+      ):(
+        missions.map((m,i)=><MissionCard key={i} m={m} chauffeur={chauffeur} onAction={onAction}/>)
+      )}
+    </div>
+  );
+}
+
+/* ══ VUE CALENDRIER ══ */
+function CalendarView({chauffeur, planning}) {
+  const today = new Date();
+  const [month,setMonth] = useState(today.getMonth());
+  const [year,setYear] = useState(today.getFullYear());
+  const [selDay,setSelDay] = useState(today.getDate());
+
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const firstDay = new Date(year,month,1).getDay();
+  const offset = firstDay===0?6:firstDay-1;
+
+  const getMissionsForDay = (day) => {
+    if(!planning) return [];
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+    const ms = [];
+    SL.forEach(h=>{
+      const k = ds+'|'+chauffeur.id+'|'+h;
+      (planning.tasks[k]||[]).forEach(t=>ms.push({...t,heure:h}));
+    });
+    return ms;
+  };
+
+  const days = [];
+  for(let i=0;i<offset;i++) days.push(null);
+  for(let d=1;d<=daysInMonth;d++) days.push(d);
+
+  const selMs = getMissionsForDay(selDay);
+
+  return (
+    <div className="cal-wrap">
+      <div className="cal-nav">
+        <button className="cal-nav-btn" onClick={()=>month===0?(setMonth(11),setYear(y=>y-1)):setMonth(m=>m-1)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:15,fontWeight:700}}>{MOIS[month]}</div>
+          <div style={{fontSize:11,color:'var(--muted)'}}>{year}</div>
+        </div>
+        <button className="cal-nav-btn" onClick={()=>month===11?(setMonth(0),setYear(y=>y+1)):setMonth(m=>m+1)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div className="cal-grid">
+        {JOURS_COURTS.map(j=><div key={j} className="cal-day-hd">{j}</div>)}
+        {days.map((d,i)=>{
+          if(!d) return <div key={`e${i}`}/>;
+          const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+          const hasMiss = getMissionsForDay(d).length>0;
+          const isSel = d===selDay;
+          return (
+            <div key={d} className={`cal-day ${isToday?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isToday?'sel':''}`}
+              onClick={()=>setSelDay(d)}>
+              {d}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="day-list">
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:8,textTransform:'uppercase'}}>
+          {['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][new Date(year,month,selDay).getDay()]} {selDay} {MOIS[month]}
+        </div>
+        {selMs.length===0?(
+          <div style={{textAlign:'center',padding:'24px 0',color:'var(--muted)',fontSize:13}}>Aucune mission</div>
+        ):(
+          selMs.map((m,i)=>(
+            <div key={i} className="day-item">
+              <div className="t">{m.heure}</div>
+              <div className="i">
+                <div className="cn">{m.client||m.task}</div>
+                <div className="cs">{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
+              </div>
+              <div style={{width:8,height:8,borderRadius:'50%',background:m.statut==='done'?'var(--green)':m.statut==='enroute'?'var(--amber)':'var(--muted)',flexShrink:0}}/>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══ VUE MESSAGES ══ */
+function MessagesView({chauffeur}) {
+  const [msgs,setMsgs] = useState([
+    {id:1,from:'resp',text:'Bonjour ! Bonne journée à tous 💪',time:'07:00'},
+    {id:2,from:'resp',text:'N\'oubliez pas les bacs gastro ce matin.',time:'07:15'},
+  ]);
+  const [text,setText] = useState('');
+  const listRef = useRef();
+
+  useEffect(()=>{ if(listRef.current) listRef.current.scrollTop=listRef.current.scrollHeight; },[msgs]);
+
+  const send = async () => {
+    if(!text.trim()) return;
+    const t = text.trim();
+    setText('');
+    const time = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    setMsgs(m=>[...m,{id:Date.now(),from:'me',text:t,time}]);
+    await sendTelegram(`💬 *${chauffeur.name}* : ${t}`);
+  };
+
+  return (
+    <div className="msg-wrap">
+      <div style={{padding:'10px 16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+        <div style={{width:36,height:36,borderRadius:10,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:600}}>Responsable</div>
+          <div style={{fontSize:10,color:'var(--green)',display:'flex',alignItems:'center',gap:4}}>
+            <div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne
+          </div>
+        </div>
+      </div>
+
+      <div ref={listRef} className="msg-list">
+        {msgs.map(m=>(
+          <div key={m.id} className={`mb ${m.from==='me'?'me':''}`}>
+            <div className="mb-inner">{m.text}</div>
+            <div className="mb-time">{m.time}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="msg-bar">
+        <textarea className="msg-input" placeholder="Message..." rows={1} value={text}
+          onChange={e=>setText(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
+        <button className="msg-send" onClick={send}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══ APP CHAUFFEUR ══ */
+function ChaufApp({chauffeur, onLogout}) {
+  const [tab,setTab] = useState('today');
+  const [planning,setPlanning] = useState(null);
+  const [loading,setLoading] = useState(true);
+  const [toast,setToast] = useState(null);
+
+  useEffect(()=>{
+    chargerPlanning().then(p=>{setPlanning(p);setLoading(false);}).catch(()=>setLoading(false));
+    const interval = setInterval(()=>chargerPlanning().then(p=>{if(p)setPlanning(p);}),30000);
+    return()=>clearInterval(interval);
+  },[]);
+
+  const showToast = (msg,color='var(--green)') => {
+    setToast({msg,color});
+    setTimeout(()=>setToast(null),3000);
+  };
+
+  const handleAction = async (mission, action) => {
+    if(action==='photo'){
+      showToast('📷 Ouvrez votre appareil photo et envoyez la photo via Telegram','var(--purple)');
+      return;
+    }
+    if(action==='enroute'){
+      showToast('🚗 En route !','var(--amber)');
+      await sendTelegram(`🚗 *${chauffeur.name.toUpperCase()}* est en route pour *${mission.client}* (${mission.heure})`);
+    }
+    if(action==='done'){
+      showToast('✅ Livraison confirmée !','var(--green)');
+      await sendTelegram(`✅ *${chauffeur.name.toUpperCase()}* a terminé la livraison chez *${mission.client}* (${mission.heure})`);
+    }
+  };
+
+  const myMissions = planning?(() => {
+    const today = new Date().toISOString().slice(0,10);
+    const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+    const ms=[];
+    SL.forEach(h=>{
+      const k=today+'|'+chauffeur.id+'|'+h;
+      (planning.tasks[k]||[]).forEach(t=>ms.push({...t,heure:h,statut:t.statut||'pending'}));
+    });
+    return ms;
+  })():[];
+
+  const pending = myMissions.filter(m=>m.statut!=='done').length;
+
+  return (
+    <div className="screen">
+      <div style={{padding:'52px 16px 10px',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontSize:12,color:'var(--muted)'}}>Bonjour 👋</div>
+            <div style={{fontSize:22,fontWeight:700,color:chauffeur.color,lineHeight:1.2}}>{chauffeur.name}</div>
+            <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{chauffeur.truck||''}</div>
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {loading&&<div className="spinner" style={{width:20,height:20,borderWidth:2}}/>}
+            <button onClick={onLogout} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        {tab==='today'&&<TodayView chauffeur={chauffeur} planning={planning} onAction={handleAction}/>}
+        {tab==='calendar'&&<CalendarView chauffeur={chauffeur} planning={planning}/>}
+        {tab==='messages'&&<MessagesView chauffeur={chauffeur}/>}
+      </div>
+
+      <nav className="bnav">
+        {[
+          {id:'today',lbl:"Aujourd'hui",svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,badge:pending},
+          {id:'calendar',lbl:'Planning',svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
+          {id:'messages',lbl:'Messages',svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,badge:1},
+        ].map(n=>(
+          <button key={n.id} className={`bnav-item ${tab===n.id?'active':''}`} onClick={()=>setTab(n.id)}>
+            {n.svg}
+            <span>{n.lbl}</span>
+            {n.badge>0&&<div className="bnav-badge" style={{background:tab===n.id?chauffeur.color:'var(--red)'}}>{n.badge}</div>}
+          </button>
+        ))}
+      </nav>
+
+      {toast&&<Toast msg={toast.msg} color={toast.color}/>}
+    </div>
+  );
+}
+
+/* ══ ROOT ══ */
+function App(){
+  const [ch,setCh] = useState(null);
+  return ch?<ChaufApp chauffeur={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
