@@ -379,8 +379,8 @@ const MATERIEL_LISTE=[
   {id:'nappe',label:'Nappes',icon:'🪡'},
 ];
 
-function MaterielModal({mission,chauffeur,onClose,onConfirm}){
-  const [laisse,setLaisse]=useState({});
+function MaterielModal({mission,chauffeur,onClose,onConfirm,aiPreFill,aiDescription,photoUrl}){
+  const [laisse,setLaisse]=useState(aiPreFill||{});
   const [recupere,setRecupere]=useState({});
   const [note,setNote]=useState('');
   const [tab,setTab]=useState('laisse');
@@ -415,6 +415,15 @@ function MaterielModal({mission,chauffeur,onClose,onConfirm}){
   return(
     <div className="mat-modal" onClick={onClose}>
       <div className="mat-box" onClick={e=>e.stopPropagation()}>
+        {aiPreFill&&Object.values(aiPreFill).some(v=>v>0)&&(
+          <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:12,padding:'8px 12px',marginBottom:12,display:'flex',gap:8,alignItems:'flex-start'}}>
+            <span style={{fontSize:16,flexShrink:0}}>🤖</span>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>IA a analysé la photo et pré-rempli le formulaire</div>
+              <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{aiDescription||'Vérifiez et ajustez si nécessaire'}</div>
+            </div>
+          </div>
+        )}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
           <div>
             <div style={{fontSize:16,fontWeight:800}}>📦 Matériel</div>
@@ -1137,7 +1146,10 @@ function ChaufApp({chauffeur,onLogout}){
   const [driveMission,setDriveMission]=useState(null);
   const [showRecap,setShowRecap]=useState(false);
   const [matMission,setMatMission]=useState(null);
+  const [matMissionIA,setMatMissionIA]=useState(null);
   const pendingPhoto=useRef(null);
+  const setMatMissionIARef=useRef(null);
+  const setMatMissionRef=useRef(null);
   const geoInterval=useRef(null);
 
   const showToast=(msg,color='var(--green)')=>{
@@ -1150,6 +1162,10 @@ function ChaufApp({chauffeur,onLogout}){
     const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
     window.speechSynthesis.speak(u);
   };
+
+  /* Synchroniser les refs pour accès depuis les handlers */
+  useEffect(()=>{setMatMissionIARef.current=setMatMissionIA;},[setMatMissionIA]);
+  useEffect(()=>{setMatMissionRef.current=setMatMission;},[setMatMission]);
 
   /* Charger planning + auto-refresh 30s */
   useEffect(()=>{
@@ -1177,9 +1193,57 @@ function ChaufApp({chauffeur,onLogout}){
       const reader=new FileReader();
       reader.onload=async ev=>{
         const dataUrl=ev.target.result;
+        const base64=dataUrl.split(',')[1];
+
+        /* Sauvegarder la photo */
         await sauverEvenement({type:'photo',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:m?m.client:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
-        showToast('📷 Photo envoyée au responsable !','var(--purple)');
-        if(navigator.vibrate)navigator.vibrate([100,50,100]);
+
+        /* Analyse IA — compter le matériel */
+        showToast('🤖 Analyse IA en cours...','var(--purple)');
+        if(navigator.vibrate)navigator.vibrate([50]);
+
+        try{
+          const aiResp = await fetch('https://api.anthropic.com/v1/messages',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              model:'claude-sonnet-4-6',
+              max_tokens:500,
+              messages:[{
+                role:'user',
+                content:[
+                  {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
+                  {type:'text',text:'Tu es un assistant logistique pour un traiteur. Analyse cette photo et compte précisément le matériel visible. Réponds UNIQUEMENT en JSON sans aucun texte autour, format exact: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"description courte en français de ce que tu vois","confiance":"haute/moyenne/faible"}. Si tu ne vois pas clairement du matériel, mets 0. Les bacs gastro sont des bacs en inox rectangulaires. Compte uniquement ce qui est clairement visible.'}
+                ]
+              }]
+            })
+          });
+          const aiData = await aiResp.json();
+          const aiText = aiData.content?.[0]?.text||'{}';
+          let aiResult;
+          try{
+            const clean=aiText.replace(/```json|```/g,'').trim();
+            aiResult=JSON.parse(clean);
+          }catch(e){aiResult={};}
+
+          /* Ouvrir le modal matériel pré-rempli avec les résultats IA */
+          const totalDetecte=Object.entries(aiResult)
+            .filter(([k])=>['gastro','chariot','echelle','container','caisse','etuve','plateau','nappe'].includes(k))
+            .reduce((a,[,v])=>a+(parseInt(v)||0),0);
+
+          if(totalDetecte>0){
+            showToast(`🤖 IA : ${totalDetecte} item(s) détecté(s) !`,'var(--green)');
+            if(navigator.vibrate)navigator.vibrate([100,50,200]);
+            /* Déclencher le modal matériel avec les données IA pré-remplies */
+            if(m) setMatMissionIARef.current&&setMatMissionIARef.current({mission:m,aiData:aiResult,photo:dataUrl});
+          } else {
+            showToast(`🤖 IA : ${aiResult.description||'Photo analysée — aucun matériel compté'}. Saisissez manuellement.`,'var(--amber)');
+            if(m) setMatMissionRef.current&&setMatMissionRef.current(m);
+          }
+        }catch(e){
+          showToast('📷 Photo sauvegardée — analyse IA indisponible','var(--purple)');
+          if(m) setMatMissionRef.current&&setMatMissionRef.current(m);
+        }
       };
       reader.readAsDataURL(file);
       input.value='';
@@ -1301,6 +1365,17 @@ function ChaufApp({chauffeur,onLogout}){
       </nav>
 
       {/* Overlays */}
+      {matMissionIA&&<MaterielModal
+        mission={matMissionIA.mission}
+        chauffeur={chauffeur}
+        aiPreFill={matMissionIA.aiData}
+        aiDescription={matMissionIA.aiData?.description}
+        photoUrl={matMissionIA.photo}
+        onClose={()=>setMatMissionIA(null)}
+        onConfirm={async(mat)=>{
+          setMatMissionIA(null);
+          await handleAction({...matMissionIA.mission,_materiel:mat},'done_confirmed');
+        }}/>}
       {matMission&&<MaterielModal mission={matMission} chauffeur={chauffeur}
         onClose={()=>setMatMission(null)}
         onConfirm={async(mat)=>{
