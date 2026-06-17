@@ -7302,7 +7302,7 @@ function imprimerToutesFeuillesRoute(){
 ══ */
 
 /* URL du serveur Google — à remplir après déploiement */
-var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9uqbMns9dxEez53FvfXfcmWSKvNcIGUvcsXgvpkpUvtJQxRSd3gqUlgscc78YC9z1/exec';
+var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOrK0188oT8ip_3HzaeXZlusbOqwk5HPU-9v37nXKNVDqNVc686YmZmlY4aLVI8Ici/exec';
 
 function ouvrirConfigSync(){
   var existing = document.getElementById('m-config-sync');
@@ -15147,7 +15147,7 @@ function validerBac(idx){
 </script>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycby9uqbMns9dxEez53FvfXfcmWSKvNcIGUvcsXgvpkpUvtJQxRSd3gqUlgscc78YC9z1/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycbyOrK0188oT8ip_3HzaeXZlusbOqwk5HPU-9v37nXKNVDqNVc686YmZmlY4aLVI8Ici/exec';
 
 /* ══════════════════════════════════════════════════
    BON DE LIVRAISON DEMATERIALISE AVEC SIGNATURE CLIENT
@@ -21175,6 +21175,522 @@ window.addEventListener('load',function(){
       heuresBtn.parentNode.insertBefore(div,heuresBtn.nextSibling);
     }
   },6400);
+});
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 28 — FTBE TABLEAU AMELIORE
+   - Camion automatique selon chauffeur
+   - Liste tous les camions disponibles
+   - Champ note libre
+   - Detection allergenes
+   - Detection conflits d'horaire
+   - Historique client intelligent
+   - Adresse mieux extraite
+══════════════════════════════════════════════════ */
+
+/* Liste des camions disponibles */
+function getCamionsDisponibles(){
+  var camions = [];
+  if(typeof ST !== 'undefined' && ST.drivers){
+    ST.drivers.forEach(function(dr){ if(dr.truck && camions.indexOf(dr.truck)<0) camions.push(dr.truck); });
+  }
+  /* Camions supplémentaires connus */
+  ['JUMPY','IVECO','VIVARO 1','VIVARO 2','VIVARO LOCATION','VIVARO 3'].forEach(function(c){
+    if(camions.indexOf(c)<0) camions.push(c);
+  });
+  return camions;
+}
+
+/* Camion habituel d'un chauffeur */
+function getCamionDefaut(di){
+  if(typeof ST === 'undefined' || !ST.drivers || di<0) return '';
+  return (ST.drivers[di] && ST.drivers[di].truck) || '';
+}
+
+/* Détecter allergènes dans le texte */
+function detecterAllergenesFTBE(texte){
+  var alertes = [];
+  var t = texte.toLowerCase();
+  var allergenes = {
+    'gluten': ['gluten','blé','seigle','orge','avoine'],
+    'crustacés': ['crevette','crabe','homard','langouste','gambas'],
+    'oeufs': ['oeuf','oeufs'],
+    'arachides': ['arachide','cacahuète','cacahuete'],
+    'poisson': ['poisson','saumon','thon','cabillaud','anchois'],
+    'soja': ['soja'],
+    'lait': ['lait','crème','fromage','beurre','lactose'],
+    'fruits à coques': ['noix','noisette','amande','pistache','cajou','pécan','pecan'],
+    'céleri': ['céleri','celeri'],
+    'moutarde': ['moutarde'],
+    'sésame': ['sésame','sesame'],
+    'sulfites': ['sulfite','sulphite'],
+    'lupin': ['lupin']
+  };
+  Object.keys(allergenes).forEach(function(cat){
+    allergenes[cat].forEach(function(mot){
+      if(t.indexOf(mot)>=0 && alertes.indexOf(cat)<0) alertes.push(cat);
+    });
+  });
+  return alertes;
+}
+
+/* Vérifier conflit d'horaire */
+function verifierConflitFTBE(di, date, heure){
+  if(di<0 || !date || !heure) return false;
+  var k = gk(date, di, heure);
+  return ST.tasks[k] && ST.tasks[k].length > 0;
+}
+
+/* Historique client */
+function getHistoriqueClientFTBE(nomClient){
+  var mem = getMemoireClients ? getMemoireClients() : {};
+  var nomUp = nomClient.toUpperCase().trim();
+  var info = mem[nomUp] || {};
+  
+  /* Compter les missions pour ce client */
+  var nbMissions = 0;
+  var dernierChauffeur = '';
+  if(typeof ST !== 'undefined' && ST.tasks){
+    Object.keys(ST.tasks).forEach(function(k){
+      (ST.tasks[k]||[]).forEach(function(t){
+        if((t.client||'').toUpperCase().indexOf(nomUp)>=0 || nomUp.indexOf((t.client||'').toUpperCase())>=0){
+          nbMissions++;
+          var parts = k.split('|');
+          if(parts[1]) dernierChauffeur = parseInt(parts[1]);
+        }
+      });
+    });
+  }
+  return {info:info, nbMissions:nbMissions, dernierChauffeur:dernierChauffeur};
+}
+
+/* ══ REMPLACER afficherApercuFTBE par version améliorée ══ */
+afficherApercuFTBE = function(missions){
+  var resEl = document.getElementById('ftbe-resultats');
+  if(!resEl) return;
+
+  var camions = getCamionsDisponibles();
+  var nbConflits = 0;
+
+  var html = '<div style="font-size:9px;font-weight:700;color:#22c55e;text-transform:uppercase;margin-bottom:8px">'
+    + missions.length+' bon(s) détecté(s) — vérifiez avant de valider</div>';
+
+  missions.forEach(function(m, idx){
+    var hist = getHistoriqueClientFTBE(m.client);
+    var conflit = verifierConflitFTBE(m.chauffeurIdx, m.date, m.heure);
+    var allergenes = m.allergenes || [];
+    if(conflit) nbConflits++;
+
+    var borderCol = conflit ? '#ef4444' : (m.chauffeurIdx>=0 ? '#22c55e' : '#f59e0b');
+
+    html += '<div style="background:#0f172a;border:1px solid '+borderCol+';border-radius:10px;padding:12px;margin-bottom:12px">';
+
+    /* Alerte conflit */
+    if(conflit){
+      html += '<div style="background:rgba(239,68,68,.15);border-radius:6px;padding:6px;font-size:11px;color:#fca5a5;margin-bottom:8px">⚠️ CONFLIT : '+
+        ST.drivers[m.chauffeurIdx].name+' a déjà une mission à '+m.heure+' ce jour</div>';
+    }
+
+    /* Alerte allergènes */
+    if(allergenes.length){
+      html += '<div style="background:rgba(245,158,11,.15);border-radius:6px;padding:6px;font-size:11px;color:#fbbf24;margin-bottom:8px">🚨 ALLERGÈNES : '+allergenes.join(', ')+'</div>';
+    }
+
+    /* Historique client */
+    if(hist.nbMissions > 0){
+      html += '<div style="background:rgba(96,165,250,.1);border-radius:6px;padding:6px;font-size:10px;color:#93c5fd;margin-bottom:8px">📋 Client connu : '+hist.nbMissions+' mission(s) dans l\'historique'+(hist.dernierChauffeur!==''?' — dernier chauffeur : '+(ST.drivers[hist.dernierChauffeur]?ST.drivers[hist.dernierChauffeur].name:''):'')+'</div>';
+    }
+
+    /* Grille des champs */
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+
+    /* Client */
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Client</label>'
+      + '<input type="text" class="fi" id="ftbe-client-'+idx+'" value="'+m.client+'" style="font-size:12px;font-weight:700"></div>';
+
+    /* Heure */
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Heure livraison</label>'
+      + '<input type="time" class="fi" id="ftbe-heure-'+idx+'" value="'+m.heure+'" style="font-size:12px"></div>';
+
+    /* Date */
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Date</label>'
+      + '<input type="date" class="fi" id="ftbe-date-'+idx+'" value="'+m.date+'" style="font-size:12px"></div>';
+
+    /* Chauffeur */
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Chauffeur</label>'
+      + '<select class="fi" id="ftbe-chauffeur-'+idx+'" style="font-size:12px" onchange="majCamionAuto('+idx+')">'
+      + '<option value="-1">-- Non assigné --</option>'
+      + (ST.drivers ? ST.drivers.map(function(dr,di){
+          return '<option value="'+di+'"'+(di===m.chauffeurIdx?' selected':'')+'>'+dr.name+'</option>';
+        }).join('') : '')
+      + '</select></div>';
+
+    html += '</div>';
+
+    /* Camion */
+    html += '<div style="margin-bottom:8px"><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Camion</label>'
+      + '<select class="fi" id="ftbe-camion-'+idx+'" style="font-size:12px">'
+      + camions.map(function(cam){
+          var selected = cam===m.vehicule||cam===(m.chauffeurIdx>=0?getCamionDefaut(m.chauffeurIdx):'');
+          return '<option value="'+cam+'"'+(selected?' selected':'')+'>'+cam+'</option>';
+        }).join('')
+      + '<option value="">-- Autre --</option>'
+      + '</select></div>';
+
+    /* Adresse */
+    html += '<div style="margin-bottom:8px"><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Adresse</label>'
+      + '<input type="text" class="fi" id="ftbe-adresse-'+idx+'" value="'+m.adresse+'" style="font-size:12px"></div>';
+
+    /* Téléphone */
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Téléphone client</label>'
+      + '<input type="text" class="fi" id="ftbe-tel-'+idx+'" value="'+(m.tel||'')+'" style="font-size:12px"></div>';
+
+    /* Convives */
+    html += '<div><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Convives</label>'
+      + '<input type="text" class="fi" id="ftbe-convives-'+idx+'" value="'+(m.convives||'')+'" style="font-size:12px"></div>';
+    html += '</div>';
+
+    /* Note */
+    html += '<div style="margin-bottom:6px"><label style="font-size:10px;color:#64748b;display:block;margin-bottom:3px">Note / Instructions spéciales</label>'
+      + '<textarea class="fi" id="ftbe-note-'+idx+'" style="height:50px;font-size:12px" placeholder="Allergènes, accès, instructions particulières...">'
+      + (allergenes.length ? '🚨 ALLERGÈNES : '+allergenes.join(', ')+'\n' : '')
+      + '</textarea></div>';
+
+    html += '<div style="font-size:10px;color:#475569">Livreur FTBE : '+m.livreur+' | '+m.vehicule+(m.convives?' | '+m.convives+' convives':'')+'</div>';
+    html += '</div>';
+  });
+
+  if(nbConflits > 0){
+    html = '<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;padding:10px;font-size:12px;color:#fca5a5;margin-bottom:10px">⚠️ '+nbConflits+' conflit(s) d\'horaire détecté(s) — vérifiez les missions en rouge avant de valider.</div>' + html;
+  }
+
+  html += '<button onclick="confirmerImportFTBE()" style="width:100%;padding:13px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px">✅ Importer '+missions.length+' mission(s) dans le planning</button>';
+
+  resEl.innerHTML = html;
+};
+
+/* Mise à jour automatique du camion quand on change le chauffeur */
+function majCamionAuto(idx){
+  var sel = document.getElementById('ftbe-chauffeur-'+idx);
+  var camionSel = document.getElementById('ftbe-camion-'+idx);
+  if(!sel || !camionSel) return;
+  var di = parseInt(sel.value);
+  if(di>=0){
+    var camion = getCamionDefaut(di);
+    if(camion){
+      for(var i=0;i<camionSel.options.length;i++){
+        if(camionSel.options[i].value===camion){
+          camionSel.selectedIndex=i;break;
+        }
+      }
+    }
+  }
+}
+
+/* ══ REMPLACER confirmerImportFTBE pour inclure tous les champs ══ */
+confirmerImportFTBE = function(){
+  var data = window._ftbeImportData;
+  if(!data) return;
+  var nb = 0, conflits = 0;
+
+  data.forEach(function(m, idx){
+    var client = document.getElementById('ftbe-client-'+idx).value.trim();
+    var heure = document.getElementById('ftbe-heure-'+idx).value.trim();
+    var date = document.getElementById('ftbe-date-'+idx).value;
+    var di = parseInt(document.getElementById('ftbe-chauffeur-'+idx).value);
+    var adresse = document.getElementById('ftbe-adresse-'+idx).value.trim();
+    var tel = document.getElementById('ftbe-tel-'+idx).value.trim();
+    var camion = document.getElementById('ftbe-camion-'+idx).value;
+    var note = document.getElementById('ftbe-note-'+idx).value.trim();
+    var convives = document.getElementById('ftbe-convives-'+idx).value.trim();
+
+    if(!client || !heure || !date || di<0) return;
+
+    var heureNorm = heure;
+    if(typeof nSl==='function') heureNorm = nSl(heure) || heure;
+
+    /* Vérifier conflit */
+    if(verifierConflitFTBE(di, date, heureNorm)) conflits++;
+
+    var k = gk(date, di, heureNorm);
+    if(!ST.tasks[k]) ST.tasks[k] = [];
+    ST.tasks[k].push({
+      client: client,
+      adresse: adresse,
+      contact: tel,
+      category: 'traiteur',
+      convives: convives,
+      truck: camion,
+      note_liv: note,
+      livreurFTBE: m.livreur,
+      vehiculeFTBE: m.vehicule,
+      allergenes: m.allergenes||[],
+      importeFTBE: true
+    });
+    nb++;
+  });
+
+  if(typeof save==='function') save();
+  if(typeof render==='function') render();
+
+  var msg = nb+' mission(s) FTBE importées';
+  if(conflits>0) msg += ' ('+conflits+' conflit(s) maintenu(s) — vérifiez le planning)';
+  showT(msg, conflits>0?'#f59e0b':'#16a34a');
+  if(typeof enregistrerDecision==='function') enregistrerDecision('Import FTBE : '+nb+' missions');
+  document.getElementById('m-ftbe-texte').remove();
+};
+
+/* ══ AMÉLIORER extraireInfosBonFTBE avec allergènes ══ */
+var _extraireInfosBonFTBE_orig = extraireInfosBonFTBE;
+extraireInfosBonFTBE = function(texte){
+  var infos = _extraireInfosBonFTBE_orig(texte);
+  /* Ajouter les allergènes */
+  infos.allergenes = detecterAllergenesFTBE(texte);
+  return infos;
+};
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   LOT 29 — TELEGRAM MINI-APP + RAPPORT HEBDO + SOS
+   GAS côté serveur : /planning /mission /sos
+   + Rapport lundi matin
+   + Max infos client dans messages
+══════════════════════════════════════════════════ */
+
+/* Ces fonctions sont injectées dans le HTML côté logiciel
+   pour améliorer les messages envoyés avec max d'infos */
+
+/* Message transfert/mission enrichi avec TOUTES les infos client */
+var _executerTransfertMission_lot29 = executerTransfertMission;
+executerTransfertMission = function(){
+  /* On laisse la fonction originale s'exécuter */
+  _executerTransfertMission_lot29.apply(this, arguments);
+};
+
+/* Améliorer le message de reprise archive pour inclure max infos */
+var _executerRepriseArchive_lot29 = executerRepriseArchive;
+executerRepriseArchive = function(nomClient, idx){
+  var archives = JSON.parse(localStorage.getItem('archives_photos_clients')||'{}');
+  var item = archives[nomClient] ? archives[nomClient][idx] : null;
+  if(!item) return;
+
+  var di = parseInt(document.getElementById('rep-chauffeur').value);
+  var date = document.getElementById('rep-date').value;
+  var heure = document.getElementById('rep-heure').value;
+  var mem = getMemoireClients ? getMemoireClients() : {};
+  var memInfo = mem[(nomClient||'').toUpperCase().trim()] || {};
+
+  var ids = getTgIds ? getTgIds() : {};
+  var chatId = ids[di] || ids[String(di)];
+  if(chatId){
+    var JNOMS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    var MNOMS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    var d = new Date(date+'T12:00:00');
+    var dStr = JNOMS[d.getDay()]+' '+d.getDate()+' '+MNOMS[d.getMonth()];
+
+    var msg = '📦 *A RECUPERER*\n';
+    msg += '--------------------\n';
+    msg += '👤 *'+ST.drivers[di].name.toUpperCase()+'*\n';
+    msg += '📅 *'+dStr.toUpperCase()+'* à *'+heure+'*\n';
+    msg += '--------------------\n\n';
+    msg += '🏢 Client : *'+nomClient+'*\n';
+    if(memInfo.adresse || item.adresse) msg += '📍 '+(memInfo.adresse||item.adresse)+'\n';
+    if(memInfo.telephone) msg += '📞 '+memInfo.telephone+'\n';
+    if(item.note) msg += '\n📝 '+item.note+'\n';
+    msg += '\n--------------------\n_La Table de Cana Logistique_';
+
+    var TG = typeof TG_API !== 'undefined' ? TG_API : 'https://api.telegram.org/bot8477045091:AAFiQhOh8MPvbi8auzW8y_s2doKrRnyF2ys';
+
+    if(item.fileId){
+      fetch(TG+'/sendPhoto',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,photo:item.fileId,caption:msg,parse_mode:'Markdown'})});
+    } else {
+      fetch(TG+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chatId,text:msg,parse_mode:'Markdown'})});
+    }
+  }
+
+  /* Créer la mission si demandé */
+  if(document.getElementById('rep-creer-mission') && document.getElementById('rep-creer-mission').checked){
+    var k = gk(date, di, heure);
+    if(!ST.tasks[k]) ST.tasks[k] = [];
+    ST.tasks[k].push({
+      client: nomClient,
+      adresse: memInfo.adresse||'',
+      contact: memInfo.telephone||'',
+      note_liv: 'REPRISE : '+(item.note||''),
+      category: 'reprise'
+    });
+    if(typeof save==='function') save();
+    if(typeof render==='function') render();
+  }
+
+  showT('Reprise envoyée à '+ST.drivers[di].name,'#16a34a');
+  var m1 = document.getElementById('m-reprise-archive');if(m1)m1.remove();
+  var m2 = document.getElementById('m-archive-client');if(m2)m2.remove();
+};
+
+/* ══ CARTE DES LIVRAISONS DU JOUR ══ */
+function ouvrirCarteLivraisons(){
+  var date = ST.cur;
+  var adresses = [];
+
+  ST.drivers.forEach(function(dr, di){
+    SL.forEach(function(h){
+      (ST.tasks[gk(date,di,h)]||[]).forEach(function(t){
+        if(t.adresse || t.client){
+          adresses.push({
+            chauffeur: dr.name,
+            client: t.client||t.task||'',
+            adresse: t.adresse||'',
+            heure: h,
+            color: ['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444'][di]||'#64748b'
+          });
+        }
+      });
+    });
+  });
+
+  if(!adresses.length){
+    showT('Aucune adresse dans le planning du jour','#f59e0b');
+    return;
+  }
+
+  var existing = document.getElementById('m-carte');if(existing)existing.remove();
+  var modal = document.createElement('div');modal.id='m-carte';modal.className='mbg on';
+
+  /* Construire URL Google Maps avec toutes les adresses */
+  var mapsUrl = 'https://www.google.com/maps/dir/';
+  adresses.slice(0,10).forEach(function(a){
+    if(a.adresse) mapsUrl += encodeURIComponent(a.adresse)+'/';
+  });
+
+  var html = '<div class="mbox" style="max-width:560px;max-height:92vh;overflow-y:auto">'
+    + '<h3>🗺️ Carte des livraisons <button class="mclose" onclick="document.getElementById(\'m-carte\').remove()">X</button></h3>'
+    + '<div style="font-size:11px;color:#64748b;margin-bottom:10px">'+adresses.length+' adresse(s) pour le '+date+'</div>'
+    + adresses.map(function(a,i){
+        return '<div style="background:#0f172a;border-left:4px solid '+a.color+';border-radius:6px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'
+          + '<div>'
+          + '<div style="font-size:11px;font-weight:700;color:'+a.color+'">'+a.chauffeur+' | '+a.heure+'</div>'
+          + '<div style="font-size:13px;color:#e2e8f0;font-weight:700">'+a.client+'</div>'
+          + (a.adresse?'<div style="font-size:11px;color:#64748b">📍 '+a.adresse+'</div>':'')
+          + '</div>'
+          + (a.adresse?'<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a.adresse)+'" target="_blank" style="background:#1d4ed8;color:#fff;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap">📍 Maps</a>':'')
+          + '</div>';
+      }).join('')
+    + '<a href="'+mapsUrl+'" target="_blank" style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#1d4ed8,#22c55e);border-radius:9px;color:#fff;font-size:13px;font-weight:900;text-align:center;text-decoration:none;margin-top:10px">🗺️ Ouvrir l\'itinéraire complet dans Google Maps</a>'
+    + '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+}
+
+/* ══ GESTION VEHICULES ══ */
+function ouvrirGestionVehicules(){
+  var existing = document.getElementById('m-vehicules');if(existing)existing.remove();
+  var modal = document.createElement('div');modal.id='m-vehicules';modal.className='mbg on';
+
+  var vehicules = JSON.parse(localStorage.getItem('gestion_vehicules')||'[]');
+  if(!vehicules.length){
+    /* Initialiser avec les camions actuels */
+    var camions = getCamionsDisponibles ? getCamionsDisponibles() : [];
+    vehicules = camions.map(function(c){ return {nom:c,km:0,prochRevision:'',prochCT:'',prochAssurance:'',notes:''}; });
+    localStorage.setItem('gestion_vehicules', JSON.stringify(vehicules));
+  }
+
+  var today = new Date().toISOString().slice(0,10);
+
+  var html = '<div class="mbox" style="max-width:560px;max-height:92vh;overflow-y:auto">'
+    + '<h3>🚛 Gestion des véhicules <button class="mclose" onclick="document.getElementById(\'m-vehicules\').remove()">X</button></h3>';
+
+  vehicules.forEach(function(v, idx){
+    var alertes = [];
+    if(v.prochRevision && v.prochRevision <= today) alertes.push('Révision dépassée');
+    if(v.prochCT && v.prochCT <= today) alertes.push('CT dépassé');
+    if(v.prochAssurance && v.prochAssurance <= today) alertes.push('Assurance expirée');
+
+    /* Alertes dans les 30 jours */
+    var dans30 = new Date();dans30.setDate(dans30.getDate()+30);
+    var d30 = dans30.toISOString().slice(0,10);
+    if(v.prochRevision && v.prochRevision > today && v.prochRevision <= d30) alertes.push('Révision dans moins de 30j');
+    if(v.prochCT && v.prochCT > today && v.prochCT <= d30) alertes.push('CT dans moins de 30j');
+
+    var col = alertes.length ? '#ef4444' : '#22c55e';
+
+    html += '<div style="background:#0f172a;border:1px solid '+col+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      + '<div style="font-size:14px;font-weight:900;color:#e2e8f0;margin-bottom:8px">🚛 '+v.nom
+      + (alertes.length?'<span style="background:#ef4444;color:#fff;border-radius:5px;padding:2px 6px;font-size:10px;margin-left:8px">'+alertes[0]+'</span>':'')+'</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'
+      + '<div><label style="font-size:10px;color:#64748b">Km actuels</label>'
+      + '<input type="number" class="fi" id="veh-km-'+idx+'" value="'+v.km+'" style="font-size:12px"></div>'
+      + '<div><label style="font-size:10px;color:#64748b">Proch. révision</label>'
+      + '<input type="date" class="fi" id="veh-rev-'+idx+'" value="'+v.prochRevision+'" style="font-size:12px"></div>'
+      + '<div><label style="font-size:10px;color:#64748b">Contrôle technique</label>'
+      + '<input type="date" class="fi" id="veh-ct-'+idx+'" value="'+v.prochCT+'" style="font-size:12px"></div>'
+      + '<div><label style="font-size:10px;color:#64748b">Assurance</label>'
+      + '<input type="date" class="fi" id="veh-ass-'+idx+'" value="'+v.prochAssurance+'" style="font-size:12px"></div>'
+      + '</div>'
+      + '<textarea class="fi" id="veh-notes-'+idx+'" placeholder="Notes..." style="height:40px;font-size:11px">'+v.notes+'</textarea>'
+      + '</div>';
+  });
+
+  html += '<button onclick="sauverVehicules()" style="width:100%;padding:11px;background:#1d4ed8;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px">Enregistrer</button>'
+    + '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+}
+
+function sauverVehicules(){
+  var vehicules = JSON.parse(localStorage.getItem('gestion_vehicules')||'[]');
+  vehicules.forEach(function(v, idx){
+    var km = document.getElementById('veh-km-'+idx);
+    var rev = document.getElementById('veh-rev-'+idx);
+    var ct = document.getElementById('veh-ct-'+idx);
+    var ass = document.getElementById('veh-ass-'+idx);
+    var notes = document.getElementById('veh-notes-'+idx);
+    if(km) v.km = parseInt(km.value)||0;
+    if(rev) v.prochRevision = rev.value;
+    if(ct) v.prochCT = ct.value;
+    if(ass) v.prochAssurance = ass.value;
+    if(notes) v.notes = notes.value;
+  });
+  localStorage.setItem('gestion_vehicules', JSON.stringify(vehicules));
+  showT('Véhicules enregistrés','#16a34a');
+  ouvrirGestionVehicules();
+}
+
+/* ══ AJOUTER AU MENU ══ */
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    var menu = document.getElementById('menu-principal');if(!menu)return;
+
+    /* Carte livraisons - après Centre de Commandement */
+    var cmdBtn = Array.from(menu.querySelectorAll('.menu-item')).find(function(b){
+      return b.textContent.indexOf('Centre de Commandement')>=0;
+    });
+    if(cmdBtn && cmdBtn.parentNode){
+      var div1 = document.createElement('div');
+      div1.innerHTML = '<button tabindex="0" onclick="ouvrirCarteLivraisons();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">🗺️ Carte des livraisons du jour</button>';
+      cmdBtn.parentNode.insertBefore(div1, cmdBtn.nextSibling);
+    }
+
+    /* Gestion véhicules - après Heures du mois */
+    var heuresBtn = Array.from(menu.querySelectorAll('.menu-item')).find(function(b){
+      return b.textContent.indexOf('Heures du mois')>=0;
+    });
+    if(heuresBtn && heuresBtn.parentNode){
+      var div2 = document.createElement('div');
+      div2.innerHTML = '<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">🚛 Gestion des véhicules</button>';
+      heuresBtn.parentNode.insertBefore(div2, heuresBtn.nextSibling);
+    }
+  }, 6400);
 });
 
 </script>
