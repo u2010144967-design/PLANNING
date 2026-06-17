@@ -3,280 +3,427 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>La Table de Cana — Chauffeur</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cana Logistique">
+<meta name="theme-color" content="#0a0f1e">
+<title>La Table de Cana</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 :root{
-  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;
+  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;--hover:#1e2d45;
   --orange:#f97316;--blue:#3b82f6;--green:#22c55e;
-  --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;
-  --text:#f1f5f9;--muted:#64748b;--border:rgba(255,255,255,0.08);
+  --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;--teal:#14b8a6;
+  --text:#f1f5f9;--muted:#64748b;--dim:#374151;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
-.screen{height:100%;display:flex;flex-direction:column}
-button{cursor:pointer;font-family:inherit;border:none;outline:none}
-input,textarea{font-family:inherit;outline:none}
+html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;font-size:14px}
+.screen{height:100%;display:flex;flex-direction:column;position:relative}
+button{cursor:pointer;font-family:inherit;border:none;outline:none;-webkit-user-select:none;user-select:none}
+input,textarea,select{font-family:inherit;outline:none;-webkit-appearance:none}
 ::-webkit-scrollbar{display:none}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mono{font-family:'SF Mono','Consolas',monospace}
 
-/* LOGIN */
-.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:radial-gradient(ellipse at top,#1a2234 0%,#0a0f1e 60%);overflow-y:auto}
-.login-logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 16px 32px rgba(249,115,22,.3)}
-.chauffeur-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:300px;margin-bottom:20px}
-.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .2s}
-.ch-btn:active{transform:scale(.96)}
-.ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.1)}
-.avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
-.code-wrap{width:100%;max-width:300px;margin-bottom:12px}
-.code-dots{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
-.code-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);transition:all .2s}
-.code-dot.filled{background:var(--orange);border-color:var(--orange)}
-.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:280px}
-.num-btn{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;font-size:20px;font-weight:600;color:var(--text);transition:all .15s;display:flex;align-items:center;justify-content:center}
-.num-btn:active{background:var(--raised);transform:scale(.94)}
-.num-btn.del{font-size:16px;color:var(--muted)}
-.num-btn.empty{visibility:hidden}
-.btn-connect{background:linear-gradient(135deg,var(--orange),#ef4444);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%;max-width:280px;box-shadow:0 8px 20px rgba(249,115,22,.3);margin-top:8px}
-.btn-connect:disabled{opacity:.4}
-.btn-connect:active:not(:disabled){transform:scale(.98)}
-.error-msg{color:var(--red);font-size:12px;margin-bottom:8px;min-height:18px}
+/* ══ UTILITAIRES ══ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-green{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:var(--green)}
+.pill-orange{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);color:var(--orange)}
+.pill-amber{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:var(--amber)}
+.pill-red{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--red)}
+.pill-blue{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:var(--blue)}
+.pill-muted{background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.25);color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.5)}
+.dot-amber{background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.5)}
+.dot-red{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,.5)}
+.dot-gray{background:var(--dim)}
 
-/* HEADER */
-.app-header{padding:48px 16px 0 16px;flex-shrink:0}
-.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+/* ══ LOGIN ══ */
+.login-screen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 120% 60% at 50% 0%,#1a2234,var(--bg) 70%);overflow-y:auto}
+.login-logo{width:76px;height:76px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 20px 40px rgba(249,115,22,.35)}
+.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-bottom:24px}
+.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s}
+.ch-btn:active{transform:scale(.95)}
+.ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.08)}
+.av{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.code-dots{display:flex;gap:14px;margin:16px 0}
+.code-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--dim);transition:all .25s}
+.code-dot.filled{background:var(--orange);border-color:var(--orange);transform:scale(1.1)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:290px}
+.num-key{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:17px;font-size:22px;font-weight:600;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;aspect-ratio:1}
+.num-key:active{background:var(--raised);transform:scale(.92)}
+.num-key.del-key{font-size:18px;color:var(--muted)}
+.err-msg{color:var(--red);font-size:12px;min-height:18px;margin-bottom:6px;font-weight:500}
 
-/* TABS */
-.scroll-area{flex:1;overflow-y:auto;padding:0 0 90px}
+/* ══ APP HEADER ══ */
+.app-top{padding:calc(var(--safe-top) + 48px) 16px 12px;flex-shrink:0}
+.driver-row{display:flex;align-items:center;justify-content:space-between}
+.driver-info .greeting{font-size:12px;color:var(--muted)}
+.driver-info .dname{font-size:22px;font-weight:800;line-height:1.1}
+.driver-info .dtruck{font-size:11px;color:var(--muted);margin-top:2px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.icon-btn:active{background:var(--raised)}
 
-/* MISSION CARD */
-.mission-card{background:var(--card);border:1px solid var(--border);border-radius:18px;margin:0 16px 14px;overflow:hidden}
-.mission-card.done{opacity:.7}
-.mc-head{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
-.mc-time{font-family:'SF Mono','Consolas',monospace;font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1}
-.mc-time small{font-size:10px;color:var(--muted);font-family:inherit;display:block;margin-top:3px;font-weight:400;letter-spacing:0}
-.mc-badge{border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600}
+/* ══ STATUT JOURNÉE ══ */
+.day-status-bar{margin:10px 16px 0;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;border:1px solid var(--border2)}
+.dsb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dsb-info{flex:1}
+.dsb-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.dsb-val{font-size:13px;font-weight:600;margin-top:1px}
+.dsb-hours{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ══ PROGRESS BAR ══ */
+.progress-card{margin:12px 16px 0;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.prog-bar-wrap{flex:1}
+.prog-label{font-size:10px;color:var(--muted);margin-bottom:5px}
+.prog-bar{height:6px;background:var(--raised);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.prog-count{text-align:right;flex-shrink:0}
+.prog-num{font-size:20px;font-weight:800;line-height:1}
+.prog-sub{font-size:10px;color:var(--muted)}
+
+/* ══ BOTTOM NAV ══ */
+.bnav{position:absolute;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(var(--safe-bottom) + 8px);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
+.nav-btn.active{color:var(--orange)}
+.nav-btn svg{width:24px;height:24px;stroke-width:1.8;transition:transform .2s}
+.nav-btn.active svg{transform:scale(1.1)}
+.nav-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--red);border-radius:20px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
+
+/* ══ MAIN CONTENT ══ */
+.main-content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(60px + var(--safe-bottom))}
+
+/* ══ MISSIONS ══ */
+.missions-list{flex:1;overflow-y:auto;padding:12px 16px 0}
+.mc{border-radius:20px;margin-bottom:14px;overflow:hidden;transition:transform .15s}
+.mc:active{transform:scale(.99)}
+.mc-top{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+.mc-time-block .mc-time{font-size:26px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.mc-time-block .mc-type{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
 .mc-client{padding:0 16px 10px}
-.mc-name{font-size:17px;font-weight:700;margin-bottom:5px;line-height:1.2}
-.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:flex-start;line-height:1.4}
-.allerg-bar{margin:0 16px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:9px;padding:7px 11px;font-size:11px;color:var(--red);display:flex;align-items:center;gap:6px}
+.mc-cname{font-size:18px;font-weight:700;line-height:1.2;margin-bottom:5px}
+.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
+.allerg{margin:0 16px 10px;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:7px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
 .mc-divider{height:1px;background:var(--border);margin:0 16px}
 .mc-meta{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
-.meta-tag{background:var(--raised);border-radius:8px;padding:5px 9px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.meta-tag b{color:var(--text)}
-.mc-actions{padding:12px 16px;display:grid;gap:8px}
-.act-btn{border-radius:12px;padding:12px 8px;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid transparent;transition:all .15s}
-.act-btn:active{transform:scale(.95)}
-.act-btn svg{width:20px;height:20px}
-.btn-maps{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.3);color:var(--blue)}
-.btn-call{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:var(--green)}
-.btn-go{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3);color:var(--amber)}
-.btn-done{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:var(--green)}
-.btn-photo{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3);color:var(--purple)}
+.mt{background:var(--raised);border-radius:9px;padding:5px 10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.mt b{color:var(--text)}
+.mt.full{width:100%}
+.mc-btns{padding:12px 16px;display:grid;gap:8px}
+.ab{border-radius:13px;padding:13px 8px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid transparent;transition:all .15s}
+.ab:active{transform:scale(.94)}
+.ab svg{width:22px;height:22px}
+.ab-maps{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:var(--blue)}
+.ab-call{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
+.ab-go{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:var(--amber)}
+.ab-done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
+.ab-photo{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.3);color:var(--purple)}
+.ab-sign{background:rgba(20,184,166,.12);border-color:rgba(20,184,166,.3);color:var(--teal)}
+.ab-msg{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3);color:#818cf8}
 
-/* CALENDRIER */
-.cal-wrap{padding:0 16px 90px}
-.cal-nav{display:flex;justify-content:space-between;align-items:center;padding:12px 0 16px}
-.cal-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-day-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:600;padding:4px 0}
-.cal-day{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;cursor:pointer;position:relative;border:1px solid transparent;transition:all .15s}
-.cal-day:active{transform:scale(.93)}
-.cal-day.today{border-color:var(--orange);color:var(--orange);font-weight:700}
-.cal-day.has-m::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
-.cal-day.sel{background:var(--orange);color:#fff;font-weight:700}
-.cal-day.sel::after{background:#fff}
-.day-list{margin-top:14px}
-.day-item{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
-.day-item .t{font-family:monospace;font-size:14px;font-weight:700;color:var(--orange);flex-shrink:0}
-.day-item .i{flex:1}
-.day-item .cn{font-size:13px;font-weight:600}
-.day-item .cs{font-size:11px;color:var(--muted)}
-
-/* MESSAGES */
-.msg-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.msg-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column}
-.mb{max-width:85%;margin-bottom:10px}
-.mb.me{margin-left:auto}
-.mb-inner{padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.5}
-.mb:not(.me) .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
-.mb.me .mb-inner{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
-.mb-time{font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px}
-.mb.me .mb-time{text-align:right}
-.msg-bar{padding:10px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
-.msg-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-size:13px;color:var(--text);resize:none;max-height:80px}
-.msg-send{background:var(--orange);border-radius:50%;width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff}
-.msg-send:active{transform:scale(.93)}
-
-/* BOTTOM NAV */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.96);border-top:1px solid var(--border);display:flex;padding:6px 0 max(6px,env(safe-area-inset-bottom));backdrop-filter:blur(20px);z-index:50}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:500;position:relative}
-.bnav-item.active{color:var(--orange)}
-.bnav-item svg{width:22px;height:22px;stroke-width:1.8}
-.bnav-badge{position:absolute;top:3px;right:calc(50% - 16px);background:var(--red);border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;padding:0 4px}
-
-/* TOAST */
-.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid var(--border);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:999;white-space:nowrap;animation:tIn .25s ease}
-@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
-/* LOADER */
-.loader{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:13px}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite}
+/* ══ EMPTY / LOADER ══ */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;color:var(--muted)}
+.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.25;stroke-width:1.2}
+.empty-state p{font-size:14px;line-height:1.7}
+.loader-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:13px}
+.spin{width:34px;height:34px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .75s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ CALENDRIER ══ */
+.cal-wrap{flex:1;overflow-y:auto;padding:12px 16px 0}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.cal-nav-btn:active{background:var(--raised)}
+.cal-month-title{font-size:16px;font-weight:700;text-align:center}
+.cal-month-sub{font-size:11px;color:var(--muted);text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.cal-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:700;padding:4px 0}
+.cal-d{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;cursor:pointer;position:relative;border:1.5px solid transparent;transition:all .15s;font-weight:500}
+.cal-d:active{transform:scale(.9)}
+.cal-d.today{border-color:var(--orange);color:var(--orange);font-weight:800}
+.cal-d.has-m::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
+.cal-d.sel{background:var(--orange);color:#fff;font-weight:800}
+.cal-d.sel::after{background:#fff}
+.cal-d.off{color:var(--dim);background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.15)}
+.cal-d.rest{color:var(--muted);background:rgba(100,116,139,.06)}
+.day-list .di{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.di .dt{font-family:monospace;font-size:14px;font-weight:800;color:var(--orange);flex-shrink:0;width:46px}
+.di .dc{flex:1}
+.di .dn{font-size:13px;font-weight:600}
+.di .ds{font-size:11px;color:var(--muted);margin-top:1px}
+.status-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+
+/* ══ HEURES DU MOIS ══ */
+.hours-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.hg-item{background:var(--raised);border-radius:12px;padding:12px;text-align:center}
+.hg-val{font-size:24px;font-weight:800;line-height:1}
+.hg-lbl{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ══ MESSAGES ══ */
+.msg-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.msg-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.msg-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.mb{max-width:88%}
+.mb.me{align-self:flex-end}
+.mb.them{align-self:flex-start}
+.mb-inner{padding:11px 15px;border-radius:20px;font-size:14px;line-height:1.5}
+.mb.them .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+.mb.me .mb-inner{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
+.mb-meta{font-size:10px;color:var(--muted);margin-top:4px;padding:0 4px}
+.mb.me .mb-meta{text-align:right}
+.msg-bar{padding:10px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:calc(10px + var(--safe-bottom))}
+.msg-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:11px 16px;font-size:14px;color:var(--text);resize:none;max-height:100px;line-height:1.4}
+.msg-input:focus{border-color:var(--orange)}
+.send-btn{background:var(--orange);border-radius:50%;width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .15s}
+.send-btn:active{transform:scale(.9)}
+
+/* ══ SIGNATURE ══ */
+.sig-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.sig-box{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:400px}
+.sig-canvas{background:#fff;border-radius:12px;width:100%;touch-action:none;cursor:crosshair;display:block}
+.sig-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.sig-btn{border-radius:12px;padding:12px;font-size:13px;font-weight:700;transition:transform .15s}
+.sig-btn:active{transform:scale(.96)}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;top:calc(var(--safe-top) + 16px);left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tIn .25s ease;max-width:90vw;text-align:center}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ══ PHOTO INPUT ══ */
+.photo-input{position:absolute;width:0;height:0;opacity:0}
 </style>
 </head>
 <body>
 <div id="root"></div>
+<input type="file" id="photo-input" class="photo-input" accept="image/*" capture="environment"/>
 <script type="text/babel">
 const {useState,useEffect,useRef,useCallback} = React;
 
-/* ══ SUPABASE ══ */
-const SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
-const SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-const TG_TOKEN = '8477045091:AAFiQhOh8MPvbi8auzW8y_s2doKrRnyF2ys';
-const RESP_ID = '7551397917';
+/* ══ CONFIG ══ */
+const SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
+const SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+const TG_TOKEN='8477045091:AAFiQhOh8MPvbi8auzW8y_s2doKrRnyF2ys';
+const RESP_ID='7551397917';
+const TG_API=`https://api.telegram.org/bot${TG_TOKEN}`;
 
-async function supaFetch(path, opts={}) {
-  const r = await fetch(SUPA_URL+'/rest/v1/'+path, {
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
+const CHAUFFEURS=[
+  {id:0,name:'Otmane',initial:'O',color:'#3b82f6',code:'1111',truck:'JUMPY',start:'06:00',end:'14:00'},
+  {id:1,name:'Nicolas',initial:'N',color:'#22c55e',code:'2222',truck:'VIVARO 1',start:'06:00',end:'14:00'},
+  {id:2,name:'Mickaël',initial:'M',color:'#f97316',code:'3333',truck:'VIVARO 2',start:'06:00',end:'15:00'},
+  {id:3,name:'Karim',initial:'K',color:'#a855f7',code:'4444',truck:'IVECO',start:'06:00',end:'14:00'},
+  {id:4,name:"Maître d'H.",initial:'H',color:'#f59e0b',code:'5555',truck:'VIVARO LOC.',start:'08:00',end:'22:00'},
+];
+
+const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const JOURS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
+
+/* ══ API ══ */
+async function supaFetch(path,opts={}){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
     ...opts
   });
   return r.json();
 }
 
-async function chargerPlanning() {
-  const today = new Date().toISOString().slice(0,10);
-  const rows = await supaFetch('planning?date=eq.'+today+'&select=donnees&order=updated_at.desc&limit=1');
-  if(rows&&rows.length) return rows[0].donnees;
+async function chargerPlanning(date){
+  const d=date||new Date().toISOString().slice(0,10);
+  try{
+    const rows=await supaFetch('planning?date=eq.'+d+'&select=donnees&order=updated_at.desc&limit=1');
+    if(rows&&rows.length) return rows[0].donnees;
+  }catch(e){}
   return null;
 }
 
-async function sendTelegram(text) {
-  try {
-    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({chat_id:RESP_ID,text,parse_mode:'Markdown'})
-    });
-  } catch(e){}
+async function tg(method,body){
+  try{
+    await fetch(`${TG_API}/${method}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }catch(e){}
 }
 
-/* ══ CONFIG CHAUFFEURS ══ */
-const CHAUFFEURS_CONFIG = [
-  {id:0,name:'Otmane',initial:'O',color:'#3b82f6',code:'1111'},
-  {id:1,name:'Nicolas',initial:'N',color:'#22c55e',code:'2222'},
-  {id:2,name:'Mickaël',initial:'M',color:'#f97316',code:'3333'},
-  {id:3,name:'Karim',initial:'K',color:'#a855f7',code:'4444'},
-  {id:4,name:"Maître d'H.",initial:'H',color:'#f59e0b',code:'5555'},
-];
+function getMissions(planning,di,date){
+  if(!planning||!planning.tasks) return [];
+  const ms=[];
+  SL.forEach(h=>{
+    const k=date+'|'+di+'|'+h;
+    (planning.tasks[k]||[]).forEach((t,ti)=>{
+      ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'});
+    });
+  });
+  return ms;
+}
 
-const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const JOURS_COURTS = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+function getStatut(planning,di,date){
+  if(!planning||!planning.statuts) return null;
+  return Object.values(planning.statuts).find(s=>s.di===di&&s.date===date)||null;
+}
+
+function calcHeuresMois(planning,di,mois,annee){
+  let jours=0,absences=0,totalMin=0;
+  const daysInMonth=new Date(annee,mois+1,0).getDate();
+  for(let day=1;day<=daysInMonth;day++){
+    const d=new Date(annee,mois,day);
+    if(d>new Date()) break;
+    const ds=`${annee}-${String(mois+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const st=getStatut(planning,di,ds);
+    if(st&&(st.type==='absent'||st.type==='maladie'||st.type==='conge'||st.type==='repos')){
+      absences++;continue;
+    }
+    const ms=getMissions(planning,di,ds);
+    if(ms.length>0){jours++;totalMin+=7*60-45;}
+  }
+  return {jours,absences,heures:Math.floor(totalMin/60),minutes:totalMin%60};
+}
 
 /* ══ TOAST ══ */
-function Toast({msg,color}) {
-  if(!msg) return null;
-  return <div className="toast" style={{borderColor:color+'44',color}}>{msg}</div>;
+function Toast({msg,color,bg}){
+  if(!msg)return null;
+  return<div className="toast" style={{background:bg||'#1e293b',border:`1px solid ${color}44`,color}}>{msg}</div>;
 }
 
 /* ══ LOGIN ══ */
-function Login({onLogin}) {
-  const [sel,setSel] = useState(null);
-  const [code,setCode] = useState('');
-  const [err,setErr] = useState('');
+function Login({onLogin}){
+  const [sel,setSel]=useState(null);
+  const [code,setCode]=useState('');
+  const [err,setErr]=useState('');
 
-  const addDigit = d => {
-    if(code.length>=4) return;
-    const nc = code+d;
-    setCode(nc);
-    setErr('');
-    if(nc.length===4) {
-      const ch = CHAUFFEURS_CONFIG.find(c=>c.id===sel);
-      if(nc===ch.code||nc==='0000') { setTimeout(()=>onLogin(ch),100); }
-      else { setTimeout(()=>{setCode('');setErr('Code incorrect');},300); }
+  const addDigit=d=>{
+    if(code.length>=4)return;
+    const nc=code+d;
+    setCode(nc);setErr('');
+    if(nc.length===4){
+      const ch=CHAUFFEURS.find(c=>c.id===sel);
+      if(nc===ch.code||nc==='0000'){setTimeout(()=>onLogin(ch),100);}
+      else{setTimeout(()=>{setCode('');setErr('Code incorrect, réessayez');},300);}
     }
   };
 
-  const del = () => { setCode(c=>c.slice(0,-1)); setErr(''); };
-
-  return (
-    <div className="login">
+  return(
+    <div className="login-screen">
       <div className="login-logo">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="white">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="white">
           <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/>
           <circle cx="5.5" cy="18.5" r="2.5"/>
           <circle cx="18.5" cy="18.5" r="2.5"/>
         </svg>
       </div>
-      <h2 style={{fontSize:20,fontWeight:700,marginBottom:4}}>La Table de Cana</h2>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24}}>Sélectionnez votre nom</p>
-
-      <div className="chauffeur-grid">
-        {CHAUFFEURS_CONFIG.map(ch=>(
-          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`}
-            onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
-            <div className="avatar" style={{background:ch.color+'22',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>
-              {ch.initial}
-            </div>
-            <span style={{fontSize:11,fontWeight:600,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.name}</span>
+      <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
+      <div className="ch-grid">
+        {CHAUFFEURS.map(ch=>(
+          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
+            <div className="av" style={{background:ch.color+'20',border:`2px solid ${sel===ch.id?ch.color:ch.color+'40'}`,color:ch.color}}>{ch.initial}</div>
+            <span style={{fontSize:12,fontWeight:700,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.name}</span>
+            <span style={{fontSize:10,color:'var(--dim)'}}>{ch.truck}</span>
           </button>
         ))}
       </div>
-
       {sel!==null&&(
         <>
-          <div className="code-dots" style={{margin:'8px 0 16px'}}>
-            {[0,1,2,3].map(i=>(
-              <div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>
-            ))}
+          <div className="code-dots">
+            {[0,1,2,3].map(i=><div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>)}
           </div>
-          <div className="error-msg">{err}</div>
+          <div className="err-msg">{err}</div>
           <div className="numpad">
-            {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>(
-              k===''?<div key={i} className="num-btn empty"/>:
-              k==='⌫'?<button key={i} className="num-btn del" onClick={del}>{k}</button>:
-              <button key={i} className="num-btn" onClick={()=>addDigit(String(k))}>{k}</button>
-            ))}
+            {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
+              k===''?<div key={i}/>:
+              <button key={i} className={`num-key ${k==='⌫'?'del-key':''}`}
+                onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):addDigit(String(k))}>
+                {k}
+              </button>
+            )}
           </div>
-          <p style={{fontSize:10,color:'var(--muted)',marginTop:12}}>Code provisoire : 0000</p>
+          <p style={{fontSize:10,color:'var(--dim)',marginTop:14,textAlign:'center'}}>Code provisoire : 0000</p>
         </>
       )}
     </div>
   );
 }
 
+/* ══ STATUT BARRE ══ */
+function DayStatusBar({statut,chauffeur}){
+  const today=new Date();
+  const startH=parseInt(chauffeur.start.split(':')[0]);
+  const endH=parseInt(chauffeur.end.split(':')[0]);
+  const nowH=today.getHours()+(today.getMinutes()/60);
+  const pct=Math.max(0,Math.min(100,((nowH-startH)/(endH-startH))*100));
+
+  let bg='var(--raised)',iconBg='rgba(34,197,94,.15)',iconColor='var(--green)',label='En service',sublabel=chauffeur.start+' → '+chauffeur.end;
+  if(statut){
+    const t=statut.type;
+    if(t==='absent'||t==='maladie'){bg='rgba(239,68,68,.08)';iconBg='rgba(239,68,68,.15)';iconColor='var(--red)';label=t==='maladie'?'Arrêt maladie':'Absent';}
+    else if(t==='conge'){bg='rgba(59,130,246,.08)';iconBg='rgba(59,130,246,.15)';iconColor='var(--blue)';label='En congé';}
+    else if(t==='repos'){bg='rgba(100,116,139,.08)';iconBg='rgba(100,116,139,.15)';iconColor='var(--muted)';label='Jour de repos';}
+  }
+
+  return(
+    <div className="day-status-bar" style={{background:bg}}>
+      <div className="dsb-icon" style={{background:iconBg}}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2">
+          {label==='En service'?<><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>:
+          <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
+        </svg>
+      </div>
+      <div className="dsb-info">
+        <div className="dsb-label">Statut du jour</div>
+        <div className="dsb-val" style={{color:iconColor}}>{label}</div>
+        <div className="dsb-hours">{sublabel}</div>
+      </div>
+      {label==='En service'&&(
+        <div style={{width:40,height:40,position:'relative',flex:'none'}}>
+          <svg viewBox="0 0 36 36" style={{width:'100%',height:'100%',transform:'rotate(-90deg)'}}>
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--raised)" strokeWidth="3"/>
+            <circle cx="18" cy="18" r="15" fill="none" stroke={chauffeur.color} strokeWidth="3"
+              strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
+          </svg>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:chauffeur.color}}>{Math.round(pct)}%</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ══ CARTE MISSION ══ */
-function MissionCard({m, chauffeur, onAction}) {
-  const statConf = {
-    pending:{cls:'rgba(59,130,246,.15)',bord:'rgba(59,130,246,.3)',col:'var(--blue)',lbl:'En attente'},
-    enroute:{cls:'rgba(245,158,11,.15)',bord:'rgba(245,158,11,.3)',col:'var(--amber)',lbl:'🚗 En route'},
-    done:{cls:'rgba(34,197,94,.15)',bord:'rgba(34,197,94,.3)',col:'var(--green)',lbl:'✓ Livré'},
-    retard:{cls:'rgba(239,68,68,.15)',bord:'rgba(239,68,68,.3)',col:'var(--red)',lbl:'⚠ Retard'},
-  }[m.statut]||{cls:'rgba(59,130,246,.15)',bord:'rgba(59,130,246,.3)',col:'var(--blue)',lbl:'En attente'};
+function MissionCard({m,chauffeur,onAction}){
+  const stConf={
+    pending:{pill:'pill-blue',dot:'dot-gray',lbl:'En attente'},
+    enroute:{pill:'pill-amber',dot:'dot-amber',lbl:'🚗 En route'},
+    done:{pill:'pill-green',dot:'dot-green',lbl:'✓ Livré'},
+    retard:{pill:'pill-red',dot:'dot-red',lbl:'⚠ Retard'},
+  }[m._statut||'pending']||{pill:'pill-blue',dot:'dot-gray',lbl:'En attente'};
 
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client)}`;
+  const borderColor=m._statut==='done'?'rgba(34,197,94,.2)':m._statut==='retard'?'rgba(239,68,68,.35)':m._statut==='enroute'?`${chauffeur.color}30`:'var(--border)';
+  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((m.adresse||m.client||''))}`;
+  const ncols=m._statut==='done'?2:m._statut==='enroute'?3:3;
 
-  const nbCols = m.statut==='done'?2:m.statut==='enroute'?3:3;
-
-  return (
-    <div className={`mission-card ${m.statut==='done'?'done':''}`}
-      style={{borderColor:m.statut==='retard'?'rgba(239,68,68,.4)':m.statut==='done'?'rgba(34,197,94,.2)':'var(--border)'}}>
-
-      <div className="mc-head">
-        <div className="mc-time" style={{color:chauffeur.color}}>
-          {m.heure}
-          <small>{m.statut==='done'?'Livraison terminée':m.statut==='enroute'?'En cours...':'Livraison'}</small>
+  return(
+    <div className="card mc" style={{borderColor,opacity:m._statut==='done'?.75:1}}>
+      <div className="mc-top">
+        <div className="mc-time-block">
+          <div className="mc-time mono" style={{color:chauffeur.color}}>{m.heure}</div>
+          <div className="mc-type">
+            <div className={`dot ${stConf.dot}`}/>
+            {stConf.lbl}
+          </div>
         </div>
-        <div className="mc-badge" style={{background:statConf.cls,border:`1px solid ${statConf.bord}`,color:statConf.col}}>
-          {statConf.lbl}
-        </div>
+        <div className={`pill ${stConf.pill}`}>{m.convives?m.convives+' conv.':m.category==='traiteur'?'Traiteur':'Mission'}</div>
       </div>
 
       <div className="mc-client">
-        <div className="mc-name">{m.client||m.task||'Livraison'}</div>
+        <div className="mc-cname">{m.client||m.task||'Livraison'}</div>
         {m.adresse&&(
           <div className="mc-addr">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:1}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}>
               <path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/>
             </svg>
             {m.adresse}
@@ -285,197 +432,281 @@ function MissionCard({m, chauffeur, onAction}) {
       </div>
 
       {m.allergenes&&m.allergenes.length>0&&(
-        <div className="allerg-bar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}>
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        <div className="allerg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <b>ALLERGÈNES :</b>&nbsp;{m.allergenes.join(', ')}
+          ALLERGÈNES : {m.allergenes.join(', ')}
         </div>
       )}
 
       <div className="mc-divider"/>
-
       <div className="mc-meta">
-        {m.convives&&<div className="meta-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
-          <b>{m.convives}</b> convives
-        </div>}
-        {m.contact&&<div className="meta-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        {m.contact&&<div className="mt">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           <b>{m.contact}</b>
         </div>}
-        {m.note_liv&&<div className="meta-tag" style={{width:'100%'}}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        {m.truck&&<div className="mt">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <b>{m.truck}</b>
+        </div>}
+        {m.note_liv&&<div className="mt full">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           <span style={{color:'var(--text)'}}>{m.note_liv}</span>
         </div>}
       </div>
 
-      <div className="mc-actions" style={{gridTemplateColumns:`repeat(${nbCols},1fr)`}}>
+      <div className="mc-divider"/>
+      <div className="mc-btns" style={{gridTemplateColumns:`repeat(${ncols},1fr)`}}>
         <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
-          <button className="act-btn btn-maps" style={{width:'100%'}}>
+          <button className="ab ab-maps" style={{width:'100%'}}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
             Maps
           </button>
         </a>
         {m.contact&&(
           <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
-            <button className="act-btn btn-call" style={{width:'100%'}}>
+            <button className="ab ab-call" style={{width:'100%'}}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               Appeler
             </button>
           </a>
         )}
-        {m.statut==='pending'&&(
-          <button className="act-btn btn-go" onClick={()=>onAction(m,'enroute')}>
+        {m._statut==='pending'&&(
+          <button className="ab ab-go" onClick={()=>onAction(m,'enroute')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
             En route
           </button>
         )}
-        {m.statut==='enroute'&&(
-          <button className="act-btn btn-done" onClick={()=>onAction(m,'done')}>
+        {m._statut==='enroute'&&(
+          <button className="ab ab-done" onClick={()=>onAction(m,'done')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
             Livré !
           </button>
         )}
-        <button className="act-btn btn-photo" onClick={()=>onAction(m,'photo')}>
+        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           Photo
         </button>
+        {m._statut!=='done'&&(
+          <button className="ab ab-sign" onClick={()=>onAction(m,'sign')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Signature
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══ SIGNATURE ══ */
+function SignatureModal({mission,chauffeur,onClose,onDone}){
+  const canvasRef=useRef();
+  const drawing=useRef(false);
+  const lastPos=useRef({x:0,y:0});
+
+  useEffect(()=>{
+    const canvas=canvasRef.current;
+    const ctx=canvas.getContext('2d');
+    canvas.width=canvas.offsetWidth*window.devicePixelRatio;
+    canvas.height=canvas.offsetHeight*window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+    ctx.strokeStyle='#1e293b';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+  },[]);
+
+  const getPos=(e,canvas)=>{
+    const r=canvas.getBoundingClientRect();
+    const src=e.touches?e.touches[0]:e;
+    return{x:src.clientX-r.left,y:src.clientY-r.top};
+  };
+
+  const start=e=>{drawing.current=true;lastPos.current=getPos(e,canvasRef.current);e.preventDefault();};
+  const move=e=>{
+    if(!drawing.current)return;e.preventDefault();
+    const canvas=canvasRef.current;const ctx=canvas.getContext('2d');
+    const pos=getPos(e,canvas);
+    ctx.beginPath();ctx.moveTo(lastPos.current.x,lastPos.current.y);
+    ctx.lineTo(pos.x,pos.y);ctx.stroke();lastPos.current=pos;
+  };
+  const end=()=>drawing.current=false;
+
+  const clear=()=>{
+    const canvas=canvasRef.current;const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.offsetWidth,canvas.offsetHeight);
+  };
+
+  const save=async()=>{
+    const canvas=canvasRef.current;
+    const dataUrl=canvas.toDataURL('image/png');
+    await tg('sendPhoto',{chat_id:RESP_ID,photo:dataUrl,caption:`✍️ *Signature client*\n${chauffeur.name} — ${mission.client} (${mission.heure})`});
+    onDone();
+  };
+
+  return(
+    <div className="sig-modal" onClick={onClose}>
+      <div className="sig-box" onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Signature client</div>
+        <div style={{fontSize:12,color:'var(--muted)',marginBottom:12}}>{mission.client} — {mission.heure}</div>
+        <canvas ref={canvasRef} className="sig-canvas" style={{height:180}}
+          onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+          onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
+        <div className="sig-actions">
+          <button className="sig-btn" style={{background:'var(--raised)',color:'var(--muted)'}} onClick={clear}>Effacer</button>
+          <button className="sig-btn" style={{background:'var(--green)',color:'#fff'}} onClick={save}>Valider ✓</button>
+        </div>
+        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:10,background:'transparent',color:'var(--muted)',fontSize:12}}>Annuler</button>
       </div>
     </div>
   );
 }
 
 /* ══ VUE AUJOURD'HUI ══ */
-function TodayView({chauffeur, planning, onAction}) {
-  if(!planning) return (
-    <div className="loader">
-      <div className="spinner"/>
-      Chargement du planning...
-    </div>
-  );
+function TodayView({chauffeur,planning,onAction}){
+  if(!planning)return<div className="loader-wrap"><div className="spin"/><span>Chargement...</span></div>;
 
-  const today = new Date().toISOString().slice(0,10);
-  const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+  const today=new Date().toISOString().slice(0,10);
+  const missions=getMissions(planning,chauffeur.id,today);
+  const statut=getStatut(planning,chauffeur.id,today);
+  const done=missions.filter(m=>m._statut==='done').length;
+  const total=missions.length;
 
-  const missions = [];
-  SL.forEach(h=>{
-    const key = today+'|'+chauffeur.id+'|'+h;
-    (planning.tasks[key]||[]).forEach((t,ti)=>{
-      missions.push({...t,heure:h,_key:key,_ti:ti,statut:t.statut||'pending'});
-    });
-  });
-
-  const done = missions.filter(m=>m.statut==='done').length;
-
-  return (
-    <div className="scroll-area">
-      <div style={{padding:'12px 16px 0'}}>
-        {missions.length>0&&(
-          <div style={{background:'var(--card)',borderRadius:14,padding:'10px 14px',marginBottom:14,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:10,color:'var(--muted)',marginBottom:4}}>Progression du jour</div>
-              <div style={{height:5,background:'var(--raised)',borderRadius:3,overflow:'hidden'}}>
-                <div style={{height:'100%',background:`linear-gradient(90deg,${chauffeur.color},var(--green))`,width:`${missions.length?Math.round(done/missions.length*100):0}%`,borderRadius:3,transition:'width .4s'}}/>
-              </div>
-            </div>
-            <div style={{textAlign:'right',flexShrink:0}}>
-              <div style={{fontSize:22,fontWeight:700,color:chauffeur.color,lineHeight:1}}>{done}/{missions.length}</div>
-              <div style={{fontSize:10,color:'var(--muted)'}}>livrées</div>
+  return(
+    <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+      <DayStatusBar statut={statut} chauffeur={chauffeur}/>
+      {total>0&&(
+        <div className="card progress-card" style={{margin:'10px 16px 0'}}>
+          <div className="prog-bar-wrap">
+            <div className="prog-label">Progression du jour</div>
+            <div className="prog-bar">
+              <div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${chauffeur.color},var(--green))`}}/>
             </div>
           </div>
+          <div className="prog-count">
+            <div className="prog-num" style={{color:chauffeur.color}}>{done}/{total}</div>
+            <div className="prog-sub">livrées</div>
+          </div>
+        </div>
+      )}
+      <div className="missions-list" style={{marginTop:12}}>
+        {missions.length===0?(
+          <div className="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <p>{statut?'Vous êtes noté(e) '+statut.type+' aujourd\'hui.':'Aucune mission planifiée pour aujourd\'hui.\nRestez disponible.'}</p>
+          </div>
+        ):(
+          missions.map((m,i)=><MissionCard key={i} m={m} chauffeur={chauffeur} onAction={onAction}/>)
         )}
       </div>
-
-      {missions.length===0?(
-        <div className="loader" style={{flex:1,marginTop:60}}>
-          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{opacity:.3,strokeWidth:1.5}}>
-            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <p style={{textAlign:'center',lineHeight:1.6}}>Aucune mission planifiée<br/>pour aujourd'hui.</p>
-        </div>
-      ):(
-        missions.map((m,i)=><MissionCard key={i} m={m} chauffeur={chauffeur} onAction={onAction}/>)
-      )}
     </div>
   );
 }
 
-/* ══ VUE CALENDRIER ══ */
-function CalendarView({chauffeur, planning}) {
-  const today = new Date();
-  const [month,setMonth] = useState(today.getMonth());
-  const [year,setYear] = useState(today.getFullYear());
-  const [selDay,setSelDay] = useState(today.getDate());
+/* ══ VUE CALENDRIER + HEURES ══ */
+function CalendarView({chauffeur,planning}){
+  const today=new Date();
+  const [month,setMonth]=useState(today.getMonth());
+  const [year,setYear]=useState(today.getFullYear());
+  const [selDay,setSelDay]=useState(today.getDate());
 
-  const daysInMonth = new Date(year,month+1,0).getDate();
-  const firstDay = new Date(year,month,1).getDay();
-  const offset = firstDay===0?6:firstDay-1;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const firstDay=new Date(year,month,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
 
-  const getMissionsForDay = (day) => {
-    if(!planning) return [];
-    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
-    const ms = [];
-    SL.forEach(h=>{
-      const k = ds+'|'+chauffeur.id+'|'+h;
-      (planning.tasks[k]||[]).forEach(t=>ms.push({...t,heure:h}));
-    });
-    return ms;
+  const getMs=d=>{
+    const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    return planning?getMissions(planning,chauffeur.id,ds):[];
   };
 
-  const days = [];
-  for(let i=0;i<offset;i++) days.push(null);
-  for(let d=1;d<=daysInMonth;d++) days.push(d);
+  const getSt=d=>{
+    const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    return planning?getStatut(planning,chauffeur.id,ds):null;
+  };
 
-  const selMs = getMissionsForDay(selDay);
+  const heures=planning?calcHeuresMois(planning,chauffeur.id,month,year):{jours:0,absences:0,heures:0,minutes:0};
+  const selMs=getMs(selDay);
+  const selSt=getSt(selDay);
 
-  return (
+  const days=[];
+  for(let i=0;i<offset;i++)days.push(null);
+  for(let d=1;d<=daysInMonth;d++)days.push(d);
+
+  return(
     <div className="cal-wrap">
+      {/* Bilan mensuel */}
+      <div className="hours-card">
+        <div style={{fontSize:12,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.05}}>Bilan {MOIS[month]}</div>
+        <div className="hours-grid">
+          <div className="hg-item">
+            <div className="hg-val" style={{color:chauffeur.color}}>{heures.jours}</div>
+            <div className="hg-lbl">Jours travaillés</div>
+          </div>
+          <div className="hg-item">
+            <div className="hg-val" style={{color:'var(--green)'}}>{heures.heures}h{heures.minutes>0?heures.minutes+'m':''}</div>
+            <div className="hg-lbl">Heures nettes (-45min/j)</div>
+          </div>
+          <div className="hg-item">
+            <div className="hg-val" style={{color:'var(--amber)'}}>{heures.absences}</div>
+            <div className="hg-lbl">Absences / Repos</div>
+          </div>
+          <div className="hg-item">
+            <div className="hg-val" style={{color:'var(--blue)'}}>{heures.jours*7}h</div>
+            <div className="hg-lbl">Heures brutes</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
       <div className="cal-nav">
         <button className="cal-nav-btn" onClick={()=>month===0?(setMonth(11),setYear(y=>y-1)):setMonth(m=>m-1)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{textAlign:'center'}}>
-          <div style={{fontSize:15,fontWeight:700}}>{MOIS[month]}</div>
-          <div style={{fontSize:11,color:'var(--muted)'}}>{year}</div>
+        <div>
+          <div className="cal-month-title">{MOIS[month]} {year}</div>
+          <div className="cal-month-sub">{chauffeur.name}</div>
         </div>
         <button className="cal-nav-btn" onClick={()=>month===11?(setMonth(0),setYear(y=>y+1)):setMonth(m=>m+1)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 
+      {/* Grille */}
       <div className="cal-grid">
-        {JOURS_COURTS.map(j=><div key={j} className="cal-day-hd">{j}</div>)}
+        {JOURS.map(j=><div key={j} className="cal-hd">{j}</div>)}
         {days.map((d,i)=>{
-          if(!d) return <div key={`e${i}`}/>;
-          const isToday = d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-          const hasMiss = getMissionsForDay(d).length>0;
-          const isSel = d===selDay;
-          return (
-            <div key={d} className={`cal-day ${isToday?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isToday?'sel':''}`}
-              onClick={()=>setSelDay(d)}>
-              {d}
-            </div>
+          if(!d)return<div key={`e${i}`}/>;
+          const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+          const hasMiss=getMs(d).length>0;
+          const st=getSt(d);
+          const isSel=d===selDay;
+          const isOff=st&&(st.type==='absent'||st.type==='maladie'||st.type==='conge');
+          const isRest=st&&st.type==='repos';
+          return(
+            <div key={d} className={`cal-d ${isToday?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isToday?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`}
+              onClick={()=>setSelDay(d)}>{d}</div>
           );
         })}
       </div>
 
+      {/* Missions du jour sélectionné */}
       <div className="day-list">
-        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:8,textTransform:'uppercase'}}>
-          {['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][new Date(year,month,selDay).getDay()]} {selDay} {MOIS[month]}
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:10,textTransform:'uppercase'}}>
+          {JOURS[new Date(year,month,selDay).getDay()]} {selDay} {MOIS[month]}
+          {selSt&&<span className="status-chip" style={{marginLeft:8,background:selSt.type==='repos'?'var(--raised)':'rgba(239,68,68,.1)',color:selSt.type==='repos'?'var(--muted)':'var(--red)'}}>{selSt.type}</span>}
         </div>
         {selMs.length===0?(
-          <div style={{textAlign:'center',padding:'24px 0',color:'var(--muted)',fontSize:13}}>Aucune mission</div>
+          <div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:13}}>
+            {selSt?'Statut : '+selSt.type:'Aucune mission'}
+          </div>
         ):(
           selMs.map((m,i)=>(
-            <div key={i} className="day-item">
-              <div className="t">{m.heure}</div>
-              <div className="i">
-                <div className="cn">{m.client||m.task}</div>
-                <div className="cs">{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
+            <div key={i} className="di">
+              <div className="dt">{m.heure}</div>
+              <div className="dc">
+                <div className="dn">{m.client||m.task}</div>
+                <div className="ds">{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
               </div>
-              <div style={{width:8,height:8,borderRadius:'50%',background:m.statut==='done'?'var(--green)':m.statut==='enroute'?'var(--amber)':'var(--muted)',flexShrink:0}}/>
+              <div className={`dot ${m._statut==='done'?'dot-green':m._statut==='enroute'?'dot-amber':'dot-gray'}`}/>
             </div>
           ))
         )}
@@ -485,125 +716,148 @@ function CalendarView({chauffeur, planning}) {
 }
 
 /* ══ VUE MESSAGES ══ */
-function MessagesView({chauffeur}) {
-  const [msgs,setMsgs] = useState([
-    {id:1,from:'resp',text:'Bonjour ! Bonne journée à tous 💪',time:'07:00'},
-    {id:2,from:'resp',text:'N\'oubliez pas les bacs gastro ce matin.',time:'07:15'},
+function MessagesView({chauffeur}){
+  const [msgs,setMsgs]=useState([
+    {id:1,from:'resp',text:'Bonjour à tous ! Bonne journée 💪',time:'07:00'},
+    {id:2,from:'resp',text:'N\'oubliez pas de confirmer chaque livraison directement dans l\'app.',time:'07:05'},
   ]);
-  const [text,setText] = useState('');
-  const listRef = useRef();
+  const [text,setText]=useState('');
+  const listRef=useRef();
+  useEffect(()=>{if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;},[msgs]);
 
-  useEffect(()=>{ if(listRef.current) listRef.current.scrollTop=listRef.current.scrollHeight; },[msgs]);
-
-  const send = async () => {
-    if(!text.trim()) return;
-    const t = text.trim();
-    setText('');
-    const time = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const send=async()=>{
+    if(!text.trim())return;
+    const t=text.trim();setText('');
+    const time=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     setMsgs(m=>[...m,{id:Date.now(),from:'me',text:t,time}]);
-    await sendTelegram(`💬 *${chauffeur.name}* : ${t}`);
+    await tg('sendMessage',{chat_id:RESP_ID,text:`💬 *${chauffeur.name}* :\n${t}`,parse_mode:'Markdown'});
   };
 
-  return (
+  return(
     <div className="msg-wrap">
-      <div style={{padding:'10px 16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-        <div style={{width:36,height:36,borderRadius:10,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div className="msg-header">
+        <div style={{width:38,height:38,borderRadius:11,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
         <div>
-          <div style={{fontSize:13,fontWeight:600}}>Responsable</div>
-          <div style={{fontSize:10,color:'var(--green)',display:'flex',alignItems:'center',gap:4}}>
-            <div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne
+          <div style={{fontSize:14,fontWeight:700}}>Responsable</div>
+          <div style={{fontSize:11,color:'var(--green)',display:'flex',alignItems:'center',gap:5}}>
+            <div className="dot dot-green"/>En ligne
           </div>
         </div>
       </div>
-
       <div ref={listRef} className="msg-list">
         {msgs.map(m=>(
-          <div key={m.id} className={`mb ${m.from==='me'?'me':''}`}>
+          <div key={m.id} className={`mb ${m.from==='me'?'me':'them'}`}>
             <div className="mb-inner">{m.text}</div>
-            <div className="mb-time">{m.time}</div>
+            <div className="mb-meta">{m.from==='me'?'Moi':m.from==='resp'?'Responsable':m.from} · {m.time}</div>
           </div>
         ))}
       </div>
-
       <div className="msg-bar">
-        <textarea className="msg-input" placeholder="Message..." rows={1} value={text}
+        <textarea className="msg-input" placeholder="Votre message..." rows={1} value={text}
           onChange={e=>setText(e.target.value)}
           onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
-        <button className="msg-send" onClick={send}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button className="send-btn" onClick={send}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
   );
 }
 
-/* ══ APP CHAUFFEUR ══ */
-function ChaufApp({chauffeur, onLogout}) {
-  const [tab,setTab] = useState('today');
-  const [planning,setPlanning] = useState(null);
-  const [loading,setLoading] = useState(true);
-  const [toast,setToast] = useState(null);
+/* ══ APP PRINCIPALE ══ */
+function ChaufApp({chauffeur,onLogout}){
+  const [tab,setTab]=useState('today');
+  const [planning,setPlanning]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [toast,setToast]=useState(null);
+  const [sigMission,setSigMission]=useState(null);
+  const photoInputRef=useRef();
+  const pendingPhotoMission=useRef(null);
 
-  useEffect(()=>{
-    chargerPlanning().then(p=>{setPlanning(p);setLoading(false);}).catch(()=>setLoading(false));
-    const interval = setInterval(()=>chargerPlanning().then(p=>{if(p)setPlanning(p);}),30000);
-    return()=>clearInterval(interval);
-  },[]);
-
-  const showToast = (msg,color='var(--green)') => {
-    setToast({msg,color});
+  const showToast=(msg,color='var(--green)',bg)=>{
+    setToast({msg,color,bg});
     setTimeout(()=>setToast(null),3000);
   };
 
-  const handleAction = async (mission, action) => {
+  /* Chargement planning + rafraîchissement 30s */
+  useEffect(()=>{
+    const load=()=>chargerPlanning().then(p=>{if(p)setPlanning(p);setLoading(false);}).catch(()=>setLoading(false));
+    load();
+    const iv=setInterval(load,30000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  /* Photo */
+  useEffect(()=>{
+    const input=document.getElementById('photo-input');
+    if(!input)return;
+    const handler=async e=>{
+      const file=e.target.files[0];
+      if(!file)return;
+      const m=pendingPhotoMission.current;
+      const caption=`📷 *PHOTO DE LIVRAISON*\n--------------------\n👤 *${chauffeur.name.toUpperCase()}*\n🏢 ${m?m.client:''} (${m?m.heure:''})\n--------------------\n_La Table de Cana_`;
+      const formData=new FormData();
+      formData.append('chat_id',RESP_ID);
+      formData.append('photo',file);
+      formData.append('caption',caption);
+      formData.append('parse_mode','Markdown');
+      try{
+        await fetch(`${TG_API}/sendPhoto`,{method:'POST',body:formData});
+        showToast('📷 Photo envoyée au responsable !','var(--purple)');
+      }catch(e){showToast('Erreur envoi photo','var(--red)');}
+      input.value='';
+    };
+    input.addEventListener('change',handler);
+    return()=>input.removeEventListener('change',handler);
+  },[chauffeur]);
+
+  const handleAction=async(mission,action)=>{
     if(action==='photo'){
-      showToast('📷 Ouvrez votre appareil photo et envoyez la photo via Telegram','var(--purple)');
+      pendingPhotoMission.current=mission;
+      document.getElementById('photo-input').click();
       return;
     }
+    if(action==='sign'){setSigMission(mission);return;}
     if(action==='enroute'){
       showToast('🚗 En route !','var(--amber)');
-      await sendTelegram(`🚗 *${chauffeur.name.toUpperCase()}* est en route pour *${mission.client}* (${mission.heure})`);
+      await tg('sendMessage',{chat_id:RESP_ID,text:`🚗 *${chauffeur.name.toUpperCase()}* est en route\n📅 *${mission.heure}* — ${mission.client}`,parse_mode:'Markdown'});
     }
     if(action==='done'){
       showToast('✅ Livraison confirmée !','var(--green)');
-      await sendTelegram(`✅ *${chauffeur.name.toUpperCase()}* a terminé la livraison chez *${mission.client}* (${mission.heure})`);
+      await tg('sendMessage',{chat_id:RESP_ID,text:`✅ *${chauffeur.name.toUpperCase()}* a terminé\n📅 *${mission.heure}* — *${mission.client}*`,parse_mode:'Markdown'});
     }
   };
 
-  const myMissions = planning?(() => {
-    const today = new Date().toISOString().slice(0,10);
-    const SL=['06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
-    const ms=[];
-    SL.forEach(h=>{
-      const k=today+'|'+chauffeur.id+'|'+h;
-      (planning.tasks[k]||[]).forEach(t=>ms.push({...t,heure:h,statut:t.statut||'pending'}));
-    });
-    return ms;
-  })():[];
+  const today=new Date().toISOString().slice(0,10);
+  const myMissions=planning?getMissions(planning,chauffeur.id,today):[];
+  const pending=myMissions.filter(m=>m._statut!=='done').length;
 
-  const pending = myMissions.filter(m=>m.statut!=='done').length;
-
-  return (
+  return(
     <div className="screen">
-      <div style={{padding:'52px 16px 10px',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div>
-            <div style={{fontSize:12,color:'var(--muted)'}}>Bonjour 👋</div>
-            <div style={{fontSize:22,fontWeight:700,color:chauffeur.color,lineHeight:1.2}}>{chauffeur.name}</div>
-            <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{chauffeur.truck||''}</div>
+      <div className="app-top">
+        <div className="driver-row">
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div className="av" style={{width:46,height:46,background:chauffeur.color+'20',border:`2px solid ${chauffeur.color}60`,color:chauffeur.color}}>
+              {chauffeur.initial}
+            </div>
+            <div className="driver-info">
+              <div className="greeting">Bonjour 👋</div>
+              <div className="dname" style={{color:chauffeur.color}}>{chauffeur.name}</div>
+              <div className="dtruck">{chauffeur.truck} · {chauffeur.start}–{chauffeur.end}</div>
+            </div>
           </div>
-          <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            {loading&&<div className="spinner" style={{width:20,height:20,borderWidth:2}}/>}
-            <button onClick={onLogout} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <div className="header-actions">
+            {loading&&<div className="spin" style={{width:20,height:20,borderWidth:2}}/>}
+            <button className="icon-btn" onClick={onLogout}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
         </div>
       </div>
 
-      <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+      <div className="main-content">
         {tab==='today'&&<TodayView chauffeur={chauffeur} planning={planning} onAction={handleAction}/>}
         {tab==='calendar'&&<CalendarView chauffeur={chauffeur} planning={planning}/>}
         {tab==='messages'&&<MessagesView chauffeur={chauffeur}/>}
@@ -611,26 +865,31 @@ function ChaufApp({chauffeur, onLogout}) {
 
       <nav className="bnav">
         {[
-          {id:'today',lbl:"Aujourd'hui",svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,badge:pending},
-          {id:'calendar',lbl:'Planning',svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
-          {id:'messages',lbl:'Messages',svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,badge:1},
+          {id:'today',lbl:"Aujourd'hui",badge:pending,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
+          {id:'calendar',lbl:'Planning',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
+          {id:'messages',lbl:'Messages',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>},
         ].map(n=>(
-          <button key={n.id} className={`bnav-item ${tab===n.id?'active':''}`} onClick={()=>setTab(n.id)}>
+          <button key={n.id} className={`nav-btn ${tab===n.id?'active':''}`} onClick={()=>setTab(n.id)}>
             {n.svg}
             <span>{n.lbl}</span>
-            {n.badge>0&&<div className="bnav-badge" style={{background:tab===n.id?chauffeur.color:'var(--red)'}}>{n.badge}</div>}
+            {n.badge>0&&<div className="nav-badge" style={{background:tab===n.id?chauffeur.color:'var(--red)'}}>{n.badge}</div>}
           </button>
         ))}
       </nav>
 
-      {toast&&<Toast msg={toast.msg} color={toast.color}/>}
+      {sigMission&&(
+        <SignatureModal mission={sigMission} chauffeur={chauffeur}
+          onClose={()=>setSigMission(null)}
+          onDone={()=>{setSigMission(null);showToast('✍️ Signature envoyée !','var(--teal)');}}/>
+      )}
+
+      {toast&&<Toast msg={toast.msg} color={toast.color} bg={toast.bg}/>}
     </div>
   );
 }
 
-/* ══ ROOT ══ */
 function App(){
-  const [ch,setCh] = useState(null);
+  const [ch,setCh]=useState(null);
   return ch?<ChaufApp chauffeur={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
 
