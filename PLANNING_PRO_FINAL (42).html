@@ -21723,13 +21723,34 @@ window.addEventListener('load', function(){
 /* ══ GESTION STATUT CHAUFFEUR ══ */
 function changerStatutDrv(di){
   var d=ST.cur;var dr=ST.drivers[di];
-  var stToday=null;
-  if(ST.statuts){Object.values(ST.statuts).forEach(function(s){if(s&&s.di===di&&s.date===d)stToday=s;});}
   var existing=document.getElementById('m-statut-drv');if(existing)existing.remove();
   var modal=document.createElement('div');modal.id='m-statut-drv';modal.className='mbg on';
-  modal.innerHTML='<div class="mbox" style="max-width:340px">'    +'<h3 style="margin-bottom:4px">Statut de '+dr.name+'</h3>'    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">'+cap(fmtCourt(d))+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'    +'<button onclick="setStatutDrv('+di+',\'service\'" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">✅ En service</button>'    +'<button onclick="setStatutDrv('+di+',\'repos\'" style="background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.3);color:#94a3b8;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">😴 Repos</button>'    +'<button onclick="setStatutDrv('+di+',\'conge\'" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">🏖️ Congé</button>'    +'<button onclick="setStatutDrv('+di+',\'absent\'" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">⛔ Absent</button>'    +'<button onclick="setStatutDrv('+di+',\'maladie\'" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">🏥 Maladie</button>'    +'<button onclick="closeMod(\'m-statut-drv\')" style="background:var(--raised,#1e293b);border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">Annuler</button>'    +'</div></div>';
-  document.body.appendChild(modal);
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='340px';
+  var h=document.createElement('h3');h.textContent='Statut — '+dr.name;h.style.marginBottom='4px';
+  var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';sub.textContent=cap(fmtCourt(d));
+  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  [
+    {t:'service',l:'✅ En service',c:'#22c55e',bg:'rgba(34,197,94,.12)',bd:'rgba(34,197,94,.3)'},
+    {t:'repos',l:'😴 Repos',c:'#94a3b8',bg:'rgba(100,116,139,.12)',bd:'rgba(100,116,139,.3)'},
+    {t:'conge',l:'🏖️ Congé',c:'#f59e0b',bg:'rgba(245,158,11,.12)',bd:'rgba(245,158,11,.3)'},
+    {t:'absent',l:'⛔ Absent',c:'#ef4444',bg:'rgba(239,68,68,.12)',bd:'rgba(239,68,68,.3)'},
+    {t:'maladie',l:'🏥 Maladie',c:'#ef4444',bg:'rgba(239,68,68,.12)',bd:'rgba(239,68,68,.3)'},
+  ].forEach(function(o){
+    var b=document.createElement('button');
+    b.textContent=o.l;
+    b.style.cssText='background:'+o.bg+';border:1px solid '+o.bd+';color:'+o.c+';border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+    (function(type){b.addEventListener('click',function(){setStatutDrv(di,type);});})(o.t);
+    grid.appendChild(b);
+  });
+  var cancel=document.createElement('button');
+  cancel.textContent='Annuler';
+  cancel.style.cssText='background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2';
+  cancel.addEventListener('click',function(){closeMod('m-statut-drv');});
+  grid.appendChild(cancel);
+  box.appendChild(h);box.appendChild(sub);box.appendChild(grid);
+  modal.appendChild(box);document.body.appendChild(modal);
 }
+
 
 function setStatutDrv(di,type){
   var d=ST.cur;
