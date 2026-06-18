@@ -1155,7 +1155,7 @@ function rGrid(){
     if(r.task)cpills+='<span class="gh-cnt-pill" style="background:#faf5ff;color:#6b21a8;border:1px solid #a855f7">'+r.task+' 📋</span>';
     /* Statut du chauffeur pour ce jour */
     var stToday=null;
-    if(ST.statuts){Object.values(ST.statuts).forEach(function(s){if(s&&s.di===i&&s.date===d)stToday=s;});}
+    if(ST.statuts){var _st=ST.statuts['st_'+i];if(_st)stToday=_st;}
     var stLabel='';var stColor='#22c55e';var stBg='rgba(34,197,94,.12)';
     if(stToday){
       if(stToday.type==='absent'){stLabel='⛔ Absent';stColor='#ef4444';stBg='rgba(239,68,68,.12)';}
@@ -21767,12 +21767,13 @@ function changerStatutDrv(di){
 function setStatutDrv(di,type){
   var d=ST.cur;
   if(!ST.statuts)ST.statuts={};
-  /* Supprimer l'ancien statut pour ce jour/chauffeur */
+  /* Supprimer TOUS les statuts pour ce chauffeur (pas juste ce jour) */
   Object.keys(ST.statuts).forEach(function(k){
-    if(ST.statuts[k]&&ST.statuts[k].di===di&&ST.statuts[k].date===d)delete ST.statuts[k];
+    if(ST.statuts[k]&&ST.statuts[k].di===di)delete ST.statuts[k];
   });
   if(type!=='service'){
-    ST.statuts['st_'+di+'_'+d]={di:di,date:d,type:type,ts:Date.now()};
+    /* Stocker sans date = permanent jusqu'à modification manuelle */
+    ST.statuts['st_'+di]={di:di,type:type,ts:Date.now(),depuis:d};
   }
   save();render();
   closeMod('m-statut-drv');
