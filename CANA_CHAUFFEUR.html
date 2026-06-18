@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cana Logistique">
+<meta name="apple-mobile-web-app-title" content="Cana">
 <meta name="theme-color" content="#0a0f1e">
 <title>La Table de Cana</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -18,196 +18,209 @@
   --orange:#f97316;--blue:#3b82f6;--green:#22c55e;
   --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;--teal:#14b8a6;
   --text:#f1f5f9;--muted:#64748b;--dim:#374151;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --safe-top:env(safe-area-inset-top,0px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.13);
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
 html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
 .screen{height:100%;display:flex;flex-direction:column}
 button{cursor:pointer;font-family:inherit;border:none;outline:none}
-input,textarea,select{font-family:inherit;outline:none;-webkit-appearance:none}
+input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 ::-webkit-scrollbar{display:none}
 .mono{font-family:'SF Mono','Consolas',monospace}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px}
 
 /* LOGIN */
-.login-screen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 120% 60% at 50% 0%,#1a2234,var(--bg) 70%);overflow-y:auto}
-.login-logo{width:76px;height:76px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 20px 40px rgba(249,115,22,.35)}
-.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-bottom:24px}
-.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s}
-.ch-btn:active{transform:scale(.95)}
+.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;background:radial-gradient(ellipse 140% 60% at 50% 0%,#1a2234,var(--bg) 65%);overflow-y:auto}
+.logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 16px 40px rgba(249,115,22,.4)}
+.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:310px;margin-bottom:22px}
+.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;transition:border-color .2s,background .2s}
+.ch-btn:active{transform:scale(.96)}
 .ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.08)}
-.av{border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
-.code-dots{display:flex;gap:14px;margin:16px 0}
-.code-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--dim);transition:all .25s}
-.code-dot.filled{background:var(--orange);border-color:var(--orange);transform:scale(1.1)}
-.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:290px}
-.num-key{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:17px;font-size:22px;font-weight:600;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;aspect-ratio:1}
-.num-key:active{background:var(--raised);transform:scale(.92)}
+.av{border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;width:44px;height:44px;font-size:17px}
+.dots{display:flex;gap:12px;margin:14px 0}
+.dot-c{width:13px;height:13px;border-radius:50%;border:2px solid var(--dim);transition:all .2s}
+.dot-c.on{background:var(--orange);border-color:var(--orange);transform:scale(1.1)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:280px}
+.nk{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;font-size:21px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;aspect-ratio:1;transition:background .1s,transform .1s}
+.nk:active{background:var(--raised);transform:scale(.91)}
 
 /* HEADER */
-.app-top{padding:calc(var(--safe-top) + 48px) 16px 12px;flex-shrink:0}
+.hdr{padding:calc(var(--sat) + 46px) 16px 10px;flex-shrink:0}
+.hdr-row{display:flex;align-items:center;justify-content:space-between}
+.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:11px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.icon-btn:active{background:var(--raised)}
 
-/* BOTTOM NAV */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(var(--safe-bottom) + 8px);backdrop-filter:blur(24px);z-index:100}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;background:transparent;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
-.nav-btn.active{color:var(--orange)}
-.nav-btn svg{width:22px;height:22px;stroke-width:1.8}
-.nav-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--red);border-radius:20px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
+/* NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:7px 0 calc(var(--sab) + 7px);backdrop-filter:blur(20px);z-index:50}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px;background:transparent;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
+.nb.on{color:var(--orange)}
+.nb svg{width:22px;height:22px;stroke-width:1.8}
+.nbadge{position:absolute;top:2px;right:calc(50% - 17px);background:var(--red);border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
 
 /* CONTENT */
-.main-content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(64px + var(--safe-bottom))}
-.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(60px + var(--sab))}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px}
 
 /* MISSION CARD */
-.mc{border-radius:20px;margin-bottom:14px;overflow:hidden;background:var(--card);border:1px solid var(--border)}
-.mc-head{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
-.mc-time{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
-.mc-time-sub{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+.mc{border-radius:18px;margin-bottom:12px;background:var(--card);border:1px solid var(--border);overflow:hidden}
+.mc-hd{padding:13px 15px 9px;display:flex;align-items:flex-start;justify-content:space-between}
+.mc-time{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px}
 .mc-truck{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
-.mc-client-block{padding:0 16px 10px;cursor:pointer}
-.mc-client-block:active{opacity:.8}
-.mc-name{font-size:18px;font-weight:800;line-height:1.2;margin-bottom:5px;display:flex;align-items:center;gap:6px}
-.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
-.allerg-bar{margin:0 16px 10px;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:7px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
-.mc-div{height:1px;background:var(--border);margin:0 16px}
-.mc-meta{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
-.mt{background:var(--raised);border-radius:9px;padding:5px 10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.mc-client{padding:0 15px 9px;cursor:pointer}
+.mc-client:active{opacity:.8}
+.mc-name{font-size:17px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.mc-addr{font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:flex-start;line-height:1.5}
+.allerg{margin:0 15px 9px;padding:7px 11px;border-radius:9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
+.div{height:1px;background:var(--border);margin:0 15px}
+.meta{padding:9px 15px;display:flex;flex-wrap:wrap;gap:7px}
+.mt{background:var(--raised);border-radius:8px;padding:5px 9px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .mt b{color:var(--text)}
-.mt.full{width:100%}
-.mc-btns{padding:12px 16px;display:grid;gap:8px}
-.ab{border-radius:13px;padding:13px 8px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid transparent;transition:all .15s}
-.ab:active{transform:scale(.93)}
-.ab svg{width:22px;height:22px}
-.ab-maps{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:var(--blue)}
-.ab-call{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
-.ab-go{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:var(--amber)}
-.ab-done{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--green)}
-.ab-photo{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.3);color:var(--purple)}
-.ab-sign{background:rgba(20,184,166,.12);border-color:rgba(20,184,166,.3);color:var(--teal)}
-.ab-voice{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:var(--red)}
+.mt.fw{width:100%}
+.btns{padding:11px 15px;display:grid;gap:7px}
+.ab{border-radius:12px;padding:12px 7px;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid transparent;transition:transform .12s}
+.ab:active{transform:scale(.92)}
+.ab svg{width:21px;height:21px}
+.ab-maps{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.28);color:var(--blue)}
+.ab-call{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28);color:var(--green)}
+.ab-go{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:var(--amber)}
+.ab-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28);color:var(--green)}
+.ab-photo{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.28);color:var(--purple)}
+.ab-sign{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.28);color:var(--teal)}
+.ab-voice{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.28);color:var(--red)}
 
-/* MODALS */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;flex-direction:column;justify-content:flex-end}
-.modal-box{background:var(--card);border-radius:24px 24px 0 0;padding:20px;max-height:88vh;overflow-y:auto}
-
-/* FICHE CLIENT */
-.client-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
-.client-row-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
-.client-row-content{flex:1}
-.client-row-label{font-size:10px;color:var(--muted);margin-bottom:2px}
-.client-row-val{font-size:14px;font-weight:500}
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
+.obox{background:var(--card);border-radius:22px 22px 0 0;padding:18px;max-height:88vh;overflow-y:auto}
+.obox h3{font-size:15px;font-weight:800;margin-bottom:3px}
+.obox .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.oc{display:flex;gap:9px;margin-top:12px}
+.obtn{flex:1;border-radius:13px;padding:13px;font-size:13px;font-weight:700;border:1px solid var(--border)}
+.obtn.cancel{background:var(--raised);color:var(--muted)}
+.obtn.confirm{background:var(--green);color:#fff;border-color:var(--green)}
 
 /* SIGNATURE */
-.sig-canvas-wrap{background:#fff;border-radius:12px;overflow:hidden;touch-action:none;user-select:none}
-.sig-canvas{display:block;width:100%;height:180px;touch-action:none}
+.sig-cv{background:#fff;border-radius:10px;width:100%;height:170px;display:block;touch-action:none}
 
 /* MATERIEL */
-.mat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}
-.mat-item{background:var(--raised);border:2px solid var(--border);border-radius:14px;padding:12px 8px;display:flex;align-items:center;gap:10px;transition:all .15s}
-.mat-item.sel{border-color:var(--orange);background:rgba(249,115,22,.08)}
-.mat-counter{display:flex;align-items:center;gap:8px;margin-left:auto}
-.mat-btn{background:var(--card);border:1px solid var(--border2);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text);flex-shrink:0}
-.mat-btn:active{background:var(--orange);color:#fff;transform:scale(.9)}
-.mat-qty{font-size:18px;font-weight:800;color:var(--orange);min-width:24px;text-align:center}
+.mat-list{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.mat-row{background:var(--raised);border:2px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.mat-row.on{border-color:var(--orange)}
+.mat-icon{font-size:20px;flex-shrink:0;width:26px;text-align:center}
+.mat-label{flex:1;font-size:12px;font-weight:600;color:var(--muted)}
+.mat-row.on .mat-label{color:var(--text)}
+.ctr{display:flex;align-items:center;gap:8px}
+.ctr-btn{background:var(--card);border:1px solid var(--border2);border-radius:50%;width:29px;height:29px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text);flex-shrink:0}
+.ctr-btn:active{background:var(--orange);color:#fff}
+.ctr-n{font-size:17px;font-weight:800;color:var(--orange);min-width:22px;text-align:center}
 
 /* MODE CONDUITE */
-.drive-mode{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.drive{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.drive-time{font-size:58px;font-weight:900;letter-spacing:-3px;line-height:1}
+.drive-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:300px;margin-top:24px}
+.drive-btn{border-radius:14px;padding:18px 10px;font-size:13px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:7px;border:none}
+.drive-btn:active{transform:scale(.95)}
+.drive-btn svg{width:26px;height:26px}
 
 /* VOCAL */
-.voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;backdrop-filter:blur(12px)}
-.voice-ring{width:130px;height:130px;border-radius:50%;border:3px solid var(--red);display:flex;align-items:center;justify-content:center;animation:vRing 1.2s ease-in-out infinite;margin-bottom:24px}
-@keyframes vRing{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+.voice{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;backdrop-filter:blur(12px)}
+.vring{width:120px;height:120px;border-radius:50%;border:3px solid var(--red);display:flex;align-items:center;justify-content:center;animation:vr 1.2s ease-in-out infinite;margin-bottom:22px}
+@keyframes vr{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
 
-/* RECAP */
-.recap-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px}
-
-/* STATUT BARRE */
-.status-bar{margin:0 16px 10px;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2)}
+/* STATUS BAR */
+.sbar{margin:0 14px 10px;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;border:1px solid var(--border2)}
+.sb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-info{flex:1}
 
 /* PROGRESS */
-.prog-wrap{margin:0 16px 10px}
-.prog-bar{height:6px;background:var(--raised);border-radius:3px;overflow:hidden}
+.prog{margin:0 14px 10px}
+.prog-bar{height:5px;background:var(--raised);border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;border-radius:3px;transition:width .5s}
 
 /* CALENDRIER */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px}
-.cal-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:700;padding:4px 0}
-.cal-d{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;cursor:pointer;position:relative;border:1.5px solid transparent;transition:all .15s;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
+.cal-hd{text-align:center;font-size:10px;color:var(--muted);font-weight:700;padding:3px 0}
+.cal-d{aspect-ratio:1;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;position:relative;border:1.5px solid transparent;transition:all .13s;font-weight:500}
 .cal-d.today{border-color:var(--orange);color:var(--orange);font-weight:800}
-.cal-d.has-m::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
+.cal-d.hasm::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--orange)}
 .cal-d.sel{background:var(--orange);color:#fff;font-weight:800}
 .cal-d.sel::after{background:#fff}
-.cal-d.off{background:rgba(239,68,68,.06);color:var(--dim)}
-.cal-d.rest{background:rgba(100,116,139,.06);color:var(--muted)}
+.cal-d.off{background:rgba(239,68,68,.07);color:var(--dim)}
+.cal-d.rest{background:rgba(100,116,139,.07);color:var(--muted)}
+.hgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:14px}
+.hg{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+.hg-v{font-size:22px;font-weight:800;line-height:1}
+.hg-l{font-size:10px;color:var(--muted);margin-top:2px}
 
 /* MESSAGES */
-.msg-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.msg-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
-.mb{max-width:88%}
+.msgw{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.msg-list{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:9px}
+.mb{max-width:87%}
 .mb.me{align-self:flex-end}
 .mb.them{align-self:flex-start}
-.mb-inner{padding:11px 15px;border-radius:20px;font-size:14px;line-height:1.5}
-.mb.them .mb-inner{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
-.mb.me .mb-inner{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
-.mb-meta{font-size:10px;color:var(--muted);margin-top:4px;padding:0 4px}
+.mb-in{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5}
+.mb.them .mb-in{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.mb.me .mb-in{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
+.mb-meta{font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px}
 .mb.me .mb-meta{text-align:right}
-.msg-bar{padding:10px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:calc(10px + var(--safe-bottom))}
-.msg-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:11px 16px;font-size:14px;color:var(--text);resize:none;max-height:100px}
-.send-btn{background:var(--orange);border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.msg-bar{padding:9px 14px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;padding-bottom:calc(9px + var(--sab))}
+.msg-in{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:10px 15px;font-size:14px;color:var(--text);resize:none;max-height:90px}
+.msg-send{background:var(--orange);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.msg-send:active{transform:scale(.93)}
 
-/* LOADER */
-.spin{border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .75s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loader-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);font-size:13px}
-
-/* HEURES */
-.hours-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
-.hg{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
-.hg-val{font-size:24px;font-weight:800;line-height:1}
-.hg-lbl{font-size:10px;color:var(--muted);margin-top:3px}
+/* RECAP */
+.recap{position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:300;display:flex;align-items:center;justify-content:center;padding:22px}
 
 /* TOAST */
-.toast{position:fixed;top:calc(var(--safe-top) + 16px);left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tIn .25s ease;max-width:88vw;text-align:center}
-@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast{position:fixed;top:calc(var(--sat) + 14px);left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:28px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tIn .22s ease;max-width:88vw;text-align:center;background:#1e293b}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* LOADER */
+.spin{border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;color:var(--muted);font-size:13px}
 
 /* GEO */
-.geo-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:gPulse 2s infinite}
-@keyframes gPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+.geo{width:6px;height:6px;border-radius:50%;background:var(--green);animation:gp 2s infinite}
+@keyframes gp{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}70%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+/* FICHE CLIENT */
+.crow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.crow-ico{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.crow-lbl{font-size:10px;color:var(--muted);margin-bottom:2px}
+.crow-val{font-size:14px;font-weight:500}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <input type="file" id="photo-cap" accept="image/*" capture="environment" style="position:fixed;width:0;height:0;opacity:0;pointer-events:none"/>
 <script type="text/babel">
-const {useState,useEffect,useRef,useCallback}=React;
+const {useState,useEffect,useRef}=React;
 
-/* ══ CONFIG — DOIT CORRESPONDRE EXACTEMENT AU LOGICIEL ══ */
-const SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
-const SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+/* ══ CONSTANTES — IDENTIQUES AU LOGICIEL ══ */
+const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
 
-/* Chauffeurs — MEME ORDRE QUE DANS LE LOGICIEL (index 0,1,2,3,4) */
-const CHAUFFEURS=[
-  {id:0,name:'OTMANE',display:'Otmane',initial:'O',color:'#3b82f6',code:'1111',truck:'VIVARO 1',start:'06:00',end:'14:00'},
-  {id:1,name:'MOMO',display:'Momo',initial:'M',color:'#22c55e',code:'2222',truck:'JUMPY',start:'06:00',end:'14:00'},
-  {id:2,name:'MOHAMED',display:'Mohamed',initial:'H',color:'#f97316',code:'3333',truck:'IVECO',start:'06:00',end:'15:00'},
-  {id:3,name:'ABDOU',display:'Abdou',initial:'A',color:'#a855f7',code:'4444',truck:'VIVARO 2',start:'06:00',end:'14:00'},
-  {id:4,name:'CHAUFFEUR 5',display:'Maître d\'H.',initial:'5',color:'#f59e0b',code:'5555',truck:'CAMION 5',start:'08:00',end:'22:00'},
+/* Même ordre et noms que le logiciel */
+const DRIVERS=[
+  {id:0,name:'OTMANE',display:'Otmane',ini:'O',color:'#3b82f6',code:'1111',truck:'VIVARO 1',start:'06:00',end:'14:00'},
+  {id:1,name:'MOMO',display:'Momo',ini:'M',color:'#22c55e',code:'2222',truck:'JUMPY',start:'06:00',end:'14:00'},
+  {id:2,name:'MOHAMED',display:'Mohamed',ini:'H',color:'#f97316',code:'3333',truck:'IVECO',start:'06:00',end:'15:00'},
+  {id:3,name:'ABDOU',display:'Abdou',ini:'A',color:'#a855f7',code:'4444',truck:'VIVARO 2',start:'06:00',end:'14:00'},
+  {id:4,name:'CHAUFFEUR 5',display:"Maître d'H.",ini:'5',color:'#f59e0b',code:'5555',truck:'CAMION 5',start:'08:00',end:'22:00'},
 ];
 
-/* Créneaux horaires — MEME QUE LE LOGICIEL */
+/* Créneaux — identiques au logiciel */
 const SL=[];
 for(let h=6;h<18;h++){
   const hh=String(h).padStart(2,'0');
-  if(h===6){SL.push('06:30');}
+  if(h===6)SL.push('06:30');
   else{SL.push(hh+':00');if(h<17)SL.push(hh+':30');}
 }
 SL.push('17:30');
 
 const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
-
-const MATERIEL=[
+const MAT=[
   {id:'gastro',label:'Bacs gastro',icon:'🥘'},
   {id:'chariot',label:'Chariots',icon:'🛒'},
   {id:'echelle',label:'Échelles pâtiss.',icon:'🏗️'},
@@ -219,77 +232,83 @@ const MATERIEL=[
 ];
 
 /* ══ SUPABASE ══ */
-async function supaFetch(path,opts={}){
+async function db(path,opts={}){
   try{
-    const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+    const r=await fetch(SUPA+'/rest/v1/'+path,{
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       ...opts
     });
-    if(!r.ok)return null;
+    if(!r.ok){console.log('Supabase err:',r.status,path);return null;}
     return r.json();
-  }catch(e){return null;}
+  }catch(e){console.log('Supabase fetch err:',e);return null;}
 }
 
-async function chargerPlanning(){
+async function loadPlanning(){
   const today=new Date().toISOString().slice(0,10);
-  /* Le logiciel sauve par date du jour courant */
-  const rows=await supaFetch('planning?date=eq.'+today+'&select=donnees&limit=1');
-  if(rows&&rows.length&&rows[0].donnees)return rows[0].donnees;
-  /* Fallback : chercher la dernière entrée valide */
-  const all=await supaFetch('planning?select=donnees,date&order=date.desc&limit=10');
-  if(all&&all.length){
-    for(const row of all){
-      if(row.donnees&&row.donnees.tasks&&row.donnees.drivers)return row.donnees;
+  console.log('Chargement planning pour:',today);
+  /* Chercher par date exacte d'abord */
+  let rows=await db('planning?date=eq.'+today+'&select=donnees,date&limit=1');
+  if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.tasks){
+    console.log('Planning trouvé pour aujourd\'hui');
+    return rows[0].donnees;
+  }
+  /* Fallback : dernière sauvegarde avec des tâches */
+  rows=await db('planning?select=donnees,date&order=date.desc&limit=20');
+  if(rows){
+    for(const r of rows){
+      if(r.date&&r.date.match(/^\d{4}-\d{2}-\d{2}$/)&&r.donnees&&r.donnees.tasks){
+        const keys=Object.keys(r.donnees.tasks);
+        if(keys.length>0){
+          console.log('Fallback planning trouvé:',r.date,'avec',keys.length,'entrées');
+          return r.donnees;
+        }
+      }
     }
   }
+  console.log('Aucun planning trouvé');
   return null;
 }
 
-async function sauverEvenement(ev){
+async function saveEvent(ev){
   try{
-    const rows=await supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1');
-    let events=[];
+    const rows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
+    let list=[];
     if(rows&&rows.length&&rows[0].donnees){
-      try{events=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
-      if(!Array.isArray(events))events=[];
+      try{
+        const d=rows[0].donnees;
+        list=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
+        if(!Array.isArray(list))list=[];
+      }catch(e){list=[];}
     }
-    events.unshift({...ev,ts:new Date().toISOString()});
-    events=events.slice(0,300);
-    const evStr=JSON.stringify(events);
+    list.unshift({...ev,ts:new Date().toISOString()});
+    list=list.slice(0,300);
+    const s=JSON.stringify(list);
     if(rows&&rows.length){
-      await supaFetch('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:evStr})});
+      await db('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:s})});
     }else{
-      await supaFetch('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:evStr})});
-    }
-  }catch(e){console.log('sauverEvenement err:',e);}
-}
-
-async function sauverMessage(msg){
-  try{
-    const rows=await supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1');
-    let msgs=[];
-    if(rows&&rows.length&&rows[0].donnees){
-      try{msgs=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
-      if(!Array.isArray(msgs))msgs=[];
-    }
-    msgs.push(msg);msgs=msgs.slice(-500);
-    const mStr=JSON.stringify(msgs);
-    if(rows&&rows.length){
-      await supaFetch('planning?date=eq.MESSAGES',{method:'PATCH',body:JSON.stringify({donnees:mStr})});
-    }else{
-      await supaFetch('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:mStr})});
+      await db('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:s})});
     }
   }catch(e){}
 }
 
-async function chargerMessages(){
-  const rows=await supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1');
+async function saveMsg(msg){
+  try{
+    const rows=await db('planning?date=eq.MESSAGES&select=donnees&limit=1');
+    let list=[];
+    if(rows&&rows.length&&rows[0].donnees){
+      try{const d=rows[0].donnees;list=JSON.parse(typeof d==='string'?d:JSON.stringify(d));if(!Array.isArray(list))list=[];}catch(e){list=[];}
+    }
+    list.push(msg);list=list.slice(-500);
+    const s=JSON.stringify(list);
+    if(rows&&rows.length){await db('planning?date=eq.MESSAGES',{method:'PATCH',body:JSON.stringify({donnees:s})});}
+    else{await db('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:s})});}
+  }catch(e){}
+}
+
+async function loadMsgs(){
+  const rows=await db('planning?date=eq.MESSAGES&select=donnees&limit=1');
   if(rows&&rows.length&&rows[0].donnees){
-    try{
-      const d=rows[0].donnees;
-      const msgs=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
-      return Array.isArray(msgs)?msgs:[];
-    }catch(e){}
+    try{const d=rows[0].donnees;const r=JSON.parse(typeof d==='string'?d:JSON.stringify(d));return Array.isArray(r)?r:[];}catch(e){}
   }
   return[];
 }
@@ -302,9 +321,7 @@ function getMissions(planning,di,date){
     const k=date+'|'+di+'|'+h;
     const tasks=planning.tasks[k];
     if(tasks&&tasks.length){
-      tasks.forEach((t,ti)=>{
-        ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'});
-      });
+      tasks.forEach((t,ti)=>ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'}));
     }
   });
   return ms;
@@ -312,34 +329,33 @@ function getMissions(planning,di,date){
 
 function getStatut(planning,di,date){
   if(!planning||!planning.statuts)return null;
-  const statuts=planning.statuts;
-  return Object.values(statuts).find(s=>s&&s.di===di&&s.date===date)||null;
+  return Object.values(planning.statuts).find(s=>s&&s.di===di&&s.date===date)||null;
 }
 
-function calcHeures(planning,di,mois,annee){
-  let jours=0,absences=0,min=0;
-  const days=new Date(annee,mois+1,0).getDate();
+function calcH(planning,di,mo,yr){
+  let j=0,ab=0,min=0;
+  const days=new Date(yr,mo+1,0).getDate();
   for(let d=1;d<=days;d++){
-    if(new Date(annee,mois,d)>new Date())break;
-    const ds=`${annee}-${String(mois+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(new Date(yr,mo,d)>new Date())break;
+    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const st=getStatut(planning,di,ds);
-    if(st&&['absent','maladie','conge','repos'].includes(st.type)){absences++;continue;}
-    if(getMissions(planning,di,ds).length>0){jours++;min+=7*60-45;}
+    if(st&&['absent','maladie','conge','repos'].includes(st.type)){ab++;continue;}
+    if(getMissions(planning,di,ds).length>0){j++;min+=7*60-45;}
   }
-  return{jours,absences,h:Math.floor(min/60),m:min%60,hBrut:jours*7};
+  return{j,ab,h:Math.floor(min/60),m:min%60,hb:j*7};
 }
 
-function speak(txt){
+function speak(t){
   if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
+  const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=.95;
   window.speechSynthesis.speak(u);
 }
 
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
-  return<div className="toast" style={{background:'#1e293b',border:`1px solid ${color}44`,color}}>{msg}</div>;
+  return<div className="toast" style={{border:`1px solid ${color}44`,color}}>{msg}</div>;
 }
 
 /* ══ LOGIN ══ */
@@ -351,23 +367,22 @@ function Login({onLogin}){
     if(code.length>=4)return;
     const nc=code+d;setCode(nc);setErr('');
     if(nc.length===4){
-      const ch=CHAUFFEURS.find(c=>c.id===sel);
+      const ch=DRIVERS.find(c=>c.id===sel);
       if(nc===ch.code||nc==='0000'){setTimeout(()=>onLogin(ch),80);}
       else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
     }
   };
   return(
-    <div className="login-screen">
-      <div className="login-logo">
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <div className="login">
+      <div className="logo">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
-      <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
+      <h2 style={{fontSize:21,fontWeight:800,marginBottom:3,textAlign:'center'}}>La Table de Cana</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:22,textAlign:'center'}}>Application chauffeur</p>
       <div className="ch-grid">
-        {CHAUFFEURS.map(ch=>(
-          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`}
-            onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
-            <div className="av" style={{width:46,height:46,fontSize:18,background:ch.color+'20',border:`2px solid ${sel===ch.id?ch.color:ch.color+'40'}`,color:ch.color}}>{ch.initial}</div>
+        {DRIVERS.map(ch=>(
+          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
+            <div className="av" style={{background:ch.color+'1e',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>{ch.ini}</div>
             <span style={{fontSize:12,fontWeight:700,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.display}</span>
             <span style={{fontSize:10,color:'var(--dim)'}}>{ch.truck}</span>
           </button>
@@ -375,18 +390,18 @@ function Login({onLogin}){
       </div>
       {sel!==null&&(
         <>
-          <div className="code-dots">{[0,1,2,3].map(i=><div key={i} className={`code-dot ${i<code.length?'filled':''}`}/>)}</div>
-          <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:8,fontWeight:500}}>{err}</div>
+          <div className="dots">{[0,1,2,3].map(i=><div key={i} className={`dot-c ${i<code.length?'on':''}`}/>)}</div>
+          <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:7,fontWeight:500}}>{err}</div>
           <div className="numpad">
             {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
               k===''?<div key={i}/>:
-              <button key={i} className="num-key" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
+              <button key={i} className="nk" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
                 onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):add(String(k))}>
                 {k}
               </button>
             )}
           </div>
-          <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>Code provisoire : 0000</p>
+          <p style={{fontSize:10,color:'var(--dim)',marginTop:12}}>Code provisoire : 0000</p>
         </>
       )}
     </div>
@@ -394,619 +409,496 @@ function Login({onLogin}){
 }
 
 /* ══ FICHE CLIENT ══ */
-function ClientSheet({mission,chauffeur,onClose}){
-  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mission.adresse||mission.client||'')}`;
+function ClientSheet({m,ch,onClose}){
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
   const rows=[
-    {icon:'🕐',label:'Heure de livraison',val:mission.heure,big:true},
-    {icon:'🏢',label:'Client',val:mission.client||mission.task},
-    {icon:'📍',label:'Adresse',val:mission.adresse,link:mapsUrl},
-    {icon:'📞',label:'Téléphone',val:mission.contact,tel:true},
-    {icon:'👥',label:'Convives',val:mission.convives?mission.convives+' personnes':null},
-    {icon:'🚛',label:'Camion',val:mission.truck||chauffeur.truck},
-    {icon:'📝',label:'Note',val:mission.note_liv},
+    {ico:'🕐',lbl:'Heure',val:m.heure,big:true},
+    {ico:'🏢',lbl:'Client',val:m.client||m.task},
+    {ico:'📍',lbl:'Adresse',val:m.adresse,link:maps},
+    {ico:'📞',lbl:'Téléphone',val:m.contact,tel:true},
+    {ico:'👥',lbl:'Convives',val:m.convives?m.convives+' personnes':null},
+    {ico:'🚛',lbl:'Camion',val:m.truck||ch.truck},
+    {ico:'📝',lbl:'Note',val:m.note_liv},
   ].filter(r=>r.val);
   return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+    <div className="overlay" onClick={onClose}>
+      <div className="obox" onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
           <div>
             <div style={{fontSize:10,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.06}}>Fiche client</div>
-            <div style={{fontSize:18,fontWeight:800,color:chauffeur.color,marginTop:2}}>{mission.client||mission.task}</div>
+            <div style={{fontSize:17,fontWeight:800,color:ch.color,marginTop:2}}>{m.client||m.task}</div>
           </div>
-          <button onClick={onClose} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:50,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)',fontSize:18}}>✕</button>
+          <button onClick={onClose} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:50,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)',fontSize:17}}>✕</button>
         </div>
         {rows.map((row,i)=>(
-          <div key={i} className="client-row">
-            <div className="client-row-icon">{row.icon}</div>
-            <div className="client-row-content">
-              <div className="client-row-label">{row.label}</div>
-              {row.link?<a href={row.link} target="_blank" style={{fontSize:14,color:'var(--blue)',fontWeight:600,textDecoration:'none',display:'block'}}>{row.val} →</a>
-              :row.tel?<a href={`tel:${row.val}`} style={{fontSize:14,color:'var(--green)',fontWeight:700,textDecoration:'none',display:'block'}}>{row.val}</a>
-              :<div className="client-row-val" style={{color:row.big?chauffeur.color:'var(--text)',fontWeight:row.big?800:500,fontSize:row.big?20:14}}>{row.val}</div>}
+          <div key={i} className="crow">
+            <div className="crow-ico">{row.ico}</div>
+            <div style={{flex:1}}>
+              <div className="crow-lbl">{row.lbl}</div>
+              {row.link?<a href={row.link} target="_blank" style={{fontSize:14,color:'var(--blue)',fontWeight:600,textDecoration:'none'}}>{row.val} →</a>
+              :row.tel?<a href={`tel:${row.val}`} style={{fontSize:14,color:'var(--green)',fontWeight:700,textDecoration:'none'}}>{row.val}</a>
+              :<div className="crow-val" style={{color:row.big?ch.color:'var(--text)',fontWeight:row.big?800:500,fontSize:row.big?19:14}}>{row.val}</div>}
             </div>
           </div>
         ))}
-        {mission.allergenes&&mission.allergenes.length>0&&(
-          <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.2)',borderRadius:10,padding:'10px 12px',margin:'12px 0',fontSize:12,color:'var(--red)',fontWeight:700}}>
-            🚨 ALLERGÈNES : {mission.allergenes.join(', ')}
+        {m.allergenes?.length>0&&(
+          <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.2)',borderRadius:9,padding:'9px 11px',margin:'10px 0',fontSize:12,color:'var(--red)',fontWeight:700}}>
+            🚨 ALLERGÈNES : {m.allergenes.join(', ')}
           </div>
         )}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:14}}>
-          <button onClick={()=>speak(`Client ${mission.client}. ${mission.adresse?'Adresse : '+mission.adresse+'.':''} ${mission.contact?'Téléphone : '+mission.contact+'.':''} ${mission.convives?mission.convives+' convives.':''} ${mission.note_liv||''} ${mission.allergenes?.length?'Allergènes : '+mission.allergenes.join(', ')+'.'':''}`)}
-            style={{background:'rgba(168,85,247,.12)',border:'1px solid rgba(168,85,247,.3)',color:'var(--purple)',borderRadius:12,padding:12,fontSize:12,fontWeight:700,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+          <button onClick={()=>speak(`${m.client}. ${m.adresse?'Adresse : '+m.adresse+'.':''} ${m.contact?'Tel : '+m.contact+'.':''} ${m.convives?m.convives+' convives.':''} ${m.note_liv||''} ${m.allergenes?.length?'Allergènes : '+m.allergenes.join(', ')+'.':''}`)}
+            style={{background:'rgba(168,85,247,.1)',border:'1px solid rgba(168,85,247,.28)',color:'var(--purple)',borderRadius:11,padding:11,fontSize:12,fontWeight:700,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
             <span style={{fontSize:20}}>🔊</span>Lire à voix haute
           </button>
-          {mission.contact&&(
-            <a href={`tel:${mission.contact}`} style={{textDecoration:'none'}}>
-              <button style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.3)',color:'var(--green)',borderRadius:12,padding:12,fontSize:12,fontWeight:700,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+          {m.contact&&(
+            <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
+              <button style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.28)',color:'var(--green)',borderRadius:11,padding:11,fontSize:12,fontWeight:700,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
                 <span style={{fontSize:20}}>📞</span>Appeler
               </button>
             </a>
           )}
         </div>
-        <button onClick={onClose} style={{width:'100%',marginTop:10,padding:12,background:'var(--raised)',color:'var(--muted)',borderRadius:12,fontSize:13,fontWeight:600,border:'1px solid var(--border)'}}>Fermer</button>
+        <button onClick={onClose} style={{width:'100%',marginTop:9,padding:10,background:'var(--raised)',color:'var(--muted)',borderRadius:11,fontSize:13,fontWeight:600,border:'1px solid var(--border)'}}>Fermer</button>
       </div>
     </div>
   );
 }
 
 /* ══ SIGNATURE ══ */
-function SigModal({mission,chauffeur,onClose,onDone}){
-  const canvasRef=useRef();
-  const ctx=useRef(null);
-  const drawing=useRef(false);
-  const last=useRef({x:0,y:0});
-
+function SigModal({m,ch,onClose,onDone}){
+  const ref=useRef();const ctx=useRef(null);const drawing=useRef(false);const last=useRef({x:0,y:0});
   useEffect(()=>{
-    const canvas=canvasRef.current;
-    if(!canvas)return;
-    /* Taille fixe pour éviter les bugs mobile */
-    canvas.width=320;canvas.height=180;
-    ctx.current=canvas.getContext('2d');
-    ctx.current.strokeStyle='#1e293b';
-    ctx.current.lineWidth=3;
-    ctx.current.lineCap='round';
-    ctx.current.lineJoin='round';
-    ctx.current.fillStyle='#ffffff';
-    ctx.current.fillRect(0,0,320,180);
+    const c=ref.current;if(!c)return;
+    c.width=320;c.height=170;
+    const x=c.getContext('2d');ctx.current=x;
+    x.fillStyle='#fff';x.fillRect(0,0,320,170);
+    x.strokeStyle='#111';x.lineWidth=2.8;x.lineCap='round';x.lineJoin='round';
   },[]);
-
-  const getPos=(e)=>{
-    const canvas=canvasRef.current;
-    const rect=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/rect.width;
-    const scaleY=canvas.height/rect.height;
-    const src=e.touches?e.touches[0]:e;
-    return{x:(src.clientX-rect.left)*scaleX,y:(src.clientY-rect.top)*scaleY};
+  const pos=e=>{
+    const c=ref.current;const r=c.getBoundingClientRect();
+    const sx=c.width/r.width;const sy=c.height/r.height;
+    const s=e.touches?e.touches[0]:e;
+    return{x:(s.clientX-r.left)*sx,y:(s.clientY-r.top)*sy};
   };
-
-  const start=(e)=>{e.preventDefault();drawing.current=true;last.current=getPos(e);};
-  const move=(e)=>{
-    if(!drawing.current||!ctx.current)return;
-    e.preventDefault();
-    const p=getPos(e);
-    ctx.current.beginPath();
-    ctx.current.moveTo(last.current.x,last.current.y);
-    ctx.current.lineTo(p.x,p.y);
-    ctx.current.stroke();
-    last.current=p;
+  const start=e=>{e.preventDefault();drawing.current=true;last.current=pos(e);};
+  const move=e=>{
+    if(!drawing.current||!ctx.current)return;e.preventDefault();
+    const p=pos(e);
+    ctx.current.beginPath();ctx.current.moveTo(last.current.x,last.current.y);
+    ctx.current.lineTo(p.x,p.y);ctx.current.stroke();last.current=p;
   };
-  const end=(e)=>{e.preventDefault();drawing.current=false;};
-
-  const clear=()=>{
-    if(!ctx.current)return;
-    ctx.current.fillStyle='#ffffff';
-    ctx.current.fillRect(0,0,320,180);
-  };
-
+  const end=e=>{e.preventDefault();drawing.current=false;};
+  const clear=()=>{if(!ctx.current)return;ctx.current.fillStyle='#fff';ctx.current.fillRect(0,0,320,170);};
   const save=async()=>{
-    const canvas=canvasRef.current;
-    if(!canvas)return;
-    const dataUrl=canvas.toDataURL('image/png');
-    await sauverEvenement({
-      type:'signature',
-      chauffeurId:chauffeur.id,
-      chauffeur:chauffeur.display,
-      client:mission.client||mission.task||'',
-      heure:mission.heure,
-      date:new Date().toISOString().slice(0,10),
-      dataUrl
-    });
+    const dataUrl=ref.current.toDataURL('image/png');
+    await saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),dataUrl});
     onDone();
   };
-
   return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e=>e.stopPropagation()}>
-        <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>✍️ Signature client</div>
-        <div style={{fontSize:12,color:'var(--muted)',marginBottom:14}}>{mission.client||mission.task} — {mission.heure}</div>
-        <div className="sig-canvas-wrap" style={{border:'2px solid var(--border2)'}}>
-          <canvas ref={canvasRef} className="sig-canvas"
-            style={{width:'100%',height:180,display:'block',touchAction:'none'}}
-            onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
-            onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
+    <div className="overlay" onClick={onClose}>
+      <div className="obox" onClick={e=>e.stopPropagation()}>
+        <h3>✍️ Signature client</h3>
+        <div className="sub">{m.client||m.task} — {m.heure}</div>
+        <canvas ref={ref} className="sig-cv" style={{border:'2px solid var(--border2)'}}
+          onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+          onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
+        <p style={{fontSize:11,color:'var(--muted)',textAlign:'center',margin:'8px 0 12px'}}>Signez dans le cadre blanc</p>
+        <div className="oc">
+          <button className="obtn cancel" onClick={clear}>🗑️ Effacer</button>
+          <button className="obtn confirm" onClick={save}>✅ Valider</button>
         </div>
-        <p style={{fontSize:11,color:'var(--muted)',textAlign:'center',margin:'8px 0 14px'}}>Signez dans le cadre blanc</p>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <button onClick={clear} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:14,padding:14,fontSize:13,fontWeight:700,color:'var(--muted)'}}>🗑️ Effacer</button>
-          <button onClick={save} style={{background:'var(--green)',border:'none',borderRadius:14,padding:14,fontSize:13,fontWeight:800,color:'#fff'}}>✅ Valider</button>
-        </div>
-        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:10,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
+        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:9,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
       </div>
     </div>
   );
 }
 
-/* ══ MODAL MATERIEL ══ */
-function MaterielModal({mission,chauffeur,onClose,onConfirm,aiPreFill,aiDesc}){
-  const [laisse,setLaisse]=useState(aiPreFill||{});
-  const [recupere,setRecupere]=useState({});
+/* ══ MATERIEL ══ */
+function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
+  const [laisse,setL]=useState(aiPre||{});
+  const [recupere,setR]=useState({});
   const [note,setNote]=useState('');
-  const [tabM,setTabM]=useState('laisse');
-  const current=tabM==='laisse'?laisse:recupere;
-  const setCurrent=tabM==='laisse'?setLaisse:setRecupere;
-  const totalL=Object.values(laisse).reduce((a,b)=>a+(b||0),0);
-  const totalR=Object.values(recupere).reduce((a,b)=>a+(b||0),0);
-  const upd=(id,d)=>setCurrent(o=>({...o,[id]:Math.max(0,(o[id]||0)+d)}));
-
-  useEffect(()=>{
-    speak(aiPreFill&&Object.values(aiPreFill).some(v=>v>0)
-      ?`L'I.A. a pré-rempli le formulaire. Vérifiez le matériel laissé chez ${mission.client||''}.`
-      :`Livraison chez ${mission.client||''}. Combien de matériel avez-vous laissé ?`);
-  },[]);
-
+  const [tab,setTab]=useState('laisse');
+  const cur=tab==='laisse'?laisse:recupere;
+  const setCur=tab==='laisse'?setL:setR;
+  const upd=(id,d)=>setCur(o=>({...o,[id]:Math.max(0,(o[id]||0)+d)}));
+  const totL=Object.values(laisse).reduce((a,b)=>a+(b||0),0);
+  const totR=Object.values(recupere).reduce((a,b)=>a+(b||0),0);
+  useEffect(()=>speak(aiPre&&Object.values(aiPre).some(v=>v>0)?`IA a pré-rempli le matériel pour ${m.client||''}.`:`Matériel laissé chez ${m.client||''} ?`),[]);
   const confirm=async()=>{
-    await sauverEvenement({type:'materiel',chauffeurId:chauffeur.id,chauffeur:chauffeur.display,client:mission.client||mission.task||'',heure:mission.heure,date:new Date().toISOString().slice(0,10),laisse,recupere,note});
+    await saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),laisse,recupere,note});
     onConfirm({laisse,recupere,note});
   };
-
   return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e=>e.stopPropagation()}>
-        {aiPreFill&&Object.values(aiPreFill).some(v=>v>0)&&(
-          <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:12,padding:'8px 12px',marginBottom:12,display:'flex',gap:8,alignItems:'center'}}>
-            <span style={{fontSize:18}}>🤖</span>
-            <div>
-              <div style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>IA a analysé et pré-rempli</div>
-              <div style={{fontSize:11,color:'var(--muted)'}}>{aiDesc||'Vérifiez et ajustez si nécessaire'}</div>
-            </div>
+    <div className="overlay" onClick={onClose}>
+      <div className="obox" onClick={e=>e.stopPropagation()}>
+        {aiPre&&Object.values(aiPre).some(v=>v>0)&&(
+          <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.22)',borderRadius:10,padding:'8px 11px',marginBottom:11,display:'flex',gap:7,alignItems:'center'}}>
+            <span style={{fontSize:16}}>🤖</span>
+            <div><div style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>IA a analysé la photo</div><div style={{fontSize:11,color:'var(--muted)'}}>{aiDesc||'Vérifiez et ajustez'}</div></div>
           </div>
         )}
-        <div style={{fontSize:15,fontWeight:800,marginBottom:2}}>📦 Matériel</div>
-        <div style={{fontSize:12,color:'var(--muted)',marginBottom:12}}>{mission.client||mission.task} — {mission.heure}</div>
-
-        {/* Tabs */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,background:'var(--raised)',borderRadius:12,padding:4,marginBottom:12}}>
-          {[{id:'laisse',lbl:'Laissé 📤',cnt:totalL},{id:'recupere',lbl:'Récupéré 📥',cnt:totalR}].map(t=>(
-            <button key={t.id} onClick={()=>setTabM(t.id)}
-              style={{background:tabM===t.id?'var(--card)':'transparent',border:tabM===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:9,padding:'8px 6px',fontSize:12,fontWeight:700,color:tabM===t.id?'var(--orange)':'var(--muted)',transition:'all .2s'}}>
-              {t.lbl}{t.cnt>0&&<span style={{marginLeft:6,background:'var(--orange)',color:'#fff',borderRadius:20,padding:'1px 7px',fontSize:10,fontWeight:800}}>{t.cnt}</span>}
+        <h3>📦 Matériel — {m.client||m.task}</h3>
+        <div className="sub">{m.heure}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,background:'var(--raised)',borderRadius:10,padding:3,marginBottom:11}}>
+          {[{id:'laisse',lbl:'Laissé 📤',cnt:totL},{id:'recupere',lbl:'Récupéré 📥',cnt:totR}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{background:tab===t.id?'var(--card)':'transparent',border:tab===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:8,padding:'8px 5px',fontSize:12,fontWeight:700,color:tab===t.id?'var(--orange)':'var(--muted)',transition:'all .18s'}}>
+              {t.lbl}{t.cnt>0&&<span style={{marginLeft:5,background:'var(--orange)',color:'#fff',borderRadius:20,padding:'1px 6px',fontSize:10,fontWeight:800}}>{t.cnt}</span>}
             </button>
           ))}
         </div>
-
-        {/* Items */}
-        <div className="mat-grid">
-          {MATERIEL.map(item=>{
-            const qty=current[item.id]||0;
+        <div className="mat-list">
+          {MAT.map(item=>{
+            const qty=cur[item.id]||0;
             return(
-              <div key={item.id} className={`mat-item ${qty>0?'sel':''}`}>
-                <span style={{fontSize:18,flexShrink:0}}>{item.icon}</span>
-                <span style={{fontSize:11,fontWeight:600,color:qty>0?'var(--text)':'var(--muted)',flex:1,lineHeight:1.3}}>{item.label}</span>
-                <div className="mat-counter">
-                  <button className="mat-btn" onClick={()=>upd(item.id,-1)}>−</button>
-                  <div className="mat-qty">{qty}</div>
-                  <button className="mat-btn" onClick={()=>upd(item.id,1)}>+</button>
+              <div key={item.id} className={`mat-row ${qty>0?'on':''}`}>
+                <div className="mat-icon">{item.icon}</div>
+                <div className="mat-label">{item.label}</div>
+                <div className="ctr">
+                  <button className="ctr-btn" onClick={()=>upd(item.id,-1)}>−</button>
+                  <div className="ctr-n">{qty}</div>
+                  <button className="ctr-btn" onClick={()=>upd(item.id,1)}>+</button>
                 </div>
               </div>
             );
           })}
         </div>
-
-        {(totalL>0||totalR>0)&&(
-          <div style={{background:'rgba(249,115,22,.08)',border:'1px solid rgba(249,115,22,.2)',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:12}}>
-            {totalL>0&&<div style={{color:'var(--amber)',marginBottom:2}}>📤 {Object.entries(laisse).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MATERIEL.find(m=>m.id===k)?.label||k}`).join(' · ')}</div>}
-            {totalR>0&&<div style={{color:'var(--green)'}}>📥 {Object.entries(recupere).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MATERIEL.find(m=>m.id===k)?.label||k}`).join(' · ')}</div>}
+        {(totL>0||totR>0)&&(
+          <div style={{background:'rgba(249,115,22,.07)',border:'1px solid rgba(249,115,22,.2)',borderRadius:9,padding:'8px 11px',marginBottom:9,fontSize:12}}>
+            {totL>0&&<div style={{color:'var(--amber)',marginBottom:2}}>📤 {Object.entries(laisse).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MAT.find(x=>x.id===k)?.label||k}`).join(' · ')}</div>}
+            {totR>0&&<div style={{color:'var(--green)'}}>📥 {Object.entries(recupere).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MAT.find(x=>x.id===k)?.label||k}`).join(' · ')}</div>}
           </div>
         )}
-
-        <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (matériel endommagé, remarque...)"
-          style={{width:'100%',background:'var(--raised)',border:'1px solid var(--border2)',borderRadius:10,padding:'9px 12px',fontSize:13,color:'var(--text)',resize:'none',height:52,marginBottom:12}}/>
-
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          <button onClick={onClose} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:14,padding:14,fontSize:13,fontWeight:700,color:'var(--muted)'}}>Annuler</button>
-          <button onClick={confirm} style={{background:'linear-gradient(135deg,var(--green),#16a34a)',border:'none',borderRadius:14,padding:14,fontSize:13,fontWeight:800,color:'#fff'}}>✅ Confirmer livraison</button>
+        <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note complémentaire..."
+          style={{width:'100%',background:'var(--raised)',border:'1px solid var(--border2)',borderRadius:9,padding:'8px 11px',fontSize:13,color:'var(--text)',resize:'none',height:48,marginBottom:11}}/>
+        <div className="oc">
+          <button className="obtn cancel" onClick={onClose}>Annuler</button>
+          <button className="obtn confirm" onClick={confirm}>✅ Confirmer livraison</button>
         </div>
-        <p style={{fontSize:10,color:'var(--dim)',textAlign:'center',marginTop:8}}>Obligatoire avant de valider la livraison</p>
+        <p style={{fontSize:10,color:'var(--dim)',textAlign:'center',marginTop:7}}>Obligatoire avant de valider</p>
       </div>
     </div>
   );
 }
 
-/* ══ ASSISTANT VOCAL ══ */
-function VoiceAssistant({mission,chauffeur,onClose,onCommand}){
-  const [listening,setListening]=useState(false);
-  const [transcript,setTranscript]=useState('');
-  const [action,setAction]=useState('');
-  const recRef=useRef(null);
-
-  const parseCmd=(t)=>{
+/* ══ VOCAL ══ */
+function VoiceModal({m,ch,onClose,onCmd}){
+  const [listening,setL]=useState(false);
+  const [transcript,setT]=useState('');
+  const [action,setA]=useState('');
+  const rec=useRef(null);
+  const parse=t=>{
     const tl=t.toLowerCase();
-    if(tl.includes('terminé')||tl.includes('livré')||tl.includes('terminée')){speak('Mission terminée.');onCommand('done');return'✅ Mission terminée';}
-    if(tl.includes('en route')||tl.includes('je pars')||tl.includes('je démarre')){speak('Bon trajet !');onCommand('enroute');return'🚗 En route';}
-    if(tl.includes('absent')||tl.includes('personne')){speak('Client absent noté.');onCommand('absent');return'⚠️ Client absent';}
-    if(tl.includes('retard')){const m=tl.match(/(\d+)/);speak('Retard signalé.');onCommand('retard',m?m[1]:'');return`⏰ Retard${m?' '+m[1]+' min':''}`;}
-    const bacs=tl.match(/(\d+)\s*(bac|caisse|plateau|chariot|container|nappe|étuve|etuve)/);
-    if(bacs){speak(`${bacs[1]} ${bacs[2]} enregistrés.`);onCommand('materiel',bacs[1]+' '+bacs[2]);return`📦 ${bacs[1]} ${bacs[2]}`;}
-    if(tl.includes('photo')){speak('Photo.');onCommand('photo');return'📷 Photo';}
-    if(tl.includes('appel')||tl.includes('appeler')){speak('Appel.');onCommand('call');return'📞 Appel';}
-    if(tl.includes('navigation')||tl.includes('maps')){speak('Navigation.');onCommand('maps');return'📍 Maps';}
-    speak('Je n\'ai pas compris. Réessayez.');
-    return'❓ Non reconnu';
+    if(tl.includes('terminé')||tl.includes('livré')){speak('Mission terminée.');onCmd('done');return'✅ Mission terminée';}
+    if(tl.includes('en route')||tl.includes('je pars')){speak('Bon trajet !');onCmd('enroute');return'🚗 En route';}
+    if(tl.includes('absent')||tl.includes('personne')){speak('Client absent.');onCmd('absent');return'⚠️ Client absent';}
+    if(tl.includes('retard')){const n=tl.match(/(\d+)/);speak('Retard noté.');onCmd('retard',n?n[1]:'');return`⏰ Retard${n?' '+n[1]+' min':''}`;}
+    const bacs=tl.match(/(\d+)\s*(bac|caisse|chariot|plateau|container|nappe)/);
+    if(bacs){speak(`${bacs[1]} ${bacs[2]} notés.`);onCmd('materiel',bacs[1]+' '+bacs[2]);return`📦 ${bacs[1]} ${bacs[2]}`;}
+    if(tl.includes('photo')){speak('Photo.');onCmd('photo');return'📷 Photo';}
+    if(tl.includes('appel')){speak('Appel.');onCmd('call');return'📞 Appel';}
+    if(tl.includes('maps')||tl.includes('navigation')){speak('Navigation.');onCmd('maps');return'📍 Maps';}
+    speak('Non compris. Réessayez.');return'❓ Non reconnu';
   };
-
   const start=()=>{
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){setAction('Non disponible sur ce navigateur');return;}
-    const rec=new SR();recRef.current=rec;
-    rec.lang='fr-FR';rec.continuous=false;rec.interimResults=true;
-    rec.onstart=()=>{setListening(true);setTranscript('');setAction('');};
-    rec.onresult=e=>{
-      const t=Array.from(e.results).map(r=>r[0].transcript).join('');
-      setTranscript(t);
-      if(e.results[e.results.length-1].isFinal){setAction(parseCmd(t));setListening(false);}
+    if(!SR){setA('Non disponible sur ce navigateur');return;}
+    const r=new SR();rec.current=r;r.lang='fr-FR';r.continuous=false;r.interimResults=true;
+    r.onstart=()=>{setL(true);setT('');setA('');};
+    r.onresult=e=>{
+      const t=Array.from(e.results).map(r=>r[0].transcript).join('');setT(t);
+      if(e.results[e.results.length-1].isFinal){setA(parse(t));setL(false);}
     };
-    rec.onerror=()=>{setListening(false);};
-    rec.onend=()=>setListening(false);
-    rec.start();
+    r.onerror=()=>setL(false);r.onend=()=>setL(false);r.start();
   };
-
-  useEffect(()=>{speak(`Que dois-je faire pour ${mission?mission.client:''} ?`);setTimeout(start,1500);},[]);
-
+  useEffect(()=>{speak(`Que faire pour ${m?m.client:''} ?`);setTimeout(start,1400);},[]);
   return(
-    <div className="voice-overlay" onClick={!listening?onClose:undefined}>
-      <div className="voice-ring" style={{background:listening?'rgba(239,68,68,.08)':'rgba(34,197,94,.08)',borderColor:listening?'var(--red)':'var(--green)'}}>
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke={listening?'var(--red)':'var(--green)'} strokeWidth="2">
+    <div className="voice" onClick={!listening?onClose:undefined}>
+      <div className="vring" style={{background:listening?'rgba(239,68,68,.08)':'rgba(34,197,94,.08)',borderColor:listening?'var(--red)':'var(--green)'}}>
+        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke={listening?'var(--red)':'var(--green)'} strokeWidth="2">
           <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
       </div>
-      <div style={{fontSize:18,fontWeight:700,marginBottom:8}}>{listening?'Je vous écoute...':'Parlez'}</div>
-      <div style={{fontSize:14,color:transcript?'var(--text)':'var(--muted)',textAlign:'center',minHeight:22,marginBottom:8}}>{transcript||'...'}</div>
-      <div style={{fontSize:16,fontWeight:700,color:'var(--green)',minHeight:24,marginBottom:24}}>{action}</div>
-      <div style={{display:'flex',gap:12}}>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:7}}>{listening?'Je vous écoute...':'Parlez'}</div>
+      <div style={{fontSize:14,color:transcript?'var(--text)':'var(--muted)',textAlign:'center',minHeight:20,marginBottom:7}}>{transcript||'...'}</div>
+      <div style={{fontSize:15,fontWeight:700,color:'var(--green)',minHeight:22,marginBottom:22}}>{action}</div>
+      <div style={{display:'flex',gap:10}}>
         {listening
-          ?<button onClick={()=>recRef.current?.stop()} style={{background:'var(--red)',color:'#fff',borderRadius:50,padding:'12px 28px',fontSize:14,fontWeight:700}}>Stop</button>
-          :<button onClick={start} style={{background:'var(--green)',color:'#fff',borderRadius:50,padding:'12px 28px',fontSize:14,fontWeight:700}}>🎤 Reparler</button>
+          ?<button onClick={()=>rec.current?.stop()} style={{background:'var(--red)',color:'#fff',borderRadius:50,padding:'11px 26px',fontSize:14,fontWeight:700}}>Stop</button>
+          :<button onClick={start} style={{background:'var(--green)',color:'#fff',borderRadius:50,padding:'11px 26px',fontSize:14,fontWeight:700}}>🎤 Reparler</button>
         }
-        <button onClick={onClose} style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border2)',borderRadius:50,padding:'12px 28px',fontSize:14,fontWeight:700}}>Fermer</button>
+        <button onClick={onClose} style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border2)',borderRadius:50,padding:'11px 26px',fontSize:14,fontWeight:700}}>Fermer</button>
       </div>
-      <p style={{fontSize:11,color:'var(--dim)',marginTop:16,textAlign:'center',lineHeight:1.7,maxWidth:280}}>
-        "Mission terminée" · "En route" · "Client absent"<br/>"Retard 10 minutes" · "5 bacs récupérés" · "Photo"
+      <p style={{fontSize:11,color:'var(--dim)',marginTop:14,textAlign:'center',lineHeight:1.7,maxWidth:260}}>
+        "Mission terminée" · "En route" · "Client absent"<br/>"Retard 10 min" · "5 bacs" · "Photo" · "Appeler"
       </p>
     </div>
   );
 }
 
 /* ══ MODE CONDUITE ══ */
-function DriveMode({mission,chauffeur,onClose,onDone}){
-  const [elapsed,setElapsed]=useState(0);
-  useEffect(()=>{const iv=setInterval(()=>setElapsed(e=>e+1),1000);return()=>clearInterval(iv);},[]);
-  useEffect(()=>{speak(`En route pour ${mission.client}. ${mission.adresse||''}`);},[]);
+function DriveMode({m,ch,onClose,onDone}){
+  const [t,setT]=useState(0);
+  useEffect(()=>{const iv=setInterval(()=>setT(x=>x+1),1000);return()=>clearInterval(iv);},[]);
+  useEffect(()=>speak(`En route pour ${m.client}. ${m.adresse||''}`),[]);
   const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mission.adresse||mission.client||'')}`;
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
   return(
-    <div className="drive-mode">
-      <div style={{position:'absolute',top:calc_top(),right:20,display:'flex',alignItems:'center',gap:6}}>
-        <div className="geo-dot"/><span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>GPS actif</span>
+    <div className="drive">
+      <div style={{position:'absolute',top:'calc(var(--sat) + 20px)',right:18,display:'flex',alignItems:'center',gap:5}}>
+        <div className="geo"/><span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>GPS actif</span>
       </div>
-      <div style={{fontSize:12,color:'var(--muted)',marginBottom:8,textTransform:'uppercase',letterSpacing:.08}}>En route vers</div>
-      <div className="mono" style={{fontSize:56,fontWeight:900,color:chauffeur.color,letterSpacing:-3,lineHeight:1}}>{mission.heure}</div>
-      <div style={{fontSize:22,fontWeight:700,margin:'10px 0 6px'}}>{mission.client||mission.task}</div>
-      <div style={{fontSize:14,color:'var(--muted)',marginBottom:16,lineHeight:1.6,textAlign:'center'}}>{mission.adresse}</div>
-      {mission.allergenes?.length>0&&(
-        <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:12,padding:'8px 16px',marginBottom:16,fontSize:12,color:'var(--red)',fontWeight:700}}>
-          🚨 {mission.allergenes.join(' · ')}
-        </div>
-      )}
-      <div style={{fontSize:16,color:'var(--amber)',fontWeight:600,marginBottom:28}}>⏱ {fmt(elapsed)}</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,width:'100%',maxWidth:320}}>
-        <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
-          <button style={{width:'100%',background:'var(--blue)',color:'#fff',borderRadius:16,padding:'18px 12px',fontSize:14,fontWeight:800,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigation
+      <div style={{fontSize:12,color:'var(--muted)',marginBottom:6,textTransform:'uppercase',letterSpacing:.08}}>En route vers</div>
+      <div className="drive-time mono" style={{color:ch.color}}>{m.heure}</div>
+      <div style={{fontSize:21,fontWeight:700,margin:'9px 0 5px'}}>{m.client||m.task}</div>
+      <div style={{fontSize:13,color:'var(--muted)',marginBottom:14,lineHeight:1.6,textAlign:'center'}}>{m.adresse}</div>
+      {m.allergenes?.length>0&&<div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'7px 14px',marginBottom:14,fontSize:12,color:'var(--red)',fontWeight:700}}>🚨 {m.allergenes.join(' · ')}</div>}
+      <div style={{fontSize:15,color:'var(--amber)',fontWeight:600,marginBottom:26}}>⏱ {fmt(t)}</div>
+      <div className="drive-btns">
+        <a href={maps} target="_blank" style={{textDecoration:'none'}}>
+          <button className="drive-btn" style={{background:'var(--blue)',color:'#fff',width:'100%'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigation
           </button>
         </a>
-        {mission.contact&&<a href={`tel:${mission.contact}`} style={{textDecoration:'none'}}>
-          <button style={{width:'100%',background:'var(--green)',color:'#fff',borderRadius:16,padding:'18px 12px',fontSize:14,fontWeight:800,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler
+        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
+          <button className="drive-btn" style={{background:'var(--green)',color:'#fff',width:'100%'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler
           </button>
         </a>}
-        <button onClick={onDone} style={{background:'var(--green)',color:'#fff',borderRadius:16,padding:'18px 12px',fontSize:14,fontWeight:800,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>Livré !
+        <button className="drive-btn" style={{background:'var(--green)',color:'#fff'}} onClick={onDone}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>Livré !
         </button>
-        <button onClick={onClose} style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border)',borderRadius:16,padding:'18px 12px',fontSize:14,fontWeight:800,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Quitter
+        <button className="drive-btn" style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border)'}} onClick={onClose}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Quitter
         </button>
       </div>
     </div>
   );
 }
 
-function calc_top(){return'calc(var(--safe-top) + 20px)';}
-
 /* ══ RECAP ══ */
-function RecapModal({missions,chauffeur,onClose}){
+function Recap({missions,ch,onClose}){
   const done=missions.filter(m=>m._statut==='done').length;
   const total=missions.length;
   const pct=total?Math.round(done/total*100):0;
-  useEffect(()=>{speak(`Bilan de votre journée. ${done} livraisons sur ${total}. ${pct===100?'Excellent travail !':''}`);},[]);
+  useEffect(()=>speak(`Bilan journée. ${done} livraisons sur ${total}. ${pct===100?'Excellent !':''}`),[]);
   return(
-    <div className="recap-overlay">
-      <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:24,padding:24,width:'100%',maxWidth:340}}>
-        <div style={{textAlign:'center',marginBottom:20}}>
-          <div style={{fontSize:52}}>{pct===100?'🎉':'📊'}</div>
-          <div style={{fontSize:18,fontWeight:800,marginTop:8}}>Bilan de la journée</div>
-          <div style={{fontSize:12,color:'var(--muted)',marginTop:4}}>{chauffeur.display} · {new Date().toLocaleDateString('fr-FR')}</div>
+    <div className="recap">
+      <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:22,padding:22,width:'100%',maxWidth:330}}>
+        <div style={{textAlign:'center',marginBottom:18}}>
+          <div style={{fontSize:50}}>{pct===100?'🎉':'📊'}</div>
+          <div style={{fontSize:17,fontWeight:800,marginTop:7}}>Bilan de la journée</div>
+          <div style={{fontSize:12,color:'var(--muted)',marginTop:3}}>{ch.display} · {new Date().toLocaleDateString('fr-FR')}</div>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-          <div style={{background:'var(--raised)',borderRadius:12,padding:14,textAlign:'center'}}>
-            <div style={{fontSize:32,fontWeight:800,color:'var(--green)'}}>{done}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+          <div style={{background:'var(--raised)',borderRadius:11,padding:13,textAlign:'center'}}>
+            <div style={{fontSize:30,fontWeight:800,color:'var(--green)'}}>{done}</div>
             <div style={{fontSize:11,color:'var(--muted)'}}>Livrées</div>
           </div>
-          <div style={{background:'var(--raised)',borderRadius:12,padding:14,textAlign:'center'}}>
-            <div style={{fontSize:32,fontWeight:800,color:chauffeur.color}}>{total}</div>
+          <div style={{background:'var(--raised)',borderRadius:11,padding:13,textAlign:'center'}}>
+            <div style={{fontSize:30,fontWeight:800,color:ch.color}}>{total}</div>
             <div style={{fontSize:11,color:'var(--muted)'}}>Total</div>
           </div>
         </div>
-        <div style={{background:'var(--raised)',borderRadius:10,overflow:'hidden',marginBottom:14}}>
-          <div style={{height:8,background:`linear-gradient(90deg,${chauffeur.color},var(--green))`,width:pct+'%',transition:'width .5s'}}/>
+        <div style={{background:'var(--raised)',borderRadius:9,overflow:'hidden',marginBottom:13}}>
+          <div style={{height:7,background:`linear-gradient(90deg,${ch.color},var(--green))`,width:pct+'%',transition:'width .5s'}}/>
         </div>
-        <div style={{textAlign:'center',fontSize:22,fontWeight:800,color:pct===100?'var(--green)':chauffeur.color,marginBottom:16}}>
+        <div style={{textAlign:'center',fontSize:20,fontWeight:800,color:pct===100?'var(--green)':ch.color,marginBottom:14}}>
           {pct===100?'✅ Parfait !':pct+'% accompli'}
         </div>
-        <button onClick={onClose} style={{width:'100%',background:chauffeur.color,color:'#fff',borderRadius:14,padding:14,fontSize:14,fontWeight:700,border:'none'}}>Fermer</button>
+        <button onClick={onClose} style={{width:'100%',background:ch.color,color:'#fff',borderRadius:13,padding:13,fontSize:14,fontWeight:700,border:'none'}}>Fermer</button>
       </div>
     </div>
   );
 }
 
 /* ══ CARTE MISSION ══ */
-function MissionCard({m,chauffeur,onAction,onClientClick}){
-  const stConf={
+function MCard({m,ch,onAction,onClient}){
+  const sc={
     pending:{col:'var(--blue)',dot:'var(--dim)',lbl:'En attente'},
     enroute:{col:'var(--amber)',dot:'var(--amber)',lbl:'🚗 En route'},
     done:{col:'var(--green)',dot:'var(--green)',lbl:'✓ Livré'},
     retard:{col:'var(--red)',dot:'var(--red)',lbl:'⚠ Retard'},
     absent:{col:'var(--red)',dot:'var(--red)',lbl:'Client absent'},
   }[m._statut]||{col:'var(--blue)',dot:'var(--dim)',lbl:'En attente'};
-
-  const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
-  const ncols=m._statut==='done'?2:3;
-
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
+  const nc=m._statut==='done'?2:m.contact?3:2;
   return(
-    <div className="mc" style={{
-      borderColor:m._statut==='done'?'rgba(34,197,94,.2)':m._statut==='retard'||m._statut==='absent'?'rgba(239,68,68,.35)':m._statut==='enroute'?chauffeur.color+'30':'var(--border)',
-      opacity:m._statut==='done'?.7:1
-    }}>
-      <div className="mc-head">
+    <div className="mc" style={{borderColor:m._statut==='done'?'rgba(34,197,94,.2)':['retard','absent'].includes(m._statut)?'rgba(239,68,68,.35)':m._statut==='enroute'?ch.color+'30':'var(--border)',opacity:m._statut==='done'?.72:1}}>
+      <div className="mc-hd">
         <div>
-          <div className="mc-time mono" style={{color:chauffeur.color}}>{m.heure}</div>
-          <div className="mc-time-sub">
-            <div style={{width:7,height:7,borderRadius:'50%',background:stConf.dot,flexShrink:0}}/>
-            {stConf.lbl}
-          </div>
+          <div className="mc-time mono" style={{color:ch.color}}>{m.heure}</div>
+          <div className="mc-sub"><div style={{width:6,height:6,borderRadius:'50%',background:sc.dot,flexShrink:0}}/>{sc.lbl}</div>
         </div>
-        <div className="mc-truck" style={{color:chauffeur.color,background:chauffeur.color+'18'}}>{m.truck||chauffeur.truck}</div>
+        <div className="mc-truck" style={{color:ch.color,background:ch.color+'18'}}>{m.truck||ch.truck}</div>
       </div>
-
-      {/* Clic sur le client → fiche complète */}
-      <div className="mc-client-block" onClick={()=>onClientClick(m)}>
-        <div className="mc-name">{m.client||m.task||'Livraison'}<span style={{fontSize:13,color:'var(--muted)',fontWeight:400}}>›</span></div>
-        {m.adresse&&(
-          <div className="mc-addr">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>
-            {m.adresse}
-          </div>
-        )}
+      <div className="mc-client" onClick={()=>onClient(m)}>
+        <div className="mc-name">{m.client||m.task||'Livraison'} <span style={{fontSize:13,color:'var(--muted)',fontWeight:400}}>›</span></div>
+        {m.adresse&&<div className="mc-addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>{m.adresse}</div>}
       </div>
-
-      {m.allergenes&&m.allergenes.length>0&&(
-        <div className="allerg-bar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          ALLERGÈNES : {m.allergenes.join(', ')}
-        </div>
-      )}
-
-      <div className="mc-div"/>
-      <div className="mc-meta">
-        {m.convives&&<div className="mt"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>{m.convives}</b> conv.</div>}
-        {m.contact&&<div className="mt"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><b>{m.contact}</b></div>}
-        {m.note_liv&&<div className="mt full"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
+      {m.allergenes?.length>0&&<div className="allerg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>ALLERGÈNES : {m.allergenes.join(', ')}</div>}
+      <div className="div"/>
+      <div className="meta">
+        {m.convives&&<div className="mt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>{m.convives}</b> conv.</div>}
+        {m.contact&&<div className="mt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><b>{m.contact}</b></div>}
+        {m.note_liv&&<div className="mt fw"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
       </div>
-
-      <div className="mc-div"/>
-      <div className="mc-btns" style={{gridTemplateColumns:`repeat(${ncols},1fr)`}}>
-        <a href={mapsUrl} target="_blank" style={{textDecoration:'none'}}>
-          <button className="ab ab-maps" style={{width:'100%'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps
-          </button>
-        </a>
-        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
-          <button className="ab ab-call" style={{width:'100%'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler
-          </button>
-        </a>}
-        {m._statut==='pending'&&<button className="ab ab-go" onClick={()=>onAction(m,'enroute')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En route
-        </button>}
-        {m._statut==='enroute'&&<button className="ab ab-done" onClick={()=>onAction(m,'done')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>Livré !
-        </button>}
-        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo 🤖
-        </button>
-        {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature
-        </button>}
-        <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤
-        </button>
+      <div className="div"/>
+      <div className="btns" style={{gridTemplateColumns:`repeat(${nc},1fr)`}}>
+        <a href={maps} target="_blank" style={{textDecoration:'none'}}><button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button></a>
+        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}><button className="ab ab-call" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler</button></a>}
+        {m._statut==='pending'&&<button className="ab ab-go" onClick={()=>onAction(m,'enroute')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En route</button>}
+        {m._statut==='enroute'&&<button className="ab ab-done" onClick={()=>onAction(m,'done')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>Livré !</button>}
+        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo 🤖</button>
+        {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature</button>}
+        <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
       </div>
     </div>
   );
 }
 
 /* ══ VUE AUJOURD'HUI ══ */
-function TodayView({chauffeur,planning,onAction,onClientClick}){
+function Today({ch,planning,onAction,onClient}){
   const today=new Date().toISOString().slice(0,10);
-  const missions=planning?getMissions(planning,chauffeur.id,today):[];
-  const statut=planning?getStatut(planning,chauffeur.id,today):null;
-  const done=missions.filter(m=>m._statut==='done').length;
-  const total=missions.length;
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const st=planning?getStatut(planning,ch.id,today):null;
+  const done=ms.filter(m=>m._statut==='done').length;
+  const total=ms.length;
   const now=new Date();
-  const sh=parseInt(chauffeur.start);const eh=parseInt(chauffeur.end);
+  const sh=parseInt(ch.start);const eh=parseInt(ch.end);
   const pct=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60-sh)/(eh-sh))*100));
   let sbBg='var(--raised)',sbCol='var(--green)',sbLbl='En service';
-  if(statut){
-    if(['absent','maladie'].includes(statut.type)){sbBg='rgba(239,68,68,.08)';sbCol='var(--red)';sbLbl=statut.type==='maladie'?'Arrêt maladie':'Absent';}
-    else if(statut.type==='conge'){sbBg='rgba(59,130,246,.08)';sbCol='var(--blue)';sbLbl='Congé';}
-    else if(statut.type==='repos'){sbBg='rgba(100,116,139,.08)';sbCol='var(--muted)';sbLbl='Repos';}
+  if(st){
+    if(['absent','maladie'].includes(st.type)){sbBg='rgba(239,68,68,.08)';sbCol='var(--red)';sbLbl=st.type==='maladie'?'Arrêt maladie':'Absent';}
+    else if(st.type==='conge'){sbBg='rgba(59,130,246,.08)';sbCol='var(--blue)';sbLbl='Congé';}
+    else if(st.type==='repos'){sbBg='rgba(100,116,139,.08)';sbCol='var(--muted)';sbLbl='Repos';}
   }
   return(
     <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
-      <div className="status-bar" style={{background:sbBg}}>
-        <div style={{width:40,height:40,borderRadius:11,background:sbCol+'15',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <div className="sbar" style={{background:sbBg}}>
+        <div className="sb-icon" style={{background:sbCol+'15'}}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         </div>
-        <div style={{flex:1}}>
+        <div className="sb-info">
           <div style={{fontSize:10,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.06}}>Statut du jour</div>
           <div style={{fontSize:14,fontWeight:700,color:sbCol,marginTop:1}}>{sbLbl}</div>
-          <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{chauffeur.start} → {chauffeur.end}</div>
+          <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{ch.start} → {ch.end}</div>
         </div>
-        <div style={{width:42,height:42,position:'relative',flexShrink:0}}>
+        <div style={{width:40,height:40,position:'relative',flexShrink:0}}>
           <svg viewBox="0 0 36 36" style={{width:'100%',height:'100%',transform:'rotate(-90deg)'}}>
             <circle cx="18" cy="18" r="15" fill="none" stroke="var(--raised)" strokeWidth="3"/>
-            <circle cx="18" cy="18" r="15" fill="none" stroke={chauffeur.color} strokeWidth="3" strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
+            <circle cx="18" cy="18" r="15" fill="none" stroke={ch.color} strokeWidth="3" strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
           </svg>
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:chauffeur.color}}>{Math.round(pct)}%</div>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:ch.color}}>{Math.round(pct)}%</div>
         </div>
       </div>
       {total>0&&(
-        <div className="prog-wrap">
+        <div className="prog">
           <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
             <span style={{fontSize:11,color:'var(--muted)'}}>Progression</span>
-            <span style={{fontSize:11,fontWeight:700,color:chauffeur.color}}>{done}/{total} livrées</span>
+            <span style={{fontSize:11,fontWeight:700,color:ch.color}}>{done}/{total} livrées</span>
           </div>
-          <div className="prog-bar"><div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${chauffeur.color},var(--green))`}}/></div>
+          <div className="prog-bar"><div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${ch.color},var(--green))`}}/></div>
         </div>
       )}
-      <div className="scroll-area" style={{paddingTop:10}}>
-        {!planning&&<div className="loader-wrap"><div className="spin" style={{width:34,height:34}}/><span>Chargement du planning...</span></div>}
-        {planning&&missions.length===0&&(
-          <div style={{textAlign:'center',padding:'60px 24px',color:'var(--muted)'}}>
-            <div style={{fontSize:48,marginBottom:12}}>{statut?'🌟':'📋'}</div>
-            <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>{statut?sbLbl:'Aucune mission'}</div>
-            <div style={{fontSize:13,lineHeight:1.6}}>Restez disponible.</div>
+      <div className="scroll" style={{paddingTop:10}}>
+        {!planning&&<div className="loader"><div className="spin" style={{width:32,height:32}}/><span>Chargement du planning...</span></div>}
+        {planning&&ms.length===0&&(
+          <div style={{textAlign:'center',padding:'55px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:46,marginBottom:11}}>{st?'🌟':'📋'}</div>
+            <div style={{fontSize:15,fontWeight:700,marginBottom:5}}>{st?sbLbl:'Aucune mission'}</div>
+            <div style={{fontSize:13,lineHeight:1.7}}>Restez disponible.</div>
           </div>
         )}
-        {missions.map((m,i)=><MissionCard key={`${m._key}-${i}`} m={m} chauffeur={chauffeur} onAction={onAction} onClientClick={onClientClick}/>)}
+        {ms.map((m,i)=><MCard key={`${m._key}-${i}`} m={m} ch={ch} onAction={onAction} onClient={onClient}/>)}
       </div>
     </div>
   );
 }
 
 /* ══ CALENDRIER ══ */
-function CalendarView({chauffeur,planning}){
+function Cal({ch,planning}){
   const today=new Date();
-  const [month,setMonth]=useState(today.getMonth());
-  const [year,setYear]=useState(today.getFullYear());
+  const [mo,setMo]=useState(today.getMonth());
+  const [yr,setYr]=useState(today.getFullYear());
   const [sel,setSel]=useState(today.getDate());
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const firstDay=new Date(year,month,1).getDay();
-  const offset=firstDay===0?6:firstDay-1;
-  const ds=d=>`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const getMs=d=>planning?getMissions(planning,chauffeur.id,ds(d)):[];
-  const getSt=d=>planning?getStatut(planning,chauffeur.id,ds(d)):null;
-  const heures=planning?calcHeures(planning,chauffeur.id,month,year):{jours:0,absences:0,h:0,m:0,hBrut:0};
-  const selMs=getMs(sel);const selSt=getSt(sel);
-  const days=[];
-  for(let i=0;i<offset;i++)days.push(null);
-  for(let d=1;d<=daysInMonth;d++)days.push(d);
+  const dim=new Date(yr,mo+1,0).getDate();
+  const fd=new Date(yr,mo,1).getDay();
+  const off=fd===0?6:fd-1;
+  const ds=d=>`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const gMs=d=>planning?getMissions(planning,ch.id,ds(d)):[];
+  const gSt=d=>planning?getStatut(planning,ch.id,ds(d)):null;
+  const h=planning?calcH(planning,ch.id,mo,yr):{j:0,ab:0,h:0,m:0,hb:0};
+  const selMs=gMs(sel);const selSt=gSt(sel);
+  const days=[];for(let i=0;i<off;i++)days.push(null);for(let d=1;d<=dim;d++)days.push(d);
   return(
-    <div className="scroll-area" style={{paddingTop:12}}>
-      <div className="hours-grid">
-        {[
-          {val:heures.jours,lbl:'Jours travaillés',col:chauffeur.color},
-          {val:`${heures.h}h${heures.m>0?heures.m+'m':''}`,lbl:'Heures nettes',col:'var(--green)'},
-          {val:heures.absences,lbl:'Absences',col:'var(--amber)'},
-          {val:`${heures.hBrut}h`,lbl:'Heures brutes',col:'var(--blue)'},
-        ].map((item,i)=>(
-          <div key={i} className="hg"><div className="hg-val" style={{color:item.col}}>{item.val}</div><div className="hg-lbl">{item.lbl}</div></div>
+    <div className="scroll" style={{paddingTop:12}}>
+      <div className="hgrid">
+        {[{v:h.j,l:'Jours travaillés',c:ch.color},{v:`${h.h}h${h.m?h.m+'m':''}`,l:'Heures nettes',c:'var(--green)'},{v:h.ab,l:'Absences',c:'var(--amber)'},{v:`${h.hb}h`,l:'Heures brutes',c:'var(--blue)'}].map((x,i)=>(
+          <div key={i} className="hg"><div className="hg-v" style={{color:x.c}}>{x.v}</div><div className="hg-l">{x.l}</div></div>
         ))}
       </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <button onClick={()=>month===0?(setMonth(11),setYear(y=>y-1)):setMonth(m=>m-1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+        <button onClick={()=>mo===0?(setMo(11),setYr(y=>y-1)):setMo(m=>m-1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:15,fontWeight:700}}>{MOIS[month]} {year}</div>
-          <div style={{fontSize:11,color:'var(--muted)'}}>{chauffeur.display}</div>
+          <div style={{fontSize:15,fontWeight:700}}>{MOIS[mo]} {yr}</div>
+          <div style={{fontSize:11,color:'var(--muted)'}}>{ch.display}</div>
         </div>
-        <button onClick={()=>month===11?(setMonth(0),setYear(y=>y+1)):setMonth(m=>m+1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+        <button onClick={()=>mo===11?(setMo(0),setYr(y=>y+1)):setMo(m=>m+1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
       <div className="cal-grid">
         {JOURS.map(j=><div key={j} className="cal-hd">{j}</div>)}
         {days.map((d,i)=>{
           if(!d)return<div key={`e${i}`}/>;
-          const isT=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-          const hasMiss=getMs(d).length>0;const st=getSt(d);const isSel=d===sel;
+          const isT=d===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
+          const hM=gMs(d).length>0;const st=gSt(d);const isSel=d===sel;
           const isOff=st&&['absent','maladie','conge'].includes(st.type);
           const isRest=st&&st.type==='repos';
-          return<div key={d} className={`cal-d ${isT?'today':''} ${hasMiss?'has-m':''} ${isSel&&!isT?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`} onClick={()=>setSel(d)}>{d}</div>;
+          return<div key={d} className={`cal-d ${isT?'today':''} ${hM?'hasm':''} ${isSel&&!isT?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`} onClick={()=>setSel(d)}>{d}</div>;
         })}
       </div>
-      <div>
-        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:10,textTransform:'uppercase'}}>
-          {JOURS[new Date(year,month,sel).getDay()]} {sel} {MOIS[month]}
-          {selSt&&<span style={{marginLeft:8,background:'var(--raised)',borderRadius:20,padding:'2px 8px',fontSize:10}}>{selSt.type}</span>}
+      <div style={{marginTop:4}}>
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:9,textTransform:'uppercase'}}>
+          {JOURS[new Date(yr,mo,sel).getDay()]} {sel} {MOIS[mo]}
+          {selSt&&<span style={{marginLeft:7,background:'var(--raised)',borderRadius:20,padding:'2px 7px',fontSize:10}}>{selSt.type}</span>}
         </div>
-        {selMs.length===0?(
-          <div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:13}}>{selSt?'Statut : '+selSt.type:'Aucune mission'}</div>
-        ):(
-          selMs.map((m,i)=>(
-            <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${chauffeur.color}`,borderRadius:12,padding:'11px 13px',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
-              <div className="mono" style={{fontSize:14,fontWeight:800,color:chauffeur.color,flexShrink:0,width:46}}>{m.heure}</div>
+        {selMs.length===0
+          ?<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:13}}>{selSt?'Statut : '+selSt.type:'Aucune mission'}</div>
+          :selMs.map((m,i)=>(
+            <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${ch.color}`,borderRadius:11,padding:'10px 12px',marginBottom:7,display:'flex',alignItems:'center',gap:9}}>
+              <div className="mono" style={{fontSize:14,fontWeight:800,color:ch.color,flexShrink:0,width:44}}>{m.heure}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:600}}>{m.client||m.task}</div>
                 <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
               </div>
-              <div style={{width:8,height:8,borderRadius:'50%',background:m._statut==='done'?'var(--green)':m._statut==='enroute'?'var(--amber)':'var(--dim)',flexShrink:0}}/>
+              <div style={{width:7,height:7,borderRadius:'50%',background:m._statut==='done'?'var(--green)':m._statut==='enroute'?'var(--amber)':'var(--dim)',flexShrink:0}}/>
             </div>
           ))
-        )}
+        }
       </div>
     </div>
   );
 }
 
 /* ══ MESSAGES ══ */
-function MessagesView({chauffeur}){
-  const [msgs,setMsgs]=useState([
-    {id:1,from:'resp',text:'Bonjour à tous ! Bonne journée 💪',time:'07:00'},
-    {id:2,from:'resp',text:'Confirmez chaque livraison dans l\'app.',time:'07:05'},
-  ]);
+function Msgs({ch}){
+  const [msgs,setMsgs]=useState([{id:1,from:'resp',text:'Bonjour à tous ! Bonne journée 💪',time:'07:00'}]);
   const [text,setText]=useState('');
-  const listRef=useRef();
-  useEffect(()=>{if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;},[msgs]);
+  const ref=useRef();
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[msgs]);
   useEffect(()=>{
     const load=async()=>{
-      const ms=await chargerMessages();
-      if(ms.length>0)setMsgs(prev=>{
+      const ms=await loadMsgs();
+      if(ms.length)setMsgs(prev=>{
         const ids=new Set(prev.map(x=>x.id));
-        const news=ms.filter(x=>!ids.has(x.id)).map(x=>({...x,from:x.chauffeurId===chauffeur.id?'me':'them'}));
+        const news=ms.filter(x=>!ids.has(x.id)).map(x=>({...x,from:x.chauffeurId===ch.id?'me':'them'}));
         return news.length?[...prev,...news]:prev;
       });
     };
@@ -1016,43 +908,43 @@ function MessagesView({chauffeur}){
     if(!text.trim())return;
     const t=text.trim();setText('');
     const time=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    const msg={id:Date.now(),from:'me',fromName:chauffeur.display,chauffeurId:chauffeur.id,text:t,time};
+    const msg={id:Date.now(),from:'me',fromName:ch.display,chauffeurId:ch.id,text:t,time};
     setMsgs(m=>[...m,msg]);
-    await sauverMessage({...msg,from:'chauffeur'});
+    await saveMsg({...msg,from:'chauffeur'});
   };
   return(
-    <div className="msg-wrap">
-      <div style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-        <div style={{width:38,height:38,borderRadius:11,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    <div className="msgw">
+      <div style={{padding:'11px 14px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:9,flexShrink:0}}>
+        <div style={{width:36,height:36,borderRadius:10,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
         <div>
           <div style={{fontSize:14,fontWeight:700}}>Responsable</div>
-          <div style={{fontSize:11,color:'var(--green)',display:'flex',alignItems:'center',gap:5}}><div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne</div>
+          <div style={{fontSize:11,color:'var(--green)',display:'flex',alignItems:'center',gap:4}}><div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne</div>
         </div>
       </div>
-      <div ref={listRef} className="msg-list">
+      <div ref={ref} className="msg-list">
         {msgs.map(m=>(
           <div key={m.id} className={`mb ${m.from==='me'?'me':'them'}`}>
-            <div className="mb-inner">{m.text}</div>
+            <div className="mb-in">{m.text}</div>
             <div className="mb-meta">{m.from==='me'?'Moi':m.fromName||'Responsable'} · {m.time}</div>
           </div>
         ))}
       </div>
       <div className="msg-bar">
-        <textarea className="msg-input" placeholder="Votre message..." rows={1} value={text}
+        <textarea className="msg-in" placeholder="Votre message..." rows={1} value={text}
           onChange={e=>setText(e.target.value)}
           onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
-        <button className="send-btn" onClick={send}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button className="msg-send" onClick={send}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
   );
 }
 
-/* ══ APP PRINCIPALE ══ */
-function ChaufApp({chauffeur,onLogout}){
+/* ══ APP ══ */
+function App2({ch,onLogout}){
   const [tab,setTab]=useState('today');
   const [planning,setPlanning]=useState(null);
   const [toast,setToast]=useState(null);
@@ -1062,344 +954,162 @@ function ChaufApp({chauffeur,onLogout}){
   const [matIA,setMatIA]=useState(null);
   const [driveM,setDriveM]=useState(null);
   const [voiceM,setVoiceM]=useState(null);
-  const [showRecap,setShowRecap]=useState(false);
-  const pendingPhoto=useRef(null);
+  const [recap,setRecap]=useState(false);
+  const photoRef=useRef(null);
 
-  const toast3=(msg,color='var(--green)')=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
+  const t3=(msg,color='var(--green)')=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
+  const vib=p=>{try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}};
 
   /* Charger planning */
   useEffect(()=>{
-    const load=async()=>{
-      const p=await chargerPlanning();
-      if(p)setPlanning(p);
-    };
-    load();
-    const iv=setInterval(load,30000);
-    return()=>clearInterval(iv);
-  },[]);
-
-  /* Géolocalisation */
-  useEffect(()=>{
-    if(!navigator.geolocation)return;
-    const iv=setInterval(()=>{
-      navigator.geolocation.getCurrentPosition(pos=>{
-        sauverEvenement({type:'geo',chauffeurId:chauffeur.id,lat:pos.coords.latitude,lng:pos.coords.longitude});
-      },()=>{},{enableHighAccuracy:true,timeout:8000});
-    },30000);
-    return()=>clearInterval(iv);
-  },[chauffeur.id]);
-
-  /* Handler photo */
-  useEffect(()=>{
-    const input=document.getElementById('photo-cap');
-    if(!input)return;
-    const handler=async e=>{
-      const file=e.target.files[0];
-      if(!file)return;
-      const m=pendingPhoto.current;
-      toast3('📷 Analyse IA en cours...','var(--purple)');
-      const reader=new FileReader();
-      reader.onload=async ev=>{
-        const dataUrl=ev.target.result;
-        const base64=dataUrl.split(',')[1];
-        /* Sauvegarder photo */
-        await sauverEvenement({type:'photo',chauffeurId:chauffeur.id,chauffeur:chauffeur.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
-        /* Analyse IA */
-        try{
-          const resp=await fetch('https://api.anthropic.com/v1/messages',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-            body:JSON.stringify({
-              model:'claude-sonnet-4-6',
-              max_tokens:400,
-              messages:[{role:'user',content:[
-                {type:'image',source:{type:'base64',media_type:idth:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne
-          </div>
-        </div>
-      </div>
-      <div ref={listRef} className="msg-list">
-        {msgs.map(m=>(
-          <div key={m.id} className={`mb ${m.from==='me'||m.from==='chauffeur'&&m.chauffeurId===chauffeur.id?'me':'them'}`}>
-            <div className="mb-inner">{m.text}</div>
-            <div className="mb-meta">{m.from==='me'?'Moi':m.fromName||'Responsable'} · {m.time}</div>
-          </div>
-        ))}
-      </div>
-      <div className="msg-bar">
-        <textarea className="msg-input" placeholder="Votre message..." rows={1} value={text}
-          onChange={e=>setText(e.target.value)}
-          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
-        <button className="send-btn" onClick={send}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ══ APP PRINCIPALE ══ */
-function ChaufApp({chauffeur,onLogout}){
-  const [tab,setTab]=useState('today');
-  const [planning,setPlanning]=useState(null);
-  const [toast,setToast]=useState(null);
-  const [voiceMission,setVoiceMission]=useState(null);
-  const [sigMission,setSigMission]=useState(null);
-  const [clientMission,setClientMission]=useState(null);
-  const [driveMission,setDriveMission]=useState(null);
-  const [showRecap,setShowRecap]=useState(false);
-  const [matMission,setMatMission]=useState(null);
-  const [matMissionIA,setMatMissionIA]=useState(null);
-  const pendingPhoto=useRef(null);
-  const setMatMissionIARef=useRef(null);
-  const setMatMissionRef=useRef(null);
-  const geoInterval=useRef(null);
-
-  const showToast=(msg,color='var(--green)')=>{
-    setToast({msg,color});setTimeout(()=>setToast(null),3000);
-  };
-
-  const speak=(txt)=>{
-    if(!window.speechSynthesis)return;
-    window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(txt);u.lang='fr-FR';u.rate=0.95;
-    window.speechSynthesis.speak(u);
-  };
-
-  /* Synchroniser les refs pour accès depuis les handlers */
-  useEffect(()=>{setMatMissionIARef.current=setMatMissionIA;},[setMatMissionIA]);
-  useEffect(()=>{setMatMissionRef.current=setMatMission;},[setMatMission]);
-
-  /* Charger planning + auto-refresh 30s */
-  useEffect(()=>{
-    const load=()=>chargerPlanning().then(p=>{if(p)setPlanning(p);}).catch(()=>{});
+    const load=async()=>{const p=await loadPlanning();if(p)setPlanning(p);};
     load();const iv=setInterval(load,30000);return()=>clearInterval(iv);
   },[]);
 
   /* Géolocalisation */
   useEffect(()=>{
     if(!navigator.geolocation)return;
-    geoInterval.current=setInterval(()=>{
-      navigator.geolocation.getCurrentPosition(pos=>{
-        sauverPosition(chauffeur.id,pos.coords.latitude,pos.coords.longitude);
-      },()=>{},{enableHighAccuracy:true,timeout:10000});
+    const iv=setInterval(()=>{
+      navigator.geolocation.getCurrentPosition(p=>{
+        saveEvent({type:'geo',chauffeurId:ch.id,lat:p.coords.latitude,lng:p.coords.longitude});
+      },()=>{},{enableHighAccuracy:true,timeout:8000});
     },30000);
-    return()=>clearInterval(geoInterval.current);
-  },[chauffeur.id]);
+    return()=>clearInterval(iv);
+  },[ch.id]);
 
-  /* Photo */
+  /* Photo handler */
   useEffect(()=>{
-    const input=document.getElementById('photo-cap');if(!input)return;
+    const inp=document.getElementById('photo-cap');if(!inp)return;
     const handler=async e=>{
       const file=e.target.files[0];if(!file)return;
-      const m=pendingPhoto.current;
+      const m=photoRef.current;
+      t3('📷 Analyse IA en cours...','var(--purple)');
       const reader=new FileReader();
       reader.onload=async ev=>{
         const dataUrl=ev.target.result;
         const base64=dataUrl.split(',')[1];
-
-        /* Sauvegarder la photo */
-        await sauverEvenement({type:'photo',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:m?m.client:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
-
-        /* Analyse IA — compter le matériel */
-        showToast('🤖 Analyse IA en cours...','var(--purple)');
-        if(navigator.vibrate)navigator.vibrate([50]);
-
+        await saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
         try{
-          const aiResp = await fetch('https://api.anthropic.com/v1/messages',{
+          const resp=await fetch('https://api.anthropic.com/v1/messages',{
             method:'POST',
-            headers:{'Content-Type':'application/json'},
+            headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
             body:JSON.stringify({
-              model:'claude-sonnet-4-6',
-              max_tokens:500,
-              messages:[{
-                role:'user',
-                content:[
-                  {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
-                  {type:'text',text:'Tu es un assistant logistique pour un traiteur. Analyse cette photo et compte précisément le matériel visible. Réponds UNIQUEMENT en JSON sans aucun texte autour, format exact: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"description courte en français de ce que tu vois","confiance":"haute/moyenne/faible"}. Si tu ne vois pas clairement du matériel, mets 0. Les bacs gastro sont des bacs en inox rectangulaires. Compte uniquement ce qui est clairement visible.'}
-                ]
-              }]
+              model:'claude-sonnet-4-6',max_tokens:350,
+              messages:[{role:'user',content:[
+                {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
+                {type:'text',text:'Expert logistique traiteur. Compte le matériel visible. JSON uniquement: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"ce que tu vois","confiance":"haute/moyenne/faible"}. Bacs gastro=bacs inox rectangulaires. Compte par unité.'}
+              ]}]
             })
           });
-          const aiData = await aiResp.json();
-          const aiText = aiData.content?.[0]?.text||'{}';
-          let aiResult;
-          try{
-            const clean=aiText.replace(/```json|```/g,'').trim();
-            aiResult=JSON.parse(clean);
-          }catch(e){aiResult={};}
-
-          /* Ouvrir le modal matériel pré-rempli avec les résultats IA */
-          const totalDetecte=Object.entries(aiResult)
-            .filter(([k])=>['gastro','chariot','echelle','container','caisse','etuve','plateau','nappe'].includes(k))
-            .reduce((a,[,v])=>a+(parseInt(v)||0),0);
-
-          if(totalDetecte>0){
-            showToast(`🤖 IA : ${totalDetecte} item(s) détecté(s) !`,'var(--green)');
-            if(navigator.vibrate)navigator.vibrate([100,50,200]);
-            /* Déclencher le modal matériel avec les données IA pré-remplies */
-            if(m) setMatMissionIARef.current&&setMatMissionIARef.current({mission:m,aiData:aiResult,photo:dataUrl});
-          } else {
-            showToast(`🤖 IA : ${aiResult.description||'Photo analysée — aucun matériel compté'}. Saisissez manuellement.`,'var(--amber)');
-            if(m) setMatMissionRef.current&&setMatMissionRef.current(m);
-          }
-        }catch(e){
-          showToast('📷 Photo sauvegardée — analyse IA indisponible','var(--purple)');
-          if(m) setMatMissionRef.current&&setMatMissionRef.current(m);
-        }
+          const data=await resp.json();
+          const txt=data.content?.[0]?.text||'{}';
+          let res;try{res=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){res={};}
+          const tot=Object.entries(res).filter(([k])=>MAT.map(x=>x.id).includes(k)).reduce((a,[,v])=>a+(parseInt(v)||0),0);
+          if(tot>0){t3(`🤖 IA : ${tot} item(s) détecté(s) !`,'var(--green)');vib([100,50,200]);if(m)setMatIA({mission:m,aiData:res,aiDesc:res.description});}
+          else{t3(`🤖 ${res.description||'Photo analysée'}. Saisissez manuellement.`,'var(--amber)');if(m)setMatM(m);}
+        }catch(err){t3('📷 Photo sauvegardée','var(--purple)');if(m)setMatM(m);}
       };
-      reader.readAsDataURL(file);
-      input.value='';
+      reader.readAsDataURL(file);inp.value='';
     };
-    input.addEventListener('change',handler);return()=>input.removeEventListener('change',handler);
-  },[chauffeur]);
+    inp.addEventListener('change',handler);return()=>inp.removeEventListener('change',handler);
+  },[ch]);
 
-  /* Vibration */
-  const vibrate=(pattern)=>{if(navigator.vibrate)navigator.vibrate(pattern);};
-
-  const handleAction=async(mission,action)=>{
-    if(action==='voice'){setVoiceMission(mission);return;}
-    if(action==='sign'){setSigMission(mission);return;}
-    if(action==='photo'){pendingPhoto.current=mission;document.getElementById('photo-cap').click();return;}
-    if(action==='enroute'){
-      vibrate([50,30,50]);showToast('🚗 En route !','var(--amber)');
-      await sauverEvenement({type:'enroute',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
-      setDriveMission(mission);
+  const action=async(m,act)=>{
+    if(act==='voice'){setVoiceM(m);return;}
+    if(act==='sign'){setSigM(m);return;}
+    if(act==='photo'){photoRef.current=m;document.getElementById('photo-cap').click();return;}
+    if(act==='done'){setMatM(m);return;}
+    if(act==='done_confirmed'){
+      vib([100,50,200]);t3('✅ Livraison confirmée !','var(--green)');speak('Livraison confirmée. Excellent travail !');
+      await saveEvent({type:'done',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),materiel:m._mat||{}});
+      setDriveM(null);
     }
-    if(action==='done'){
-      /* Ouvrir modal matériel obligatoire avant de confirmer */
-      setMatMission(mission);
-      return;
+    if(act==='enroute'){
+      vib([50,30,50]);t3('🚗 En route !','var(--amber)');
+      await saveEvent({type:'enroute',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure});
+      setDriveM(m);
     }
-    if(action==='done_confirmed'){
-      vibrate([100,50,200]);showToast('✅ Livraison confirmée !','var(--green)');
-      await sauverEvenement({type:'done',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure,date:new Date().toISOString().slice(0,10),materiel:mission._materiel||{}});
-      speak('Livraison confirmée. Excellent travail !');
-      setDriveMission(null);
-    }
-    if(action==='absent'){
-      showToast('⚠️ Client absent enregistré','var(--red)');
-      await sauverEvenement({type:'absent',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
-    }
-    if(action==='retard'){
-      showToast('⏰ Retard signalé','var(--amber)');
-      await sauverEvenement({type:'retard',chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:mission.client,heure:mission.heure});
-    }
-    if(action==='materiel'){
-      showToast('📦 Matériel enregistré','var(--blue)');
-    }
+    if(act==='absent'){t3('⚠️ Client absent','var(--red)');await saveEvent({type:'absent',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure});}
   };
 
-  const handleVoiceCommand=async(cmd,data)=>{
-    const m=voiceMission;
-    if(cmd==='done')await handleAction(m,'done');
-    if(cmd==='enroute')await handleAction(m,'enroute');
-    if(cmd==='photo')await handleAction(m,'photo');
-    if(cmd==='absent')await handleAction(m,'absent');
-    if(cmd==='retard')await handleAction(m,'retard');
-    if(cmd==='materiel')await sauverEvenement({type:'materiel',detail:data,chauffeurId:chauffeur.id,chauffeur:chauffeur.name,client:m?.client||''});
+  const voiceCmd=async(cmd,data)=>{
+    const m=voiceM;
+    if(cmd==='done')action(m,'done');
+    if(cmd==='enroute')action(m,'enroute');
+    if(cmd==='photo')action(m,'photo');
+    if(cmd==='absent')action(m,'absent');
+    if(cmd==='retard')await saveEvent({type:'retard',detail:data,chauffeurId:ch.id,chauffeur:ch.display,client:m?.client||''});
+    if(cmd==='materiel')await saveEvent({type:'materiel_vocal',detail:data,chauffeurId:ch.id,chauffeur:ch.display,client:m?.client||''});
     if(cmd==='call'&&m?.contact)window.open('tel:'+m.contact);
     if(cmd==='maps'&&m)window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`, '_blank');
-    setVoiceMission(null);
+    setVoiceM(null);
   };
 
   const today=new Date().toISOString().slice(0,10);
-  const myMissions=planning?getMissions(planning,chauffeur.id,today):[];
-  const pending=myMissions.filter(m=>m._statut!=='done').length;
-  const allDone=myMissions.length>0&&myMissions.every(m=>m._statut==='done');
-
-  /* Alerter si tout est fait */
-  useEffect(()=>{
-    if(allDone){setTimeout(()=>setShowRecap(true),1000);}
-  },[allDone]);
+  const myMs=planning?getMissions(planning,ch.id,today):[];
+  const pending=myMs.filter(m=>m._statut!=='done').length;
+  useEffect(()=>{if(myMs.length>0&&myMs.every(m=>m._statut==='done'))setTimeout(()=>setRecap(true),700);},[myMs.filter(m=>m._statut==='done').length]);
 
   return(
     <div className="screen">
-      {/* Header */}
-      <div className="app-top">
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div className="av" style={{width:46,height:46,fontSize:18,background:chauffeur.color+'20',border:`2px solid ${chauffeur.color}60`,color:chauffeur.color}}>
-              {chauffeur.initial}
-            </div>
+      <div className="hdr">
+        <div className="hdr-row">
+          <div style={{display:'flex',alignItems:'center',gap:11}}>
+            <div className="av" style={{width:44,height:44,fontSize:17,background:ch.color+'1e',border:`2px solid ${ch.color}55`,color:ch.color}}>{ch.ini}</div>
             <div>
-              <div style={{fontSize:12,color:'var(--muted)'}}>Bonjour 👋</div>
-              <div style={{fontSize:20,fontWeight:800,color:chauffeur.color,lineHeight:1.1}}>{chauffeur.name}</div>
-              <div style={{fontSize:10,color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
-                <span>{chauffeur.truck}</span>
-                <span>·</span>
-                <span>{chauffeur.start}–{chauffeur.end}</span>
-                <div className="geo-dot" style={{width:6,height:6}}/>
+              <div style={{fontSize:11,color:'var(--muted)'}}>Bonjour 👋</div>
+              <div style={{fontSize:19,fontWeight:800,color:ch.color,lineHeight:1.1}}>{ch.display}</div>
+              <div style={{fontSize:10,color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
+                <span>{ch.truck}</span><span>·</span><span>{ch.start}–{ch.end}</span>
+                <div className="geo"/>
               </div>
             </div>
           </div>
-          <div style={{display:'flex',gap:8}}>
-            {myMissions.length>0&&(
-              <button onClick={()=>setShowRecap(true)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              </button>
-            )}
-            <button onClick={onLogout} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <div style={{display:'flex',gap:7}}>
+            {myMs.length>0&&<button className="icon-btn" onClick={()=>setRecap(true)}>📊</button>}
+            <button className="icon-btn" onClick={onLogout}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Contenu */}
-      <div className="main-content">
-        {tab==='today'&&<TodayView chauffeur={chauffeur} planning={planning} onAction={handleAction} onClientClick={setClientMission}/>}
-        {tab==='calendar'&&<CalendarView chauffeur={chauffeur} planning={planning}/>}
-        {tab==='messages'&&<MessagesView chauffeur={chauffeur}/>}
+      <div className="content">
+        {tab==='today'&&<Today ch={ch} planning={planning} onAction={action} onClient={setClientM}/>}
+        {tab==='cal'&&<Cal ch={ch} planning={planning}/>}
+        {tab==='msgs'&&<Msgs ch={ch}/>}
       </div>
 
-      {/* Nav */}
       <nav className="bnav">
         {[
           {id:'today',lbl:"Aujourd'hui",badge:pending,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
-          {id:'calendar',lbl:'Planning',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
-          {id:'messages',lbl:'Messages',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>},
+          {id:'cal',lbl:'Planning',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
+          {id:'msgs',lbl:'Messages',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>},
         ].map(n=>(
-          <button key={n.id} className={`nav-btn ${tab===n.id?'active':''}`} onClick={()=>setTab(n.id)}>
+          <button key={n.id} className={`nb ${tab===n.id?'on':''}`} onClick={()=>setTab(n.id)}>
             {n.svg}<span>{n.lbl}</span>
-            {n.badge>0&&<div className="nav-badge" style={{background:tab===n.id?chauffeur.color:'var(--red)'}}>{n.badge}</div>}
+            {n.badge>0&&<div className="nbadge" style={{background:tab===n.id?ch.color:'var(--red)'}}>{n.badge}</div>}
           </button>
         ))}
       </nav>
 
-      {/* Overlays */}
-      {matMissionIA&&<MaterielModal
-        mission={matMissionIA.mission}
-        chauffeur={chauffeur}
-        aiPreFill={matMissionIA.aiData}
-        aiDescription={matMissionIA.aiData?.description}
-        photoUrl={matMissionIA.photo}
-        onClose={()=>setMatMissionIA(null)}
-        onConfirm={async(mat)=>{
-          setMatMissionIA(null);
-          await handleAction({...matMissionIA.mission,_materiel:mat},'done_confirmed');
-        }}/>}
-      {matMission&&<MaterielModal mission={matMission} chauffeur={chauffeur}
-        onClose={()=>setMatMission(null)}
-        onConfirm={async(mat)=>{
-          const m={...matMission,_materiel:mat};
-          setMatMission(null);
-          await handleAction(m,'done_confirmed');
-        }}/>}
-      {driveMission&&<DriveMode mission={driveMission} chauffeur={chauffeur} onClose={()=>setDriveMission(null)} onDone={()=>handleAction(driveMission,'done')}/>}
-      {voiceMission&&<VoiceAssistant chauffeur={chauffeur} mission={voiceMission} onClose={()=>setVoiceMission(null)} onCommand={handleVoiceCommand}/>}
-      {sigMission&&<SigModal mission={sigMission} chauffeur={chauffeur} onClose={()=>setSigMission(null)} onDone={()=>{setSigMission(null);showToast('✍️ Signature enregistrée !','var(--teal)');}}/>}
-      {clientMission&&<ClientSheet mission={clientMission} planning={planning} chauffeur={chauffeur} onClose={()=>setClientMission(null)}/>}
-      {showRecap&&<RecapModal missions={myMissions} chauffeur={chauffeur} onClose={()=>setShowRecap(false)}/>}
+      {clientM&&<ClientSheet m={clientM} ch={ch} onClose={()=>setClientM(null)}/>}
+      {sigM&&<SigModal m={sigM} ch={ch} onClose={()=>setSigM(null)} onDone={()=>{setSigM(null);t3('✍️ Signature enregistrée !','var(--teal)');}}/>}
+      {matM&&<MatModal m={matM} ch={ch} onClose={()=>setMatM(null)} onConfirm={async mat=>{setMatM(null);await action({...matM,_mat:mat},'done_confirmed');}}/>}
+      {matIA&&<MatModal m={matIA.mission} ch={ch} aiPre={matIA.aiData} aiDesc={matIA.aiDesc} onClose={()=>setMatIA(null)} onConfirm={async mat=>{setMatIA(null);await action({...matIA.mission,_mat:mat},'done_confirmed');}}/>}
+      {driveM&&<DriveMode m={driveM} ch={ch} onClose={()=>setDriveM(null)} onDone={()=>action(driveM,'done')}/>}
+      {voiceM&&<VoiceModal m={voiceM} ch={ch} onClose={()=>setVoiceM(null)} onCmd={voiceCmd}/>}
+      {recap&&<Recap missions={myMs} ch={ch} onClose={()=>setRecap(false)}/>}
       {toast&&<Toast msg={toast.msg} color={toast.color}/>}
     </div>
   );
 }
 
-function App(){
+function Root(){
   const [ch,setCh]=useState(null);
-  return ch?<ChaufApp chauffeur={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
+  return ch?<App2 ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
 </script>
 </body>
 </html>
