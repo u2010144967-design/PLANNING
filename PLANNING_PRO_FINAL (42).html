@@ -216,9 +216,9 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .gtc.past{opacity:.45}
 
 /* CELLULES */
-.gcw{position:relative;border-right:1px solid #1e293b;border-bottom:1px solid #1e293b;min-height:36px;background:#0f172a;transition:background .15s}
+.gcw{position:relative;border-right:1px solid #1e3a5f;border-bottom:1px solid #162033;min-height:36px;background:#0d1829;transition:background .15s}
 .gcw:last-child{border-right:none}
-.gcw.past-col{background:#0d1424}
+.gcw.past-col{background:#0a1020}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
 .gcell:hover{background:#1e3a5f}
 
@@ -21729,6 +21729,13 @@ function changerStatutDrv(di){
   var h=document.createElement('h3');h.textContent='Statut — '+dr.name;h.style.marginBottom='4px';
   var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';sub.textContent=cap(fmtCourt(d));
   var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  /* Bouton tournée commune */
+  var tourBtn=document.createElement('button');
+  tourBtn.textContent='🤝 Tournée commune';
+  tourBtn.style.cssText='background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);color:#14b8a6;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2';
+  tourBtn.addEventListener('click',function(){closeMod('m-statut-drv');ouvrirTourneeCommune(di);});
+  grid.appendChild(tourBtn);
+
   [
     {t:'service',l:'✅ En service',c:'#22c55e',bg:'rgba(34,197,94,.12)',bd:'rgba(34,197,94,.3)'},
     {t:'repos',l:'😴 Repos',c:'#94a3b8',bg:'rgba(100,116,139,.12)',bd:'rgba(100,116,139,.3)'},
@@ -21774,12 +21781,25 @@ function changerCamionDrv(di){
   var camions=['JUMPY','VIVARO 1','VIVARO 2','IVECO','VIVARO LOCATION','CAMION 5'];
   var existing=document.getElementById('m-camion-drv');if(existing)existing.remove();
   var modal=document.createElement('div');modal.id='m-camion-drv';modal.className='mbg on';
-  var btns=camions.map(function(cam){
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='360px';
+  var h=document.createElement('h3');h.textContent='Camion — '+dr.name;h.style.marginBottom='4px';
+  var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';sub.textContent='Actuel : '+dr.truck;
+  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  camions.forEach(function(cam){
     var sel=cam===dr.truck;
-    return '<button onclick="setCamionDrv('+di+',\''+cam+'\'" style="background:'+(sel?'rgba(249,115,22,.2)':'rgba(30,41,59,.5)')+';border:1px solid '+(sel?'#f97316':'#334155')+';color:'+(sel?'#f97316':'#94a3b8')+';border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">'+cam+'</button>';
-  }).join('');
-  modal.innerHTML='<div class="mbox" style="max-width:340px">'    +'<h3 style="margin-bottom:4px">Camion de '+dr.name+'</h3>'    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">Camion actuel : '+dr.truck+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+btns    +'<button onclick="closeMod(\'m-camion-drv\')" style="background:var(--raised,#1e293b);border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2">Annuler</button>'    +'</div></div>';
-  document.body.appendChild(modal);
+    var b=document.createElement('button');
+    b.textContent=cam;
+    b.style.cssText='background:'+(sel?'rgba(249,115,22,.2)':'rgba(30,41,59,.5)')+';border:1px solid '+(sel?'#f97316':'#334155')+';color:'+(sel?'#f97316':'#94a3b8')+';border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer';
+    (function(c){b.addEventListener('click',function(){setCamionDrv(di,c);});})(cam);
+    grid.appendChild(b);
+  });
+  var cancel=document.createElement('button');
+  cancel.textContent='Annuler';
+  cancel.style.cssText='background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2';
+  cancel.addEventListener('click',function(){closeMod('m-camion-drv');});
+  grid.appendChild(cancel);
+  box.appendChild(h);box.appendChild(sub);box.appendChild(grid);
+  modal.appendChild(box);document.body.appendChild(modal);
 }
 
 function setCamionDrv(di,camion){
@@ -21848,6 +21868,59 @@ window.addEventListener('load', function(){
     if(isNaN(di)) return;
     if(action === 'statut') changerStatutDrv(di);
     if(action === 'camion') changerCamionDrv(di);
+  });
+});
+
+</script>
+
+<script>
+
+function ouvrirTourneeCommune(di){
+  var dr=ST.drivers[di];
+  var existing=document.getElementById('m-tournee');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-tournee';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='360px';
+  var h=document.createElement('h3');h.textContent='🤝 Tournée commune — '+dr.name;h.style.marginBottom='4px';
+  var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';sub.textContent='Choisir le co-chauffeur pour aujourd\'hui';
+  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  ST.drivers.forEach(function(dr2,di2){
+    if(di2===di)return;
+    var b=document.createElement('button');
+    b.textContent=dr2.name+' '+dr2.truck;
+    b.style.cssText='background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);color:#14b8a6;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer';
+    (function(d2){b.addEventListener('click',function(){
+      /* Enregistrer la tournée commune */
+      if(!ST.statuts)ST.statuts={};
+      var d=ST.cur;
+      ST.statuts['tc_'+di+'_'+d]={di:di,date:d,type:'tournee_commune',avec:d2,ts:Date.now()};
+      save();render();closeMod('m-tournee');
+      showT(dr.name+' + '+ST.drivers[d2].name+' → Tournée commune','#14b8a6');
+      setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+    });})(di2);
+    grid.appendChild(b);
+  });
+  var cancel=document.createElement('button');
+  cancel.textContent='Annuler';
+  cancel.style.cssText='background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2';
+  cancel.addEventListener('click',function(){closeMod('m-tournee');});
+  grid.appendChild(cancel);
+  box.appendChild(h);box.appendChild(sub);box.appendChild(grid);
+  modal.appendChild(box);document.body.appendChild(modal);
+}
+
+/* Listener pour changer heure début/fin directement dans l'en-tête */
+window.addEventListener('load',function(){
+  document.addEventListener('change',function(e){
+    var input=e.target;
+    if(!input.dataset||!input.dataset.field)return;
+    var di=parseInt(input.dataset.di);
+    var field=input.dataset.field;
+    var val=input.value;
+    if(isNaN(di)||!val)return;
+    if(field==='start')ST.drivers[di].start=val;
+    if(field==='end')ST.drivers[di].end=val;
+    save();
+    setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
   });
 });
 
