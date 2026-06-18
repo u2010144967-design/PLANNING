@@ -216,16 +216,16 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .gtc.past{opacity:.45}
 
 /* CELLULES */
-.gcw{position:relative;border-right:1px solid rgba(59,130,246,0.12);border-bottom:1px solid rgba(59,130,246,0.06);min-height:36px;background:#0e1c2e;transition:background .15s}
+.gcw{position:relative;border-right:1px solid rgba(219,112,147,0.2);border-bottom:1px solid rgba(219,112,147,0.08);min-height:36px;background:#fdf0f4;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
 .gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
 .gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
 .gcw:last-child{border-right:none}
-.gcw.past-col{background:#0a1520}
+.gcw.past-col{background:#f5e8ec}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
-.gcell:hover{background:rgba(59,130,246,0.12)}
+.gcell:hover{background:rgba(219,112,147,0.15)}
 
 /* ════ PILLS COLORÉES PAR CATÉGORIE ════ */
 .pill{font-size:14px;font-weight:700;padding:6px 8px;margin-top:15px;border-radius:6px;line-height:1.35;word-break:break-word;position:relative;margin-bottom:2px;border-left:4px solid;transition:opacity .3s}
@@ -21945,6 +21945,34 @@ function autoFillCategory(){
     setTimeout(function(){document.getElementById('m-client').focus();},100);
   }
 }
+
+/* ══ SYNC AUTO SUPABASE — déclenché après chaque modification ══ */
+(function(){
+  var _origSave = window.save;
+  if(typeof _origSave === 'function'){
+    window.save = function(){
+      _origSave.apply(this, arguments);
+      clearTimeout(window._syncTimer);
+      window._syncTimer = setTimeout(function(){
+        if(typeof sauverDansSupabase === 'function') sauverDansSupabase();
+      }, 2000);
+    };
+  }
+})();
+
+/* ══ MODIFIER HEURE DEBUT/FIN CHAUFFEUR DEPUIS EN-TETE ══ */
+document.addEventListener('change', function(e){
+  var input = e.target;
+  if(!input.dataset || !input.dataset.field) return;
+  var di = parseInt(input.dataset.di);
+  var field = input.dataset.field;
+  var val = input.value;
+  if(isNaN(di) || !val) return;
+  if(field === 'start') ST.drivers[di].start = val;
+  if(field === 'end') ST.drivers[di].end = val;
+  if(typeof save === 'function') save();
+  if(typeof render === 'function') render();
+});
 </script>
 </body>
 </html>
