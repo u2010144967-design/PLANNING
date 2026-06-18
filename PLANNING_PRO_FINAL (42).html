@@ -1159,7 +1159,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button onclick="event.stopPropagation();changerStatutDrv('+i+')" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button onclick="event.stopPropagation();changerCamionDrv('+i+')" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div class="gh-hrs" style="color:#94a3b8">'+dr.start+' → '+(dr.end||'?')+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div class="gh-hrs" style="color:#94a3b8">'+dr.start+' → '+(dr.end||'?')+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -21804,6 +21804,52 @@ if(typeof delT==='function'){
     setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
   };
 }
+
+</script>
+
+<script>
+
+/* Délégation événements boutons statut et camion dans la grille */
+window.addEventListener('load', function(){
+  var grid = document.getElementById('grid');
+  if(!grid) return;
+  grid.addEventListener('click', function(e){
+    var btnStatut = e.target.closest('.btn-statut-drv');
+    if(btnStatut){
+      e.stopPropagation();
+      var di = parseInt(btnStatut.getAttribute('data-di'));
+      if(!isNaN(di)) changerStatutDrv(di);
+      return;
+    }
+    var btnCamion = e.target.closest('.btn-camion-drv');
+    if(btnCamion){
+      e.stopPropagation();
+      var di = parseInt(btnCamion.getAttribute('data-di'));
+      if(!isNaN(di)) changerCamionDrv(di);
+      return;
+    }
+  });
+});
+
+</script>
+
+<script>
+
+/* Délégation clics boutons statut/camion dans la grille */
+window.addEventListener('load', function(){
+  var g = document.getElementById('grid');
+  if(!g) return;
+  g.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    e.stopPropagation();
+    var di = parseInt(btn.getAttribute('data-di'));
+    var action = btn.getAttribute('data-action');
+    if(isNaN(di)) return;
+    if(action === 'statut') changerStatutDrv(di);
+    if(action === 'camion') changerCamionDrv(di);
+  });
+});
 
 </script>
 </body>
