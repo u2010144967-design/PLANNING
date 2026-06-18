@@ -216,14 +216,14 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .gtc.past{opacity:.45}
 
 /* CELLULES */
-.gcw{position:relative;border-right:1px solid rgba(59,130,246,0.15);border-bottom:1px solid rgba(255,255,255,0.04);min-height:36px;background:#0d1829;transition:background .15s}
+.gcw{position:relative;border-right:1px solid rgba(59,130,246,0.12);border-bottom:1px solid rgba(59,130,246,0.06);min-height:36px;background:#0e1c2e;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
 .gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
 .gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
 .gcw:last-child{border-right:none}
-.gcw.past-col{background:#080e1a}
+.gcw.past-col{background:#0a1520}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
 .gcell:hover{background:rgba(59,130,246,0.12)}
 
@@ -847,17 +847,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid #1d4ed8;border-color:#
 <div class="mbg" id="m-add">
   <div class="mbox">
     <h3 id="m-ttl">Ajouter une tâche</h3>
-    <label>Tâche <span style="color:#334155;font-size:10px;text-transform:none">(optionnel)</span></label>
-    <div class="macw"><textarea id="m-task" rows="2" placeholder="Description..." oninput="mAc('task')"></textarea><div class="macl" id="mac-task"></div></div>
-    <label>Client <span style="color:#334155;font-size:10px;text-transform:none">(optionnel)</span></label>
-    <div class="macw"><input type="text" id="m-client" placeholder="Tapez pour chercher..." autocomplete="off" oninput="mAc('client')"><div class="macl" id="mac-client"></div></div>
+    <label style="color:#60a5fa;font-size:12px;font-weight:800">🏛 Client / Collectivité</label>
+    <div class="macw"><input type="text" id="m-client" placeholder="Tapez pour chercher ou choisir..." autocomplete="off" oninput="mAc('client')"><div class="macl" id="mac-client"></div></div>
     <label>Catégorie</label>
-    <select id="m-cat">
+    <select id="m-cat" onchange="autoFillCategory()">
       <option value="">— Sans —</option>
       <option value="traiteur">🍽 Traiteur</option>
       <option value="collectivite">🏛 Collectivité</option>
       <option value="task">📋 Tâche</option>
     </select>
+    <label>Tâche / Description <span style="color:#334155;font-size:10px;text-transform:none">(optionnel)</span></label>
+    <div class="macw"><textarea id="m-task" rows="2" placeholder="Description de la livraison..." oninput="mAc('task')"></textarea><div class="macl" id="mac-task"></div></div>
     <label>Camion <span style="color:#334155;font-size:10px;text-transform:none">(vide = camion habituel)</span></label>
     <div class="macw"><input type="text" id="m-truck" placeholder="Camion habituel" oninput="mAc('truck')"><div class="macl" id="mac-truck"></div></div>
     <label>Heure de fin</label><input type="time" id="m-end">
@@ -1164,7 +1164,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div class="gh-hrs" style="color:#94a3b8">'+dr.start+' → '+(dr.end||'?')+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:4px;color:#60a5fa;font-size:9px;padding:1px 3px;width:52px" onclick="event.stopPropagation()">'+'<span style="color:#334155;font-size:9px">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+' " style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:4px;color:#60a5fa;font-size:9px;padding:1px 3px;width:52px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -21929,6 +21929,22 @@ window.addEventListener('load',function(){
   });
 });
 
+
+function autoFillCategory(){
+  var cat = document.getElementById('m-cat').value;
+  if(cat === 'collectivite' || cat === 'traiteur'){
+    /* Focus sur le client */
+    setTimeout(function(){document.getElementById('m-client').focus();},100);
+  }
+}
+
+function autoFillCategory(){
+  var cat = document.getElementById('m-cat').value;
+  if(cat === 'collectivite' || cat === 'traiteur'){
+    /* Focus sur le client */
+    setTimeout(function(){document.getElementById('m-client').focus();},100);
+  }
+}
 </script>
 </body>
 </html>
