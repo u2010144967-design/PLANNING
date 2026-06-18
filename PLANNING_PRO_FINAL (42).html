@@ -201,7 +201,7 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .grid{display:grid;background:#fff;border-radius:8px;border:2px solid #1e293b;overflow:hidden}
 
 /* EN-TÊTES CHAUFFEURS ECRAN */
-.gh{background:#fff;color:#111;border-bottom:2px solid #1e293b;border-right:1.5px solid #94a3b8;padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.gh{background:#0d1424;color:#f1f5f9;border-bottom:2px solid #3b82f6;border-right:1.5px solid #1e293b;padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .gh:last-child{border-right:none}
 .gh.th{background:#020617;color:#fff;font-size:10px;font-weight:600;border-right:2px solid #0f172a}
 .gh-name{font-size:15px;font-weight:900;color:#111;line-height:1}
@@ -216,11 +216,11 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .gtc.past{opacity:.45}
 
 /* CELLULES */
-.gcw{position:relative;border-right:1px solid #e2e8f0;border-bottom:1px solid #f1f5f9;min-height:36px;background:#fff;transition:background .15s}
+.gcw{position:relative;border-right:1px solid #1e293b;border-bottom:1px solid #1e293b;min-height:36px;background:#0f172a;transition:background .15s}
 .gcw:last-child{border-right:none}
-.gcw.past-col{background:#fafafa}
+.gcw.past-col{background:#0d1424}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
-.gcell:hover{background:#eff6ff}
+.gcell:hover{background:#1e3a5f}
 
 /* ════ PILLS COLORÉES PAR CATÉGORIE ════ */
 .pill{font-size:14px;font-weight:700;padding:6px 8px;margin-top:15px;border-radius:6px;line-height:1.35;word-break:break-word;position:relative;margin-bottom:2px;border-left:4px solid;transition:opacity .3s}
@@ -858,6 +858,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid #1d4ed8;border-color:#
     <label>Heure de fin</label><input type="time" id="m-end">
     <label>Priorité</label>
     <select id="m-prio"><option value="normal">Normale</option><option value="high">⚠ Urgente</option><option value="info">ℹ Info</option></select>
+    <div style="height:1px;background:#1e293b;margin:12px 0"></div>
+    <label style="color:#60a5fa;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">📍 Informations client</label>
+    <label>Adresse <span style="color:#334155;font-size:10px;text-transform:none">(pour Maps chauffeur)</span></label>
+    <input type="text" id="m-adresse" class="fi" placeholder="Ex: 10 Rue des Fleurs, 13001 Marseille">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><label>Téléphone client</label><input type="tel" id="m-contact" class="fi" placeholder="06 XX XX XX XX"></div>
+      <div><label>Convives</label><input type="number" id="m-convives" class="fi" placeholder="Nb personnes" min="0"></div>
+    </div>
+    <label>Note de livraison</label>
+    <textarea id="m-note" class="fi" rows="2" placeholder="Instructions, accès, étage..."></textarea>
+    <label>🚨 Allergènes <span style="color:#334155;font-size:10px;text-transform:none">(séparés par virgule)</span></label>
+    <input type="text" id="m-allergenes" class="fi" placeholder="Ex: gluten, lait, fruits à coques">
     <label style="display:flex;align-items:center;gap:7px;margin-top:10px;cursor:pointer;text-transform:none;letter-spacing:0;color:#64748b;font-size:12px">
       <input type="checkbox" id="m-bold" style="width:14px;height:14px"> Afficher en gras
     </label>
@@ -1136,12 +1148,18 @@ function rGrid(){
     if(r.traiteur)cpills+='<span class="gh-cnt-pill" style="background:#fff7ed;color:#9a3412;border:1px solid #f97316">'+r.traiteur+' 🍽</span>';
     if(r.collectivite)cpills+='<span class="gh-cnt-pill" style="background:#f0fdf4;color:#166534;border:1px solid #22c55e">'+r.collectivite+' 🏛</span>';
     if(r.task)cpills+='<span class="gh-cnt-pill" style="background:#faf5ff;color:#6b21a8;border:1px solid #a855f7">'+r.task+' 📋</span>';
+    /* Statut du chauffeur pour ce jour */
+    var stToday=null;
+    if(ST.statuts){Object.values(ST.statuts).forEach(function(s){if(s&&s.di===i&&s.date===d)stToday=s;});}
+    var stLabel='';var stColor='#22c55e';var stBg='rgba(34,197,94,.12)';
+    if(stToday){
+      if(stToday.type==='absent'){stLabel='⛔ Absent';stColor='#ef4444';stBg='rgba(239,68,68,.12)';}
+      else if(stToday.type==='maladie'){stLabel='🏥 Maladie';stColor='#ef4444';stBg='rgba(239,68,68,.12)';}
+      else if(stToday.type==='conge'){stLabel='🏖️ Congé';stColor='#f59e0b';stBg='rgba(245,158,11,.12)';}
+      else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
+    }
     html+='<div class="gh">'
-      +'<div class="gh-name">'+dr.name+'</div>'
-      +'<div class="gh-truck">'+dr.truck+'</div>'
-      +'<div class="gh-hrs">'+dr.start+' → '+(dr.end||'?')+'</div>'
-      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')
-      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button onclick="event.stopPropagation();changerStatutDrv('+i+')" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button onclick="event.stopPropagation();changerCamionDrv('+i+')" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div class="gh-hrs" style="color:#94a3b8">'+dr.start+' → '+(dr.end||'?')+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -1247,6 +1265,9 @@ function openAdd(date,di,hour){
   document.getElementById('m-task').value='';document.getElementById('m-client').value='';
   document.getElementById('m-cat').value='';document.getElementById('m-truck').value=dr.truck;
   document.getElementById('m-end').value=dr.end||'';document.getElementById('m-bold').checked=ST.gb;document.getElementById('m-prio').value='normal';
+  document.getElementById('m-adresse').value='';document.getElementById('m-contact').value='';
+  document.getElementById('m-convives').value='';document.getElementById('m-note').value='';
+  document.getElementById('m-allergenes').value='';
   document.querySelectorAll('.macl').forEach(function(l){l.classList.remove('on');});
   document.getElementById('m-add').classList.add('on');
   setTimeout(function(){document.getElementById('m-task').focus();},80);
@@ -1258,7 +1279,9 @@ function saveTask(){
   var cat=document.getElementById('m-cat').value;
   var k=gk(MC.date,MC.di,MC.hour);
   if(!ST.tasks[k])ST.tasks[k]=[];
-  ST.tasks[k].push({task:task,client:client,category:cat,truck:(document.getElementById('m-truck').value||'').trim(),end:document.getElementById('m-end').value,bold:document.getElementById('m-bold').checked,priority:document.getElementById('m-prio').value,ts:Date.now()});
+  var allergStr=(document.getElementById('m-allergenes').value||'').trim();
+  var allergArr=allergStr?allergStr.split(',').map(function(a){return a.trim();}).filter(Boolean):[];
+  ST.tasks[k].push({task:task,client:client,category:cat,truck:(document.getElementById('m-truck').value||'').trim(),end:document.getElementById('m-end').value,bold:document.getElementById('m-bold').checked,priority:document.getElementById('m-prio').value,adresse:(document.getElementById('m-adresse').value||'').trim(),contact:(document.getElementById('m-contact').value||'').trim(),convives:(document.getElementById('m-convives').value||'').trim(),note_liv:(document.getElementById('m-note').value||'').trim(),allergenes:allergArr,ts:Date.now()});
   if(client&&cat&&cat!=='truck'&&!(ST.library[cat]||[]).includes(client)){if(!ST.library[cat])ST.library[cat]=[];ST.library[cat].push(client);}
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
 }
@@ -21692,6 +21715,74 @@ window.addEventListener('load', function(){
     }
   }, 6400);
 });
+
+</script>
+
+<script>
+
+/* ══ GESTION STATUT CHAUFFEUR ══ */
+function changerStatutDrv(di){
+  var d=ST.cur;var dr=ST.drivers[di];
+  var stToday=null;
+  if(ST.statuts){Object.values(ST.statuts).forEach(function(s){if(s&&s.di===di&&s.date===d)stToday=s;});}
+  var existing=document.getElementById('m-statut-drv');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-statut-drv';modal.className='mbg on';
+  modal.innerHTML='<div class="mbox" style="max-width:340px">'    +'<h3 style="margin-bottom:4px">Statut de '+dr.name+'</h3>'    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">'+cap(fmtCourt(d))+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'    +'<button onclick="setStatutDrv('+di+',\'service\'" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">✅ En service</button>'    +'<button onclick="setStatutDrv('+di+',\'repos\'" style="background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.3);color:#94a3b8;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">😴 Repos</button>'    +'<button onclick="setStatutDrv('+di+',\'conge\'" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">🏖️ Congé</button>'    +'<button onclick="setStatutDrv('+di+',\'absent\'" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">⛔ Absent</button>'    +'<button onclick="setStatutDrv('+di+',\'maladie\'" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">🏥 Maladie</button>'    +'<button onclick="closeMod(\'m-statut-drv\')" style="background:var(--raised,#1e293b);border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">Annuler</button>'    +'</div></div>';
+  document.body.appendChild(modal);
+}
+
+function setStatutDrv(di,type){
+  var d=ST.cur;
+  if(!ST.statuts)ST.statuts={};
+  /* Supprimer l'ancien statut pour ce jour/chauffeur */
+  Object.keys(ST.statuts).forEach(function(k){
+    if(ST.statuts[k]&&ST.statuts[k].di===di&&ST.statuts[k].date===d)delete ST.statuts[k];
+  });
+  if(type!=='service'){
+    ST.statuts['st_'+di+'_'+d]={di:di,date:d,type:type,ts:Date.now()};
+  }
+  save();render();
+  closeMod('m-statut-drv');
+  showT(ST.drivers[di].name+' → '+(type==='service'?'En service':type),'#22c55e');
+  /* Sync auto Supabase */
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+}
+
+function changerCamionDrv(di){
+  var dr=ST.drivers[di];
+  var camions=['JUMPY','VIVARO 1','VIVARO 2','IVECO','VIVARO LOCATION','CAMION 5'];
+  var existing=document.getElementById('m-camion-drv');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-camion-drv';modal.className='mbg on';
+  var btns=camions.map(function(cam){
+    var sel=cam===dr.truck;
+    return '<button onclick="setCamionDrv('+di+',\''+cam+'\'" style="background:'+(sel?'rgba(249,115,22,.2)':'rgba(30,41,59,.5)')+';border:1px solid '+(sel?'#f97316':'#334155')+';color:'+(sel?'#f97316':'#94a3b8')+';border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">'+cam+'</button>';
+  }).join('');
+  modal.innerHTML='<div class="mbox" style="max-width:340px">'    +'<h3 style="margin-bottom:4px">Camion de '+dr.name+'</h3>'    +'<div style="font-size:11px;color:#64748b;margin-bottom:14px">Camion actuel : '+dr.truck+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+btns    +'<button onclick="closeMod(\'m-camion-drv\')" style="background:var(--raised,#1e293b);border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2">Annuler</button>'    +'</div></div>';
+  document.body.appendChild(modal);
+}
+
+function setCamionDrv(di,camion){
+  ST.drivers[di].truck=camion;
+  save();render();
+  closeMod('m-camion-drv');
+  showT(ST.drivers[di].name+' → '+camion,'#f97316');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+}
+
+/* ══ SYNC AUTO SUPABASE APRES CHAQUE ACTION ══ */
+var _origSaveTask=saveTask;
+saveTask=function(){
+  _origSaveTask.apply(this,arguments);
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
+};
+
+var _origDelT=delT;
+if(typeof delT==='function'){
+  delT=function(){
+    _origDelT.apply(this,arguments);
+    setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
+  };
+}
 
 </script>
 </body>
