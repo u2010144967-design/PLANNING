@@ -419,6 +419,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid #1d4ed8;border-color:#
 .ghour span{font-size:10px;font-weight:700;color:#64748b;font-family:monospace}
 
 
+
+/* Corriger l'icône horloge qui cache les chiffres des heures */
+input[type="time"]::-webkit-calendar-picker-indicator{
+  filter:invert(0.6);
+  margin-left:4px;
+  cursor:pointer;
+}
+input[type="time"]{
+  min-width:80px;
+}
 </style>
 </head>
 <body>
@@ -1164,7 +1174,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:68px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:68px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -6818,11 +6828,10 @@ function _injecterTampons(){
   var pg=document.getElementById('print-grid'); if(!pg) return;
   var headers=pg.querySelectorAll('.pgh');
   /* Nettoyer */
-  pg.querySelectorAll('.print-stamp-txt,.print-col-mot').forEach(function(el){el.remove();});
+  pg.querySelectorAll('.print-stamp-txt,.print-col-mot,.print-cond-txt').forEach(function(el){el.remove();});
   headers.forEach(function(h){h.style.borderTop='';});
-  /* Appliquer */
+  /* Appliquer statuts (permanents, sans filtre date) */
   Object.values(ST.statuts||{}).forEach(function(s){
-    if(s.date!==date) return;
     var di=s.di; var lbl=LBLS[s.type]; var col=COLS[s.type];
     if(!lbl||!headers[di]) return;
     /* En-tête : bordure + mot */
@@ -6843,6 +6852,17 @@ function _injecterTampons(){
       mot.style.cssText='text-align:center;font-size:14pt;font-weight:900;color:'+col+';letter-spacing:3px;text-transform:uppercase;padding:8px 0;opacity:.9';
       mot.textContent=lbl;
       mid.appendChild(mot);
+    }
+  });
+  /* Conducteur désigné — affiché sous le nom du chauffeur sur l'impression */
+  ST.drivers.forEach(function(dr,di){
+    var cond=getConducteurDesigne(dr.truck,date);
+    if(cond && headers[di]){
+      var sp2=document.createElement('span');
+      sp2.className='print-cond-txt';
+      sp2.style.cssText='display:block;font-size:7pt;font-weight:900;color:#b45309;letter-spacing:0.5px;margin-top:2px;background:#fef3c7;border-radius:3px;padding:1px 4px';
+      sp2.textContent='CONDUCTEUR : '+cond.driverName;
+      headers[di].appendChild(sp2);
     }
   });
 }
