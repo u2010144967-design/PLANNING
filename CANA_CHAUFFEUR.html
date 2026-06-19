@@ -6,33 +6,35 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cana">
-<meta name="theme-color" content="#0a0f1e">
-<title>La Table de Cana</title>
+<meta name="theme-color" content="#0B1220">
+<title>Cana Chauffeur</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0a0f1e;--card:#111827;--raised:#1a2234;
-  --orange:#f97316;--blue:#3b82f6;--green:#22c55e;
+  --bg:#0B1220;--card:#111827;--raised:#1A2332;
+  --orange:#f97316;--terracotta:#C2540A;--blue:#3b82f6;--green:#22c55e;
   --amber:#f59e0b;--red:#ef4444;--purple:#a855f7;--teal:#14b8a6;
-  --text:#f1f5f9;--muted:#64748b;--dim:#374151;
+  --text:#F8FAFC;--muted:#8B96A8;--dim:#475569;
   --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.13);
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
 html,body,#root{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
 .screen{height:100%;display:flex;flex-direction:column}
-button{cursor:pointer;font-family:inherit;border:none;outline:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none;-webkit-user-select:none;user-select:none}
 input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 ::-webkit-scrollbar{display:none}
 .mono{font-family:'SF Mono','Consolas',monospace}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px}
 
 /* LOGIN */
-.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;background:radial-gradient(ellipse 140% 60% at 50% 0%,#1a2234,var(--bg) 65%);overflow-y:auto}
-.logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 16px 40px rgba(249,115,22,.4)}
+.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;background:radial-gradient(ellipse 140% 60% at 50% 0%,#1A2332,var(--bg) 65%);overflow-y:auto}
+.logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#C2540A);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 16px 40px rgba(249,115,22,.35)}
 .ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:310px;margin-bottom:22px}
-.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;transition:border-color .2s,background .2s}
+.ch-btn{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;transition:border-color .2s,background .2s}
 .ch-btn:active{transform:scale(.96)}
 .ch-btn.sel{border-color:var(--orange);background:rgba(249,115,22,.08)}
 .av{border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;width:44px;height:44px;font-size:17px}
@@ -40,25 +42,41 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .dot-c{width:13px;height:13px;border-radius:50%;border:2px solid var(--dim);transition:all .2s}
 .dot-c.on{background:var(--orange);border-color:var(--orange);transform:scale(1.1)}
 .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:280px}
-.nk{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;font-size:21px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;aspect-ratio:1;transition:background .1s,transform .1s}
+.nk{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:16px;font-size:21px;font-weight:600;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;aspect-ratio:1}
 .nk:active{background:var(--raised);transform:scale(.91)}
 
-/* HEADER */
-.hdr{padding:calc(var(--sat) + 46px) 16px 10px;flex-shrink:0}
-.hdr-row{display:flex;align-items:center;justify-content:space-between}
-.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:11px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.icon-btn:active{background:var(--raised)}
+/* HEADER avec retour */
+.hdr{padding:calc(var(--sat) + 16px) 16px 12px;flex-shrink:0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.back-btn{width:40px;height:40px;border-radius:12px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text);flex-shrink:0}
+.back-btn:active{background:var(--raised);transform:scale(.93)}
+.hdr-title{font-size:17px;font-weight:800;flex:1}
 
-/* NAV */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:7px 0 calc(var(--sab) + 7px);backdrop-filter:blur(20px);z-index:50}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px;background:transparent;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
-.nb.on{color:var(--orange);text-shadow:0 0 12px rgba(249,115,22,.5)}
-.nb svg{width:22px;height:22px;stroke-width:1.8}
-.nbadge{position:absolute;top:2px;right:calc(50% - 17px);background:var(--red);border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
+/* ACCUEIL GRILLE */
+.home-top{padding:calc(var(--sat) + 24px) 18px 16px;flex-shrink:0}
+.home-greet{font-size:13px;color:var(--muted)}
+.home-name{font-size:24px;font-weight:900;margin-top:2px}
+.home-meta{font-size:12px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:8px}
+.icon-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+.icon-tile{aspect-ratio:1.15;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;border:1px solid var(--border2);transition:transform .15s}
+.icon-tile:active{transform:scale(.95)}
+.icon-tile-emoji{font-size:34px}
+.icon-tile-label{font-size:13px;font-weight:800;text-align:center}
+.icon-tile-sub{font-size:10px;opacity:.8;font-weight:600}
+.tile-badge{position:absolute;top:10px;right:10px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
 
-/* CONTENT */
-.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding-bottom:calc(60px + var(--sab))}
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px}
+/* STATUT TILE special */
+.status-tile{grid-column:span 2;border-radius:22px;padding:18px;display:flex;align-items:center;gap:16px;border:1px solid var(--border2)}
+
+/* SOS */
+.sos-fab{position:fixed;bottom:24px;right:16px;width:54px;height:54px;border-radius:50%;background:rgba(239,68,68,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(239,68,68,.45);z-index:60}
+.sos-fab:active{transform:scale(.92)}
+
+/* SCROLL LIST */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(24px + var(--sab))}
+
+/* NEXT BANNER */
+.next-banner{margin:0 16px 14px;background:linear-gradient(135deg,var(--raised),var(--card));border:1px solid var(--border2);border-radius:18px;padding:14px 16px;position:relative;overflow:hidden}
+.next-banner::before{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:radial-gradient(circle,rgba(249,115,22,.15),transparent 70%)}
 
 /* MISSION CARD */
 .mc{border-radius:20px;margin-bottom:14px;background:var(--card);border:1px solid var(--border);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18)}
@@ -67,7 +85,6 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .mc-sub{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px}
 .mc-truck{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
 .mc-client{padding:0 15px 9px;cursor:pointer}
-.mc-client:active{opacity:.8}
 .mc-name{font-size:17px;font-weight:800;line-height:1.2;margin-bottom:4px}
 .mc-addr{font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:flex-start;line-height:1.5}
 .allerg{margin:0 15px 9px;padding:7px 11px;border-radius:9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
@@ -83,6 +100,7 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .ab-maps{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.28);color:var(--blue)}
 .ab-call{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28);color:var(--green)}
 .ab-go{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:var(--amber)}
+.ab-arrived{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.28);color:var(--purple)}
 .ab-done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28);color:var(--green)}
 .ab-photo{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.28);color:var(--purple)}
 .ab-sign{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.28);color:var(--teal)}
@@ -94,12 +112,16 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .obox h3{font-size:15px;font-weight:800;margin-bottom:3px}
 .obox .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
 .oc{display:flex;gap:9px;margin-top:12px}
-.obtn{flex:1;border-radius:13px;padding:13px;font-size:13px;font-weight:700;border:1px solid var(--border)}
+.obtn{flex:1;border-radius:13px;padding:14px;font-size:13px;font-weight:700;border:1px solid var(--border)}
 .obtn.cancel{background:var(--raised);color:var(--muted)}
 .obtn.confirm{background:var(--green);color:#fff;border-color:var(--green)}
 
-/* SIGNATURE */
-.sig-cv{background:#fff;border-radius:10px;width:100%;height:170px;display:block;touch-action:none}
+/* SIGNATURE — zone isolée pour éviter conflits tactiles */
+.sig-wrap{position:relative;width:100%;height:180px;border-radius:12px;overflow:hidden;border:2px solid var(--border2);touch-action:none}
+.sig-cv{display:block;width:100%;height:100%;background:#fff;touch-action:none}
+.sig-actions{display:flex;gap:10px;margin-top:14px;position:relative;z-index:5}
+.sig-btn{flex:1;border-radius:13px;padding:15px;font-size:14px;font-weight:800;border:none;-webkit-user-select:none;user-select:none}
+.sig-btn:active{transform:scale(.96)}
 
 /* MATERIEL */
 .mat-list{display:flex;flex-direction:column;gap:7px;margin:12px 0}
@@ -109,7 +131,7 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .mat-label{flex:1;font-size:12px;font-weight:600;color:var(--muted)}
 .mat-row.on .mat-label{color:var(--text)}
 .ctr{display:flex;align-items:center;gap:8px}
-.ctr-btn{background:var(--card);border:1px solid var(--border2);border-radius:50%;width:29px;height:29px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text);flex-shrink:0}
+.ctr-btn{background:var(--card);border:1px solid var(--border2);border-radius:50%;width:29px;height:29px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text)}
 .ctr-btn:active{background:var(--orange);color:#fff}
 .ctr-n{font-size:17px;font-weight:800;color:var(--orange);min-width:22px;text-align:center}
 
@@ -126,16 +148,24 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .vring{width:120px;height:120px;border-radius:50%;border:3px solid var(--red);display:flex;align-items:center;justify-content:center;animation:vr 1.2s ease-in-out infinite;margin-bottom:22px}
 @keyframes vr{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
 
-/* STATUS BAR */
-.sbar{margin:0 14px 12px;border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2);background:linear-gradient(135deg,var(--raised),var(--card));position:relative;overflow:hidden}
-.sbar::before{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:radial-gradient(circle,rgba(249,115,22,.12),transparent 70%);pointer-events:none}
-.sb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sb-info{flex:1}
+/* TOAST */
+.toast{position:fixed;top:calc(var(--sat) + 14px);left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:28px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tIn .22s ease;max-width:88vw;text-align:center;background:#1e293b}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* PROGRESS */
-.prog{margin:0 14px 10px}
-.prog-bar{height:5px;background:var(--raised);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+/* LOADER */
+.spin{border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;color:var(--muted);font-size:13px}
+
+/* GEO */
+.geo{width:6px;height:6px;border-radius:50%;background:var(--green);animation:gp 2s infinite}
+@keyframes gp{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}70%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+/* FICHE CLIENT rows */
+.crow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.crow-ico{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.crow-lbl{font-size:10px;color:var(--muted);margin-bottom:2px}
+.crow-val{font-size:14px;font-weight:500}
 
 /* CALENDRIER */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
@@ -168,27 +198,9 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .msg-send{background:var(--orange);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
 .msg-send:active{transform:scale(.93)}
 
-/* RECAP */
-.recap{position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:300;display:flex;align-items:center;justify-content:center;padding:22px}
-
-/* TOAST */
-.toast{position:fixed;top:calc(var(--sat) + 14px);left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:28px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tIn .22s ease;max-width:88vw;text-align:center;background:#1e293b}
-@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
-/* LOADER */
-.spin{border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.loader{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;color:var(--muted);font-size:13px}
-
-/* GEO */
-.geo{width:6px;height:6px;border-radius:50%;background:var(--green);animation:gp 2s infinite}
-@keyframes gp{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}70%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
-
-/* FICHE CLIENT */
-.crow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start}
-.crow-ico{font-size:18px;flex-shrink:0;width:26px;text-align:center}
-.crow-lbl{font-size:10px;color:var(--muted);margin-bottom:2px}
-.crow-val{font-size:14px;font-weight:500}
+/* VEHICULE */
+.veh-issue-btn{background:var(--raised);border:1.5px solid var(--border2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px}
+.veh-issue-btn:active{background:var(--card);transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -197,11 +209,10 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 <script type="text/babel">
 const {useState,useEffect,useRef}=React;
 
-/* ══ CONSTANTES — IDENTIQUES AU LOGICIEL ══ */
+/* ══ CONFIG ══ */
 const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
 const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
 
-/* Même ordre et noms que le logiciel */
 const DRIVERS=[
   {id:0,name:'OTMANE',display:'Otmane',ini:'O',color:'#3b82f6',code:'1111',truck:'VIVARO 1',start:'06:00',end:'14:00'},
   {id:1,name:'MOMO',display:'Momo',ini:'M',color:'#22c55e',code:'2222',truck:'JUMPY',start:'06:00',end:'14:00'},
@@ -210,7 +221,6 @@ const DRIVERS=[
   {id:4,name:'CHAUFFEUR 5',display:"Maître d'H.",ini:'5',color:'#f59e0b',code:'5555',truck:'CAMION 5',start:'08:00',end:'22:00'},
 ];
 
-/* Créneaux — identiques au logiciel */
 const SL=[];
 for(let h=6;h<18;h++){
   const hh=String(h).padStart(2,'0');
@@ -239,34 +249,23 @@ async function db(path,opts={}){
       headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       ...opts
     });
-    if(!r.ok){console.log('Supabase err:',r.status,path);return null;}
+    if(!r.ok)return null;
     return r.json();
-  }catch(e){console.log('Supabase fetch err:',e);return null;}
+  }catch(e){return null;}
 }
 
 async function loadPlanning(){
   const today=new Date().toISOString().slice(0,10);
-  console.log('Chargement planning pour:',today);
-  /* Chercher par date exacte d'abord */
   let rows=await db('planning?date=eq.'+today+'&select=donnees,date&limit=1');
-  if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.tasks){
-    console.log('Planning trouvé pour aujourd\'hui');
-    return rows[0].donnees;
-  }
-  /* Fallback : dernière sauvegarde avec des tâches */
+  if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.tasks)return rows[0].donnees;
   rows=await db('planning?select=donnees,date&order=date.desc&limit=20');
   if(rows){
     for(const r of rows){
       if(r.date&&r.date.match(/^\d{4}-\d{2}-\d{2}$/)&&r.donnees&&r.donnees.tasks){
-        const keys=Object.keys(r.donnees.tasks);
-        if(keys.length>0){
-          console.log('Fallback planning trouvé:',r.date,'avec',keys.length,'entrées');
-          return r.donnees;
-        }
+        if(Object.keys(r.donnees.tasks).length>0)return r.donnees;
       }
     }
   }
-  console.log('Aucun planning trouvé');
   return null;
 }
 
@@ -275,20 +274,13 @@ async function saveEvent(ev){
     const rows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
     let list=[];
     if(rows&&rows.length&&rows[0].donnees){
-      try{
-        const d=rows[0].donnees;
-        list=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
-        if(!Array.isArray(list))list=[];
-      }catch(e){list=[];}
+      try{const d=rows[0].donnees;list=JSON.parse(typeof d==='string'?d:JSON.stringify(d));if(!Array.isArray(list))list=[];}catch(e){list=[];}
     }
     list.unshift({...ev,ts:new Date().toISOString()});
     list=list.slice(0,300);
     const s=JSON.stringify(list);
-    if(rows&&rows.length){
-      await db('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:s})});
-    }else{
-      await db('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:s})});
-    }
+    if(rows&&rows.length)await db('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:s})});
+    else await db('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:s})});
   }catch(e){}
 }
 
@@ -301,8 +293,8 @@ async function saveMsg(msg){
     }
     list.push(msg);list=list.slice(-500);
     const s=JSON.stringify(list);
-    if(rows&&rows.length){await db('planning?date=eq.MESSAGES',{method:'PATCH',body:JSON.stringify({donnees:s})});}
-    else{await db('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:s})});}
+    if(rows&&rows.length)await db('planning?date=eq.MESSAGES',{method:'PATCH',body:JSON.stringify({donnees:s})});
+    else await db('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:s})});
   }catch(e){}
 }
 
@@ -321,31 +313,26 @@ function getMissions(planning,di,date){
   SL.forEach(h=>{
     const k=date+'|'+di+'|'+h;
     const tasks=planning.tasks[k];
-    if(tasks&&tasks.length){
-      tasks.forEach((t,ti)=>ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'}));
-    }
+    if(tasks&&tasks.length)tasks.forEach((t,ti)=>ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'}));
   });
   return ms;
 }
-
 function getStatut(planning,di,date){
   if(!planning||!planning.statuts)return null;
   return Object.values(planning.statuts).find(s=>s&&s.di===di&&s.date===date)||null;
 }
-
 function calcH(planning,di,mo,yr){
   let j=0,ab=0,min=0;
   const days=new Date(yr,mo+1,0).getDate();
   for(let d=1;d<=days;d++){
     if(new Date(yr,mo,d)>new Date())break;
-    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const st=getStatut(planning,di,ds);
     if(st&&['absent','maladie','conge','repos'].includes(st.type)){ab++;continue;}
     if(getMissions(planning,di,ds).length>0){j++;min+=7*60-45;}
   }
   return{j,ab,h:Math.floor(min/60),m:min%60,hb:j*7};
 }
-
 function speak(t){
   if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
@@ -378,8 +365,8 @@ function Login({onLogin}){
       <div className="logo">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
-      <h2 style={{fontSize:21,fontWeight:800,marginBottom:3,textAlign:'center'}}>La Table de Cana</h2>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:22,textAlign:'center'}}>Application chauffeur</p>
+      <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
       <div className="ch-grid">
         {DRIVERS.map(ch=>(
           <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
@@ -402,114 +389,305 @@ function Login({onLogin}){
               </button>
             )}
           </div>
-          <p style={{fontSize:10,color:'var(--dim)',marginTop:12}}>Code provisoire : 0000</p>
+          <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>Code provisoire : 0000</p>
         </>
       )}
     </div>
   );
 }
 
-/* ══ FICHE CLIENT ══ */
-function ClientSheet({m,ch,onClose}){
-  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
-  const rows=[
-    {ico:'🕐',lbl:'Heure',val:m.heure,big:true},
-    {ico:'🏢',lbl:'Client',val:m.client||m.task},
-    {ico:'📍',lbl:'Adresse',val:m.adresse,link:maps},
-    {ico:'📞',lbl:'Téléphone',val:m.contact,tel:true},
-    {ico:'👥',lbl:'Convives',val:m.convives?m.convives+' personnes':null},
-    {ico:'🚛',lbl:'Camion',val:m.truck||ch.truck},
-    {ico:'📝',lbl:'Note',val:m.note_liv},
-  ].filter(r=>r.val);
+/* ══ HEADER avec retour ══ */
+function Header({title, onBack}){
   return(
-    <div className="overlay" onClick={onClose}>
-      <div className="obox" onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
-          <div>
-            <div style={{fontSize:10,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.06}}>Fiche client</div>
-            <div style={{fontSize:17,fontWeight:800,color:ch.color,marginTop:2}}>{m.client||m.task}</div>
-          </div>
-          <button onClick={onClose} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:50,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)',fontSize:17}}>✕</button>
+    <div className="hdr">
+      <button className="back-btn" onClick={onBack}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div className="hdr-title">{title}</div>
+    </div>
+  );
+}
+
+/* ══ ECRAN ACCUEIL — GRILLE D'ICONES ══ */
+function HomeScreen({ch,planning,onNavigate,unreadMsg}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const st=planning?getStatut(planning,ch.id,today):null;
+  const done=ms.filter(m=>m._statut==='done').length;
+  const enroute=ms.filter(m=>m._statut==='enroute').length;
+  const restant=ms.length-done;
+  const now=new Date();
+
+  let sbLbl='En service',sbCol='var(--green)';
+  if(st){
+    if(['absent','maladie'].includes(st.type)){sbLbl=st.type==='maladie'?'Arrêt maladie':'Absent';sbCol='var(--red)';}
+    else if(st.type==='conge'){sbLbl='Congé';sbCol='var(--amber)';}
+    else if(st.type==='repos'){sbLbl='Repos';sbCol='var(--muted)';}
+  }
+
+  /* Prochaine mission non terminée */
+  const next = ms.find(m=>m._statut!=='done');
+
+  return(
+    <div className="scroll" style={{padding:'0 0 calc(24px + var(--sab))'}}>
+      <div className="home-top">
+        <div className="home-greet">Bonjour 👋</div>
+        <div className="home-name" style={{color:ch.color}}>{ch.display}</div>
+        <div className="home-meta">
+          <span>🚛 {ch.truck}</span><span>·</span><span>{ch.start}–{ch.end}</span>
+          <div className="geo"/>
         </div>
-        {rows.map((row,i)=>(
-          <div key={i} className="crow">
-            <div className="crow-ico">{row.ico}</div>
-            <div style={{flex:1}}>
-              <div className="crow-lbl">{row.lbl}</div>
-              {row.link?<a href={row.link} target="_blank" style={{fontSize:14,color:'var(--blue)',fontWeight:600,textDecoration:'none'}}>{row.val} →</a>
-              :row.tel?<a href={`tel:${row.val}`} style={{fontSize:14,color:'var(--green)',fontWeight:700,textDecoration:'none'}}>{row.val}</a>
-              :<div className="crow-val" style={{color:row.big?ch.color:'var(--text)',fontWeight:row.big?800:500,fontSize:row.big?19:14}}>{row.val}</div>}
+      </div>
+
+      {next && (
+        <div className="next-banner">
+          <div style={{fontSize:10,color:'var(--orange)',fontWeight:800,textTransform:'uppercase',letterSpacing:.06,marginBottom:6,position:'relative'}}>
+            <i className="fa-solid"/>📍 Prochaine étape
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:12,position:'relative'}}>
+            <div className="mono" style={{fontSize:24,fontWeight:900,color:ch.color}}>{next.heure}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{next.client||next.task}</div>
+              <div style={{fontSize:11,color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{next.adresse}</div>
             </div>
           </div>
-        ))}
-        {m.allergenes?.length>0&&(
-          <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.2)',borderRadius:9,padding:'9px 11px',margin:'10px 0',fontSize:12,color:'var(--red)',fontWeight:700}}>
-            🚨 ALLERGÈNES : {m.allergenes.join(', ')}
-          </div>
-        )}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:14}}>
-          <button onClick={()=>speak(`${m.client}. ${m.adresse?'Adresse : '+m.adresse+'.':''} ${m.contact?'Tel : '+m.contact+'.':''} ${m.convives?m.convives+' convives.':''} ${m.note_liv||''} ${m.allergenes?.length?'Allergènes : '+m.allergenes.join(', ')+'.':''}`)}
-            style={{background:'rgba(168,85,247,.1)',border:'1px solid rgba(168,85,247,.28)',color:'var(--purple)',borderRadius:11,padding:11,fontSize:12,fontWeight:700,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-            <span style={{fontSize:20}}>🔊</span>Lire à voix haute
-          </button>
-          {m.contact&&(
-            <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
-              <button style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.28)',color:'var(--green)',borderRadius:11,padding:11,fontSize:12,fontWeight:700,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                <span style={{fontSize:20}}>📞</span>Appeler
-              </button>
-            </a>
-          )}
         </div>
-        <button onClick={onClose} style={{width:'100%',marginTop:9,padding:10,background:'var(--raised)',color:'var(--muted)',borderRadius:11,fontSize:13,fontWeight:600,border:'1px solid var(--border)'}}>Fermer</button>
+      )}
+
+      <div className="icon-grid">
+        <div className="status-tile" style={{background:'var(--card)'}} onClick={()=>onNavigate('today')}>
+          <div style={{width:46,height:46,borderRadius:14,background:sbCol+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:800,color:sbCol}}>{sbLbl}</div>
+            <div style={{display:'flex',gap:10,marginTop:4,fontSize:11,color:'var(--muted)'}}>
+              <span>Restant <b style={{color:'var(--text)'}}>{restant}</b></span>
+              <span>Livré <b style={{color:'var(--green)'}}>{done}</b></span>
+              <span>En route <b style={{color:'var(--amber)'}}>{enroute}</b></span>
+            </div>
+          </div>
+        </div>
+
+        <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('today')}>
+          <div className="icon-tile-emoji">📅</div>
+          <div className="icon-tile-label" style={{color:'#60a5fa'}}>Planning</div>
+          <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Aujourd'hui</div>
+          {restant>0 && <div className="tile-badge">{restant}</div>}
+        </button>
+
+        <button className="icon-tile" style={{background:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.25)'}} onClick={()=>onNavigate('calendar')}>
+          <div className="icon-tile-emoji">🗓️</div>
+          <div className="icon-tile-label" style={{color:'#c084fc'}}>Planning</div>
+          <div className="icon-tile-sub" style={{color:'#c084fc'}}>Du mois</div>
+        </button>
+
+        <button className="icon-tile" style={{background:'rgba(249,115,22,.1)',borderColor:'rgba(249,115,22,.25)'}} onClick={()=>onNavigate('clients')}>
+          <div className="icon-tile-emoji">👥</div>
+          <div className="icon-tile-label" style={{color:'#fb923c'}}>Mes clients</div>
+          <div className="icon-tile-sub" style={{color:'#fb923c'}}>Aujourd'hui</div>
+        </button>
+
+        <button className="icon-tile" style={{background:'rgba(20,184,166,.1)',borderColor:'rgba(20,184,166,.25)',position:'relative'}} onClick={()=>onNavigate('messages')}>
+          <div className="icon-tile-emoji">💬</div>
+          <div className="icon-tile-label" style={{color:'#2dd4bf'}}>Messages</div>
+          <div className="icon-tile-sub" style={{color:'#2dd4bf'}}>Responsable</div>
+          {unreadMsg>0 && <div className="tile-badge">{unreadMsg}</div>}
+        </button>
+
+        <button className="icon-tile" style={{background:'rgba(245,158,11,.1)',borderColor:'rgba(245,158,11,.25)'}} onClick={()=>onNavigate('vehicle')}>
+          <div className="icon-tile-emoji">🚛</div>
+          <div className="icon-tile-label" style={{color:'#fbbf24'}}>Mon véhicule</div>
+          <div className="icon-tile-sub" style={{color:'#fbbf24'}}>{ch.truck}</div>
+        </button>
+
+        <button className="icon-tile" style={{background:'rgba(239,68,68,.1)',borderColor:'rgba(239,68,68,.25)'}} onClick={()=>onNavigate('help')}>
+          <div className="icon-tile-emoji">🆘</div>
+          <div className="icon-tile-label" style={{color:'#f87171'}}>Aide rapide</div>
+          <div className="icon-tile-sub" style={{color:'#f87171'}}>SOS / Urgence</div>
+        </button>
       </div>
     </div>
   );
 }
 
-/* ══ SIGNATURE ══ */
+/* ══ ECRAN PLANNING DU JOUR (liste qui défile) ══ */
+function TodayList({ch,planning,onSelectMission,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  return(
+    <>
+      <Header title="Planning — Aujourd'hui" onBack={onBack}/>
+      <div className="scroll">
+        {!planning && <div className="loader"><div className="spin" style={{width:32,height:32}}/><span>Chargement...</span></div>}
+        {planning && ms.length===0 && (
+          <div style={{textAlign:'center',padding:'60px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:46,marginBottom:11}}>📋</div>
+            <div style={{fontSize:15,fontWeight:700}}>Aucune mission aujourd'hui</div>
+          </div>
+        )}
+        {ms.map((m,i)=>{
+          const stColors={pending:'var(--dim)',enroute:'var(--amber)',done:'var(--green)',retard:'var(--red)'};
+          return(
+            <button key={i} onClick={()=>onSelectMission(m)} style={{width:'100%',textAlign:'left',background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${stColors[m._statut]}`,borderRadius:16,padding:14,marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
+              <div className="mono" style={{fontSize:18,fontWeight:800,color:ch.color,flexShrink:0,width:54}}>{m.heure}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.client||m.task}</div>
+                <div style={{fontSize:11,color:'var(--muted)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.adresse||'—'}</div>
+              </div>
+              <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:13,flexShrink:0}}/>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/* ══ FICHE MISSION DETAIL — toutes les actions ══ */
+function MissionDetail({m,ch,onBack,onAction}){
+  const stConf={
+    pending:{col:'var(--blue)',lbl:'En attente'},
+    enroute:{col:'var(--amber)',lbl:'🚗 En route'},
+    done:{col:'var(--green)',lbl:'✓ Livré'},
+    retard:{col:'var(--red)',lbl:'⚠ Retard'},
+  }[m._statut]||{col:'var(--blue)',lbl:'En attente'};
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
+
+  return(
+    <>
+      <Header title={m.client||m.task||'Mission'} onBack={onBack}/>
+      <div className="scroll">
+        <div className="mc" style={{margin:0}}>
+          <div className="mc-hd">
+            <div>
+              <div className="mc-time mono" style={{color:ch.color}}>{m.heure}</div>
+              <div className="mc-sub"><div style={{width:6,height:6,borderRadius:'50%',background:stConf.col}}/>{stConf.lbl}</div>
+            </div>
+            <div className="mc-truck" style={{color:ch.color,background:ch.color+'18'}}>{m.truck||ch.truck}</div>
+          </div>
+          <div className="mc-client" style={{cursor:'default'}}>
+            <div className="mc-name">{m.client||m.task}</div>
+            {m.adresse&&<div className="mc-addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>{m.adresse}</div>}
+          </div>
+          {m.allergenes?.length>0&&<div className="allerg">🚨 ALLERGÈNES : {m.allergenes.join(', ')}</div>}
+          <div className="div"/>
+          <div className="meta">
+            {m.convives&&<div className="mt"><b>{m.convives}</b> conv.</div>}
+            {m.contact&&<div className="mt"><b>{m.contact}</b></div>}
+            {m.note_liv&&<div className="mt fw"><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
+          </div>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+          <a href={maps} target="_blank" style={{textDecoration:'none'}}>
+            <button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button>
+          </a>
+          {m.contact?(
+            <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
+              <button className="ab ab-call" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler</button>
+            </a>
+          ):<div/>}
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:m._statut==='done'?'1fr 1fr':'1fr 1fr',gap:8,marginBottom:8}}>
+          {m._statut==='pending'&&<button className="ab ab-go" onClick={()=>onAction(m,'enroute')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En route</button>}
+          {m._statut==='enroute'&&<button className="ab ab-arrived" onClick={()=>onAction(m,'arrived')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>J'y suis</button>}
+          {m._statut!=='done'&&<button className="ab ab-done" onClick={()=>onAction(m,'done')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>Livré !</button>}
+          <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo IA</button>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature</button>}
+          <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══ SIGNATURE — corrigée, zone tactile isolée ══ */
 function SigModal({m,ch,onClose,onDone}){
   const ref=useRef();const ctx=useRef(null);const drawing=useRef(false);const last=useRef({x:0,y:0});
+  const [hasDrawn,setHasDrawn]=useState(false);
+
   useEffect(()=>{
     const c=ref.current;if(!c)return;
-    c.width=320;c.height=170;
+    const rect=c.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    c.width=rect.width*dpr;c.height=rect.height*dpr;
     const x=c.getContext('2d');ctx.current=x;
-    x.fillStyle='#fff';x.fillRect(0,0,320,170);
-    x.strokeStyle='#111';x.lineWidth=2.8;x.lineCap='round';x.lineJoin='round';
+    x.scale(dpr,dpr);
+    x.fillStyle='#fff';x.fillRect(0,0,rect.width,rect.height);
+    x.strokeStyle='#111';x.lineWidth=2.6;x.lineCap='round';x.lineJoin='round';
   },[]);
-  const pos=e=>{
+
+  const getPos=(clientX,clientY)=>{
     const c=ref.current;const r=c.getBoundingClientRect();
-    const sx=c.width/r.width;const sy=c.height/r.height;
-    const s=e.touches?e.touches[0]:e;
-    return{x:(s.clientX-r.left)*sx,y:(s.clientY-r.top)*sy};
+    return{x:clientX-r.left,y:clientY-r.top};
   };
-  const start=e=>{e.preventDefault();drawing.current=true;last.current=pos(e);};
-  const move=e=>{
-    if(!drawing.current||!ctx.current)return;e.preventDefault();
-    const p=pos(e);
-    ctx.current.beginPath();ctx.current.moveTo(last.current.x,last.current.y);
-    ctx.current.lineTo(p.x,p.y);ctx.current.stroke();last.current=p;
+
+  const handleStart=(clientX,clientY)=>{
+    drawing.current=true;
+    last.current=getPos(clientX,clientY);
+    setHasDrawn(true);
   };
-  const end=e=>{e.preventDefault();drawing.current=false;};
-  const clear=()=>{if(!ctx.current)return;ctx.current.fillStyle='#fff';ctx.current.fillRect(0,0,320,170);};
-  const save=async()=>{
+  const handleMove=(clientX,clientY)=>{
+    if(!drawing.current||!ctx.current)return;
+    const p=getPos(clientX,clientY);
+    ctx.current.beginPath();
+    ctx.current.moveTo(last.current.x,last.current.y);
+    ctx.current.lineTo(p.x,p.y);
+    ctx.current.stroke();
+    last.current=p;
+  };
+  const handleEnd=()=>{drawing.current=false;};
+
+  const onMouseDown=e=>{e.preventDefault();handleStart(e.clientX,e.clientY);};
+  const onMouseMove=e=>{e.preventDefault();handleMove(e.clientX,e.clientY);};
+  const onTouchStart=e=>{e.preventDefault();const t=e.touches[0];handleStart(t.clientX,t.clientY);};
+  const onTouchMove=e=>{e.preventDefault();const t=e.touches[0];handleMove(t.clientX,t.clientY);};
+
+  const clear=()=>{
+    if(!ctx.current||!ref.current)return;
+    const rect=ref.current.getBoundingClientRect();
+    ctx.current.fillStyle='#fff';
+    ctx.current.fillRect(0,0,rect.width,rect.height);
+    setHasDrawn(false);
+  };
+
+  const handleValidate=async()=>{
+    if(!ref.current)return;
     const dataUrl=ref.current.toDataURL('image/png');
     await saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),dataUrl});
     onDone();
   };
+
   return(
     <div className="overlay" onClick={onClose}>
       <div className="obox" onClick={e=>e.stopPropagation()}>
         <h3>✍️ Signature client</h3>
         <div className="sub">{m.client||m.task} — {m.heure}</div>
-        <canvas ref={ref} className="sig-cv" style={{border:'2px solid var(--border2)'}}
-          onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
-          onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
-        <p style={{fontSize:11,color:'var(--muted)',textAlign:'center',margin:'8px 0 12px'}}>Signez dans le cadre blanc</p>
-        <div className="oc">
-          <button className="obtn cancel" onClick={clear}>🗑️ Effacer</button>
-          <button className="obtn confirm" onClick={save}>✅ Valider</button>
+
+        <div className="sig-wrap">
+          <canvas ref={ref} className="sig-cv"
+            onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={handleEnd} onMouseLeave={handleEnd}
+            onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={handleEnd}/>
         </div>
-        <button onClick={onClose} style={{width:'100%',marginTop:8,padding:9,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
+        <p style={{fontSize:11,color:'var(--muted)',textAlign:'center',margin:'8px 0 0'}}>Signez dans le cadre blanc</p>
+
+        <div className="sig-actions">
+          <button type="button" className="sig-btn" style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border2)'}}
+            onPointerUp={clear}>
+            🗑️ Effacer
+          </button>
+          <button type="button" className="sig-btn" style={{background:hasDrawn?'var(--green)':'var(--dim)',color:'#fff'}}
+            disabled={!hasDrawn}
+            onPointerUp={handleValidate}>
+            ✅ Valider
+          </button>
+        </div>
+        <button onClick={onClose} style={{width:'100%',marginTop:10,padding:10,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
       </div>
     </div>
   );
@@ -526,11 +704,12 @@ function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
   const upd=(id,d)=>setCur(o=>({...o,[id]:Math.max(0,(o[id]||0)+d)}));
   const totL=Object.values(laisse).reduce((a,b)=>a+(b||0),0);
   const totR=Object.values(recupere).reduce((a,b)=>a+(b||0),0);
-  useEffect(()=>speak(aiPre&&Object.values(aiPre).some(v=>v>0)?`IA a pré-rempli le matériel pour ${m.client||''}.`:`Matériel laissé chez ${m.client||''} ?`),[]);
+
   const confirm=async()=>{
     await saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),laisse,recupere,note});
     onConfirm({laisse,recupere,note});
   };
+
   return(
     <div className="overlay" onClick={onClose}>
       <div className="obox" onClick={e=>e.stopPropagation()}>
@@ -545,7 +724,7 @@ function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,background:'var(--raised)',borderRadius:10,padding:3,marginBottom:11}}>
           {[{id:'laisse',lbl:'Laissé 📤',cnt:totL},{id:'recupere',lbl:'Récupéré 📥',cnt:totR}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{background:tab===t.id?'var(--card)':'transparent',border:tab===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:8,padding:'8px 5px',fontSize:12,fontWeight:700,color:tab===t.id?'var(--orange)':'var(--muted)',transition:'all .18s'}}>
+              style={{background:tab===t.id?'var(--card)':'transparent',border:tab===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:8,padding:'8px 5px',fontSize:12,fontWeight:700,color:tab===t.id?'var(--orange)':'var(--muted)'}}>
               {t.lbl}{t.cnt>0&&<span style={{marginLeft:5,background:'var(--orange)',color:'#fff',borderRadius:20,padding:'1px 6px',fontSize:10,fontWeight:800}}>{t.cnt}</span>}
             </button>
           ))}
@@ -566,19 +745,12 @@ function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
             );
           })}
         </div>
-        {(totL>0||totR>0)&&(
-          <div style={{background:'rgba(249,115,22,.07)',border:'1px solid rgba(249,115,22,.2)',borderRadius:9,padding:'8px 11px',marginBottom:9,fontSize:12}}>
-            {totL>0&&<div style={{color:'var(--amber)',marginBottom:2}}>📤 {Object.entries(laisse).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MAT.find(x=>x.id===k)?.label||k}`).join(' · ')}</div>}
-            {totR>0&&<div style={{color:'var(--green)'}}>📥 {Object.entries(recupere).filter(([,v])=>v>0).map(([k,v])=>`${v} ${MAT.find(x=>x.id===k)?.label||k}`).join(' · ')}</div>}
-          </div>
-        )}
         <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note complémentaire..."
           style={{width:'100%',background:'var(--raised)',border:'1px solid var(--border2)',borderRadius:9,padding:'8px 11px',fontSize:13,color:'var(--text)',resize:'none',height:48,marginBottom:11}}/>
         <div className="oc">
           <button className="obtn cancel" onClick={onClose}>Annuler</button>
           <button className="obtn confirm" onClick={confirm}>✅ Confirmer livraison</button>
         </div>
-        <p style={{fontSize:10,color:'var(--dim)',textAlign:'center',marginTop:7}}>Obligatoire avant de valider</p>
       </div>
     </div>
   );
@@ -595,7 +767,7 @@ function VoiceModal({m,ch,onClose,onCmd}){
     if(tl.includes('terminé')||tl.includes('livré')){speak('Mission terminée.');onCmd('done');return'✅ Mission terminée';}
     if(tl.includes('en route')||tl.includes('je pars')){speak('Bon trajet !');onCmd('enroute');return'🚗 En route';}
     if(tl.includes('absent')||tl.includes('personne')){speak('Client absent.');onCmd('absent');return'⚠️ Client absent';}
-    if(tl.includes('retard')){const n=tl.match(/(\d+)/);speak('Retard noté.');onCmd('retard',n?n[1]:'');return`⏰ Retard${n?' '+n[1]+' min':''}`;}
+    if(tl.includes('arrivé')||tl.includes('j arrive')){speak('Arrivée notée.');onCmd('arrived');return'📍 Arrivée notée';}
     const bacs=tl.match(/(\d+)\s*(bac|caisse|chariot|plateau|container|nappe)/);
     if(bacs){speak(`${bacs[1]} ${bacs[2]} notés.`);onCmd('materiel',bacs[1]+' '+bacs[2]);return`📦 ${bacs[1]} ${bacs[2]}`;}
     if(tl.includes('photo')){speak('Photo.');onCmd('photo');return'📷 Photo';}
@@ -634,210 +806,44 @@ function VoiceModal({m,ch,onClose,onCmd}){
         <button onClick={onClose} style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border2)',borderRadius:50,padding:'11px 26px',fontSize:14,fontWeight:700}}>Fermer</button>
       </div>
       <p style={{fontSize:11,color:'var(--dim)',marginTop:14,textAlign:'center',lineHeight:1.7,maxWidth:260}}>
-        "Mission terminée" · "En route" · "Client absent"<br/>"Retard 10 min" · "5 bacs" · "Photo" · "Appeler"
+        "Mission terminée" · "En route" · "J'arrive" · "Client absent"<br/>"5 bacs" · "Photo" · "Appeler"
       </p>
     </div>
   );
 }
 
-/* ══ MODE CONDUITE ══ */
-function DriveMode({m,ch,onClose,onDone}){
-  const [t,setT]=useState(0);
-  useEffect(()=>{const iv=setInterval(()=>setT(x=>x+1),1000);return()=>clearInterval(iv);},[]);
-  useEffect(()=>speak(`En route pour ${m.client}. ${m.adresse||''}`),[]);
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
-  return(
-    <div className="drive">
-      <div style={{position:'absolute',top:'calc(var(--sat) + 20px)',right:18,display:'flex',alignItems:'center',gap:5}}>
-        <div className="geo"/><span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>GPS actif</span>
-      </div>
-      <div style={{fontSize:12,color:'var(--muted)',marginBottom:6,textTransform:'uppercase',letterSpacing:.08}}>En route vers</div>
-      <div className="drive-time mono" style={{color:ch.color}}>{m.heure}</div>
-      <div style={{fontSize:21,fontWeight:700,margin:'9px 0 5px'}}>{m.client||m.task}</div>
-      <div style={{fontSize:13,color:'var(--muted)',marginBottom:14,lineHeight:1.6,textAlign:'center'}}>{m.adresse}</div>
-      {m.allergenes?.length>0&&<div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'7px 14px',marginBottom:14,fontSize:12,color:'var(--red)',fontWeight:700}}>🚨 {m.allergenes.join(' · ')}</div>}
-      <div style={{fontSize:15,color:'var(--amber)',fontWeight:600,marginBottom:26}}>⏱ {fmt(t)}</div>
-      <div className="drive-btns">
-        <a href={maps} target="_blank" style={{textDecoration:'none'}}>
-          <button className="drive-btn" style={{background:'var(--blue)',color:'#fff',width:'100%'}}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigation
-          </button>
-        </a>
-        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
-          <button className="drive-btn" style={{background:'var(--green)',color:'#fff',width:'100%'}}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler
-          </button>
-        </a>}
-        <button className="drive-btn" style={{background:'var(--green)',color:'#fff'}} onClick={onDone}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>Livré !
-        </button>
-        <button className="drive-btn" style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border)'}} onClick={onClose}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Quitter
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ══ RECAP ══ */
-function Recap({missions,ch,onClose}){
-  const done=missions.filter(m=>m._statut==='done').length;
-  const total=missions.length;
-  const pct=total?Math.round(done/total*100):0;
-  useEffect(()=>speak(`Bilan journée. ${done} livraisons sur ${total}. ${pct===100?'Excellent !':''}`),[]);
-  return(
-    <div className="recap">
-      <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:22,padding:22,width:'100%',maxWidth:330}}>
-        <div style={{textAlign:'center',marginBottom:18}}>
-          <div style={{fontSize:50}}>{pct===100?'🎉':'📊'}</div>
-          <div style={{fontSize:17,fontWeight:800,marginTop:7}}>Bilan de la journée</div>
-          <div style={{fontSize:12,color:'var(--muted)',marginTop:3}}>{ch.display} · {new Date().toLocaleDateString('fr-FR')}</div>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-          <div style={{background:'var(--raised)',borderRadius:11,padding:13,textAlign:'center'}}>
-            <div style={{fontSize:30,fontWeight:800,color:'var(--green)'}}>{done}</div>
-            <div style={{fontSize:11,color:'var(--muted)'}}>Livrées</div>
-          </div>
-          <div style={{background:'var(--raised)',borderRadius:11,padding:13,textAlign:'center'}}>
-            <div style={{fontSize:30,fontWeight:800,color:ch.color}}>{total}</div>
-            <div style={{fontSize:11,color:'var(--muted)'}}>Total</div>
-          </div>
-        </div>
-        <div style={{background:'var(--raised)',borderRadius:9,overflow:'hidden',marginBottom:13}}>
-          <div style={{height:7,background:`linear-gradient(90deg,${ch.color},var(--green))`,width:pct+'%',transition:'width .5s'}}/>
-        </div>
-        <div style={{textAlign:'center',fontSize:20,fontWeight:800,color:pct===100?'var(--green)':ch.color,marginBottom:14}}>
-          {pct===100?'✅ Parfait !':pct+'% accompli'}
-        </div>
-        <button onClick={onClose} style={{width:'100%',background:ch.color,color:'#fff',borderRadius:13,padding:13,fontSize:14,fontWeight:700,border:'none'}}>Fermer</button>
-      </div>
-    </div>
-  );
-}
-
-/* ══ CARTE MISSION ══ */
-function MCard({m,ch,onAction,onClient}){
-  const sc={
-    pending:{col:'var(--blue)',dot:'var(--dim)',lbl:'En attente'},
-    enroute:{col:'var(--amber)',dot:'var(--amber)',lbl:'🚗 En route'},
-    done:{col:'var(--green)',dot:'var(--green)',lbl:'✓ Livré'},
-    retard:{col:'var(--red)',dot:'var(--red)',lbl:'⚠ Retard'},
-    absent:{col:'var(--red)',dot:'var(--red)',lbl:'Client absent'},
-  }[m._statut]||{col:'var(--blue)',dot:'var(--dim)',lbl:'En attente'};
-  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
-  const nc=m._statut==='done'?2:m.contact?3:2;
-  return(
-    <div className="mc" style={{borderColor:m._statut==='done'?'rgba(34,197,94,.2)':['retard','absent'].includes(m._statut)?'rgba(239,68,68,.35)':m._statut==='enroute'?ch.color+'30':'var(--border)',opacity:m._statut==='done'?.72:1}}>
-      <div className="mc-hd">
-        <div>
-          <div className="mc-time mono" style={{color:ch.color}}>{m.heure}</div>
-          <div className="mc-sub"><div style={{width:6,height:6,borderRadius:'50%',background:sc.dot,flexShrink:0}}/>{sc.lbl}</div>
-        </div>
-        <div className="mc-truck" style={{color:ch.color,background:ch.color+'18'}}>{m.truck||ch.truck}</div>
-      </div>
-      <div className="mc-client" onClick={()=>onClient(m)}>
-        <div className="mc-name">{m.client||m.task||'Livraison'} <span style={{fontSize:13,color:'var(--muted)',fontWeight:400}}>›</span></div>
-        {m.adresse&&<div className="mc-addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>{m.adresse}</div>}
-      </div>
-      {m.allergenes?.length>0&&<div className="allerg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>ALLERGÈNES : {m.allergenes.join(', ')}</div>}
-      <div className="div"/>
-      <div className="meta">
-        {m.convives&&<div className="mt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><b>{m.convives}</b> conv.</div>}
-        {m.contact&&<div className="mt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><b>{m.contact}</b></div>}
-        {m.note_liv&&<div className="mt fw"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
-      </div>
-      <div className="div"/>
-      <div className="btns" style={{gridTemplateColumns:`repeat(${nc},1fr)`}}>
-        <a href={maps} target="_blank" style={{textDecoration:'none'}}><button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button></a>
-        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}><button className="ab ab-call" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler</button></a>}
-        {m._statut==='pending'&&<button className="ab ab-go" onClick={()=>onAction(m,'enroute')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En route</button>}
-        {m._statut==='enroute'&&<button className="ab ab-done" onClick={()=>onAction(m,'done')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>Livré !</button>}
-        <button className="ab ab-photo" onClick={()=>onAction(m,'photo')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photo 🤖</button>
-        {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature</button>}
-        <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
-      </div>
-    </div>
-  );
-}
-
-/* ══ VUE AUJOURD'HUI ══ */
-function Today({ch,planning,onAction,onClient}){
+/* ══ ECRAN CLIENTS DU JOUR ══ */
+function ClientsList({ch,planning,onSelectMission,onBack}){
   const today=new Date().toISOString().slice(0,10);
   const ms=planning?getMissions(planning,ch.id,today):[];
-  const st=planning?getStatut(planning,ch.id,today):null;
-  const done=ms.filter(m=>m._statut==='done').length;
-  const total=ms.length;
-  const now=new Date();
-  const sh=parseInt(ch.start);const eh=parseInt(ch.end);
-  const pct=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60-sh)/(eh-sh))*100));
-  let sbBg='var(--raised)',sbCol='var(--green)',sbLbl='En service';
-  if(st){
-    if(['absent','maladie'].includes(st.type)){sbBg='rgba(239,68,68,.08)';sbCol='var(--red)';sbLbl=st.type==='maladie'?'Arrêt maladie':'Absent';}
-    else if(st.type==='conge'){sbBg='rgba(59,130,246,.08)';sbCol='var(--blue)';sbLbl='Congé';}
-    else if(st.type==='repos'){sbBg='rgba(100,116,139,.08)';sbCol='var(--muted)';sbLbl='Repos';}
-  }
   return(
-    <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
-      <div className="sbar" style={{background:st?sbBg:undefined}}>
-        <div className="sb-icon" style={{background:sbCol+'15'}}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        </div>
-        <div className="sb-info">
-          <div style={{fontSize:10,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.06}}>Statut du jour</div>
-          <div style={{fontSize:14,fontWeight:700,color:sbCol,marginTop:1}}>{sbLbl}</div>
-          <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{ch.start} → {ch.end}</div>
-        </div>
-        <div style={{width:40,height:40,position:'relative',flexShrink:0}}>
-          <svg viewBox="0 0 36 36" style={{width:'100%',height:'100%',transform:'rotate(-90deg)'}}>
-            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--raised)" strokeWidth="3"/>
-            <circle cx="18" cy="18" r="15" fill="none" stroke={ch.color} strokeWidth="3" strokeDasharray={`${pct*0.942} 100`} strokeLinecap="round"/>
-          </svg>
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:ch.color}}>{Math.round(pct)}%</div>
-        </div>
+    <>
+      <Header title="Mes clients — Aujourd'hui" onBack={onBack}/>
+      <div className="scroll">
+        {ms.length===0 ? (
+          <div style={{textAlign:'center',padding:'60px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:46,marginBottom:11}}>👥</div>
+            <div style={{fontSize:15,fontWeight:700}}>Aucun client aujourd'hui</div>
+          </div>
+        ) : ms.map((m,i)=>(
+          <button key={i} onClick={()=>onSelectMission(m)} style={{width:'100%',textAlign:'left',background:'var(--card)',border:'1px solid var(--border)',borderRadius:16,padding:16,marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:42,height:42,borderRadius:12,background:ch.color+'1e',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <span style={{fontSize:16,fontWeight:900,color:ch.color}}>{(m.client||m.task||'?')[0]}</span>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.client||m.task}</div>
+              <div style={{fontSize:11,color:'var(--muted)',marginTop:2}} className="mono">{m.heure}</div>
+            </div>
+            <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:13}}/>
+          </button>
+        ))}
       </div>
-      {total>0&&(
-        <div className="prog">
-          <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-            <span style={{fontSize:11,color:'var(--muted)'}}>Progression</span>
-            <span style={{fontSize:11,fontWeight:700,color:ch.color}}>{done}/{total} livrées</span>
-          </div>
-          <div className="prog-bar"><div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${ch.color},var(--green))`}}/></div>
-        </div>
-      )}
-      {total>0&&(
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,margin:'0 14px 12px'}}>
-          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
-            <div style={{fontSize:18,fontWeight:900,color:'var(--green)'}}>{done}</div>
-            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>Livrées</div>
-          </div>
-          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
-            <div style={{fontSize:18,fontWeight:900,color:'var(--amber)'}}>{ms.filter(m=>m._statut==='enroute').length}</div>
-            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>En route</div>
-          </div>
-          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
-            <div style={{fontSize:18,fontWeight:900,color:ch.color}}>{total-done}</div>
-            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>Restantes</div>
-          </div>
-        </div>
-      )}
-      <div className="scroll" style={{paddingTop:10}}>
-        {!planning&&<div className="loader"><div className="spin" style={{width:32,height:32}}/><span>Chargement du planning...</span></div>}
-        {planning&&ms.length===0&&(
-          <div style={{textAlign:'center',padding:'55px 22px',color:'var(--muted)'}}>
-            <div style={{fontSize:46,marginBottom:11}}>{st?'🌟':'📋'}</div>
-            <div style={{fontSize:15,fontWeight:700,marginBottom:5}}>{st?sbLbl:'Aucune mission'}</div>
-            <div style={{fontSize:13,lineHeight:1.7}}>Restez disponible.</div>
-          </div>
-        )}
-        {ms.map((m,i)=><MCard key={`${m._key}-${i}`} m={m} ch={ch} onAction={onAction} onClient={onClient}/>)}
-      </div>
-    </div>
+    </>
   );
 }
 
 /* ══ CALENDRIER ══ */
-function Cal({ch,planning}){
+function CalendarScreen({ch,planning,onBack}){
   const today=new Date();
   const [mo,setMo]=useState(today.getMonth());
   const [yr,setYr]=useState(today.getFullYear());
@@ -852,60 +858,58 @@ function Cal({ch,planning}){
   const selMs=gMs(sel);const selSt=gSt(sel);
   const days=[];for(let i=0;i<off;i++)days.push(null);for(let d=1;d<=dim;d++)days.push(d);
   return(
-    <div className="scroll" style={{paddingTop:12}}>
-      <div className="hgrid">
-        {[{v:h.j,l:'Jours travaillés',c:ch.color},{v:`${h.h}h${h.m?h.m+'m':''}`,l:'Heures nettes',c:'var(--green)'},{v:h.ab,l:'Absences',c:'var(--amber)'},{v:`${h.hb}h`,l:'Heures brutes',c:'var(--blue)'}].map((x,i)=>(
-          <div key={i} className="hg"><div className="hg-v" style={{color:x.c}}>{x.v}</div><div className="hg-l">{x.l}</div></div>
-        ))}
-      </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
-        <button onClick={()=>mo===0?(setMo(11),setYr(y=>y-1)):setMo(m=>m-1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style={{textAlign:'center'}}>
-          <div style={{fontSize:15,fontWeight:700}}>{MOIS[mo]} {yr}</div>
-          <div style={{fontSize:11,color:'var(--muted)'}}>{ch.display}</div>
+    <>
+      <Header title="Mon planning du mois" onBack={onBack}/>
+      <div className="scroll">
+        <div className="hgrid">
+          {[{v:h.j,l:'Jours travaillés',c:ch.color},{v:`${h.h}h${h.m?h.m+'m':''}`,l:'Heures nettes',c:'var(--green)'},{v:h.ab,l:'Absences',c:'var(--amber)'},{v:`${h.hb}h`,l:'Heures brutes',c:'var(--blue)'}].map((x,i)=>(
+            <div key={i} className="hg"><div className="hg-v" style={{color:x.c}}>{x.v}</div><div className="hg-l">{x.l}</div></div>
+          ))}
         </div>
-        <button onClick={()=>mo===11?(setMo(0),setYr(y=>y+1)):setMo(m=>m+1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div className="cal-grid">
-        {JOURS.map(j=><div key={j} className="cal-hd">{j}</div>)}
-        {days.map((d,i)=>{
-          if(!d)return<div key={`e${i}`}/>;
-          const isT=d===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
-          const hM=gMs(d).length>0;const st=gSt(d);const isSel=d===sel;
-          const isOff=st&&['absent','maladie','conge'].includes(st.type);
-          const isRest=st&&st.type==='repos';
-          return<div key={d} className={`cal-d ${isT?'today':''} ${hM?'hasm':''} ${isSel&&!isT?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`} onClick={()=>setSel(d)}>{d}</div>;
-        })}
-      </div>
-      <div style={{marginTop:4}}>
-        <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:9,textTransform:'uppercase'}}>
-          {JOURS[new Date(yr,mo,sel).getDay()]} {sel} {MOIS[mo]}
-          {selSt&&<span style={{marginLeft:7,background:'var(--raised)',borderRadius:20,padding:'2px 7px',fontSize:10}}>{selSt.type}</span>}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+          <button onClick={()=>mo===0?(setMo(11),setYr(y=>y-1)):setMo(m=>m-1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div style={{textAlign:'center'}}><div style={{fontSize:15,fontWeight:700}}>{MOIS[mo]} {yr}</div></div>
+          <button onClick={()=>mo===11?(setMo(0),setYr(y=>y+1)):setMo(m=>m+1)} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
-        {selMs.length===0
-          ?<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:13}}>{selSt?'Statut : '+selSt.type:'Aucune mission'}</div>
-          :selMs.map((m,i)=>(
+        <div className="cal-grid">
+          {JOURS.map(j=><div key={j} className="cal-hd">{j}</div>)}
+          {days.map((d,i)=>{
+            if(!d)return<div key={`e${i}`}/>;
+            const isT=d===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
+            const hM=gMs(d).length>0;const st=gSt(d);const isSel=d===sel;
+            const isOff=st&&['absent','maladie','conge'].includes(st.type);
+            const isRest=st&&st.type==='repos';
+            return<div key={d} className={`cal-d ${isT?'today':''} ${hM?'hasm':''} ${isSel&&!isT?'sel':''} ${isOff?'off':''} ${isRest?'rest':''}`} onClick={()=>setSel(d)}>{d}</div>;
+          })}
+        </div>
+        <div style={{marginTop:4}}>
+          <div style={{fontSize:11,color:'var(--muted)',fontWeight:600,marginBottom:9,textTransform:'uppercase'}}>
+            {JOURS[new Date(yr,mo,sel).getDay()]} {sel} {MOIS[mo]}
+            {selSt&&<span style={{marginLeft:7,background:'var(--raised)',borderRadius:20,padding:'2px 7px',fontSize:10}}>{selSt.type}</span>}
+          </div>
+          {selMs.length===0?(
+            <div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:13}}>{selSt?'Statut : '+selSt.type:'Aucune mission'}</div>
+          ):selMs.map((m,i)=>(
             <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${ch.color}`,borderRadius:11,padding:'10px 12px',marginBottom:7,display:'flex',alignItems:'center',gap:9}}>
               <div className="mono" style={{fontSize:14,fontWeight:800,color:ch.color,flexShrink:0,width:44}}>{m.heure}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:600}}>{m.client||m.task}</div>
-                <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{m.convives?m.convives+' conv. · ':''}{(m.adresse||'').split(',')[0]}</div>
+                <div style={{fontSize:11,color:'var(--muted)',marginTop:1}}>{(m.adresse||'').split(',')[0]}</div>
               </div>
-              <div style={{width:7,height:7,borderRadius:'50%',background:m._statut==='done'?'var(--green)':m._statut==='enroute'?'var(--amber)':'var(--dim)',flexShrink:0}}/>
             </div>
-          ))
-        }
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 /* ══ MESSAGES ══ */
-function Msgs({ch}){
+function MessagesScreen({ch,onBack}){
   const [msgs,setMsgs]=useState([{id:1,from:'resp',text:'Bonjour à tous ! Bonne journée 💪',time:'07:00'}]);
   const [text,setText]=useState('');
   const ref=useRef();
@@ -930,60 +934,168 @@ function Msgs({ch}){
     await saveMsg({...msg,from:'chauffeur'});
   };
   return(
-    <div className="msgw">
-      <div style={{padding:'11px 14px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:9,flexShrink:0}}>
-        <div style={{width:36,height:36,borderRadius:10,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    <>
+      <Header title="Messages" onBack={onBack}/>
+      <div className="msgw">
+        <div ref={ref} className="msg-list">
+          {msgs.map(m=>(
+            <div key={m.id} className={`mb ${m.from==='me'?'me':'them'}`}>
+              <div className="mb-in">{m.text}</div>
+              <div className="mb-meta">{m.from==='me'?'Moi':m.fromName||'Responsable'} · {m.time}</div>
+            </div>
+          ))}
         </div>
-        <div>
-          <div style={{fontSize:14,fontWeight:700}}>Responsable</div>
-          <div style={{fontSize:11,color:'var(--green)',display:'flex',alignItems:'center',gap:4}}><div style={{width:5,height:5,background:'var(--green)',borderRadius:'50%'}}/>En ligne</div>
+        <div className="msg-bar">
+          <textarea className="msg-in" placeholder="Votre message..." rows={1} value={text}
+            onChange={e=>setText(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
+          <button className="msg-send" onClick={send}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
         </div>
       </div>
-      <div ref={ref} className="msg-list">
-        {msgs.map(m=>(
-          <div key={m.id} className={`mb ${m.from==='me'?'me':'them'}`}>
-            <div className="mb-in">{m.text}</div>
-            <div className="mb-meta">{m.from==='me'?'Moi':m.fromName||'Responsable'} · {m.time}</div>
-          </div>
+    </>
+  );
+}
+
+/* ══ ECRAN VEHICULE ══ */
+function VehicleScreen({ch,onBack,onToast}){
+  const [km,setKm]=useState('');
+  const reportIssue=async(issue)=>{
+    await saveEvent({type:'vehicule_issue',chauffeurId:ch.id,chauffeur:ch.display,truck:ch.truck,issue,date:new Date().toISOString().slice(0,10)});
+    onToast(`⚠️ Signalé : ${issue}`,'var(--red)');
+  };
+  const saveKm=async()=>{
+    if(!km)return;
+    await saveEvent({type:'kilometrage',chauffeurId:ch.id,chauffeur:ch.display,truck:ch.truck,km,date:new Date().toISOString().slice(0,10)});
+    onToast('✅ Kilométrage enregistré','var(--green)');
+    setKm('');
+  };
+  return(
+    <>
+      <Header title="Mon véhicule" onBack={onBack}/>
+      <div className="scroll">
+        <div className="card" style={{padding:16,marginBottom:16,textAlign:'center'}}>
+          <i className="fa-solid fa-truck" style={{fontSize:30,color:ch.color,marginBottom:8}}/>
+          <div style={{fontSize:18,fontWeight:900}}>{ch.truck}</div>
+        </div>
+
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>Kilométrage du jour</div>
+        <div style={{display:'flex',gap:8,marginBottom:20}}>
+          <input type="number" value={km} onChange={e=>setKm(e.target.value)} placeholder="Ex: 84230" style={{flex:1}}/>
+          <button onClick={saveKm} style={{background:'var(--orange)',color:'#fff',borderRadius:10,padding:'0 18px',fontWeight:700,fontSize:13}}>OK</button>
+        </div>
+
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>Signaler un problème</div>
+        {[
+          {label:'Pneu crevé / usé',icon:'🛞'},
+          {label:'Voyant moteur allumé',icon:'⚠️'},
+          {label:'Freinage anormal',icon:'🛑'},
+          {label:'Carrosserie endommagée',icon:'🔧'},
+          {label:'Autre problème',icon:'❗'},
+        ].map((issue,i)=>(
+          <button key={i} className="veh-issue-btn" onClick={()=>reportIssue(issue.label)}>
+            <span style={{fontSize:20}}>{issue.icon}</span>
+            <span style={{fontSize:13,fontWeight:600,flex:1,textAlign:'left'}}>{issue.label}</span>
+            <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:12}}/>
+          </button>
         ))}
       </div>
-      <div className="msg-bar">
-        <textarea className="msg-in" placeholder="Votre message..." rows={1} value={text}
-          onChange={e=>setText(e.target.value)}
-          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
-        <button className="msg-send" onClick={send}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </>
+  );
+}
+
+/* ══ AIDE RAPIDE / SOS ══ */
+function HelpScreen({ch,onBack,onToast}){
+  const sendSOS=async()=>{
+    navigator.geolocation?.getCurrentPosition(async pos=>{
+      await saveEvent({type:'sos',chauffeurId:ch.id,chauffeur:ch.display,lat:pos.coords.latitude,lng:pos.coords.longitude,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    },async()=>{
+      await saveEvent({type:'sos',chauffeurId:ch.id,chauffeur:ch.display,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    });
+    onToast('🆘 Alerte envoyée au responsable !','var(--red)');
+  };
+  return(
+    <>
+      <Header title="Aide rapide" onBack={onBack}/>
+      <div className="scroll">
+        <button onClick={sendSOS} style={{width:'100%',background:'linear-gradient(135deg,#ef4444,#dc2626)',borderRadius:20,padding:24,display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:20,boxShadow:'0 8px 24px rgba(239,68,68,.35)'}}>
+          <i className="fa-solid fa-bell" style={{fontSize:36,color:'#fff'}}/>
+          <span style={{fontSize:16,fontWeight:900,color:'#fff'}}>🆘 ENVOYER UNE ALERTE SOS</span>
+          <span style={{fontSize:11,color:'rgba(255,255,255,.8)'}}>Le responsable reçoit votre position immédiatement</span>
+        </button>
+        <a href="tel:0491000000" style={{textDecoration:'none'}}>
+          <div className="veh-issue-btn">
+            <span style={{fontSize:20}}>📞</span>
+            <span style={{fontSize:13,fontWeight:600,flex:1}}>Appeler le responsable</span>
+            <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:12}}/>
+          </div>
+        </a>
+      </div>
+    </>
+  );
+}
+
+/* ══ MODE CONDUITE ══ */
+function DriveMode({m,ch,onClose,onDone}){
+  const [t,setT]=useState(0);
+  useEffect(()=>{const iv=setInterval(()=>setT(x=>x+1),1000);return()=>clearInterval(iv);},[]);
+  useEffect(()=>speak(`En route pour ${m.client}. ${m.adresse||''}`),[]);
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
+  return(
+    <div className="drive">
+      <div style={{position:'absolute',top:'calc(var(--sat) + 20px)',right:18,display:'flex',alignItems:'center',gap:5}}>
+        <div className="geo"/><span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>GPS actif</span>
+      </div>
+      <div style={{fontSize:12,color:'var(--muted)',marginBottom:6,textTransform:'uppercase',letterSpacing:.08}}>En route vers</div>
+      <div className="drive-time mono" style={{color:ch.color}}>{m.heure}</div>
+      <div style={{fontSize:21,fontWeight:700,margin:'9px 0 5px'}}>{m.client||m.task}</div>
+      <div style={{fontSize:13,color:'var(--muted)',marginBottom:14,lineHeight:1.6,textAlign:'center'}}>{m.adresse}</div>
+      <div style={{fontSize:15,color:'var(--amber)',fontWeight:600,marginBottom:26}}>⏱ {fmt(t)}</div>
+      <div className="drive-btns">
+        <a href={maps} target="_blank" style={{textDecoration:'none'}}>
+          <button className="drive-btn" style={{background:'var(--blue)',color:'#fff',width:'100%'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigation
+          </button>
+        </a>
+        {m.contact&&<a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
+          <button className="drive-btn" style={{background:'var(--green)',color:'#fff',width:'100%'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler
+          </button>
+        </a>}
+        <button className="drive-btn" style={{background:'var(--green)',color:'#fff'}} onClick={onDone}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>Livré !
+        </button>
+        <button className="drive-btn" style={{background:'var(--raised)',color:'var(--muted)',border:'1px solid var(--border)'}} onClick={onClose}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Quitter
         </button>
       </div>
     </div>
   );
 }
 
-/* ══ APP ══ */
-function App2({ch,onLogout}){
-  const [tab,setTab]=useState('today');
+/* ══ APP PRINCIPALE ══ */
+function ChaufApp({ch,onLogout}){
+  const [screen,setScreen]=useState('home');
   const [planning,setPlanning]=useState(null);
   const [toast,setToast]=useState(null);
-  const [clientM,setClientM]=useState(null);
+  const [selectedMission,setSelectedMission]=useState(null);
   const [sigM,setSigM]=useState(null);
   const [matM,setMatM]=useState(null);
   const [matIA,setMatIA]=useState(null);
   const [driveM,setDriveM]=useState(null);
   const [voiceM,setVoiceM]=useState(null);
-  const [recap,setRecap]=useState(false);
   const photoRef=useRef(null);
 
   const t3=(msg,color='var(--green)')=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
   const vib=p=>{try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}};
 
-  /* Charger planning */
   useEffect(()=>{
     const load=async()=>{const p=await loadPlanning();if(p)setPlanning(p);};
     load();const iv=setInterval(load,30000);return()=>clearInterval(iv);
   },[]);
 
-  /* Géolocalisation */
   useEffect(()=>{
     if(!navigator.geolocation)return;
     const iv=setInterval(()=>{
@@ -994,41 +1106,78 @@ function App2({ch,onLogout}){
     return()=>clearInterval(iv);
   },[ch.id]);
 
-  /* Photo handler */
+  /* PHOTO + IA — corrigé avec gestion d'erreur complète */
   useEffect(()=>{
     const inp=document.getElementById('photo-cap');if(!inp)return;
     const handler=async e=>{
       const file=e.target.files[0];if(!file)return;
       const m=photoRef.current;
-      t3('📷 Analyse IA en cours...','var(--purple)');
+      t3('📷 Photo en cours d\\'analyse...','var(--purple)');
       const reader=new FileReader();
       reader.onload=async ev=>{
         const dataUrl=ev.target.result;
         const base64=dataUrl.split(',')[1];
         await saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
+
         try{
           const resp=await fetch('https://api.anthropic.com/v1/messages',{
             method:'POST',
-            headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+            headers:{
+              'Content-Type':'application/json',
+              'anthropic-dangerous-direct-browser-access':'true',
+              'anthropic-version':'2023-06-01'
+            },
             body:JSON.stringify({
-              model:'claude-sonnet-4-6',max_tokens:350,
+              model:'claude-sonnet-4-6',
+              max_tokens:400,
               messages:[{role:'user',content:[
                 {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
-                {type:'text',text:'Expert logistique traiteur. Compte le matériel visible. JSON uniquement: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"ce que tu vois","confiance":"haute/moyenne/faible"}. Bacs gastro=bacs inox rectangulaires. Compte par unité.'}
+                {type:'text',text:'Tu es un expert logistique traiteur. Analyse cette photo et compte précisément le matériel visible (bacs gastro inox rectangulaires, chariots, échelles pâtissières, containers, caisses, étuves, plateaux, nappes). Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans markdown, format exact: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"description courte en français","confiance":"haute"}'}
               ]}]
             })
           });
+
+          if(!resp.ok){
+            const errText=await resp.text();
+            console.log('Erreur API:',resp.status,errText);
+            t3('🤖 IA indisponible — saisie manuelle','var(--amber)');
+            if(m)setMatM(m);
+            return;
+          }
+
           const data=await resp.json();
           const txt=data.content?.[0]?.text||'{}';
-          let res;try{res=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){res={};}
-          const tot=Object.entries(res).filter(([k])=>MAT.map(x=>x.id).includes(k)).reduce((a,[,v])=>a+(parseInt(v)||0),0);
-          if(tot>0){t3(`🤖 IA : ${tot} item(s) détecté(s) !`,'var(--green)');vib([100,50,200]);if(m)setMatIA({mission:m,aiData:res,aiDesc:res.description});}
-          else{t3(`🤖 ${res.description||'Photo analysée'}. Saisissez manuellement.`,'var(--amber)');if(m)setMatM(m);}
-        }catch(err){t3('📷 Photo sauvegardée','var(--purple)');if(m)setMatM(m);}
+          let res={};
+          try{
+            const cleaned=txt.replace(/```json|```/g,'').trim();
+            res=JSON.parse(cleaned);
+          }catch(parseErr){
+            console.log('Erreur parsing JSON IA:',parseErr,txt);
+            res={};
+          }
+
+          const matKeys=['gastro','chariot','echelle','container','caisse','etuve','plateau','nappe'];
+          const tot=matKeys.reduce((a,k)=>a+(parseInt(res[k])||0),0);
+
+          if(tot>0){
+            t3(`🤖 IA : ${tot} item(s) détecté(s) !`,'var(--green)');
+            vib([100,50,200]);
+            if(m)setMatIA({mission:m,aiData:res,aiDesc:res.description});
+          }else{
+            t3(`🤖 ${res.description||'Aucun matériel détecté'} — saisissez manuellement`,'var(--amber)');
+            if(m)setMatM(m);
+          }
+        }catch(err){
+          console.log('Erreur réseau IA:',err);
+          t3('📷 Photo sauvegardée — IA indisponible','var(--purple)');
+          if(m)setMatM(m);
+        }
       };
-      reader.readAsDataURL(file);inp.value='';
+      reader.readAsDataURL(file);
+      inp.value='';
     };
-    inp.addEventListener('change',handler);return()=>inp.removeEventListener('change',handler);
+    inp.addEventListener('change',handler);
+    return()=>inp.removeEventListener('change',handler);
   },[ch]);
 
   const action=async(m,act)=>{
@@ -1040,23 +1189,26 @@ function App2({ch,onLogout}){
       vib([100,50,200]);t3('✅ Livraison confirmée !','var(--green)');speak('Livraison confirmée. Excellent travail !');
       await saveEvent({type:'done',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),materiel:m._mat||{}});
       setDriveM(null);
+      setSelectedMission(prev=>prev?{...prev,_statut:'done'}:null);
     }
     if(act==='enroute'){
       vib([50,30,50]);t3('🚗 En route !','var(--amber)');
       await saveEvent({type:'enroute',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure});
+      setSelectedMission(prev=>prev?{...prev,_statut:'enroute'}:null);
       setDriveM(m);
     }
-    if(act==='absent'){t3('⚠️ Client absent','var(--red)');await saveEvent({type:'absent',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure});}
+    if(act==='arrived'){
+      vib([80]);t3('📍 Arrivée notée !','var(--purple)');
+      await saveEvent({type:'arrived',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure});
+    }
   };
 
   const voiceCmd=async(cmd,data)=>{
     const m=voiceM;
     if(cmd==='done')action(m,'done');
     if(cmd==='enroute')action(m,'enroute');
+    if(cmd==='arrived')action(m,'arrived');
     if(cmd==='photo')action(m,'photo');
-    if(cmd==='absent')action(m,'absent');
-    if(cmd==='retard')await saveEvent({type:'retard',detail:data,chauffeurId:ch.id,chauffeur:ch.display,client:m?.client||''});
-    if(cmd==='materiel')await saveEvent({type:'materiel_vocal',detail:data,chauffeurId:ch.id,chauffeur:ch.display,client:m?.client||''});
     if(cmd==='call'&&m?.contact)window.open('tel:'+m.contact);
     if(cmd==='maps'&&m)window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`, '_blank');
     setVoiceM(null);
@@ -1064,69 +1216,53 @@ function App2({ch,onLogout}){
 
   const today=new Date().toISOString().slice(0,10);
   const myMs=planning?getMissions(planning,ch.id,today):[];
-  const pending=myMs.filter(m=>m._statut!=='done').length;
-  useEffect(()=>{if(myMs.length>0&&myMs.every(m=>m._statut==='done'))setTimeout(()=>setRecap(true),700);},[myMs.filter(m=>m._statut==='done').length]);
+
+  const handleSelectMission=(m)=>{setSelectedMission(m);};
 
   return(
     <div className="screen">
-      <div className="hdr">
-        <div className="hdr-row">
-          <div style={{display:'flex',alignItems:'center',gap:11}}>
-            <div className="av" style={{width:44,height:44,fontSize:17,background:ch.color+'1e',border:`2px solid ${ch.color}55`,color:ch.color}}>{ch.ini}</div>
-            <div>
-              <div style={{fontSize:11,color:'var(--muted)'}}>Bonjour 👋</div>
-              <div style={{fontSize:19,fontWeight:800,color:ch.color,lineHeight:1.1}}>{ch.display}</div>
-              <div style={{fontSize:10,color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
-                <span>{ch.truck}</span><span>·</span><span>{ch.start}–{ch.end}</span>
-                <div className="geo"/>
-              </div>
-            </div>
-          </div>
-          <div style={{display:'flex',gap:7}}>
-            {myMs.length>0&&<button className="icon-btn" onClick={()=>setRecap(true)}>📊</button>}
-            <button className="icon-btn" onClick={onLogout}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
+      {screen==='home'&&!selectedMission&&<HomeScreen ch={ch} planning={planning} onNavigate={setScreen} unreadMsg={1}/>}
+      {screen==='today'&&!selectedMission&&<TodayList ch={ch} planning={planning} onSelectMission={handleSelectMission} onBack={()=>setScreen('home')}/>}
+      {screen==='clients'&&!selectedMission&&<ClientsList ch={ch} planning={planning} onSelectMission={handleSelectMission} onBack={()=>setScreen('home')}/>}
+      {screen==='calendar'&&<CalendarScreen ch={ch} planning={planning} onBack={()=>setScreen('home')}/>}
+      {screen==='messages'&&<MessagesScreen ch={ch} onBack={()=>setScreen('home')}/>}
+      {screen==='vehicle'&&<VehicleScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='help'&&<HelpScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
 
-      <div className="content">
-        {tab==='today'&&<Today ch={ch} planning={planning} onAction={action} onClient={setClientM}/>}
-        {tab==='cal'&&<Cal ch={ch} planning={planning}/>}
-        {tab==='msgs'&&<Msgs ch={ch}/>}
-      </div>
+      {selectedMission&&(
+        <MissionDetail m={selectedMission} ch={ch}
+          onBack={()=>setSelectedMission(null)}
+          onAction={action}/>
+      )}
 
-      <nav className="bnav">
-        {[
-          {id:'today',lbl:"Aujourd'hui",badge:pending,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>},
-          {id:'cal',lbl:'Planning',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>},
-          {id:'msgs',lbl:'Messages',badge:0,svg:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>},
-        ].map(n=>(
-          <button key={n.id} className={`nb ${tab===n.id?'on':''}`} onClick={()=>setTab(n.id)}>
-            {n.svg}<span>{n.lbl}</span>
-            {n.badge>0&&<div className="nbadge" style={{background:tab===n.id?ch.color:'var(--red)'}}>{n.badge}</div>}
-          </button>
-        ))}
-      </nav>
+      {screen==='home'&&!selectedMission&&(
+        <button onClick={onLogout} style={{position:'fixed',top:'calc(var(--sat) + 16px)',right:16,width:36,height:36,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)',zIndex:10}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      )}
 
-      {clientM&&<ClientSheet m={clientM} ch={ch} onClose={()=>setClientM(null)}/>}
       {sigM&&<SigModal m={sigM} ch={ch} onClose={()=>setSigM(null)} onDone={()=>{setSigM(null);t3('✍️ Signature enregistrée !','var(--teal)');}}/>}
       {matM&&<MatModal m={matM} ch={ch} onClose={()=>setMatM(null)} onConfirm={async mat=>{setMatM(null);await action({...matM,_mat:mat},'done_confirmed');}}/>}
       {matIA&&<MatModal m={matIA.mission} ch={ch} aiPre={matIA.aiData} aiDesc={matIA.aiDesc} onClose={()=>setMatIA(null)} onConfirm={async mat=>{setMatIA(null);await action({...matIA.mission,_mat:mat},'done_confirmed');}}/>}
       {driveM&&<DriveMode m={driveM} ch={ch} onClose={()=>setDriveM(null)} onDone={()=>action(driveM,'done')}/>}
       {voiceM&&<VoiceModal m={voiceM} ch={ch} onClose={()=>setVoiceM(null)} onCmd={voiceCmd}/>}
-      {recap&&<Recap missions={myMs} ch={ch} onClose={()=>setRecap(false)}/>}
+
+      {!selectedMission&&screen==='home'&&(
+        <button className="sos-fab" onClick={()=>setScreen('help')}>
+          <i className="fa-solid fa-bell" style={{color:'#fff',fontSize:20}}/>
+        </button>
+      )}
+
       {toast&&<Toast msg={toast.msg} color={toast.color}/>}
     </div>
   );
 }
 
-function Root(){
+function App(){
   const [ch,setCh]=useState(null);
-  return ch?<App2 ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
+  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
