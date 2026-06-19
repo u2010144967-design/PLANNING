@@ -198,7 +198,7 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 
 /* GRILLE */
 .grid-wrap{flex:1;overflow:auto;padding:8px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
-.grid{display:grid;background:#fff;border-radius:8px;border:2px solid #1e293b;overflow:hidden}
+.grid{display:grid;background:#f8fafc;border-radius:8px;border:2px solid #1e293b;overflow:hidden;position:relative}
 
 /* EN-TÊTES CHAUFFEURS ECRAN */
 .gh{background:#0d1424;color:#f1f5f9;border-bottom:2px solid #3b82f6;border-right:1.5px solid #1e293b;padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
@@ -429,6 +429,11 @@ input[type="time"]::-webkit-calendar-picker-indicator{
 input[type="time"]{
   min-width:80px;
 }
+
+/* Ligne heure actuelle */
+.now-line{position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:50;pointer-events:none;box-shadow:0 0 6px rgba(239,68,68,.5)}
+.now-line::before{content:'';position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ef4444}
+.now-line::after{content:'MAINTENANT';position:absolute;left:8px;top:-9px;font-size:8px;font-weight:900;color:#fff;background:#ef4444;padding:1px 6px;border-radius:8px;white-space:nowrap;letter-spacing:.5px}
 </style>
 </head>
 <body>
@@ -1174,7 +1179,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -21917,6 +21922,7 @@ window.addEventListener('load', function(){
     if(isNaN(di)) return;
     if(action === 'statut') changerStatutDrv(di);
     if(action === 'camion') changerCamionDrv(di);
+    if(action === 'fiche') ouvrirFicheChauffeur(di);
   });
 });
 
@@ -22070,6 +22076,159 @@ function voirHistoriqueConducteurs(){
   closeBtn.addEventListener('click',function(){closeMod('m-hist-cond');});
   box.appendChild(closeBtn);
   modal.appendChild(box);document.body.appendChild(modal);
+}
+
+/* Ligne heure actuelle — positionnement dynamique */
+function updateNowLine(){
+  var old=document.querySelector('.now-line');if(old)old.remove();
+  var now=new Date();
+  var todayStr=now.toISOString().slice(0,10);
+  if(ST.cur!==todayStr) return; /* seulement si on regarde aujourd'hui */
+  var h=now.getHours(),m=now.getMinutes();
+  if(h<6||h>=18) return;
+  var totalMin=(h-6)*60+m-30;
+  if(totalMin<0) return;
+  var cells=document.querySelectorAll('.gcw');
+  if(!cells.length) return;
+  var cellH=cells[0].getBoundingClientRect().height||36;
+  var slotMin=30;
+  var top=(totalMin/slotMin)*cellH;
+  var grid=document.getElementById('grid');
+  if(!grid) return;
+  var line=document.createElement('div');
+  line.className='now-line';
+  line.style.top=top+'px';
+  grid.appendChild(line);
+}
+setInterval(updateNowLine,60000);
+window.addEventListener('load',function(){setTimeout(updateNowLine,1200);});
+var _origRenderForNowLine=render;
+if(typeof _origRenderForNowLine==='function'){
+  render=function(){_origRenderForNowLine.apply(this,arguments);setTimeout(updateNowLine,100);};
+}
+
+/* ══════════════════════════════════════════════════
+   FICHE CHAUFFEUR COMPLETE — historique, stats, congés
+══════════════════════════════════════════════════ */
+function ouvrirFicheChauffeur(di){
+  var dr=ST.drivers[di];
+  var existing=document.getElementById('m-fiche-chauf');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-fiche-chauf';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='560px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  /* ══ Calcul stats du mois en cours ══ */
+  var now=new Date();
+  var mois=now.getMonth(),annee=now.getFullYear();
+  var heures=calcHeuresDriverMois(di,mois,annee);
+  var missions=compterMissionsDriverMois(di,mois,annee);
+  var ponctualite=calcPonctualite(di,mois,annee);
+
+  /* ══ Historique 14 derniers jours ══ */
+  var historique=[];
+  for(var j=13;j>=0;j--){
+    var d=new Date();d.setDate(d.getDate()-j);
+    var ds=d.toISOString().slice(0,10);
+    var st=null;
+    if(ST.statuts){var s=ST.statuts['st_'+di];if(s)st=s;}
+    var ms=getMissionsJourDriver(di,ds);
+    historique.push({date:ds,dateAff:d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),statut:st,missions:ms});
+  }
+
+  /* ══ HTML ══ */
+  var html='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="width:50px;height:50px;border-radius:12px;background:rgba(59,130,246,.15);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#3b82f6">'+dr.name[0]+'</div>'
+    +'<div><div style="font-size:18px;font-weight:900">'+dr.name+'</div><div style="font-size:12px;color:#64748b">🚛 '+dr.truck+' · 🕐 '+dr.start+' → '+(dr.end||'?')+'</div></div>'
+    +'<button id="fc-close" style="margin-left:auto;background:#1e293b;border:1px solid #334155;border-radius:50%;width:34px;height:34px;color:#64748b;font-size:16px;cursor:pointer">✕</button>'
+    +'</div>';
+
+  /* Stats du mois */
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
+    +'<div style="background:#1e293b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:#3b82f6">'+heures.h+'h'+(heures.m>0?heures.m:'')+'</div><div style="font-size:10px;color:#64748b">Heures du mois</div></div>'
+    +'<div style="background:#1e293b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:#22c55e">'+missions+'</div><div style="font-size:10px;color:#64748b">Missions réalisées</div></div>'
+    +'<div style="background:#1e293b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:'+(ponctualite>=90?'#22c55e':ponctualite>=70?'#f59e0b':'#ef4444')+'">'+ponctualite+'%</div><div style="font-size:10px;color:#64748b">Ponctualité</div></div>'
+    +'</div>';
+
+  /* Actions rapides */
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
+    +'<button id="fc-statut" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818cf8;border-radius:9px;padding:10px;font-size:11px;font-weight:700;cursor:pointer">📋 Statut</button>'
+    +'<button id="fc-camion" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);color:#f97316;border-radius:9px;padding:10px;font-size:11px;font-weight:700;cursor:pointer">🚛 Camion</button>'
+    +'<button id="fc-cond" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:9px;padding:10px;font-size:11px;font-weight:700;cursor:pointer">🔑 Conducteur</button>'
+    +'</div>';
+
+  /* Historique 14 jours */
+  html+='<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📅 Historique — 14 derniers jours</div>';
+
+  var STLBL={absent:{l:'Absent',c:'#ef4444',i:'⛔'},maladie:{l:'Maladie',c:'#ef4444',i:'🏥'},conge:{l:'Congé',c:'#f59e0b',i:'🏖️'},repos:{l:'Repos',c:'#64748b',i:'😴'}};
+
+  historique.forEach(function(h){
+    var isToday=h.date===now.toISOString().slice(0,10);
+    var stInfo=h.statut?STLBL[h.statut.type]:null;
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:'+(isToday?'rgba(59,130,246,.08)':'#1e293b')+';border-radius:8px;margin-bottom:5px;border-left:3px solid '+(stInfo?stInfo.c:h.missions.length>0?'#22c55e':'#334155')+'">';
+    html+='<div style="font-size:11px;font-weight:700;color:'+(isToday?'#60a5fa':'#94a3b8')+';width:40px;flex-shrink:0">'+h.dateAff+'</div>';
+    if(stInfo){
+      html+='<div style="font-size:12px;font-weight:700;color:'+stInfo.c+'">'+stInfo.i+' '+stInfo.l+'</div>';
+    } else if(h.missions.length>0){
+      html+='<div style="font-size:12px;color:#e2e8f0">'+h.missions.length+' livraison(s) : '+h.missions.slice(0,2).map(function(m){return m.client||m.task;}).join(', ')+(h.missions.length>2?'...':'')+'</div>';
+    } else {
+      html+='<div style="font-size:12px;color:#475569">Aucune mission</div>';
+    }
+    html+='</div>';
+  });
+
+  box.innerHTML=html;
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  /* Events */
+  document.getElementById('fc-close').addEventListener('click',function(){closeMod('m-fiche-chauf');});
+  document.getElementById('fc-statut').addEventListener('click',function(){closeMod('m-fiche-chauf');changerStatutDrv(di);});
+  document.getElementById('fc-camion').addEventListener('click',function(){closeMod('m-fiche-chauf');changerCamionDrv(di);});
+  document.getElementById('fc-cond').addEventListener('click',function(){closeMod('m-fiche-chauf');setConducteurDesigne(di);});
+}
+
+function calcHeuresDriverMois(di,mois,annee){
+  var min=0;
+  var days=new Date(annee,mois+1,0).getDate();
+  for(var d=1;d<=days;d++){
+    var dd=new Date(annee,mois,d);
+    if(dd>new Date())break;
+    var ds=annee+'-'+String(mois+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var ms=getMissionsJourDriver(di,ds);
+    if(ms.length>0)min+=7*60-45;
+  }
+  return{h:Math.floor(min/60),m:min%60};
+}
+
+function getMissionsJourDriver(di,date){
+  var ms=[];
+  SL.forEach(function(h){
+    var k=date+'|'+di+'|'+h;
+    (ST.tasks[k]||[]).forEach(function(t){ms.push(t);});
+  });
+  return ms;
+}
+
+function compterMissionsDriverMois(di,mois,annee){
+  var total=0;
+  var days=new Date(annee,mois+1,0).getDate();
+  for(var d=1;d<=days;d++){
+    var ds=annee+'-'+String(mois+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    total+=getMissionsJourDriver(di,ds).length;
+  }
+  return total;
+}
+
+function calcPonctualite(di,mois,annee){
+  /* Estimation basée sur les missions confirmées vs total */
+  var total=0,confirmees=0;
+  var days=new Date(annee,mois+1,0).getDate();
+  for(var d=1;d<=days;d++){
+    var ds=annee+'-'+String(mois+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var ms=getMissionsJourDriver(di,ds);
+    ms.forEach(function(t){total++;if(t._statut==='done')confirmees++;});
+  }
+  if(total===0)return 100;
+  return Math.round(confirmees/total*100);
 }
 </script>
 </body>
