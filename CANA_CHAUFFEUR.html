@@ -52,7 +52,7 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 /* NAV */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,30,.97);border-top:1px solid var(--border);display:flex;padding:7px 0 calc(var(--sab) + 7px);backdrop-filter:blur(20px);z-index:50}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px;background:transparent;color:var(--muted);font-size:10px;font-weight:500;position:relative;transition:color .2s}
-.nb.on{color:var(--orange)}
+.nb.on{color:var(--orange);text-shadow:0 0 12px rgba(249,115,22,.5)}
 .nb svg{width:22px;height:22px;stroke-width:1.8}
 .nbadge{position:absolute;top:2px;right:calc(50% - 17px);background:var(--red);border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;padding:0 4px;border:2px solid var(--bg)}
 
@@ -61,7 +61,7 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px}
 
 /* MISSION CARD */
-.mc{border-radius:18px;margin-bottom:12px;background:var(--card);border:1px solid var(--border);overflow:hidden}
+.mc{border-radius:20px;margin-bottom:14px;background:var(--card);border:1px solid var(--border);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18)}
 .mc-hd{padding:13px 15px 9px;display:flex;align-items:flex-start;justify-content:space-between}
 .mc-time{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
 .mc-sub{font-size:10px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px}
@@ -77,7 +77,7 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 .mt b{color:var(--text)}
 .mt.fw{width:100%}
 .btns{padding:11px 15px;display:grid;gap:7px}
-.ab{border-radius:12px;padding:12px 7px;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid transparent;transition:transform .12s}
+.ab{border-radius:14px;padding:14px 8px;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid transparent;transition:all .15s}
 .ab:active{transform:scale(.92)}
 .ab svg{width:21px;height:21px}
 .ab-maps{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.28);color:var(--blue)}
@@ -127,7 +127,8 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 @keyframes vr{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:1}}
 
 /* STATUS BAR */
-.sbar{margin:0 14px 10px;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;border:1px solid var(--border2)}
+.sbar{margin:0 14px 12px;border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2);background:linear-gradient(135deg,var(--raised),var(--card));position:relative;overflow:hidden}
+.sbar::before{content:"";position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:radial-gradient(circle,rgba(249,115,22,.12),transparent 70%);pointer-events:none}
 .sb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-info{flex:1}
 
@@ -778,7 +779,7 @@ function Today({ch,planning,onAction,onClient}){
   }
   return(
     <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
-      <div className="sbar" style={{background:sbBg}}>
+      <div className="sbar" style={{background:st?sbBg:undefined}}>
         <div className="sb-icon" style={{background:sbCol+'15'}}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
         </div>
@@ -802,6 +803,22 @@ function Today({ch,planning,onAction,onClient}){
             <span style={{fontSize:11,fontWeight:700,color:ch.color}}>{done}/{total} livrées</span>
           </div>
           <div className="prog-bar"><div className="prog-fill" style={{width:`${total?Math.round(done/total*100):0}%`,background:`linear-gradient(90deg,${ch.color},var(--green))`}}/></div>
+        </div>
+      )}
+      {total>0&&(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,margin:'0 14px 12px'}}>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:900,color:'var(--green)'}}>{done}</div>
+            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>Livrées</div>
+          </div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:900,color:'var(--amber)'}}>{ms.filter(m=>m._statut==='enroute').length}</div>
+            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>En route</div>
+          </div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:900,color:ch.color}}>{total-done}</div>
+            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>Restantes</div>
+          </div>
         </div>
       )}
       <div className="scroll" style={{paddingTop:10}}>
