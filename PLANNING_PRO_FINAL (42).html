@@ -514,7 +514,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #1d4ed8;border-color:#
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
-<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item">🚗 Gestion véhicules</button>
+<button tabindex="0" onclick="voirHistoriqueConducteurs();fermerMenu()" class="menu-item" style="color:#f59e0b;font-weight:700">🔑 Historique conducteurs désignés</button>\n<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item">🚗 Gestion véhicules</button>
 <button tabindex="0" onclick="ouvrirChronogramme();fermerMenu()" class="menu-item">⏱ Chronogramme insertion</button>
 <button tabindex="0" onclick="ouvrirNotifications();fermerMenu()" class="menu-item">🔔 Notifications</button>
 <button tabindex="0" onclick="ouvrirCockpit();fermerMenu()" class="menu-item">🚀 Cockpit opérationnel</button>
@@ -1164,7 +1164,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:4px;color:#60a5fa;font-size:9px;padding:1px 3px;width:52px" onclick="event.stopPropagation()">'+'<span style="color:#334155;font-size:9px">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+' " style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:4px;color:#60a5fa;font-size:9px;padding:1px 3px;width:52px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:68px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:68px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -21741,6 +21741,13 @@ function changerStatutDrv(di){
   tourBtn.addEventListener('click',function(){closeMod('m-statut-drv');ouvrirTourneeCommune(di);});
   grid.appendChild(tourBtn);
 
+  /* Bouton conducteur désigné */
+  var condBtn=document.createElement('button');
+  condBtn.textContent='🔑 Conducteur désigné';
+  condBtn.style.cssText='background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;grid-column:span 2';
+  condBtn.addEventListener('click',function(){closeMod('m-statut-drv');setConducteurDesigne(di);});
+  grid.appendChild(condBtn);
+
   [
     {t:'service',l:'✅ En service',c:'#22c55e',bg:'rgba(34,197,94,.12)',bd:'rgba(34,197,94,.3)'},
     {t:'repos',l:'😴 Repos',c:'#94a3b8',bg:'rgba(100,116,139,.12)',bd:'rgba(100,116,139,.3)'},
@@ -21972,8 +21979,62 @@ document.addEventListener('change', function(e){
   if(field === 'start') ST.drivers[di].start = val;
   if(field === 'end') ST.drivers[di].end = val;
   if(typeof save === 'function') save();
-  if(typeof render === 'function') render();
+  showT(ST.drivers[di].name+' — '+(field==='start'?'Début':'Fin')+' : '+val,'#3b82f6');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
 });
+
+/* Validation par Entree sur les champs heure */
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter' && e.target.dataset && e.target.dataset.field){
+    e.target.blur();
+    e.preventDefault();
+  }
+});
+
+/* ══ CONDUCTEUR DESIGNE — responsabilité légale en cas d'infraction ══ */
+function setConducteurDesigne(di){
+  var dr=ST.drivers[di];
+  var d=ST.cur;
+  if(!ST.conducteurs)ST.conducteurs={};
+  var key=d+'_'+dr.truck;
+  ST.conducteurs[key]={driverIdx:di,driverName:dr.name,truck:dr.truck,date:d,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),ts:Date.now()};
+  save();render();
+  showT('🔑 '+dr.name+' désigné conducteur du '+dr.truck+' aujourd\'hui','#f59e0b');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+}
+
+function getConducteurDesigne(truck,date){
+  if(!ST.conducteurs)return null;
+  return ST.conducteurs[date+'_'+truck]||null;
+}
+
+/* Afficher historique des conducteurs désignés (en cas d'infraction) */
+function voirHistoriqueConducteurs(){
+  var existing=document.getElementById('m-hist-cond');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-hist-cond';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='500px';box.style.maxHeight='80vh';box.style.overflowY='auto';
+  var h=document.createElement('h3');h.textContent='🔑 Historique conducteurs désignés';
+  box.appendChild(h);
+  var list=ST.conducteurs?Object.values(ST.conducteurs).sort(function(a,b){return b.ts-a.ts;}):[];
+  if(!list.length){
+    var empty=document.createElement('div');
+    empty.style.cssText='text-align:center;color:#64748b;padding:30px;font-size:13px';
+    empty.textContent='Aucun conducteur désigné enregistré';
+    box.appendChild(empty);
+  }
+  list.forEach(function(c){
+    var item=document.createElement('div');
+    item.style.cssText='background:#1e293b;border:1px solid #334155;border-left:3px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-bottom:8px';
+    item.innerHTML='<div style="font-size:13px;font-weight:700;color:#f1f5f9">'+c.driverName+' — '+c.truck+'</div><div style="font-size:11px;color:#64748b;margin-top:3px">'+c.date+' à '+c.heure+'</div>';
+    box.appendChild(item);
+  });
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:10px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-hist-cond');});
+  box.appendChild(closeBtn);
+  modal.appendChild(box);document.body.appendChild(modal);
+}
 </script>
 </body>
 </html>
