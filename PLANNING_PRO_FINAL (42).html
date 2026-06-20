@@ -24,24 +24,39 @@
    PROTECTION PAR MOT DE PASSE
 ══════════════════════════════════════════════════ */
 (function(){
-  var MDP = 'cana2026'; /* Mot de passe par défaut - modifiable */
+  window.SERVICES_CONFIG = {
+    'cana2026': {nom:'Direction', niveau:'admin', icone:'\uD83D\uDC54'},
+    'direction2026': {nom:'Direction', niveau:'admin', icone:'\uD83D\uDC54'},
+    'com2026': {nom:'Service Commercial', niveau:'commercial', icone:'\uD83C\uDFE2'},
+    'restoco2026': {nom:'Resto-Co', niveau:'restoco', icone:'\uD83C\uDF7D\uFE0F'},
+    'compta2026': {nom:'Compta', niveau:'compta', icone:'\uD83D\uDCB0'},
+    'rh2026': {nom:'RH Insertion', niveau:'rh', icone:'\uD83D\uDC65'},
+    'rse2026': {nom:'RSE-Formation', niveau:'rse', icone:'\uD83C\uDF31'}
+  };
+
   var dejaConnecte = sessionStorage.getItem('planning_auth');
 
-  if(dejaConnecte === MDP) return; /* Déjà connecté cette session */
+  if(dejaConnecte && window.SERVICES_CONFIG[dejaConnecte]){
+    window._serviceActuel = window.SERVICES_CONFIG[dejaConnecte];
+    window._codeActuel = dejaConnecte;
+    window.addEventListener('load',function(){
+      setTimeout(function(){if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();},500);
+    });
+    return;
+  }
 
-  /* Masquer tout le contenu */
   document.documentElement.style.visibility='hidden';
 
   window.addEventListener('DOMContentLoaded', function(){
     var overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#020617;z-index:999999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,Arial,sans-serif;visibility:visible';
     overlay.innerHTML='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:30px;max-width:340px;width:90%;text-align:center">'
-      +'<div style="font-size:40px;margin-bottom:10px">🔒</div>'
+      +'<div style="font-size:40px;margin-bottom:10px">\uD83D\uDD12</div>'
       +'<div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:6px">Planning La Table de Cana</div>'
-      +'<div style="font-size:12px;color:#64748b;margin-bottom:20px">Acces protege</div>'
-      +'<input type="password" id="pwd-input" placeholder="Mot de passe" style="width:100%;padding:12px;background:#020617;border:1px solid #334155;border-radius:10px;color:#fff;font-size:16px;text-align:center;margin-bottom:12px">'
+      +'<div style="font-size:12px;color:#64748b;margin-bottom:20px">Code d\'acces de votre service</div>'
+      +'<input type="password" id="pwd-input" placeholder="Code d\'acces" style="width:100%;padding:12px;background:#020617;border:1px solid #334155;border-radius:10px;color:#fff;font-size:16px;text-align:center;margin-bottom:12px">'
       +'<button id="pwd-btn" style="width:100%;padding:12px;background:#1d4ed8;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Acceder</button>'
-      +'<div id="pwd-err" style="color:#ef4444;font-size:12px;margin-top:10px;display:none">Mot de passe incorrect</div>'
+      +'<div id="pwd-err" style="color:#ef4444;font-size:12px;margin-top:10px;display:none">Code incorrect</div>'
       +'</div>';
     document.body.appendChild(overlay);
     document.documentElement.style.visibility='visible';
@@ -51,9 +66,13 @@
     var err=document.getElementById('pwd-err');
 
     function tryLogin(){
-      if(inp.value===MDP){
-        sessionStorage.setItem('planning_auth',MDP);
+      var code=inp.value;
+      if(window.SERVICES_CONFIG[code]){
+        sessionStorage.setItem('planning_auth',code);
+        window._serviceActuel = window.SERVICES_CONFIG[code];
+        window._codeActuel = code;
         overlay.remove();
+        if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
       } else {
         err.style.display='block';
         inp.value='';
@@ -536,6 +555,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirGestionAcces();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:900">🔑 Gestion des accès (Direction)</button>
 <button tabindex="0" onclick="ouvrirMessagesChauffeurs();fermerMenu()" class="menu-item" style="color:#14b8a6;font-weight:700">💬 Messages chauffeurs</button>
 <button tabindex="0" onclick="ouvrirCentreArchives();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">📂 Centre Archives</button>
 <button tabindex="0" onclick="ouvrirRechercheBL();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">📄 Bons de livraison</button>
@@ -1320,7 +1340,7 @@ function saveTask(){
   if(client&&cat&&cat!=='truck'&&!(ST.library[cat]||[]).includes(client)){if(!ST.library[cat])ST.library[cat]=[];ST.library[cat].push(client);}
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
 }
-function delT(k,ti){if(!ST.tasks[k])return;ST.tasks[k].splice(ti,1);if(!ST.tasks[k].length)delete ST.tasks[k];save();rGrid();rStats();rCounters();showT('✓ Supprimé','#dc2626');}
+function delT(k,ti){if(!ST.tasks[k])return;var t=ST.tasks[k][ti];var nomClient=t&&(t.client||t.task)||'?';ST.tasks[k].splice(ti,1);if(!ST.tasks[k].length)delete ST.tasks[k];save();rGrid();rStats();rCounters();showT('✓ Supprimé','#dc2626');if(typeof logAudit==='function')logAudit('Suppression mission',nomClient+' — '+k);}
 
 /* SUPPRESSION / TRANSFERT */
 function openDelMod(){document.getElementById('del-date').value=ST.cur;document.getElementById('m-del').classList.add('on');loadDel();}
@@ -21882,8 +21902,11 @@ function setCamionDrv(di,camion){
 /* ══ SYNC AUTO SUPABASE APRES CHAQUE ACTION ══ */
 var _origSaveTask=saveTask;
 saveTask=function(){
+  var clientVal=document.getElementById('m-client')?document.getElementById('m-client').value:'';
+  var taskVal=document.getElementById('m-task')?document.getElementById('m-task').value:'';
   _origSaveTask.apply(this,arguments);
   setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
+  if(typeof logAudit==='function')logAudit('Ajout mission',(clientVal||taskVal||'?'));
 };
 
 var _origDelT=delT;
@@ -23343,6 +23366,181 @@ function ouvrirMessagesChauffeurs(){
     if(!document.getElementById('m-messages-resp')){clearInterval(autoRefresh);observer.disconnect();}
   });
   observer.observe(document.body,{childList:true});
+}
+
+/* ══════════════════════════════════════════════════
+   RESTRICTIONS PAR SERVICE + JOURNAL D'AUDIT
+══════════════════════════════════════════════════ */
+var SERVICE_BADGES_VISIBLE=false;
+
+function appliquerRestrictionsService(){
+  if(!window._serviceActuel)return;
+  var niveau=window._serviceActuel.niveau;
+
+  /* Commercial: tout sauf RH/Direction confidentiel */
+  if(niveau==='commercial'||niveau==='restoco'){
+    setTimeout(function(){
+      document.querySelectorAll('.menu-item').forEach(function(btn){
+        var txt=btn.textContent;
+        if(txt.indexOf('RH')>=0||txt.indexOf('Evaluation')>=0||txt.indexOf('Salarié')>=0||txt.indexOf('Insertion')>=0){
+          btn.style.display='none';
+        }
+      });
+    },300);
+  }
+
+  /* Compta: limite a BL, archives, vue financiere */
+  if(niveau==='compta'){
+    setTimeout(function(){
+      document.querySelectorAll('.menu-item').forEach(function(btn){
+        var txt=btn.textContent;
+        var autorise=txt.indexOf('Bon')>=0||txt.indexOf('Archives')>=0||txt.indexOf('Recherche')>=0;
+        if(!autorise)btn.style.display='none';
+      });
+    },300);
+  }
+
+  /* RH: uniquement gestion chauffeurs, statuts, historique */
+  if(niveau==='rh'){
+    setTimeout(function(){
+      document.querySelectorAll('.menu-item').forEach(function(btn){
+        var txt=btn.textContent;
+        var autorise=txt.indexOf('Gestion des chauffeurs')>=0||txt.indexOf('Historique')>=0||txt.indexOf('Recherche')>=0;
+        if(!autorise)btn.style.display='none';
+      });
+    },300);
+  }
+
+  /* RSE: vue lecture seule planning + stats */
+  if(niveau==='rse'){
+    setTimeout(function(){
+      document.querySelectorAll('.menu-item').forEach(function(btn){
+        var txt=btn.textContent;
+        var autorise=txt.indexOf('Photos')>=0||txt.indexOf('Archives')>=0||txt.indexOf('Statistiques')>=0;
+        if(!autorise)btn.style.display='none';
+      });
+    },300);
+  }
+
+  /* Badge service visible en haut */
+  setTimeout(function(){
+    if(SERVICE_BADGES_VISIBLE)return;
+    SERVICE_BADGES_VISIBLE=true;
+    var badge=document.createElement('div');
+    badge.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #334155;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:#f97316;z-index:9999;display:flex;align-items:center;gap:6px';
+    badge.innerHTML='<span>'+window._serviceActuel.icone+'</span><span>'+window._serviceActuel.nom+'</span>';
+    document.body.appendChild(badge);
+  },300);
+}
+
+/* Journal d'audit - enregistre chaque action importante */
+function logAudit(action,detail){
+  if(!window._serviceActuel)return;
+  var entry={
+    date:new Date().toISOString().slice(0,10),
+    heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+    service:window._serviceActuel.nom,
+    action:action,
+    detail:detail||''
+  };
+  var key='AUDIT_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  supaFetch('planning',{method:'POST',body:JSON.stringify({date:key,donnees:entry})});
+}
+
+function ouvrirJournalAudit(){
+  var existing=document.getElementById('m-audit');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-audit';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='650px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='\uD83D\uDCDC Journal d\'audit';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:14px';
+  sub.textContent='Qui a fait quoi, quand, sur quel service';
+  box.appendChild(sub);
+
+  var results=document.createElement('div');
+  results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:12px">Chargement...</div>';
+  box.appendChild(results);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:14px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-audit');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  supaFetch('planning?date=like.AUDIT_*&select=donnees&order=date.desc&limit=200').then(function(rows){
+    if(!rows||!rows.length){
+      results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">Aucune action enregistree</div>';
+      return;
+    }
+    var entries=rows.map(function(r){return r.donnees;}).filter(Boolean);
+    entries.sort(function(a,b){return (b.date+b.heure).localeCompare(a.date+a.heure);});
+
+    var html='';
+    entries.forEach(function(e){
+      var couleur=e.action.indexOf('Supprim')>=0?'#ef4444':e.action.indexOf('Ajout')>=0?'#22c55e':'#3b82f6';
+      html+='<div style="background:#1e293b;border-left:3px solid '+couleur+';border-radius:8px;padding:10px 12px;margin-bottom:6px">'
+        +'<div style="display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:700;color:#fff">'+e.service+'</span><span style="font-size:11px;color:#64748b">'+e.date+' '+e.heure+'</span></div>'
+        +'<div style="font-size:12px;color:'+couleur+';font-weight:600;margin-top:3px">'+e.action+'</div>'
+        +(e.detail?'<div style="font-size:11px;color:#94a3b8;margin-top:2px">'+e.detail+'</div>':'')
+        +'</div>';
+    });
+    results.innerHTML=html;
+  });
+}
+
+/* ══ GESTION DES ACCES — vue Direction uniquement ══ */
+function ouvrirGestionAcces(){
+  if(!window._serviceActuel||window._serviceActuel.niveau!=='admin'){
+    showT('Acces reserve a la Direction','#ef4444');
+    return;
+  }
+  var existing=document.getElementById('m-acces');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-acces';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='600px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='\uD83D\uDD11 Gestion des acces — Recapitulatif';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.6';
+  sub.textContent='Liens et codes a transmettre a chaque service. Le lien est identique pour tous (le logiciel), seul le code change.';
+  box.appendChild(sub);
+
+  var lienBase=window.location.href.split('?')[0];
+
+  Object.keys(window.SERVICES_CONFIG).forEach(function(code){
+    if(code==='cana2026'||code==='direction2026')return;
+    var srv=window.SERVICES_CONFIG[code];
+    var card=document.createElement('div');
+    card.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:10px';
+    card.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:20px">'+srv.icone+'</span><span style="font-size:14px;font-weight:800;color:#fff">'+srv.nom+'</span></div>'
+      +'<div style="font-size:11px;color:#64748b;margin-bottom:4px">Lien (identique pour tous) :</div>'
+      +'<div style="background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#60a5fa;word-break:break-all;margin-bottom:8px">'+lienBase+'</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-bottom:4px">Code d\'acces :</div>'
+      +'<div style="background:#0f172a;border-radius:6px;padding:8px;font-size:14px;font-weight:900;color:#f97316;letter-spacing:1px">'+code+'</div>';
+    box.appendChild(card);
+  });
+
+  var auditBtn=document.createElement('button');
+  auditBtn.textContent='\uD83D\uDCDC Voir le journal d\'audit complet';
+  auditBtn.style.cssText='width:100%;background:#1d4ed8;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-top:8px';
+  auditBtn.addEventListener('click',function(){closeMod('m-acces');ouvrirJournalAudit();});
+  box.appendChild(auditBtn);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:8px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-acces');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
 }
 </script>
 </body>
