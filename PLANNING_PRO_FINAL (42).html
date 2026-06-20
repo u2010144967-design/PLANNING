@@ -536,6 +536,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirMessagesChauffeurs();fermerMenu()" class="menu-item" style="color:#14b8a6;font-weight:700">💬 Messages chauffeurs</button>
 <button tabindex="0" onclick="ouvrirCentreArchives();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">📂 Centre Archives</button>
 <button tabindex="0" onclick="ouvrirRechercheBL();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">📄 Bons de livraison</button>
 <button tabindex="0" onclick="ouvrirDashboardMateriel();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">📦 Tableau de bord matériel</button>
@@ -23233,6 +23234,115 @@ function ouvrirCentreArchives(){
   }
 
   majZoneRecherche();
+}
+
+/* ══════════════════════════════════════════════════
+   MESSAGES CHAUFFEURS — vue et envoi depuis le logiciel
+══════════════════════════════════════════════════ */
+function ouvrirMessagesChauffeurs(){
+  var existing=document.getElementById('m-messages-resp');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-messages-resp';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='560px';box.style.maxHeight='88vh';box.style.display='flex';box.style.flexDirection='column';
+
+  var h=document.createElement('h3');h.textContent='💬 Messages chauffeurs';h.style.marginBottom='4px';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:12px';
+  sub.textContent='Conversation avec toute l\'équipe';
+  box.appendChild(sub);
+
+  var listDiv=document.createElement('div');
+  listDiv.id='msg-list-resp';
+  listDiv.style.cssText='flex:1;overflow-y:auto;background:#0f172a;border-radius:10px;padding:12px;margin-bottom:12px;max-height:400px;min-height:200px';
+  box.appendChild(listDiv);
+
+  var inputRow=document.createElement('div');
+  inputRow.style.cssText='display:flex;gap:8px';
+
+  var textInput=document.createElement('textarea');
+  textInput.id='msg-input-resp';
+  textInput.placeholder='Message à toute l\'équipe...';
+  textInput.style.cssText='flex:1;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#fff;padding:10px 14px;font-size:13px;resize:none;height:44px';
+  inputRow.appendChild(textInput);
+
+  var sendBtn=document.createElement('button');
+  sendBtn.textContent='➤';
+  sendBtn.style.cssText='background:#f97316;border:none;border-radius:50%;width:44px;height:44px;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0';
+  inputRow.appendChild(sendBtn);
+
+  box.appendChild(inputRow);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:10px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-messages-resp');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  function chargerMessages(){
+    supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1').then(function(rows){
+      var msgs=[];
+      if(rows&&rows.length&&rows[0].donnees){
+        try{msgs=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
+      }
+      if(!Array.isArray(msgs))msgs=[];
+
+      if(!msgs.length){
+        listDiv.innerHTML='<div style="text-align:center;color:#64748b;font-size:12px;padding:30px">Aucun message</div>';
+        return;
+      }
+
+      var html='';
+      msgs.slice(-50).forEach(function(m){
+        var isResp=m.from==='resp';
+        html+='<div style="display:flex;justify-content:'+(isResp?'flex-end':'flex-start')+';margin-bottom:10px">'
+          +'<div style="max-width:80%">'
+          +'<div style="background:'+(isResp?'#f97316':'#1e293b')+';color:#fff;border-radius:16px;padding:9px 14px;font-size:13px;'+(isResp?'border-bottom-right-radius:4px':'border-bottom-left-radius:4px')+'">'+m.text+'</div>'
+          +'<div style="font-size:10px;color:#64748b;margin-top:3px;text-align:'+(isResp?'right':'left')+'">'+(isResp?'Moi':(m.fromName||m.chauffeur||'?'))+' · '+(m.time||'')+'</div>'
+          +'</div></div>';
+      });
+      listDiv.innerHTML=html;
+      listDiv.scrollTop=listDiv.scrollHeight;
+    });
+  }
+
+  function envoyerMessage(){
+    var text=textInput.value.trim();
+    if(!text)return;
+    textInput.value='';
+    var msg={id:Date.now(),from:'resp',fromName:'Responsable',text:text,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
+
+    supaFetch('planning?date=eq.MESSAGES&select=donnees&limit=1').then(function(rows){
+      var msgs=[];
+      if(rows&&rows.length&&rows[0].donnees){
+        try{msgs=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
+      }
+      if(!Array.isArray(msgs))msgs=[];
+      msgs.push(msg);
+      msgs=msgs.slice(-500);
+      var body=JSON.stringify({donnees:JSON.stringify(msgs)});
+      if(rows&&rows.length){
+        supaFetch('planning?date=eq.MESSAGES',{method:'PATCH',body:body}).then(chargerMessages);
+      }else{
+        supaFetch('planning',{method:'POST',body:JSON.stringify({date:'MESSAGES',donnees:JSON.stringify(msgs)})}).then(chargerMessages);
+      }
+    });
+  }
+
+  sendBtn.addEventListener('click',envoyerMessage);
+  textInput.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();envoyerMessage();}
+  });
+
+  chargerMessages();
+  var autoRefresh=setInterval(chargerMessages,10000);
+  var observer=new MutationObserver(function(){
+    if(!document.getElementById('m-messages-resp')){clearInterval(autoRefresh);observer.disconnect();}
+  });
+  observer.observe(document.body,{childList:true});
 }
 </script>
 </body>
