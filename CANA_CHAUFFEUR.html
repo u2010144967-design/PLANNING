@@ -2155,11 +2155,13 @@ function ChaufApp({ch,onLogout}){
 
             const finishSave=(finalDataUrl)=>{
               try{
+                console.log('DEBUG photo - clientKey:',JSON.stringify(clientKey),'heureKey:',heureKey,'todayD:',todayD);
                 const updatedProof=saveMissionProof(ch.id,clientKey,heureKey,todayD,'photo',finalDataUrl);
+                console.log('DEBUG photo - updatedProof:',updatedProof?JSON.stringify({photosCount:updatedProof.photos?updatedProof.photos.length:0}):'NULL');
                 const savedPhotoId=updatedProof&&updatedProof.photos&&updatedProof.photos.length
                   ?updatedProof.photos[updatedProof.photos.length-1].id:null;
                 vib([60]);
-                t3('📷 Photo enregistrée !','var(--green)');
+                t3(`📷 Photo OK (${updatedProof&&updatedProof.photos?updatedProof.photos.length:0})`,'var(--green)');
                 setRefreshKey(k=>k+1);
 
                 saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl:finalDataUrl,date:todayD}).then(ok=>{
