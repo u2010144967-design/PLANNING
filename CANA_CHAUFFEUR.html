@@ -679,11 +679,14 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
 
+  const [diag,setDiag]=useState('');
+
   const refresh=async()=>{
     setLoading(true);
     const [p,ev]=await Promise.all([loadPlanning(),loadAllEvents()]);
     if(p)setPlanning(p);
     setEvents(ev);
+    setDiag(`${ev.length} événement(s) chargé(s) — types: ${[...new Set(ev.map(e=>e.type))].join(', ')||'aucun'} — chauffeurs: ${[...new Set(ev.map(e=>e.chauffeur))].join(', ')||'aucun'}`);
     setLoading(false);
   };
 
@@ -776,6 +779,7 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
       </div>
 
       {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}><div className="spin" style={{width:20,height:20,margin:'0 auto 8px'}}/>Synchronisation...</div>}
+      {!loading&&diag&&<div style={{margin:'0 16px',padding:12,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:10,fontSize:11,color:'#93c5fd',lineHeight:1.6}}>🔍 DIAGNOSTIC : {diag}</div>}
     </div>
   );
 }
