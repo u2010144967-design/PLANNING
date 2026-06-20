@@ -599,127 +599,220 @@ function Login({onLogin,onResponsable}){
 /* ══════════════════════════════════════════════════
    VUE RESPONSABLE — toutes les preuves de tous les chauffeurs
 ══════════════════════════════════════════════════ */
-function ResponsableScreen({onLogout}){
+/* ══════════════════════════════════════════════════
+   VUE RESPONSABLE — style app, grille de tuiles chauffeurs
+══════════════════════════════════════════════════ */
+function ResponsableHome({onLogout,onSelectDriver}){
+  const today=new Date().toISOString().slice(0,10);
+  const [planning,setPlanning]=useState(null);
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [selectedDate,setSelectedDate]=useState(new Date().toISOString().slice(0,10));
-  const [selectedDriver,setSelectedDriver]=useState('tous');
-  const [zoom,setZoom]=useState(null);
 
   const refresh=async()=>{
     setLoading(true);
-    const ev=await loadAllEvents();
+    const [p,ev]=await Promise.all([loadPlanning(),loadAllEvents()]);
+    if(p)setPlanning(p);
     setEvents(ev);
     setLoading(false);
   };
 
   useEffect(()=>{refresh();const iv=setInterval(refresh,30000);return()=>clearInterval(iv);},[]);
 
-  const filtered=events.filter(e=>{
-    if(e.date!==selectedDate)return false;
-    if(selectedDriver!=='tous'&&e.chauffeur!==selectedDriver)return false;
-    return['photo','signature'].includes(e.type);
-  });
+  const liveDrivers=planning&&planning.drivers&&planning.drivers.length
+    ?DRIVERS.map((d,i)=>{
+        const real=planning.drivers[i];
+        return real?{...d,name:real.name,display:real.name.charAt(0)+real.name.slice(1).toLowerCase(),ini:real.name.charAt(0),truck:real.truck||d.truck,start:real.start||d.start,end:real.end||d.end}:d;
+      })
+    :DRIVERS;
 
-  const driverNames=[...new Set(events.filter(e=>e.date===selectedDate).map(e=>e.chauffeur).filter(Boolean))];
+  const getDriverStats=(driverName)=>{
+    const todayEvents=events.filter(e=>e.date===today&&e.chauffeur===driverName);
+    const photos=todayEvents.filter(e=>e.type==='photo').length;
+    const sigs=todayEvents.filter(e=>e.type==='signature').length;
+    const done=todayEvents.filter(e=>e.type==='done').length;
+    const missions=planning?getMissions(planning,liveDrivers.findIndex(d=>d.name===driverName),today).length:0;
+    return{photos,sigs,done,missions};
+  };
 
-  const photos=filtered.filter(e=>e.type==='photo');
-  const signatures=filtered.filter(e=>e.type==='signature');
+  return(
+    <div className="scroll" style={{padding:'0 0 calc(24px + var(--sab))'}}>
+      <div className="home-top">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+          <div>
+            <div className="home-greet">👔 Vue Responsable</div>
+            <div className="home-name" style={{fontSize:24}}>Équipe du jour</div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={refresh} style={{width:38,height:38,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--orange)'}}>
+              <i className={`fa-solid fa-arrows-rotate ${loading?'fa-spin':''}`}/>
+            </button>
+            <button onClick={onLogout} style={{width:38,height:38,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div className="home-meta" style={{marginTop:8}}>
+          <span>{new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span>
+        </div>
+      </div>
+
+      <div className="icon-grid">
+        {liveDrivers.map(dr=>{
+          const stats=getDriverStats(dr.name);
+          return(
+            <button key={dr.id} className="icon-tile" style={{background:dr.color+'15',borderColor:dr.color+'40',position:'relative'}} onClick={()=>onSelectDriver(dr)}>
+              <div className="av" style={{width:42,height:42,fontSize:17,background:dr.color+'22',border:`2px solid ${dr.color}55`,color:dr.color}}>{dr.ini}</div>
+              <div className="icon-tile-label" style={{color:dr.color,fontSize:14}}>{dr.display}</div>
+              <div style={{display:'flex',gap:6,fontSize:9,color:'var(--muted)',fontWeight:700}}>
+                <span>📦{stats.missions}</span><span>✅{stats.done}</span>
+              </div>
+              {(stats.photos+stats.sigs)>0&&<div className="tile-badge" style={{background:'var(--purple)'}}>{stats.photos+stats.sigs}</div>}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}><div className="spin" style={{width:20,height:20,margin:'0 auto 8px'}}/>Synchronisation...</div>}
+    </div>
+  );
+}
+
+/* ══ FICHE DETAIL CHAUFFEUR — vue responsable ══ */
+function ResponsableDriverDetail({driver,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const [selectedDate,setSelectedDate]=useState(today);
+  const [planning,setPlanning]=useState(null);
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [zoom,setZoom]=useState(null);
+  const [tab,setTab]=useState('missions');
+
+  const refresh=async()=>{
+    setLoading(true);
+    const [p,ev]=await Promise.all([loadPlanning(),loadAllEvents()]);
+    if(p)setPlanning(p);
+    setEvents(ev);
+    setLoading(false);
+  };
+  useEffect(()=>{refresh();},[]);
+
+  const missions=planning?getMissions(planning,driver.id,selectedDate):[];
+  const dayEvents=events.filter(e=>e.date===selectedDate&&e.chauffeur===driver.name);
+  const photos=dayEvents.filter(e=>e.type==='photo');
+  const signatures=dayEvents.filter(e=>e.type==='signature');
+  const done=missions.filter(m=>m._statut==='done').length;
 
   return(
     <>
-      <div className="hdr" style={{justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:36,height:36,borderRadius:11,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{fontSize:16}}>👔</span>
-          </div>
-          <div className="hdr-title">Vue Responsable</div>
-        </div>
-        <button onClick={onLogout} style={{width:36,height:36,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
-      </div>
-
+      <Header title={driver.display} onBack={onBack}/>
       <div className="scroll">
-        <div style={{display:'flex',gap:8,marginBottom:14}}>
-          <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}
-            style={{flex:1,fontSize:14,fontWeight:700,padding:'10px 12px'}}/>
-          <button onClick={refresh} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,width:42,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--orange)'}}>
-            <i className={`fa-solid fa-arrows-rotate ${loading?'fa-spin':''}`}/>
-          </button>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:18}}>
+          <div className="av" style={{width:56,height:56,fontSize:22,background:driver.color+'22',border:`2px solid ${driver.color}55`,color:driver.color}}>{driver.ini}</div>
+          <div>
+            <div style={{fontSize:18,fontWeight:900}}>{driver.display}</div>
+            <div style={{fontSize:12,color:'var(--muted)'}}>🚛 {driver.truck} · {driver.start}–{driver.end}</div>
+          </div>
         </div>
 
-        <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:10,marginBottom:6}}>
-          <button onClick={()=>setSelectedDriver('tous')}
-            style={{flexShrink:0,padding:'7px 14px',borderRadius:20,fontSize:12,fontWeight:700,background:selectedDriver==='tous'?'var(--orange)':'var(--card)',color:selectedDriver==='tous'?'#fff':'var(--muted)',border:'1px solid var(--border2)'}}>
-            Tous
-          </button>
-          {driverNames.map(name=>(
-            <button key={name} onClick={()=>setSelectedDriver(name)}
-              style={{flexShrink:0,padding:'7px 14px',borderRadius:20,fontSize:12,fontWeight:700,background:selectedDriver===name?'var(--orange)':'var(--card)',color:selectedDriver===name?'#fff':'var(--muted)',border:'1px solid var(--border2)'}}>
-              {name}
+        <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}
+          style={{width:'100%',marginBottom:14,fontSize:14,fontWeight:700,padding:'10px 12px'}}/>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:16}}>
+          <div className="card" style={{padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:900,color:driver.color}}>{missions.length}</div>
+            <div style={{fontSize:10,color:'var(--muted)'}}>Missions</div>
+          </div>
+          <div className="card" style={{padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:900,color:'var(--green)'}}>{done}</div>
+            <div style={{fontSize:10,color:'var(--muted)'}}>Livrées</div>
+          </div>
+          <div className="card" style={{padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:900,color:'var(--purple)'}}>{photos.length+signatures.length}</div>
+            <div style={{fontSize:10,color:'var(--muted)'}}>Preuves</div>
+          </div>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,background:'var(--raised)',borderRadius:12,padding:4,marginBottom:16}}>
+          {[{id:'missions',lbl:'📦 Missions'},{id:'photos',lbl:'📸 Photos'},{id:'sig',lbl:'✍️ Signatures'}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{background:tab===t.id?'var(--card)':'transparent',border:tab===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:9,padding:'9px 4px',fontSize:11,fontWeight:700,color:tab===t.id?'var(--orange)':'var(--muted)'}}>
+              {t.lbl}
             </button>
           ))}
         </div>
 
-        {loading&&<div className="loader" style={{minHeight:200}}><div className="spin" style={{width:32,height:32}}/><span>Chargement...</span></div>}
-
-        {!loading&&photos.length===0&&signatures.length===0&&(
-          <div style={{textAlign:'center',padding:'50px 22px',color:'var(--muted)'}}>
-            <div style={{fontSize:40,marginBottom:10}}>📭</div>
-            <div style={{fontSize:14,fontWeight:700}}>Aucune preuve pour cette date</div>
-          </div>
+        {tab==='missions'&&(
+          missions.length===0?(
+            <div style={{textAlign:'center',padding:30,color:'var(--muted)',fontSize:13}}>Aucune mission ce jour</div>
+          ):missions.map((m,i)=>(
+            <div key={i} className="card" style={{padding:12,marginBottom:8,borderLeft:`3px solid ${m._statut==='done'?'var(--green)':m._statut==='enroute'?'var(--amber)':'var(--dim)'}`}}>
+              <div style={{display:'flex',justifyContent:'space-between'}}>
+                <span className="mono" style={{fontWeight:800,color:driver.color}}>{m.heure}</span>
+                <span style={{fontSize:10,color:'var(--muted)',fontWeight:700}}>{m._statut==='done'?'✓ Livré':m._statut==='enroute'?'🚗 En route':'En attente'}</span>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,marginTop:4}}>{m.client||m.task}</div>
+              {m.adresse&&<div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{m.adresse}</div>}
+            </div>
+          ))
         )}
 
-        {photos.length>0&&(
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>📸 Photos ({photos.length})</div>
+        {tab==='photos'&&(
+          photos.length===0?(
+            <div style={{textAlign:'center',padding:30,color:'var(--muted)',fontSize:13}}>Aucune photo ce jour</div>
+          ):(
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {photos.map((p,i)=>(
                 <div key={i} onClick={()=>setZoom(p)} style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--border2)',position:'relative',cursor:'pointer',aspectRatio:1}}>
                   <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.85))',padding:'18px 8px 6px',color:'#fff'}}>
-                    <div style={{fontSize:11,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.chauffeur}</div>
-                    <div style={{fontSize:10,opacity:.85,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.client}</div>
-                    <div style={{fontSize:9,opacity:.7}}>{p.heure}</div>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.85))',padding:'16px 8px 6px',color:'#fff'}}>
+                    <div style={{fontSize:11,fontWeight:700}}>{p.client}</div>
+                    <div style={{fontSize:9,opacity:.8}}>{p.heure}</div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          )
         )}
 
-        {signatures.length>0&&(
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>✍️ Signatures ({signatures.length})</div>
-            {signatures.map((s,i)=>(
-              <div key={i} className="card" style={{padding:12,marginBottom:10}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:800}}>{s.chauffeur}</div>
-                    <div style={{fontSize:11,color:'var(--muted)'}}>{s.client} — {s.heure}</div>
-                  </div>
-                </div>
-                <div style={{background:'#fff',borderRadius:10,padding:6}}>
-                  <img src={s.dataUrl} style={{width:'100%',height:50,objectFit:'contain'}}/>
-                </div>
+        {tab==='sig'&&(
+          signatures.length===0?(
+            <div style={{textAlign:'center',padding:30,color:'var(--muted)',fontSize:13}}>Aucune signature ce jour</div>
+          ):signatures.map((s,i)=>(
+            <div key={i} className="card" style={{padding:12,marginBottom:10}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:2}}>{s.client}</div>
+              <div style={{fontSize:11,color:'var(--muted)',marginBottom:8}}>{s.heure}</div>
+              <div style={{background:'#fff',borderRadius:10,padding:6}}>
+                <img src={s.dataUrl} style={{width:'100%',height:50,objectFit:'contain'}}/>
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
 
       {zoom&&(
         <div onClick={()=>setZoom(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
           <img src={zoom.dataUrl} style={{maxWidth:'100%',maxHeight:'70%',borderRadius:12,objectFit:'contain'}}/>
-          <div style={{color:'#fff',fontSize:15,marginTop:14,fontWeight:800}}>{zoom.chauffeur}</div>
-          <div style={{color:'var(--muted)',fontSize:13,marginTop:2}}>{zoom.client} — {zoom.heure}</div>
+          <div style={{color:'#fff',fontSize:14,marginTop:14,fontWeight:700}}>{zoom.client}</div>
+          <div style={{color:'var(--muted)',fontSize:12,marginTop:2}}>{zoom.heure}</div>
           <button onClick={()=>setZoom(null)} style={{marginTop:18,background:'var(--card)',color:'var(--text)',borderRadius:50,padding:'10px 24px',fontSize:13,fontWeight:700}}>Fermer</button>
         </div>
       )}
     </>
   );
 }
+
+function ResponsableScreen({onLogout}){
+  const [selectedDriver,setSelectedDriver]=useState(null);
+  return(
+    <div className="screen">
+      {selectedDriver
+        ?<ResponsableDriverDetail driver={selectedDriver} onBack={()=>setSelectedDriver(null)}/>
+        :<ResponsableHome onLogout={onLogout} onSelectDriver={setSelectedDriver}/>
+      }
+    </div>
+  );
+}
+
 
 /* ══ HEADER avec retour ══ */
 function Header({title, onBack}){
@@ -1877,7 +1970,7 @@ function App(){
     const iv=setInterval(checkNight,300000);
     return()=>clearInterval(iv);
   },[]);
-  if(respMode)return<div className="screen"><ResponsableScreen onLogout={()=>setRespMode(false)}/></div>;
+  if(respMode)return<ResponsableScreen onLogout={()=>setRespMode(false)}/>;
   if(respCodeScreen)return<RespCodeScreen onUnlock={()=>{setRespCodeScreen(false);setRespMode(true);}} onCancel={()=>setRespCodeScreen(false)}/>;
   return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh} onResponsable={()=>setRespCodeScreen(true)}/>;
 }
