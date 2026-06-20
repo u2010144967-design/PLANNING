@@ -340,6 +340,37 @@ function speak(t){
   window.speechSynthesis.speak(u);
 }
 
+
+/* ══ SYSTEME DE PREUVES PAR MISSION — stocke localement + Supabase ══ */
+function getProofKey(chId,client,heure,date){
+  return `proof_${chId}_${date}_${heure}_${(client||'').replace(/[^a-zA-Z0-9]/g,'')}`;
+}
+function getMissionProofs(chId,client,heure,date){
+  try{
+    const key=getProofKey(chId,client,heure,date);
+    const raw=localStorage.getItem(key);
+    return raw?JSON.parse(raw):{photos:[],signature:null,materiel:null};
+  }catch(e){return{photos:[],signature:null,materiel:null};}
+}
+function saveMissionProof(chId,client,heure,date,type,data){
+  try{
+    const key=getProofKey(chId,client,heure,date);
+    const current=getMissionProofs(chId,client,heure,date);
+    if(type==='photo'){
+      current.photos=current.photos||[];
+      current.photos.push({dataUrl:data,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    }
+    if(type==='signature'){
+      current.signature={dataUrl:data,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
+    }
+    if(type==='materiel'){
+      current.materiel=data;
+    }
+    localStorage.setItem(key,JSON.stringify(current));
+    return current;
+  }catch(e){return null;}
+}
+
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
@@ -416,58 +447,50 @@ function HomeScreen({ch,planning,onNavigate,unreadMsg}){
   const done=ms.filter(m=>m._statut==='done').length;
   const enroute=ms.filter(m=>m._statut==='enroute').length;
   const restant=ms.length-done;
-  const now=new Date();
 
-  let sbLbl='En service',sbCol='var(--green)';
+  let sbLbl='En service',sbCol='#22c55e',sbBgC='rgba(34,197,94,.1)',sbBorder='rgba(34,197,94,.25)';
   if(st){
-    if(['absent','maladie'].includes(st.type)){sbLbl=st.type==='maladie'?'Arrêt maladie':'Absent';sbCol='var(--red)';}
-    else if(st.type==='conge'){sbLbl='Congé';sbCol='var(--amber)';}
-    else if(st.type==='repos'){sbLbl='Repos';sbCol='var(--muted)';}
+    if(['absent','maladie'].includes(st.type)){sbLbl=st.type==='maladie'?'Arrêt maladie':'Absent';sbCol='#ef4444';sbBgC='rgba(239,68,68,.1)';sbBorder='rgba(239,68,68,.25)';}
+    else if(st.type==='conge'){sbLbl='Congé';sbCol='#f59e0b';sbBgC='rgba(245,158,11,.1)';sbBorder='rgba(245,158,11,.25)';}
+    else if(st.type==='repos'){sbLbl='Repos';sbCol='#8B96A8';sbBgC='rgba(139,150,168,.1)';sbBorder='rgba(139,150,168,.25)';}
   }
 
-  /* Prochaine mission non terminée */
   const next = ms.find(m=>m._statut!=='done');
 
   return(
     <div className="scroll" style={{padding:'0 0 calc(24px + var(--sab))'}}>
       <div className="home-top">
         <div className="home-greet">Bonjour 👋</div>
-        <div className="home-name" style={{color:ch.color}}>{ch.display}</div>
-        <div className="home-meta">
-          <span>🚛 {ch.truck}</span><span>·</span><span>{ch.start}–{ch.end}</span>
+        <div className="home-name" style={{color:ch.color,fontSize:26}}>{ch.display}</div>
+        <div className="home-meta" style={{fontSize:13,marginTop:8}}>
+          <span style={{fontWeight:700}}>🚛 {ch.truck}</span><span>·</span><span style={{fontWeight:700}}>{ch.start}–{ch.end}</span>
           <div className="geo"/>
         </div>
       </div>
 
-      {next && (
-        <div className="next-banner">
-          <div style={{fontSize:10,color:'var(--orange)',fontWeight:800,textTransform:'uppercase',letterSpacing:.06,marginBottom:6,position:'relative'}}>
-            <i className="fa-solid"/>📍 Prochaine étape
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:12,position:'relative'}}>
-            <div className="mono" style={{fontSize:24,fontWeight:900,color:ch.color}}>{next.heure}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{next.client||next.task}</div>
-              <div style={{fontSize:11,color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{next.adresse}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="icon-grid">
-        <div className="status-tile" style={{background:'var(--card)'}} onClick={()=>onNavigate('today')}>
-          <div style={{width:46,height:46,borderRadius:14,background:sbCol+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        {/* Tuile STATUT — meme format que les autres */}
+        <button className="icon-tile" style={{background:sbBgC,borderColor:sbBorder}} onClick={()=>onNavigate('today')}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={sbCol} strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <div className="icon-tile-label" style={{color:sbCol,fontSize:15}}>{sbLbl}</div>
+          <div style={{display:'flex',gap:8,fontSize:10,color:'var(--muted)',fontWeight:700}}>
+            <span>Restant {restant}</span>·<span>Livré {done}</span>
           </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:800,color:sbCol}}>{sbLbl}</div>
-            <div style={{display:'flex',gap:10,marginTop:4,fontSize:11,color:'var(--muted)'}}>
-              <span>Restant <b style={{color:'var(--text)'}}>{restant}</b></span>
-              <span>Livré <b style={{color:'var(--green)'}}>{done}</b></span>
-              <span>En route <b style={{color:'var(--amber)'}}>{enroute}</b></span>
-            </div>
+        </button>
+
+        {/* Tuile PROCHAINE ETAPE — meme format, couleur orange distincte */}
+        {next ? (
+          <button className="icon-tile" style={{background:'rgba(249,115,22,.1)',borderColor:'rgba(249,115,22,.3)'}} onClick={()=>onNavigate('today')}>
+            <div style={{fontSize:11,color:'var(--orange)',fontWeight:800,textTransform:'uppercase',letterSpacing:.04}}>📍 Prochaine</div>
+            <div className="mono" style={{fontSize:22,fontWeight:900,color:'var(--orange)'}}>{next.heure}</div>
+            <div className="icon-tile-label" style={{color:'var(--text)',fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{next.client||next.task}</div>
+          </button>
+        ):(
+          <div className="icon-tile" style={{background:'rgba(34,197,94,.08)',borderColor:'rgba(34,197,94,.2)'}}>
+            <div className="icon-tile-emoji">🎉</div>
+            <div className="icon-tile-label" style={{color:'var(--green)'}}>Tout livré !</div>
           </div>
-        </div>
+        )}
 
         <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('today')}>
           <div className="icon-tile-emoji">📅</div>
@@ -545,7 +568,7 @@ function TodayList({ch,planning,onSelectMission,onBack}){
 }
 
 /* ══ FICHE MISSION DETAIL — toutes les actions ══ */
-function MissionDetail({m,ch,onBack,onAction}){
+function MissionDetail({m,ch,onBack,onAction,refreshKey}){
   const stConf={
     pending:{col:'var(--blue)',lbl:'En attente'},
     enroute:{col:'var(--amber)',lbl:'🚗 En route'},
@@ -553,6 +576,17 @@ function MissionDetail({m,ch,onBack,onAction}){
     retard:{col:'var(--red)',lbl:'⚠ Retard'},
   }[m._statut]||{col:'var(--blue)',lbl:'En attente'};
   const maps=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.adresse||m.client||'')}`;
+  const today=new Date().toISOString().slice(0,10);
+  const [proofs,setProofs]=useState(()=>getMissionProofs(ch.id,m.client||m.task,m.heure,today));
+  const [zoomPhoto,setZoomPhoto]=useState(null);
+
+  useEffect(()=>{
+    setProofs(getMissionProofs(ch.id,m.client||m.task,m.heure,today));
+  },[refreshKey,m._statut]);
+
+  const hasPhotos=proofs.photos&&proofs.photos.length>0;
+  const hasSig=!!proofs.signature;
+  const hasMat=!!proofs.materiel;
 
   return(
     <>
@@ -579,6 +613,40 @@ function MissionDetail({m,ch,onBack,onAction}){
           </div>
         </div>
 
+        {/* RECAP PREUVES */}
+        {(hasPhotos||hasSig||hasMat)&&(
+          <div style={{display:'flex',gap:7,marginBottom:12,flexWrap:'wrap'}}>
+            {hasSig&&<span style={{background:'rgba(20,184,166,.12)',color:'var(--teal)',fontSize:11,fontWeight:700,padding:'5px 10px',borderRadius:20,display:'flex',alignItems:'center',gap:5}}>✅ Signé</span>}
+            {hasPhotos&&<span style={{background:'rgba(168,85,247,.12)',color:'var(--purple)',fontSize:11,fontWeight:700,padding:'5px 10px',borderRadius:20,display:'flex',alignItems:'center',gap:5}}>📸 {proofs.photos.length} photo{proofs.photos.length>1?'s':''}</span>}
+            {hasMat&&<span style={{background:'rgba(249,115,22,.12)',color:'var(--orange)',fontSize:11,fontWeight:700,padding:'5px 10px',borderRadius:20,display:'flex',alignItems:'center',gap:5}}>📦 Matériel noté</span>}
+          </div>
+        )}
+
+        {/* GALERIE PHOTOS */}
+        {hasPhotos&&(
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:8}}>📸 Photos prises</div>
+            <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
+              {proofs.photos.map((p,i)=>(
+                <div key={i} onClick={()=>setZoomPhoto(p)} style={{flexShrink:0,width:80,height:80,borderRadius:12,overflow:'hidden',border:'1px solid var(--border2)',position:'relative',cursor:'pointer'}}>
+                  <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:9,padding:'2px 4px',textAlign:'center'}}>{p.time}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SIGNATURE APERCU */}
+        {hasSig&&(
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:8}}>✍️ Signature client — {proofs.signature.time}</div>
+            <div style={{background:'#fff',borderRadius:12,padding:8,border:'1px solid var(--border2)'}}>
+              <img src={proofs.signature.dataUrl} style={{width:'100%',height:60,objectFit:'contain'}}/>
+            </div>
+          </div>
+        )}
+
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
           <a href={maps} target="_blank" style={{textDecoration:'none'}}>
             <button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button>
@@ -598,10 +666,18 @@ function MissionDetail({m,ch,onBack,onAction}){
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {m._statut!=='done'&&<button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Signature</button>}
+          <button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>{hasSig?'Re-signer':'Signature'}</button>
           <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
         </div>
       </div>
+
+      {zoomPhoto&&(
+        <div onClick={()=>setZoomPhoto(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
+          <img src={zoomPhoto.dataUrl} style={{maxWidth:'100%',maxHeight:'75%',borderRadius:12,objectFit:'contain'}}/>
+          <div style={{color:'#fff',fontSize:13,marginTop:14,fontWeight:600}}>📸 Prise à {zoomPhoto.time}</div>
+          <button onClick={()=>setZoomPhoto(null)} style={{marginTop:18,background:'var(--card)',color:'var(--text)',borderRadius:50,padding:'10px 24px',fontSize:13,fontWeight:700}}>Fermer</button>
+        </div>
+      )}
     </>
   );
 }
@@ -656,11 +732,20 @@ function SigModal({m,ch,onClose,onDone}){
     setHasDrawn(false);
   };
 
+  const [saving,setSaving]=useState(false);
+  const [saved,setSaved]=useState(false);
+
   const handleValidate=async()=>{
-    if(!ref.current)return;
+    if(!ref.current||saving)return;
+    setSaving(true);
     const dataUrl=ref.current.toDataURL('image/png');
-    await saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),dataUrl});
-    onDone();
+    const today=new Date().toISOString().slice(0,10);
+    saveMissionProof(ch.id,m.client||m.task,m.heure,today,'signature',dataUrl);
+    await saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:today,dataUrl});
+    setSaving(false);
+    setSaved(true);
+    if(navigator.vibrate)navigator.vibrate([80,40,80]);
+    setTimeout(()=>{onDone();},900);
   };
 
   return(
@@ -681,10 +766,10 @@ function SigModal({m,ch,onClose,onDone}){
             onPointerUp={clear}>
             🗑️ Effacer
           </button>
-          <button type="button" className="sig-btn" style={{background:hasDrawn?'var(--green)':'var(--dim)',color:'#fff'}}
-            disabled={!hasDrawn}
+          <button type="button" className="sig-btn" style={{background:saved?'#16a34a':hasDrawn?'var(--green)':'var(--dim)',color:'#fff',opacity:saving?0.7:1}}
+            disabled={!hasDrawn||saving||saved}
             onPointerUp={handleValidate}>
-            ✅ Valider
+            {saved?'✅ Enregistrée !':saving?'⏳ Enregistrement...':'✅ Valider'}
           </button>
         </div>
         <button onClick={onClose} style={{width:'100%',marginTop:10,padding:10,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
@@ -706,7 +791,9 @@ function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
   const totR=Object.values(recupere).reduce((a,b)=>a+(b||0),0);
 
   const confirm=async()=>{
-    await saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:new Date().toISOString().slice(0,10),laisse,recupere,note});
+    const todayD=new Date().toISOString().slice(0,10);
+    saveMissionProof(ch.id,m.client||m.task,m.heure,todayD,'materiel',{laisse,recupere,note});
+    await saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:todayD,laisse,recupere,note});
     onConfirm({laisse,recupere,note});
   };
 
@@ -1086,6 +1173,7 @@ function ChaufApp({ch,onLogout}){
   const [matIA,setMatIA]=useState(null);
   const [driveM,setDriveM]=useState(null);
   const [voiceM,setVoiceM]=useState(null);
+  const [refreshKey,setRefreshKey]=useState(0);
   const photoRef=useRef(null);
 
   const t3=(msg,color='var(--green)')=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
@@ -1117,8 +1205,11 @@ function ChaufApp({ch,onLogout}){
       reader.onload=async ev=>{
         const dataUrl=ev.target.result;
         const base64=dataUrl.split(',')[1];
-        await saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:new Date().toISOString().slice(0,10)});
+        const todayD=new Date().toISOString().slice(0,10);
+        saveMissionProof(ch.id,m?m.client||m.task:'',m?m.heure:'',todayD,'photo',dataUrl);
+        await saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:todayD});
 
+        setRefreshKey(k=>k+1);
         try{
           const resp=await fetch('https://api.anthropic.com/v1/messages',{
             method:'POST',
@@ -1232,7 +1323,8 @@ function ChaufApp({ch,onLogout}){
       {selectedMission&&(
         <MissionDetail m={selectedMission} ch={ch}
           onBack={()=>setSelectedMission(null)}
-          onAction={action}/>
+          onAction={action}
+          refreshKey={refreshKey}/>
       )}
 
       {screen==='home'&&!selectedMission&&(
@@ -1241,9 +1333,9 @@ function ChaufApp({ch,onLogout}){
         </button>
       )}
 
-      {sigM&&<SigModal m={sigM} ch={ch} onClose={()=>setSigM(null)} onDone={()=>{setSigM(null);t3('✍️ Signature enregistrée !','var(--teal)');}}/>}
-      {matM&&<MatModal m={matM} ch={ch} onClose={()=>setMatM(null)} onConfirm={async mat=>{setMatM(null);await action({...matM,_mat:mat},'done_confirmed');}}/>}
-      {matIA&&<MatModal m={matIA.mission} ch={ch} aiPre={matIA.aiData} aiDesc={matIA.aiDesc} onClose={()=>setMatIA(null)} onConfirm={async mat=>{setMatIA(null);await action({...matIA.mission,_mat:mat},'done_confirmed');}}/>}
+      {sigM&&<SigModal m={sigM} ch={ch} onClose={()=>setSigM(null)} onDone={()=>{setSigM(null);setRefreshKey(k=>k+1);t3('✍️ Signature enregistrée !','var(--teal)');}}/>}
+      {matM&&<MatModal m={matM} ch={ch} onClose={()=>setMatM(null)} onConfirm={async mat=>{setMatM(null);setRefreshKey(k=>k+1);await action({...matM,_mat:mat},'done_confirmed');}}/>}
+      {matIA&&<MatModal m={matIA.mission} ch={ch} aiPre={matIA.aiData} aiDesc={matIA.aiDesc} onClose={()=>setMatIA(null)} onConfirm={async mat=>{setMatIA(null);setRefreshKey(k=>k+1);await action({...matIA.mission,_mat:mat},'done_confirmed');}}/>}
       {driveM&&<DriveMode m={driveM} ch={ch} onClose={()=>setDriveM(null)} onDone={()=>action(driveM,'done')}/>}
       {voiceM&&<VoiceModal m={voiceM} ch={ch} onClose={()=>setVoiceM(null)} onCmd={voiceCmd}/>}
 
