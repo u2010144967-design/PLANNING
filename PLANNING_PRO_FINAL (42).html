@@ -437,6 +437,10 @@ input[type="time"]{
 .now-line{position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:50;pointer-events:none;box-shadow:0 0 6px rgba(239,68,68,.5)}
 .now-line::before{content:'';position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ef4444}
 .now-line::after{content:'MAINTENANT';position:absolute;left:8px;top:-9px;font-size:8px;font-weight:900;color:#fff;background:#ef4444;padding:1px 6px;border-radius:8px;white-space:nowrap;letter-spacing:.5px}
+
+/* Empecher le texte noir par defaut sur les boutons (bug navigateur) */
+.mbox button{color:inherit}
+.mbox button div,.mbox button span{color:inherit}
 </style>
 </head>
 <body>
@@ -23064,7 +23068,7 @@ function ouvrirRechercheBL(){
           count++;
           html+='<button onclick=\'ouvrirBonLivraison("'+date+'",'+di+',"'+h+'",'+ti+')\' style="width:100%;text-align:left;background:#1e293b;border:1px solid #334155;border-left:3px solid #f97316;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;color:#fff">'
             +'<div style="display:flex;justify-content:space-between"><span style="font-family:monospace;font-weight:800;color:#f97316">'+h+'</span><span style="font-size:11px;color:#64748b">'+dr.name+'</span></div>'
-            +'<div style="font-size:13px;font-weight:700;margin-top:4px">'+t.client+'</div>'
+            +'<div style="font-size:13px;font-weight:700;margin-top:4px;color:#fff">'+t.client+'</div>'
             +'</button>';
         });
       });
@@ -23220,7 +23224,7 @@ function ouvrirCentreArchives(){
         var dr=ST.drivers[m.di];
         var hasProof=events.some(function(e){return e.date===m.date&&e.client&&m.task.client&&e.client.toUpperCase().indexOf(m.task.client.toUpperCase().substring(0,8))>=0;});
         html+='<button onclick=\'ouvrirBonLivraison("'+m.date+'",'+m.di+',"'+m.heure+'",'+m.ti+')\' style="width:100%;text-align:left;background:#1e293b;border:1px solid #334155;border-left:3px solid '+(hasProof?'#22c55e':'#64748b')+';border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;color:#fff">'
-          +'<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:800">'+m.task.client+'</span>'+(hasProof?'<span style="font-size:10px;color:#22c55e;font-weight:700">✓ Preuves</span>':'')+'</div>'
+          +'<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:800;color:#fff">'+m.task.client+'</span>'+(hasProof?'<span style="font-size:10px;color:#22c55e;font-weight:700">✓ Preuves</span>':'')+'</div>'
           +'<div style="font-size:11px;color:#64748b;margin-top:3px">'+m.date+' à '+m.heure+' — '+dr.name+'</div>'
           +'</button>';
       });
