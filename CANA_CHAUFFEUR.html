@@ -384,7 +384,7 @@ function saveMissionProof(chId,client,heure,date,type,data){
     const current=getMissionProofs(chId,client,heure,date);
     if(type==='photo'){
       current.photos=current.photos||[];
-      current.photos.push({dataUrl:data,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+      current.photos.push({dataUrl:data,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),id:Date.now()});
     }
     if(type==='signature'){
       current.signature={dataUrl:data,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
@@ -392,11 +392,108 @@ function saveMissionProof(chId,client,heure,date,type,data){
     if(type==='materiel'){
       current.materiel=data;
     }
+    if(type==='ia_result'){
+      current.photos=current.photos||[];
+      const photo=current.photos.find(p=>p.id===data.photoId);
+      if(photo)photo.ia=data.result;
+    }
     localStorage.setItem(key,JSON.stringify(current));
+    /* Index global pour retrouver toutes les missions ayant des preuves aujourd'hui */
+    try{
+      const idxKey='proof_index_'+chId+'_'+date;
+      const idx=JSON.parse(localStorage.getItem(idxKey)||'[]');
+      if(!idx.includes(key)){idx.push(key);localStorage.setItem(idxKey,JSON.stringify(idx));}
+    }catch(e2){}
     return current;
-  }catch(e){return null;}
+  }catch(e){
+    console.log('Erreur sauvegarde preuve:',e);
+    /* Si quota depasse, nettoyer les plus vieilles photos */
+    if(e.name==='QuotaExceededError'){
+      try{nettoyerVieillesPreuves(chId);}catch(e3){}
+    }
+    return null;
+  }
 }
 
+function nettoyerVieillesPreuves(chId){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('proof_')&&!k.startsWith('proof_index_'));
+  /* Garder seulement les preuves des 3 derniers jours */
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-3);
+  const cutoffStr=cutoff.toISOString().slice(0,10);
+  keys.forEach(k=>{
+    const parts=k.split('_');
+    if(parts[2]&&parts[2]<cutoffStr){localStorage.removeItem(k);}
+  });
+}
+
+function getAllPhotosToday(chId,date){
+  try{
+    const idxKey='proof_index_'+chId+'_'+date;
+    const idx=JSON.parse(localStorage.getItem(idxKey)||'[]');
+    const all=[];
+    idx.forEach(key=>{
+      try{
+        const data=JSON.parse(localStorage.getItem(key)||'{}');
+        if(data.photos&&data.photos.length){
+          const clientName=key.split('_').slice(4).join('_')||'Client';
+          data.photos.forEach(p=>all.push({...p,client:clientName}));
+        }
+      }catch(e){}
+    });
+    return all.sort((a,b)=>b.id-a.id);
+  }catch(e){return[];}
+}
+
+
+/* ══ ANALYSE IA PHOTO — en arriere-plan, fiable, avec retry ══ */
+async function analyserPhotoIA(dataUrl,mimeType,retryCount){
+  retryCount=retryCount||0;
+  const base64=dataUrl.split(',')[1];
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-dangerous-direct-browser-access':'true',
+        'anthropic-version':'2023-06-01'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:300,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mimeType,data:base64}},
+          {type:'text',text:'Compte le materiel logistique traiteur visible sur cette photo (bacs gastro inox, chariots, containers, caisses, etuves, plateaux, nappes). Reponds UNIQUEMENT en JSON sans aucun texte autour: {"gastro":0,"chariot":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"resume court en francais"}'}
+        ]}]
+      })
+    });
+
+    if(!resp.ok){
+      console.log('IA erreur HTTP:',resp.status);
+      if(retryCount<1){
+        await new Promise(r=>setTimeout(r,1500));
+        return analyserPhotoIA(dataUrl,mimeType,retryCount+1);
+      }
+      return null;
+    }
+
+    const data=await resp.json();
+    const txt=data.content?.[0]?.text||'{}';
+    const cleaned=txt.replace(/```json|```/g,'').trim();
+    const res=JSON.parse(cleaned);
+
+    const keys=['gastro','chariot','container','caisse','etuve','plateau','nappe'];
+    const total=keys.reduce((a,k)=>a+(parseInt(res[k])||0),0);
+
+    return{...res,total};
+  }catch(err){
+    console.log('Erreur analyse IA:',err);
+    if(retryCount<1){
+      await new Promise(r=>setTimeout(r,1500));
+      return analyserPhotoIA(dataUrl,mimeType,retryCount+1);
+    }
+    return null;
+  }
+}
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
@@ -577,6 +674,12 @@ function HomeScreen({ch,planning,onNavigate,unreadMsg}){
           <div className="icon-tile-sub" style={{color:'#fbbf24'}}>{ch.truck}</div>
         </button>
 
+        <button className="icon-tile" style={{background:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.25)'}} onClick={()=>onNavigate('photos')}>
+          <div className="icon-tile-emoji">📸</div>
+          <div className="icon-tile-label" style={{color:'#c084fc'}}>Mes photos</div>
+          <div className="icon-tile-sub" style={{color:'#c084fc'}}>Du jour</div>
+        </button>
+
         <button className="icon-tile" style={{background:'rgba(239,68,68,.1)',borderColor:'rgba(239,68,68,.25)'}} onClick={()=>onNavigate('help')}>
           <div className="icon-tile-emoji">🆘</div>
           <div className="icon-tile-label" style={{color:'#f87171'}}>Aide rapide</div>
@@ -699,6 +802,7 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
                 <div key={i} onClick={()=>setZoomPhoto(p)} style={{flexShrink:0,width:80,height:80,borderRadius:12,overflow:'hidden',border:'1px solid var(--border2)',position:'relative',cursor:'pointer'}}>
                   <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                   <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:9,padding:'2px 4px',textAlign:'center'}}>{p.time}</div>
+                  {p.ia&&p.ia.total>0&&<div style={{position:'absolute',top:3,right:3,background:'var(--purple)',color:'#fff',fontSize:9,fontWeight:800,borderRadius:8,padding:'2px 5px'}}>🤖{p.ia.total}</div>}
                 </div>
               ))}
             </div>
@@ -1118,6 +1222,49 @@ function MessagesScreen({ch,onBack}){
 }
 
 /* ══ ECRAN VEHICULE ══ */
+/* ══ ECRAN TOUTES MES PHOTOS DU JOUR ══ */
+function AllPhotosScreen({ch,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const [photos,setPhotos]=useState(()=>getAllPhotosToday(ch.id,today));
+  const [zoom,setZoom]=useState(null);
+
+  return(
+    <>
+      <Header title="📸 Mes photos du jour" onBack={onBack}/>
+      <div className="scroll">
+        {photos.length===0?(
+          <div style={{textAlign:'center',padding:'60px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:46,marginBottom:11}}>📷</div>
+            <div style={{fontSize:15,fontWeight:700}}>Aucune photo aujourd'hui</div>
+          </div>
+        ):(
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {photos.map((p,i)=>(
+              <div key={i} onClick={()=>setZoom(p)} style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--border2)',position:'relative',cursor:'pointer',aspectRatio:1}}>
+                <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.8))',padding:'16px 8px 6px',color:'#fff'}}>
+                  <div style={{fontSize:11,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.client}</div>
+                  <div style={{fontSize:9,opacity:.8}}>{p.time}</div>
+                </div>
+                {p.ia&&p.ia.total>0&&<div style={{position:'absolute',top:6,right:6,background:'var(--purple)',color:'#fff',fontSize:9,fontWeight:800,borderRadius:8,padding:'3px 6px'}}>🤖{p.ia.total}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {zoom&&(
+        <div onClick={()=>setZoom(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
+          <img src={zoom.dataUrl} style={{maxWidth:'100%',maxHeight:'70%',borderRadius:12,objectFit:'contain'}}/>
+          <div style={{color:'#fff',fontSize:14,marginTop:14,fontWeight:700}}>{zoom.client}</div>
+          <div style={{color:'var(--muted)',fontSize:12,marginTop:2}}>📸 {zoom.time}</div>
+          {zoom.ia&&<div style={{color:'var(--purple)',fontSize:12,marginTop:8,background:'rgba(168,85,247,.15)',padding:'6px 14px',borderRadius:20}}>🤖 {zoom.ia.description||zoom.ia.total+' items détectés'}</div>}
+          <button onClick={()=>setZoom(null)} style={{marginTop:18,background:'var(--card)',color:'var(--text)',borderRadius:50,padding:'10px 24px',fontSize:13,fontWeight:700}}>Fermer</button>
+        </div>
+      )}
+    </>
+  );
+}
+
 function VehicleScreen({ch,onBack,onToast}){
   const [km,setKm]=useState('');
   const reportIssue=async(issue)=>{
@@ -1339,23 +1486,54 @@ function ChaufApp({ch,onLogout}){
   },[planning,ch.id]);
 
 
-  /* PHOTO — rapide, instantanée, sans attente IA bloquante */
+  /* PHOTO — instantanee + compressee + IA en arriere-plan fiable */
   useEffect(()=>{
     const inp=document.getElementById('photo-cap');if(!inp)return;
     const handler=e=>{
       const file=e.target.files[0];if(!file)return;
       const m=photoRef.current;
+      const img=new Image();
       const reader=new FileReader();
       reader.onload=ev=>{
-        const dataUrl=ev.target.result;
-        const todayD=new Date().toISOString().slice(0,10);
-        /* Sauvegarde locale INSTANTANEE */
-        saveMissionProof(ch.id,m?m.client||m.task:'',m?m.heure:'',todayD,'photo',dataUrl);
-        vib([60]);
-        t3('📷 Photo enregistrée !','var(--green)');
-        setRefreshKey(k=>k+1);
-        /* Envoi Supabase en arriere-plan, ne bloque rien */
-        saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:todayD});
+        img.onload=()=>{
+          /* Compresser l'image pour eviter le quota localStorage (max 900px de large) */
+          const canvas=document.createElement('canvas');
+          const maxW=900;
+          const scale=Math.min(1,maxW/img.width);
+          canvas.width=img.width*scale;
+          canvas.height=img.height*scale;
+          const cx=canvas.getContext('2d');
+          cx.drawImage(img,0,0,canvas.width,canvas.height);
+          const dataUrl=canvas.toDataURL('image/jpeg',0.75);
+
+          const todayD=new Date().toISOString().slice(0,10);
+          const clientKey=m?m.client||m.task:'';
+          const heureKey=m?m.heure:'';
+
+          /* Sauvegarde locale INSTANTANEE - visible immediatement */
+          const updatedProof=saveMissionProof(ch.id,clientKey,heureKey,todayD,'photo',dataUrl);
+          const savedPhotoId=updatedProof&&updatedProof.photos&&updatedProof.photos.length
+            ?updatedProof.photos[updatedProof.photos.length-1].id:null;
+          vib([60]);
+          t3('📷 Photo enregistrée !','var(--green)');
+          setRefreshKey(k=>k+1);
+
+          /* Envoi Supabase en arriere-plan */
+          saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl,date:todayD});
+
+          /* IA en arriere-plan - ne bloque jamais l'interface */
+          analyserPhotoIA(dataUrl,file.type||'image/jpeg').then(res=>{
+            if(res&&res.total>0){
+              t3(`🤖 IA : ${res.total} item(s) détecté(s) — vérifiez`,'var(--purple)');
+              vib([80,40,80]);
+              if(savedPhotoId)saveMissionProof(ch.id,clientKey,heureKey,todayD,'ia_result',{photoId:savedPhotoId,result:res});
+              setRefreshKey(k=>k+1);
+            }
+          }).catch(err=>{
+            console.log('IA non disponible:',err);
+          });
+        };
+        img.src=ev.target.result;
       };
       reader.readAsDataURL(file);
       inp.value='';
@@ -1415,6 +1593,7 @@ function ChaufApp({ch,onLogout}){
       {screen==='calendar'&&<CalendarScreen ch={ch} planning={planning} onBack={()=>setScreen('home')}/>}
       {screen==='messages'&&<MessagesScreen ch={ch} onBack={()=>setScreen('home')}/>}
       {screen==='vehicle'&&<VehicleScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='photos'&&<AllPhotosScreen ch={ch} onBack={()=>setScreen('home')}/>}
       {screen==='help'&&<HelpScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
 
       {selectedMission&&(
