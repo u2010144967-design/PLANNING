@@ -494,6 +494,20 @@ async function analyserPhotoIA(dataUrl,mimeType,retryCount){
     return null;
   }
 }
+
+/* ══ CHARGER TOUS LES EVENEMENTS (preuves) DEPUIS SUPABASE — vue responsable ══ */
+async function loadAllEvents(){
+  try{
+    const rows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
+    if(rows&&rows.length&&rows[0].donnees){
+      const d=rows[0].donnees;
+      const events=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
+      return Array.isArray(events)?events:[];
+    }
+  }catch(e){console.log('Erreur chargement events:',e);}
+  return[];
+}
+
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
@@ -501,7 +515,7 @@ function Toast({msg,color}){
 }
 
 /* ══ LOGIN ══ */
-function Login({onLogin}){
+function Login({onLogin,onResponsable}){
   const [sel,setSel]=useState(null);
   const [code,setCode]=useState('');
   const [err,setErr]=useState('');
@@ -573,7 +587,137 @@ function Login({onLogin}){
           <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>Code provisoire : 0000</p>
         </>
       )}
+      {sel===null&&(
+        <button onClick={onResponsable} style={{marginTop:20,background:'transparent',border:'none',color:'var(--dim)',fontSize:11,textDecoration:'underline'}}>
+          👔 Accès responsable
+        </button>
+      )}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   VUE RESPONSABLE — toutes les preuves de tous les chauffeurs
+══════════════════════════════════════════════════ */
+function ResponsableScreen({onLogout}){
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [selectedDate,setSelectedDate]=useState(new Date().toISOString().slice(0,10));
+  const [selectedDriver,setSelectedDriver]=useState('tous');
+  const [zoom,setZoom]=useState(null);
+
+  const refresh=async()=>{
+    setLoading(true);
+    const ev=await loadAllEvents();
+    setEvents(ev);
+    setLoading(false);
+  };
+
+  useEffect(()=>{refresh();const iv=setInterval(refresh,30000);return()=>clearInterval(iv);},[]);
+
+  const filtered=events.filter(e=>{
+    if(e.date!==selectedDate)return false;
+    if(selectedDriver!=='tous'&&e.chauffeur!==selectedDriver)return false;
+    return['photo','signature'].includes(e.type);
+  });
+
+  const driverNames=[...new Set(events.filter(e=>e.date===selectedDate).map(e=>e.chauffeur).filter(Boolean))];
+
+  const photos=filtered.filter(e=>e.type==='photo');
+  const signatures=filtered.filter(e=>e.type==='signature');
+
+  return(
+    <>
+      <div className="hdr" style={{justifyContent:'space-between'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:36,height:36,borderRadius:11,background:'rgba(249,115,22,.15)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{fontSize:16}}>👔</span>
+          </div>
+          <div className="hdr-title">Vue Responsable</div>
+        </div>
+        <button onClick={onLogout} style={{width:36,height:36,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+
+      <div className="scroll">
+        <div style={{display:'flex',gap:8,marginBottom:14}}>
+          <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}
+            style={{flex:1,fontSize:14,fontWeight:700,padding:'10px 12px'}}/>
+          <button onClick={refresh} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,width:42,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--orange)'}}>
+            <i className={`fa-solid fa-arrows-rotate ${loading?'fa-spin':''}`}/>
+          </button>
+        </div>
+
+        <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:10,marginBottom:6}}>
+          <button onClick={()=>setSelectedDriver('tous')}
+            style={{flexShrink:0,padding:'7px 14px',borderRadius:20,fontSize:12,fontWeight:700,background:selectedDriver==='tous'?'var(--orange)':'var(--card)',color:selectedDriver==='tous'?'#fff':'var(--muted)',border:'1px solid var(--border2)'}}>
+            Tous
+          </button>
+          {driverNames.map(name=>(
+            <button key={name} onClick={()=>setSelectedDriver(name)}
+              style={{flexShrink:0,padding:'7px 14px',borderRadius:20,fontSize:12,fontWeight:700,background:selectedDriver===name?'var(--orange)':'var(--card)',color:selectedDriver===name?'#fff':'var(--muted)',border:'1px solid var(--border2)'}}>
+              {name}
+            </button>
+          ))}
+        </div>
+
+        {loading&&<div className="loader" style={{minHeight:200}}><div className="spin" style={{width:32,height:32}}/><span>Chargement...</span></div>}
+
+        {!loading&&photos.length===0&&signatures.length===0&&(
+          <div style={{textAlign:'center',padding:'50px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:40,marginBottom:10}}>📭</div>
+            <div style={{fontSize:14,fontWeight:700}}>Aucune preuve pour cette date</div>
+          </div>
+        )}
+
+        {photos.length>0&&(
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>📸 Photos ({photos.length})</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              {photos.map((p,i)=>(
+                <div key={i} onClick={()=>setZoom(p)} style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--border2)',position:'relative',cursor:'pointer',aspectRatio:1}}>
+                  <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.85))',padding:'18px 8px 6px',color:'#fff'}}>
+                    <div style={{fontSize:11,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.chauffeur}</div>
+                    <div style={{fontSize:10,opacity:.85,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.client}</div>
+                    <div style={{fontSize:9,opacity:.7}}>{p.heure}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {signatures.length>0&&(
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>✍️ Signatures ({signatures.length})</div>
+            {signatures.map((s,i)=>(
+              <div key={i} className="card" style={{padding:12,marginBottom:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:800}}>{s.chauffeur}</div>
+                    <div style={{fontSize:11,color:'var(--muted)'}}>{s.client} — {s.heure}</div>
+                  </div>
+                </div>
+                <div style={{background:'#fff',borderRadius:10,padding:6}}>
+                  <img src={s.dataUrl} style={{width:'100%',height:50,objectFit:'contain'}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {zoom&&(
+        <div onClick={()=>setZoom(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
+          <img src={zoom.dataUrl} style={{maxWidth:'100%',maxHeight:'70%',borderRadius:12,objectFit:'contain'}}/>
+          <div style={{color:'#fff',fontSize:15,marginTop:14,fontWeight:800}}>{zoom.chauffeur}</div>
+          <div style={{color:'var(--muted)',fontSize:13,marginTop:2}}>{zoom.client} — {zoom.heure}</div>
+          <button onClick={()=>setZoom(null)} style={{marginTop:18,background:'var(--card)',color:'var(--text)',borderRadius:50,padding:'10px 24px',fontSize:13,fontWeight:700}}>Fermer</button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1684,8 +1828,45 @@ class ErrorBoundary extends React.Component{
   }
 }
 
+function RespCodeScreen({onUnlock,onCancel}){
+  const [code,setCode]=useState('');
+  const [err,setErr]=useState('');
+  const RESP_CODE='9999';
+  const add=d=>{
+    if(code.length>=4)return;
+    const nc=code+d;setCode(nc);setErr('');
+    if(nc.length===4){
+      if(nc===RESP_CODE){setTimeout(()=>onUnlock(),80);}
+      else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
+    }
+  };
+  return(
+    <div className="login">
+      <div className="logo" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        <span style={{fontSize:30}}>👔</span>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:800,marginBottom:4,textAlign:'center'}}>Accès Responsable</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Entrez le code responsable</p>
+      <div className="dots">{[0,1,2,3].map(i=><div key={i} className={`dot-c ${i<code.length?'on':''}`}/>)}</div>
+      <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:7,fontWeight:500}}>{err}</div>
+      <div className="numpad">
+        {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
+          k===''?<div key={i}/>:
+          <button key={i} className="nk" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
+            onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):add(String(k))}>
+            {k}
+          </button>
+        )}
+      </div>
+      <button onClick={onCancel} style={{marginTop:20,background:'transparent',border:'none',color:'var(--dim)',fontSize:12}}>← Retour</button>
+    </div>
+  );
+}
+
 function App(){
   const [ch,setCh]=useState(null);
+  const [respMode,setRespMode]=useState(false);
+  const [respCodeScreen,setRespCodeScreen]=useState(false);
   useEffect(()=>{
     const checkNight=()=>{
       const h=new Date().getHours();
@@ -1696,7 +1877,9 @@ function App(){
     const iv=setInterval(checkNight,300000);
     return()=>clearInterval(iv);
   },[]);
-  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
+  if(respMode)return<div className="screen"><ResponsableScreen onLogout={()=>setRespMode(false)}/></div>;
+  if(respCodeScreen)return<RespCodeScreen onUnlock={()=>{setRespCodeScreen(false);setRespMode(true);}} onCancel={()=>setRespCodeScreen(false)}/>;
+  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh} onResponsable={()=>setRespCodeScreen(true)}/>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
