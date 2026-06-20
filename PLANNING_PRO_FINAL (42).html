@@ -22523,12 +22523,24 @@ function ouvrirPhotosSignatures(){
 
   function chargerEtAfficher(){
     results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:12px">Chargement...</div>';
-    supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1').then(function(rows){
+    Promise.all([
+      supaFetch('planning?date=like.EV_*&select=donnees&order=date.desc&limit=500'),
+      supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1')
+    ]).then(function(results2){
+      var newRows=results2[0]||[];
+      var oldRows=results2[1];
       var events=[];
-      if(rows&&rows.length&&rows[0].donnees){
-        try{events=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
+      /* Nouveau format: chaque ligne EV_xxx est un evenement individuel */
+      newRows.forEach(function(r){
+        if(r.donnees&&r.donnees._isEvent)events.push(r.donnees);
+      });
+      /* Ancien format groupe (compatibilite) */
+      if(oldRows&&oldRows.length&&oldRows[0].donnees){
+        try{
+          var oldEv=JSON.parse(typeof oldRows[0].donnees==='string'?oldRows[0].donnees:JSON.stringify(oldRows[0].donnees));
+          if(Array.isArray(oldEv))events=events.concat(oldEv);
+        }catch(e){}
       }
-      if(!Array.isArray(events))events=[];
 
       var date=document.getElementById('ps-date').value;
       var dayEvents=events.filter(function(e){return e.date===date&&(e.type==='photo'||e.type==='signature');});
@@ -22591,7 +22603,7 @@ function ouvrirPhotosSignatures(){
       }
 
       results.innerHTML=html;
-    });
+    }).catch(function(err){results.innerHTML='<div style="text-align:center;padding:30px;color:#ef4444;font-size:12px">Erreur de chargement</div>';console.log(err);});
   }
 
   refreshBtn.addEventListener('click',chargerEtAfficher);
