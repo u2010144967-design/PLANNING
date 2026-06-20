@@ -529,6 +529,8 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirRechercheHistorique();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">🔍 Recherche historique (infractions)</button>
+<button tabindex="0" onclick="ouvrirGestionChauffeurs();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">👥 Gestion des chauffeurs</button>
 <button tabindex="0" onclick="voirHistoriqueConducteurs();fermerMenu()" class="menu-item" style="color:#f59e0b;font-weight:700">🔑 Historique conducteurs désignés</button>\n<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item">🚗 Gestion véhicules</button>
 <button tabindex="0" onclick="ouvrirChronogramme();fermerMenu()" class="menu-item">⏱ Chronogramme insertion</button>
 <button tabindex="0" onclick="ouvrirNotifications();fermerMenu()" class="menu-item">🔔 Notifications</button>
@@ -22229,6 +22231,243 @@ function calcPonctualite(di,mois,annee){
   }
   if(total===0)return 100;
   return Math.round(confirmees/total*100);
+}
+
+/* ══════════════════════════════════════════════════
+   GESTION DES CHAUFFEURS — autonomie sans Claude
+   Permet de changer nom + code d'un poste sans toucher au code
+══════════════════════════════════════════════════ */
+function ouvrirGestionChauffeurs(){
+  var existing=document.getElementById('m-gest-chauf');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-gest-chauf';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='560px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='👥 Gestion des chauffeurs';
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.6';
+  sub.textContent='Changez le nom et le code d un poste sans modifier le logiciel. Le lien de l application reste identique — donnez-le simplement au nouveau chauffeur. L historique des anciens chauffeurs reste conserve pour toujours.';
+  box.appendChild(h);box.appendChild(sub);
+
+  var codes=JSON.parse(localStorage.getItem('codes_chauffeurs')||'{}');
+
+  ST.drivers.forEach(function(dr,di){
+    var card=document.createElement('div');
+    card.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:14px;padding:14px;margin-bottom:12px';
+
+    var label=document.createElement('div');
+    label.style.cssText='font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:10px';
+    label.textContent='Poste '+(di+1)+' — '+dr.truck;
+    card.appendChild(label);
+
+    var row=document.createElement('div');
+    row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px';
+
+    var nameWrap=document.createElement('div');
+    var nameLbl=document.createElement('label');
+    nameLbl.style.cssText='font-size:10px;color:#64748b;display:block;margin-bottom:4px';
+    nameLbl.textContent='Nom du chauffeur';
+    var nameInput=document.createElement('input');
+    nameInput.type='text';nameInput.value=dr.name;nameInput.className='fi';
+    nameInput.id='gc-name-'+di;
+    nameInput.style.cssText='width:100%;font-size:14px;font-weight:700';
+    nameWrap.appendChild(nameLbl);nameWrap.appendChild(nameInput);
+
+    var codeWrap=document.createElement('div');
+    var codeLbl=document.createElement('label');
+    codeLbl.style.cssText='font-size:10px;color:#64748b;display:block;margin-bottom:4px';
+    codeLbl.textContent='Code personnel (4 chiffres)';
+    var codeInput=document.createElement('input');
+    codeInput.type='text';codeInput.maxLength=4;codeInput.inputMode='numeric';
+    codeInput.value=codes[di]||'';
+    codeInput.placeholder='Ex: 1111';
+    codeInput.id='gc-code-'+di;
+    codeInput.style.cssText='width:100%;font-size:14px;font-weight:700';
+    codeWrap.appendChild(codeLbl);codeWrap.appendChild(codeInput);
+
+    row.appendChild(nameWrap);row.appendChild(codeWrap);
+    card.appendChild(row);
+
+    var truckRow=document.createElement('div');
+    truckRow.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px';
+    ['truck','start','end'].forEach(function(field){
+      var w=document.createElement('div');
+      var l=document.createElement('label');
+      l.style.cssText='font-size:10px;color:#64748b;display:block;margin-bottom:4px';
+      l.textContent=field==='truck'?'Camion':field==='start'?'Heure début':'Heure fin';
+      var inp=document.createElement('input');
+      inp.type=field==='truck'?'text':'time';
+      inp.value=dr[field]||'';
+      inp.id='gc-'+field+'-'+di;
+      inp.className='fi';
+      inp.style.cssText='width:100%;font-size:12px';
+      w.appendChild(l);w.appendChild(inp);
+      truckRow.appendChild(w);
+    });
+    card.appendChild(truckRow);
+
+    box.appendChild(card);
+  });
+
+  var saveBtn=document.createElement('button');
+  saveBtn.textContent='💾 Enregistrer tous les changements';
+  saveBtn.style.cssText='width:100%;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px';
+  saveBtn.addEventListener('click',function(){
+    var newCodes={};
+    ST.drivers.forEach(function(dr,di){
+      var newName=(document.getElementById('gc-name-'+di).value||'').trim().toUpperCase();
+      var newCode=(document.getElementById('gc-code-'+di).value||'').trim();
+      var newTruck=(document.getElementById('gc-truck-'+di).value||'').trim();
+      var newStart=document.getElementById('gc-start-'+di).value;
+      var newEnd=document.getElementById('gc-end-'+di).value;
+      if(newName)ST.drivers[di].name=newName;
+      if(newTruck)ST.drivers[di].truck=newTruck;
+      if(newStart)ST.drivers[di].start=newStart;
+      if(newEnd)ST.drivers[di].end=newEnd;
+      if(newCode)newCodes[di]=newCode;
+    });
+    localStorage.setItem('codes_chauffeurs',JSON.stringify(newCodes));
+    save();render();
+    closeMod('m-gest-chauf');
+    showT('✅ Chauffeurs mis à jour — synchronisation en cours','#22c55e');
+    setTimeout(function(){
+      if(typeof sauverDansSupabase==='function')sauverDansSupabase();
+      sauverCodesChauffeursSupabase(newCodes);
+    },1000);
+  });
+  box.appendChild(saveBtn);
+
+  var info=document.createElement('div');
+  info.style.cssText='margin-top:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px;font-size:11px;color:#86efac;line-height:1.6';
+  info.innerHTML='💡 <b>Exemple concret</b> : Nicolas quitte le 31/07, remplacé par Bilal sur le même poste.<br>1. Changez le nom "NICOLAS" → "BILAL" et donnez-lui un nouveau code<br>2. Donnez-lui le même lien d application que Nicolas avait<br>3. L historique de Nicolas reste consultable pour toujours dans les recherches';
+  box.appendChild(info);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+/* Sauvegarder les codes chauffeurs dans Supabase pour que l'app les lise */
+function sauverCodesChauffeursSupabase(codes){
+  supaFetch('planning?date=eq.CODES_CHAUFFEURS&select=id')
+    .then(function(rows){
+      var body=JSON.stringify({donnees:codes});
+      if(rows&&rows.length>0){
+        return supaFetch('planning?date=eq.CODES_CHAUFFEURS',{method:'PATCH',body:body});
+      } else {
+        return supaFetch('planning',{method:'POST',body:JSON.stringify({date:'CODES_CHAUFFEURS',donnees:codes})});
+      }
+    });
+}
+
+/* ══════════════════════════════════════════════════
+   RECHERCHE HISTORIQUE PAR DATE — pour infractions/litiges
+   Retrouve TOUT ce qui s'est passe a une date, peu importe
+   qui occupe le poste aujourd'hui (historique jamais efface)
+══════════════════════════════════════════════════ */
+function ouvrirRechercheHistorique(){
+  var existing=document.getElementById('m-rech-hist');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-rech-hist';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='560px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='🔍 Recherche dans l historique';
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:14px';
+  sub.textContent='Retrouvez qui conduisait quel véhicule, quelle mission, à n importe quelle date passée — même après le départ d un chauffeur.';
+  box.appendChild(h);box.appendChild(sub);
+
+  var dateInput=document.createElement('input');
+  dateInput.type='date';
+  dateInput.value=ST.cur;
+  dateInput.id='rh-date';
+  dateInput.className='fi';
+  dateInput.style.cssText='width:100%;margin-bottom:10px;font-size:14px;padding:10px';
+  box.appendChild(dateInput);
+
+  var searchBtn=document.createElement('button');
+  searchBtn.textContent='🔍 Rechercher cette date';
+  searchBtn.style.cssText='width:100%;background:#1d4ed8;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:16px';
+  box.appendChild(searchBtn);
+
+  var results=document.createElement('div');
+  results.id='rh-results';
+  box.appendChild(results);
+
+  searchBtn.addEventListener('click',function(){
+    var date=document.getElementById('rh-date').value;
+    if(!date)return;
+    afficherResultatsRecherche(date,results);
+  });
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+function afficherResultatsRecherche(date,container){
+  container.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;font-size:12px">Recherche en cours...</div>';
+
+  supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1').then(function(rows){
+    var events=[];
+    if(rows&&rows.length&&rows[0].donnees){
+      try{events=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
+    }
+    if(!Array.isArray(events))events=[];
+
+    /* Filtrer par date */
+    var dayEvents=events.filter(function(e){return e.date===date;});
+
+    /* Conducteurs designes ce jour */
+    var conducteursJour=[];
+    if(ST.conducteurs){
+      Object.values(ST.conducteurs).forEach(function(c){if(c.date===date)conducteursJour.push(c);});
+    }
+
+    /* Missions de ce jour (toutes colonnes) */
+    var missionsJour=[];
+    if(ST.tasks){
+      Object.keys(ST.tasks).forEach(function(k){
+        if(k.startsWith(date+'|')){
+          var parts=k.split('|');
+          var di=parseInt(parts[1]);
+          var heure=parts[2];
+          (ST.tasks[k]||[]).forEach(function(t){
+            missionsJour.push({di:di,heure:heure,client:t.client||t.task,truck:t.truck});
+          });
+        }
+      });
+    }
+
+    if(dayEvents.length===0&&conducteursJour.length===0&&missionsJour.length===0){
+      container.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">Aucune donnée trouvée pour cette date</div>';
+      return;
+    }
+
+    var html='';
+
+    if(conducteursJour.length>0){
+      html+='<div style="font-size:11px;color:#f59e0b;font-weight:700;text-transform:uppercase;margin-bottom:8px">🔑 Conducteurs désignés ce jour</div>';
+      conducteursJour.forEach(function(c){
+        html+='<div style="background:#1e293b;border-left:3px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:12px"><b>'+c.driverName+'</b> — '+c.truck+' (désigné à '+c.heure+')</div>';
+      });
+    }
+
+    if(missionsJour.length>0){
+      html+='<div style="font-size:11px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin:14px 0 8px">📦 Missions ce jour ('+missionsJour.length+')</div>';
+      missionsJour.sort(function(a,b){return a.heure.localeCompare(b.heure);}).forEach(function(m){
+        var drName=ST.drivers[m.di]?ST.drivers[m.di].name:'Poste '+m.di;
+        html+='<div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:5px;font-size:11px;color:#cbd5e1">'+m.heure+' — <b>'+drName+'</b> ('+(m.truck||'')+') — '+m.client+'</div>';
+      });
+    }
+
+    if(dayEvents.length>0){
+      var typeLabels={done:'✅ Livré',enroute:'🚗 En route',signature:'✍️ Signature',photo:'📷 Photo',materiel:'📦 Matériel',sos:'🆘 SOS',arrived:'📍 Arrivée'};
+      html+='<div style="font-size:11px;color:#22c55e;font-weight:700;text-transform:uppercase;margin:14px 0 8px">📋 Actions enregistrées ('+dayEvents.length+')</div>';
+      dayEvents.forEach(function(e){
+        var lbl=typeLabels[e.type]||e.type;
+        html+='<div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:5px;font-size:11px;color:#cbd5e1">'+lbl+' — <b>'+(e.chauffeur||'?')+'</b>'+(e.client?' — '+e.client:'')+(e.heure?' à '+e.heure:'')+'</div>';
+      });
+    }
+
+    container.innerHTML=html;
+  });
 }
 </script>
 </body>
