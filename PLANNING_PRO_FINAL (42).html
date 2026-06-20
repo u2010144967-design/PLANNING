@@ -532,6 +532,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirCentreArchives();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">📂 Centre Archives</button>
 <button tabindex="0" onclick="ouvrirRechercheBL();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">📄 Bons de livraison</button>
 <button tabindex="0" onclick="ouvrirDashboardMateriel();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">📦 Tableau de bord matériel</button>
 <button tabindex="0" onclick="ouvrirNettoyageSupabase();fermerMenu()" class="menu-item" style="color:#ef4444;font-weight:700">🧹 Nettoyage stockage Supabase</button>
@@ -23073,6 +23074,161 @@ function ouvrirRechercheBL(){
 
   dateInput.addEventListener('change',afficherMissionsJour);
   afficherMissionsJour();
+}
+
+/* ══════════════════════════════════════════════════
+   CENTRE D'ARCHIVES — recherche par client/date/chauffeur
+   Memoire permanente de toutes les livraisons
+══════════════════════════════════════════════════ */
+function ouvrirCentreArchives(){
+  var existing=document.getElementById('m-archives');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-archives';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='700px';box.style.maxHeight='90vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='📂 Centre d\'Archives';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px';
+  sub.textContent='Recherchez n\'importe quelle livraison passée, par client, date ou chauffeur';
+  box.appendChild(sub);
+
+  /* Onglets de recherche */
+  var tabRow=document.createElement('div');
+  tabRow.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:#1e293b;border-radius:10px;padding:4px;margin-bottom:14px';
+  var currentTab='client';
+
+  ['client','date','chauffeur'].forEach(function(t){
+    var b=document.createElement('button');
+    b.textContent=t==='client'?'🏢 Client':t==='date'?'📅 Date':'👤 Chauffeur';
+    b.dataset.tab=t;
+    b.style.cssText='background:'+(t===currentTab?'#0f172a':'transparent')+';border:1px solid '+(t===currentTab?'#334155':'transparent')+';border-radius:8px;padding:9px 5px;font-size:12px;font-weight:700;color:'+(t===currentTab?'#22c55e':'#64748b')+';cursor:pointer';
+    b.addEventListener('click',function(){
+      currentTab=t;
+      tabRow.querySelectorAll('button').forEach(function(btn){
+        var active=btn.dataset.tab===t;
+        btn.style.background=active?'#0f172a':'transparent';
+        btn.style.border=active?'1px solid #334155':'1px solid transparent';
+        btn.style.color=active?'#22c55e':'#64748b';
+      });
+      majZoneRecherche();
+    });
+    tabRow.appendChild(b);
+  });
+  box.appendChild(tabRow);
+
+  var searchZone=document.createElement('div');
+  searchZone.id='arch-search-zone';
+  box.appendChild(searchZone);
+
+  var results=document.createElement('div');
+  results.id='arch-results';
+  results.style.cssText='margin-top:14px';
+  box.appendChild(results);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:14px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-archives');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  function majZoneRecherche(){
+    searchZone.innerHTML='';
+    if(currentTab==='client'){
+      var inp=document.createElement('input');
+      inp.type='text';inp.placeholder='Nom du client (ex: Boiron, Cipriani...)';
+      inp.id='arch-input';
+      inp.style.cssText='width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px 12px;font-size:14px';
+      inp.addEventListener('input',function(){if(inp.value.length>=2)lancerRecherche();else results.innerHTML='';});
+      searchZone.appendChild(inp);
+    } else if(currentTab==='date'){
+      var inp2=document.createElement('input');
+      inp2.type='date';inp2.value=ST.cur;
+      inp2.id='arch-input';
+      inp2.style.cssText='width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px 12px;font-size:14px;font-weight:700';
+      inp2.addEventListener('change',lancerRecherche);
+      searchZone.appendChild(inp2);
+      lancerRecherche();
+    } else if(currentTab==='chauffeur'){
+      var sel=document.createElement('select');
+      sel.id='arch-input';
+      sel.style.cssText='width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px 12px;font-size:14px;font-weight:700';
+      ST.drivers.forEach(function(dr,i){
+        var opt=document.createElement('option');opt.value=dr.name;opt.textContent=dr.name;sel.appendChild(opt);
+      });
+      sel.addEventListener('change',lancerRecherche);
+      searchZone.appendChild(sel);
+      lancerRecherche();
+    }
+  }
+
+  function lancerRecherche(){
+    var val=document.getElementById('arch-input').value;
+    if(!val){results.innerHTML='';return;}
+    results.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;font-size:12px">Recherche...</div>';
+
+    Promise.all([
+      supaFetch('planning?date=like.EV_*&select=donnees&order=date.desc&limit=500')
+    ]).then(function(res){
+      var events=(res[0]||[]).map(function(r){return r.donnees;}).filter(function(d){return d&&d._isEvent;});
+
+      var matches=[];
+
+      if(currentTab==='client'){
+        var valUp=val.toUpperCase();
+        Object.keys(ST.tasks).forEach(function(k){
+          (ST.tasks[k]||[]).forEach(function(t,ti){
+            if(t.client&&t.client.toUpperCase().indexOf(valUp)>=0){
+              var parts=k.split('|');
+              matches.push({date:parts[0],di:parseInt(parts[1]),heure:parts[2],ti:ti,task:t});
+            }
+          });
+        });
+      } else if(currentTab==='date'){
+        Object.keys(ST.tasks).forEach(function(k){
+          var parts=k.split('|');
+          if(parts[0]===val){
+            (ST.tasks[k]||[]).forEach(function(t,ti){
+              if(t.client)matches.push({date:parts[0],di:parseInt(parts[1]),heure:parts[2],ti:ti,task:t});
+            });
+          }
+        });
+      } else if(currentTab==='chauffeur'){
+        var di=ST.drivers.findIndex(function(d){return d.name===val;});
+        Object.keys(ST.tasks).forEach(function(k){
+          var parts=k.split('|');
+          if(parseInt(parts[1])===di){
+            (ST.tasks[k]||[]).forEach(function(t,ti){
+              if(t.client)matches.push({date:parts[0],di:di,heure:parts[2],ti:ti,task:t});
+            });
+          }
+        });
+      }
+
+      matches.sort(function(a,b){return b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure);});
+
+      if(!matches.length){
+        results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">Aucun résultat</div>';
+        return;
+      }
+
+      var html='<div style="font-size:11px;color:#64748b;margin-bottom:10px">'+matches.length+' résultat(s)</div>';
+      matches.slice(0,50).forEach(function(m){
+        var dr=ST.drivers[m.di];
+        var hasProof=events.some(function(e){return e.date===m.date&&e.client&&m.task.client&&e.client.toUpperCase().indexOf(m.task.client.toUpperCase().substring(0,8))>=0;});
+        html+='<button onclick=\'ouvrirBonLivraison("'+m.date+'",'+m.di+',"'+m.heure+'",'+m.ti+')\' style="width:100%;text-align:left;background:#1e293b;border:1px solid #334155;border-left:3px solid '+(hasProof?'#22c55e':'#64748b')+';border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;color:#fff">'
+          +'<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:800">'+m.task.client+'</span>'+(hasProof?'<span style="font-size:10px;color:#22c55e;font-weight:700">✓ Preuves</span>':'')+'</div>'
+          +'<div style="font-size:11px;color:#64748b;margin-top:3px">'+m.date+' à '+m.heure+' — '+dr.name+'</div>'
+          +'</button>';
+      });
+      results.innerHTML=html;
+    });
+  }
+
+  majZoneRecherche();
 }
 </script>
 </body>
