@@ -529,6 +529,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirNettoyageSupabase();fermerMenu()" class="menu-item" style="color:#ef4444;font-weight:700">🧹 Nettoyage stockage Supabase</button>
 <button tabindex="0" onclick="ouvrirPhotosSignatures();fermerMenu()" class="menu-item" style="color:#a855f7;font-weight:700">📸 Photos & Signatures chauffeurs</button>
 <button tabindex="0" onclick="ouvrirRechercheHistorique();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">🔍 Recherche historique (infractions)</button>
 <button tabindex="0" onclick="ouvrirGestionChauffeurs();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">👥 Gestion des chauffeurs</button>
@@ -22593,6 +22594,86 @@ function ouvrirPhotosSignatures(){
   refreshBtn.addEventListener('click',chargerEtAfficher);
   dateInput.addEventListener('change',chargerEtAfficher);
   chargerEtAfficher();
+}
+
+/* ══════════════════════════════════════════════════
+   NETTOYAGE SUPABASE — liberer l'espace de stockage
+══════════════════════════════════════════════════ */
+function ouvrirNettoyageSupabase(){
+  var existing=document.getElementById('m-clean-supa');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-clean-supa';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='480px';
+
+  var h=document.createElement('h3');h.textContent='🧹 Nettoyage du stockage';
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.6';
+  sub.textContent='Si vous avez un message de limite de stockage atteinte dans Supabase, ceci va analyser et supprimer les anciennes données inutiles (vieux evenements de plus de 30 jours) pour liberer de la place.';
+  box.appendChild(h);box.appendChild(sub);
+
+  var statusDiv=document.createElement('div');
+  statusDiv.id='clean-status';
+  statusDiv.style.cssText='background:#1e293b;border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;color:#94a3b8;text-align:center';
+  statusDiv.textContent='Cliquez sur Analyser pour commencer';
+  box.appendChild(statusDiv);
+
+  var analyzeBtn=document.createElement('button');
+  analyzeBtn.textContent='🔍 Analyser le stockage';
+  analyzeBtn.style.cssText='width:100%;background:#1d4ed8;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:8px';
+  box.appendChild(analyzeBtn);
+
+  var cleanBtn=document.createElement('button');
+  cleanBtn.textContent='🗑️ Supprimer les vieux événements (+30 jours)';
+  cleanBtn.style.cssText='width:100%;background:#dc2626;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:none';
+  cleanBtn.id='clean-execute-btn';
+  box.appendChild(cleanBtn);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:10px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-clean-supa');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  var oldEventDates=[];
+
+  analyzeBtn.addEventListener('click',function(){
+    statusDiv.textContent='Analyse en cours...';
+    supaFetch('planning?date=like.EV_*&select=date&order=date.asc').then(function(rows){
+      if(!rows){statusDiv.textContent='Erreur de connexion';return;}
+      var total=rows.length;
+      var cutoff=Date.now()-(30*24*60*60*1000);
+      oldEventDates=[];
+      rows.forEach(function(r){
+        var match=r.date.match(/EV_(\d+)_/);
+        if(match&&parseInt(match[1])<cutoff)oldEventDates.push(r.date);
+      });
+      statusDiv.innerHTML='<b>'+total+'</b> événements trouvés au total<br><b style="color:#f59e0b">'+oldEventDates.length+'</b> peuvent être supprimés (+30 jours)';
+      if(oldEventDates.length>0)cleanBtn.style.display='block';
+    });
+  });
+
+  cleanBtn.addEventListener('click',function(){
+    if(!confirm('Supprimer '+oldEventDates.length+' vieux événements ? Cette action est irréversible.'))return;
+    statusDiv.textContent='Suppression en cours...';
+    cleanBtn.disabled=true;
+
+    var deleted=0;
+    function deleteNext(i){
+      if(i>=oldEventDates.length){
+        statusDiv.textContent='✅ '+deleted+' événements supprimés. Espace libéré !';
+        cleanBtn.style.display='none';
+        return;
+      }
+      supaFetch('planning?date=eq.'+encodeURIComponent(oldEventDates[i]),{method:'DELETE'}).then(function(){
+        deleted++;
+        statusDiv.textContent='Suppression... '+deleted+'/'+oldEventDates.length;
+        deleteNext(i+1);
+      });
+    }
+    deleteNext(0);
+  });
 }
 </script>
 </body>
