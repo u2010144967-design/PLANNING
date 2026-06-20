@@ -696,8 +696,8 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
       })
     :DRIVERS;
 
-  const getDriverStats=(driverName)=>{
-    const todayEvents=events.filter(e=>e.date===today&&e.chauffeur===driverName);
+  const getDriverStats=(driverName,driverDisplay)=>{
+    const todayEvents=events.filter(e=>e.date===today&&(e.chauffeur===driverName||e.chauffeur===driverDisplay));
     const photos=todayEvents.filter(e=>e.type==='photo').length;
     const sigs=todayEvents.filter(e=>e.type==='signature').length;
     const done=todayEvents.filter(e=>e.type==='done').length;
@@ -735,7 +735,7 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
       </div>
       <div className="icon-grid" style={{marginBottom:18}}>
         {liveDrivers.map(dr=>{
-          const stats=getDriverStats(dr.name);
+          const stats=getDriverStats(dr.name,dr.display);
           return(
             <button key={dr.id} className="icon-tile" style={{background:dr.color+'15',borderColor:dr.color+'40',position:'relative'}} onClick={()=>onSelectDriver(dr)}>
               <div className="av" style={{width:42,height:42,fontSize:17,background:dr.color+'22',border:`2px solid ${dr.color}55`,color:dr.color}}>{dr.ini}</div>
@@ -801,7 +801,7 @@ function ResponsableDriverDetail({driver,onBack}){
   useEffect(()=>{refresh();},[]);
 
   const missions=planning?getMissions(planning,driver.id,selectedDate):[];
-  const dayEvents=events.filter(e=>e.date===selectedDate&&e.chauffeur===driver.name);
+  const dayEvents=events.filter(e=>e.date===selectedDate&&(e.chauffeur===driver.name||e.chauffeur===driver.display));
   const photos=dayEvents.filter(e=>e.type==='photo');
   const signatures=dayEvents.filter(e=>e.type==='signature');
   const done=missions.filter(m=>m._statut==='done').length;
