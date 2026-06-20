@@ -530,6 +530,31 @@ async function loadAllEvents(){
   }
 }
 
+
+/* ══ NOTES CLIENT PARTAGEES — visibles par tous les chauffeurs ══ */
+async function loadClientNote(clientName){
+  if(!clientName)return'';
+  try{
+    const key='CLIENTNOTE_'+clientName.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+    const rows=await db('planning?date=eq.'+key+'&select=donnees&limit=1');
+    if(rows&&rows.length&&rows[0].donnees)return rows[0].donnees.note||'';
+  }catch(e){}
+  return'';
+}
+async function saveClientNote(clientName,note){
+  if(!clientName)return;
+  try{
+    const key='CLIENTNOTE_'+clientName.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+    const rows=await db('planning?date=eq.'+key+'&select=id&limit=1');
+    const body=JSON.stringify({donnees:{note,client:clientName,maj:new Date().toISOString()}});
+    if(rows&&rows.length){
+      await fetch(SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(key),{method:'PATCH',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body});
+    }else{
+      await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({date:key,donnees:{note,client:clientName,maj:new Date().toISOString()}})});
+    }
+  }catch(e){console.log('Erreur sauvegarde note client:',e);}
+}
+
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
@@ -1074,6 +1099,59 @@ function ResponsableScreen({onLogout}){
 }
 
 
+/* ══ CHECKLIST AVANT DEPART ══ */
+function ChecklistScreen({ch,onComplete}){
+  const items=[
+    {id:'proprete',label:'Camion propre',icon:'🧹'},
+    {id:'carburant',label:'Plein de carburant fait',icon:'⛽'},
+    {id:'materiel',label:'Matériel chargé',icon:'📦'},
+    {id:'papiers',label:'Papiers du véhicule présents',icon:'📄'},
+    {id:'etat',label:'Aucun dommage visible',icon:'✅'},
+  ];
+  const [checked,setChecked]=useState({});
+  const allChecked=items.every(it=>checked[it.id]);
+
+  const toggle=(id)=>setChecked(c=>({...c,[id]:!c[id]}));
+
+  const valider=async()=>{
+    const today=new Date().toISOString().slice(0,10);
+    localStorage.setItem('checklist_'+ch.id+'_'+today,'1');
+    await saveEvent({type:'checklist',chauffeurId:ch.id,chauffeur:ch.display,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    onComplete();
+  };
+
+  return(
+    <div className="login" style={{justifyContent:'flex-start',paddingTop:'calc(var(--sat) + 40px)'}}>
+      <div className="logo" style={{width:60,height:60}}>
+        <span style={{fontSize:26}}>✅</span>
+      </div>
+      <h2 style={{fontSize:19,fontWeight:800,marginBottom:4,textAlign:'center'}}>Avant de partir</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Vérifiez ces points, {ch.display}</p>
+
+      <div style={{width:'100%',maxWidth:340}}>
+        {items.map(it=>(
+          <button key={it.id} onClick={()=>toggle(it.id)}
+            style={{width:'100%',display:'flex',alignItems:'center',gap:12,background:checked[it.id]?'rgba(34,197,94,.12)':'var(--card)',border:`2px solid ${checked[it.id]?'var(--green)':'var(--border2)'}`,borderRadius:14,padding:14,marginBottom:10}}>
+            <span style={{fontSize:22}}>{it.icon}</span>
+            <span style={{flex:1,fontSize:14,fontWeight:700,textAlign:'left',color:checked[it.id]?'var(--green)':'var(--text)'}}>{it.label}</span>
+            <div style={{width:24,height:24,borderRadius:7,border:`2px solid ${checked[it.id]?'var(--green)':'var(--dim)'}`,background:checked[it.id]?'var(--green)':'transparent',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {checked[it.id]&&<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <button onClick={valider} disabled={!allChecked}
+        style={{width:'100%',maxWidth:340,marginTop:10,background:allChecked?'var(--green)':'var(--dim)',color:'#fff',borderRadius:14,padding:16,fontSize:15,fontWeight:800}}>
+        {allChecked?'🚀 Démarrer ma journée':'Cochez tous les points'}
+      </button>
+      <button onClick={onComplete} style={{marginTop:14,background:'transparent',border:'none',color:'var(--dim)',fontSize:12}}>
+        Passer pour aujourd'hui →
+      </button>
+    </div>
+  );
+}
+
 /* ══ HEADER avec retour ══ */
 function Header({title, onBack}){
   return(
@@ -1247,10 +1325,27 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
   const today=new Date().toISOString().slice(0,10);
   const [proofs,setProofs]=useState(()=>getMissionProofs(ch.id,m.client||m.task,m.heure,today));
   const [zoomPhoto,setZoomPhoto]=useState(null);
+  const [clientNote,setClientNote]=useState('');
+  const [noteInput,setNoteInput]=useState('');
+  const [noteSaving,setNoteSaving]=useState(false);
+  const [noteOpen,setNoteOpen]=useState(false);
 
   useEffect(()=>{
     setProofs(getMissionProofs(ch.id,m.client||m.task,m.heure,today));
   },[refreshKey,m._statut]);
+
+  useEffect(()=>{
+    const clientName=m.client||m.task;
+    if(clientName)loadClientNote(clientName).then(n=>{setClientNote(n);setNoteInput(n);});
+  },[m.client,m.task]);
+
+  const saveNote=async()=>{
+    setNoteSaving(true);
+    await saveClientNote(m.client||m.task,noteInput);
+    setClientNote(noteInput);
+    setNoteSaving(false);
+    setNoteOpen(false);
+  };
 
   const hasPhotos=proofs.photos&&proofs.photos.length>0;
   const hasSig=!!proofs.signature;
@@ -1279,6 +1374,31 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
             {m.contact&&<div className="mt"><b>{m.contact}</b></div>}
             {m.note_liv&&<div className="mt fw"><span style={{color:'var(--text)'}}>{m.note_liv}</span></div>}
           </div>
+        </div>
+
+        {/* NOTE CLIENT PARTAGEE */}
+        <div className="card" style={{padding:12,marginBottom:12,borderLeft:'3px solid var(--teal)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:noteOpen?8:0}}>
+            <div style={{fontSize:11,color:'var(--teal)',fontWeight:700,display:'flex',alignItems:'center',gap:5}}>
+              📌 Note partagée (tous les chauffeurs)
+            </div>
+            <button onClick={()=>setNoteOpen(!noteOpen)} style={{fontSize:11,color:'var(--teal)',fontWeight:700}}>
+              {noteOpen?'Fermer':clientNote?'Modifier':'+ Ajouter'}
+            </button>
+          </div>
+          {!noteOpen&&clientNote&&<div style={{fontSize:13,color:'var(--text)',marginTop:6}}>{clientNote}</div>}
+          {!noteOpen&&!clientNote&&<div style={{fontSize:11,color:'var(--dim)'}}>Aucune note pour ce client</div>}
+          {noteOpen&&(
+            <div>
+              <textarea value={noteInput} onChange={e=>setNoteInput(e.target.value)}
+                placeholder="Ex: digicode cassé, livrer par l'arrière..."
+                style={{width:'100%',background:'var(--raised)',border:'1px solid var(--border2)',borderRadius:9,padding:'8px 11px',fontSize:13,color:'var(--text)',resize:'none',height:60,marginBottom:8}}/>
+              <button onClick={saveNote} disabled={noteSaving}
+                style={{width:'100%',background:'var(--teal)',color:'#fff',borderRadius:10,padding:10,fontSize:12,fontWeight:700}}>
+                {noteSaving?'Enregistrement...':'💾 Enregistrer pour tous'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* RECAP PREUVES */}
@@ -1812,6 +1932,7 @@ function VehicleScreen({ch,onBack,onToast}){
 
 /* ══ AIDE RAPIDE / SOS ══ */
 function HelpScreen({ch,onBack,onToast}){
+  const [blockReason,setBlockReason]=useState(null);
   const sendSOS=async()=>{
     navigator.geolocation?.getCurrentPosition(async pos=>{
       await saveEvent({type:'sos',chauffeurId:ch.id,chauffeur:ch.display,lat:pos.coords.latitude,lng:pos.coords.longitude,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
@@ -1820,15 +1941,41 @@ function HelpScreen({ch,onBack,onToast}){
     });
     onToast('🆘 Alerte envoyée au responsable !','var(--red)');
   };
+  const signalerBlocage=async(raison)=>{
+    await saveEvent({type:'blocage',chauffeurId:ch.id,chauffeur:ch.display,raison,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    onToast('📍 Signalé : '+raison,'var(--amber)');
+    setBlockReason(null);
+  };
   return(
     <>
       <Header title="Aide rapide" onBack={onBack}/>
       <div className="scroll">
-        <button onClick={sendSOS} style={{width:'100%',background:'linear-gradient(135deg,#ef4444,#dc2626)',borderRadius:20,padding:24,display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:20,boxShadow:'0 8px 24px rgba(239,68,68,.35)'}}>
+        <button onClick={sendSOS} style={{width:'100%',background:'linear-gradient(135deg,#ef4444,#dc2626)',borderRadius:20,padding:24,display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:14,boxShadow:'0 8px 24px rgba(239,68,68,.35)'}}>
           <i className="fa-solid fa-bell" style={{fontSize:36,color:'#fff'}}/>
           <span style={{fontSize:16,fontWeight:900,color:'#fff'}}>🆘 ENVOYER UNE ALERTE SOS</span>
           <span style={{fontSize:11,color:'rgba(255,255,255,.8)'}}>Le responsable reçoit votre position immédiatement</span>
         </button>
+
+        <button onClick={()=>setBlockReason(blockReason?null:'open')}
+          style={{width:'100%',background:'rgba(245,158,11,.12)',border:'2px solid rgba(245,158,11,.3)',borderRadius:16,padding:16,display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+          <span style={{fontSize:24}}>🤔</span>
+          <div style={{textAlign:'left',flex:1}}>
+            <div style={{fontSize:14,fontWeight:800,color:'var(--amber)'}}>Je suis bloqué</div>
+            <div style={{fontSize:11,color:'var(--muted)'}}>Signaler un souci simple, sans urgence</div>
+          </div>
+        </button>
+
+        {blockReason&&(
+          <div style={{marginBottom:14}}>
+            {['Parking impossible','Client absent','Accès fermé/digicode','Embouteillage important','Autre raison'].map(r=>(
+              <button key={r} onClick={()=>signalerBlocage(r)} className="veh-issue-btn">
+                <span style={{fontSize:13,fontWeight:600,flex:1,textAlign:'left'}}>{r}</span>
+                <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:12}}/>
+              </button>
+            ))}
+          </div>
+        )}
+
         <a href="tel:0491000000" style={{textDecoration:'none'}}>
           <div className="veh-issue-btn">
             <span style={{fontSize:20}}>📞</span>
@@ -2188,6 +2335,7 @@ class ErrorBoundary extends React.Component{
 function App(){
   const [ch,setCh]=useState(null);
   const [respMode,setRespMode]=useState(false);
+  const [checklistDone,setChecklistDone]=useState(false);
   useEffect(()=>{
     const checkNight=()=>{
       const h=new Date().getHours();
@@ -2199,7 +2347,13 @@ function App(){
     return()=>clearInterval(iv);
   },[]);
   if(respMode)return<ResponsableScreen onLogout={()=>setRespMode(false)}/>;
-  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh} onResponsable={()=>setRespMode(true)}/>;
+  if(ch&&!checklistDone){
+    const today=new Date().toISOString().slice(0,10);
+    const already=localStorage.getItem('checklist_'+ch.id+'_'+today);
+    if(already)return<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>;
+    return<ChecklistScreen ch={ch} onComplete={()=>setChecklistDone(true)}/>;
+  }
+  return ch?<ChaufApp ch={ch} onLogout={()=>{setCh(null);setChecklistDone(false);}}/>:<Login onLogin={setCh} onResponsable={()=>setRespMode(true)}/>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
