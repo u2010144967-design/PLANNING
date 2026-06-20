@@ -571,6 +571,35 @@ async function saveClientNote(clientName,note){
   }catch(e){console.log('Erreur sauvegarde note client:',e);}
 }
 
+
+/* ══ SYSTEME DE REPRISES — assignees par le responsable ══ */
+async function loadReprises(driverId){
+  try{
+    const r=await fetch(SUPA+'/rest/v1/planning?date=like.REPRISE_*&select=donnees,date&order=date.desc&limit=100',{
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+    });
+    if(!r.ok)return[];
+    const rows=await r.json();
+    return rows
+      .map(row=>({...row.donnees,_key:row.date}))
+      .filter(rep=>rep.di===driverId&&rep.statut==='a_faire');
+  }catch(e){
+    console.log('Erreur chargement reprises:',e);
+    return[];
+  }
+}
+
+async function marquerRepriseFaite(repriseKey){
+  try{
+    await fetch(SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(repriseKey),{
+      method:'PATCH',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({donnees:{statut:'fait'}})
+    });
+    return true;
+  }catch(e){return false;}
+}
+
 /* ══ TOAST ══ */
 function Toast({msg,color}){
   if(!msg)return null;
@@ -1269,6 +1298,12 @@ function HomeScreen({ch,planning,onNavigate,unreadMsg}){
           <div className="icon-tile-sub" style={{color:'#fbbf24'}}>{ch.truck}</div>
         </button>
 
+        <button className="icon-tile" style={{background:'rgba(249,115,22,.1)',borderColor:'rgba(249,115,22,.25)'}} onClick={()=>onNavigate('reprises')}>
+          <div className="icon-tile-emoji">📥</div>
+          <div className="icon-tile-label" style={{color:'#fb923c'}}>Mes reprises</div>
+          <div className="icon-tile-sub" style={{color:'#fb923c'}}>À récupérer</div>
+        </button>
+
         <button className="icon-tile" style={{background:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.25)'}} onClick={()=>onNavigate('photos')}>
           <div className="icon-tile-emoji">📸</div>
           <div className="icon-tile-label" style={{color:'#c084fc'}}>Mes photos</div>
@@ -1904,6 +1939,65 @@ function AllPhotosScreen({ch,onBack}){
   );
 }
 
+/* ══ ECRAN MES REPRISES — assignees par le responsable ══ */
+function ReprisesScreen({ch,onBack,onToast}){
+  const [reprises,setReprises]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [zoom,setZoom]=useState(null);
+
+  const refresh=()=>{
+    setLoading(true);
+    loadReprises(ch.id).then(r=>{setReprises(r);setLoading(false);});
+  };
+  useEffect(()=>{refresh();},[]);
+
+  const marquerFait=async(rep)=>{
+    const ok=await marquerRepriseFaite(rep._key);
+    if(ok){
+      onToast('✅ Reprise marquée comme faite !','var(--green)');
+      refresh();
+    }
+  };
+
+  return(
+    <>
+      <Header title="📥 Mes reprises" onBack={onBack}/>
+      <div className="scroll">
+        {loading&&<div className="loader"><div className="spin" style={{width:28,height:28}}/></div>}
+        {!loading&&reprises.length===0&&(
+          <div style={{textAlign:'center',padding:'50px 22px',color:'var(--muted)'}}>
+            <div style={{fontSize:40,marginBottom:10}}>📭</div>
+            <div style={{fontSize:14,fontWeight:700}}>Aucune reprise à faire</div>
+          </div>
+        )}
+        {reprises.map((rep,i)=>(
+          <div key={i} className="card" style={{padding:14,marginBottom:12,borderLeft:'3px solid var(--orange)'}}>
+            <div style={{display:'flex',gap:12,marginBottom:10}}>
+              <img src={rep.photoUrl} onClick={()=>setZoom(rep.photoUrl)} style={{width:60,height:60,borderRadius:10,objectFit:'cover',cursor:'pointer',flexShrink:0}}/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:800}}>{rep.client}</div>
+                <div style={{fontSize:11,color:'var(--muted)'}}>Photo de {rep.photoSource}</div>
+              </div>
+            </div>
+            <div style={{background:'var(--raised)',borderRadius:10,padding:10,marginBottom:10,fontSize:13}}>
+              {rep.instruction}
+            </div>
+            <button onClick={()=>marquerFait(rep)}
+              style={{width:'100%',background:'var(--green)',color:'#fff',borderRadius:10,padding:11,fontSize:12,fontWeight:800}}>
+              ✅ Marquer comme récupéré
+            </button>
+          </div>
+        ))}
+      </div>
+      {zoom&&(
+        <div onClick={()=>setZoom(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <img src={zoom} style={{maxWidth:'100%',maxHeight:'80%',borderRadius:12,objectFit:'contain'}}/>
+        </div>
+      )}
+    </>
+  );
+}
+
 function VehicleScreen({ch,onBack,onToast}){
   const [km,setKm]=useState('');
   const reportIssue=async(issue)=>{
@@ -2175,27 +2269,33 @@ function ChaufApp({ch,onLogout}){
 
             const finishSave=(finalDataUrl)=>{
               try{
-                console.log('DEBUG photo - clientKey:',JSON.stringify(clientKey),'heureKey:',heureKey,'todayD:',todayD);
                 const updatedProof=saveMissionProof(ch.id,clientKey,heureKey,todayD,'photo',finalDataUrl);
-                console.log('DEBUG photo - updatedProof:',updatedProof?JSON.stringify({photosCount:updatedProof.photos?updatedProof.photos.length:0}):'NULL');
                 const savedPhotoId=updatedProof&&updatedProof.photos&&updatedProof.photos.length
                   ?updatedProof.photos[updatedProof.photos.length-1].id:null;
                 vib([60]);
-                t3(`📷 Photo OK (${updatedProof&&updatedProof.photos?updatedProof.photos.length:0})`,'var(--green)');
+                t3('📷 Photo enregistrée — analyse en cours...','var(--green)');
                 setRefreshKey(k=>k+1);
 
-                saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl:finalDataUrl,date:todayD}).then(ok=>{
-                  if(!ok)t3('⚠️ Photo non envoyée au serveur (stockage plein ?)','var(--red)');
-                }).catch(()=>{t3('⚠️ Erreur réseau envoi photo','var(--red)');});
-
+                /* Analyser AVANT d'envoyer a Supabase, pour inclure le comptage dans le meme evenement */
                 analyserPhotoIA(finalDataUrl,file.type||'image/jpeg').then(res=>{
+                  var materielDetecte=null;
                   if(res&&res.total>0){
+                    materielDetecte={gastro:res.gastro||0,chariot:res.chariot||0,container:res.container||0,caisse:res.caisse||0,etuve:res.etuve||0,plateau:res.plateau||0,nappe:res.nappe||0};
                     t3(`🤖 IA : ${res.total} item(s) détecté(s)`,'var(--purple)');
                     if(navigator.vibrate)navigator.vibrate([80,40,80]);
                     if(savedPhotoId)saveMissionProof(ch.id,clientKey,heureKey,todayD,'ia_result',{photoId:savedPhotoId,result:res});
                     setRefreshKey(k=>k+1);
                   }
-                }).catch(err=>{console.log('IA non disponible:',err);});
+                  saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl:finalDataUrl,date:todayD,materielDetecte:materielDetecte}).then(ok=>{
+                    if(!ok)t3('⚠️ Photo non envoyée au serveur (stockage plein ?)','var(--red)');
+                  }).catch(()=>{t3('⚠️ Erreur réseau envoi photo','var(--red)');});
+                }).catch(err=>{
+                  console.log('IA non disponible:',err);
+                  /* Envoyer quand meme la photo sans le comptage IA */
+                  saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl:finalDataUrl,date:todayD}).then(ok=>{
+                    if(!ok)t3('⚠️ Photo non envoyée au serveur (stockage plein ?)','var(--red)');
+                  }).catch(()=>{t3('⚠️ Erreur réseau envoi photo','var(--red)');});
+                });
               }catch(saveErr){
                 console.log('Erreur sauvegarde:',saveErr);
                 t3('⚠️ Photo prise mais non sauvegardée','var(--amber)');
@@ -2298,6 +2398,7 @@ function ChaufApp({ch,onLogout}){
       {screen==='calendar'&&<CalendarScreen ch={ch} planning={planning} onBack={()=>setScreen('home')}/>}
       {screen==='messages'&&<MessagesScreen ch={ch} onBack={()=>setScreen('home')}/>}
       {screen==='vehicle'&&<VehicleScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='reprises'&&<ReprisesScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
       {screen==='photos'&&<AllPhotosScreen ch={ch} onBack={()=>setScreen('home')}/>}
       {screen==='help'&&<HelpScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
 
