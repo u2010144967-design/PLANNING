@@ -43,6 +43,7 @@
       setTimeout(function(){
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')afficherHub();
+        if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
       },500);
     });
     return;
@@ -77,6 +78,7 @@
         overlay.remove();
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')setTimeout(afficherHub,300);
+        if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
       } else {
         err.style.display='block';
         inp.value='';
@@ -481,6 +483,11 @@ input[type="time"]{
 .hub-tile-sub{font-size:11px;color:#8B96A8;text-align:center}
 .hub-enter-btn{margin-top:32px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:16px;padding:16px 40px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.3)}
 @media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* Bouton Accueil flottant - toujours visible */
+#hub-fab{position:fixed;bottom:24px;left:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#f97316,#c2540a);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(249,115,22,.4);cursor:pointer;z-index:9997;border:none;transition:transform .15s}
+#hub-fab:hover{transform:scale(1.08)}
+#hub-fab:active{transform:scale(.92)}
 </style>
 </head>
 <body>
@@ -23631,6 +23638,20 @@ function fermerHub(){
 
 function ouvrirHub(){
   afficherHub();
+}
+
+/* Bouton Accueil flottant - cree une fois, reste visible partout */
+function creerBoutonAccueilFlottant(){
+  if(document.getElementById('hub-fab'))return;
+  var fab=document.createElement('button');
+  fab.id='hub-fab';
+  fab.innerHTML='\uD83C\uDFE0';
+  fab.style.fontSize='22px';
+  fab.title='Retour a l\'accueil';
+  fab.addEventListener('click',function(){
+    if(typeof ouvrirHub==='function')ouvrirHub();
+  });
+  document.body.appendChild(fab);
 }
 </script>
 </body>
