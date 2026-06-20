@@ -296,18 +296,25 @@ async function loadPlanning(){
 }
 
 async function saveEvent(ev){
+  /* Chaque evenement est stocke individuellement (pas de race condition entre chauffeurs) */
+  const evKey='EV_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   try{
-    const rows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
-    let list=[];
-    if(rows&&rows.length&&rows[0].donnees){
-      try{const d=rows[0].donnees;list=JSON.parse(typeof d==='string'?d:JSON.stringify(d));if(!Array.isArray(list))list=[];}catch(e){list=[];}
+    const body=JSON.stringify({date:evKey,donnees:{...ev,ts:new Date().toISOString(),_isEvent:true}});
+    const r=await fetch(SUPA+'/rest/v1/planning',{
+      method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:body
+    });
+    if(!r.ok){
+      const errTxt=await r.text();
+      console.log('ERREUR saveEvent:',r.status,errTxt);
+      return false;
     }
-    list.unshift({...ev,ts:new Date().toISOString()});
-    list=list.slice(0,300);
-    const s=JSON.stringify(list);
-    if(rows&&rows.length)await db('planning?date=eq.EVENTS',{method:'PATCH',body:JSON.stringify({donnees:s})});
-    else await db('planning',{method:'POST',body:JSON.stringify({date:'EVENTS',donnees:s})});
-  }catch(e){}
+    return true;
+  }catch(e){
+    console.log('ERREUR RESEAU saveEvent:',e);
+    return false;
+  }
 }
 
 async function saveMsg(msg){
@@ -498,14 +505,29 @@ async function analyserPhotoIA(dataUrl,mimeType,retryCount){
 /* ══ CHARGER TOUS LES EVENEMENTS (preuves) DEPUIS SUPABASE — vue responsable ══ */
 async function loadAllEvents(){
   try{
-    const rows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
-    if(rows&&rows.length&&rows[0].donnees){
-      const d=rows[0].donnees;
-      const events=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
-      return Array.isArray(events)?events:[];
+    /* Charger tous les evenements individuels (cle commençant par EV_) + ancien format EVENTS en fallback */
+    const r=await fetch(SUPA+'/rest/v1/planning?date=like.EV_*&select=donnees,date&order=date.desc&limit=500',{
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+    });
+    if(!r.ok){console.log('Erreur loadAllEvents HTTP:',r.status);return[];}
+    const rows=await r.json();
+    const events=rows.map(row=>row.donnees).filter(d=>d&&d._isEvent);
+
+    /* Fallback: ancien format groupe (pour compatibilite avec donnees existantes) */
+    const oldRows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
+    if(oldRows&&oldRows.length&&oldRows[0].donnees){
+      try{
+        const d=oldRows[0].donnees;
+        const oldEvents=JSON.parse(typeof d==='string'?d:JSON.stringify(d));
+        if(Array.isArray(oldEvents))events.push(...oldEvents);
+      }catch(e){}
     }
-  }catch(e){console.log('Erreur chargement events:',e);}
-  return[];
+
+    return events;
+  }catch(e){
+    console.log('Erreur chargement events:',e);
+    return[];
+  }
 }
 
 /* ══ TOAST ══ */
@@ -522,8 +544,8 @@ function Login({onLogin,onResponsable}){
   const [liveDrivers,setLiveDrivers]=useState(DRIVERS);
   const [liveCodes,setLiveCodes]=useState({});
   const [loaded,setLoaded]=useState(false);
+  const RESP_TILE={id:'resp',display:'Responsable',ini:'R',color:'#3b82f6',code:'9999',truck:'Vue d\'ensemble'};
 
-  /* Charger les noms/camions reels + codes depuis Supabase au demarrage */
   useEffect(()=>{
     const load=async()=>{
       const planning=await loadPlanning();
@@ -544,28 +566,39 @@ function Login({onLogin,onResponsable}){
     load();
   },[]);
 
+  const allTiles=[...liveDrivers,RESP_TILE];
+
   const add=d=>{
     if(code.length>=4)return;
     const nc=code+d;setCode(nc);setErr('');
     if(nc.length===4){
+      if(sel==='resp'){
+        if(nc===RESP_TILE.code){setTimeout(()=>onResponsable(),80);}
+        else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
+        return;
+      }
       const ch=liveDrivers.find(c=>c.id===sel);
       const realCode=liveCodes[sel]||ch.code;
       if(nc===realCode||nc==='0000'){setTimeout(()=>onLogin(ch),80);}
       else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
     }
   };
+
   return(
     <div className="login">
       <div className="logo">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </div>
       <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Sélectionnez votre profil</p>
       {!loaded&&<div className="spin" style={{width:24,height:24,marginBottom:16}}/>}
       <div className="ch-grid">
-        {liveDrivers.map(ch=>(
-          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
-            <div className="av" style={{background:ch.color+'1e',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>{ch.ini}</div>
+        {allTiles.map(ch=>(
+          <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}
+            style={ch.id==='resp'?{gridColumn:'span 2',background:sel==='resp'?'rgba(59,130,246,.1)':'var(--card)'}:{}}>
+            <div className="av" style={{background:ch.color+'1e',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>
+              {ch.id==='resp'?'👔':ch.ini}
+            </div>
             <span style={{fontSize:12,fontWeight:700,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.display}</span>
             <span style={{fontSize:10,color:'var(--dim)'}}>{ch.truck}</span>
           </button>
@@ -584,17 +617,14 @@ function Login({onLogin,onResponsable}){
               </button>
             )}
           </div>
-          <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>Code provisoire : 0000</p>
+          <p style={{fontSize:10,color:'var(--dim)',marginTop:14}}>{sel==='resp'?'Code responsable : 9999':'Code provisoire : 0000'}</p>
         </>
-      )}
-      {sel===null&&(
-        <button onClick={onResponsable} style={{marginTop:20,background:'transparent',border:'none',color:'var(--dim)',fontSize:11,textDecoration:'underline'}}>
-          👔 Accès responsable
-        </button>
       )}
     </div>
   );
 }
+
+
 
 /* ══════════════════════════════════════════════════
    VUE RESPONSABLE — toutes les preuves de tous les chauffeurs
@@ -602,7 +632,7 @@ function Login({onLogin,onResponsable}){
 /* ══════════════════════════════════════════════════
    VUE RESPONSABLE — style app, grille de tuiles chauffeurs
 ══════════════════════════════════════════════════ */
-function ResponsableHome({onLogout,onSelectDriver}){
+function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
   const today=new Date().toISOString().slice(0,10);
   const [planning,setPlanning]=useState(null);
   const [events,setEvents]=useState([]);
@@ -634,13 +664,16 @@ function ResponsableHome({onLogout,onSelectDriver}){
     return{photos,sigs,done,missions};
   };
 
+  const totalMissions=liveDrivers.reduce((a,d)=>a+getDriverStats(d.name).missions,0);
+  const totalDone=liveDrivers.reduce((a,d)=>a+getDriverStats(d.name).done,0);
+
   return(
     <div className="scroll" style={{padding:'0 0 calc(24px + var(--sab))'}}>
       <div className="home-top">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
           <div>
             <div className="home-greet">👔 Vue Responsable</div>
-            <div className="home-name" style={{fontSize:24}}>Équipe du jour</div>
+            <div className="home-name" style={{fontSize:22}}>Centre de pilotage</div>
           </div>
           <div style={{display:'flex',gap:8}}>
             <button onClick={refresh} style={{width:38,height:38,borderRadius:11,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--orange)'}}>
@@ -652,11 +685,14 @@ function ResponsableHome({onLogout,onSelectDriver}){
           </div>
         </div>
         <div className="home-meta" style={{marginTop:8}}>
-          <span>{new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span>
+          <span>{new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} · {totalDone}/{totalMissions} livrées</span>
         </div>
       </div>
 
-      <div className="icon-grid">
+      <div style={{padding:'0 16px',marginBottom:6}}>
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>👥 Équipe</div>
+      </div>
+      <div className="icon-grid" style={{marginBottom:18}}>
         {liveDrivers.map(dr=>{
           const stats=getDriverStats(dr.name);
           return(
@@ -672,10 +708,37 @@ function ResponsableHome({onLogout,onSelectDriver}){
         })}
       </div>
 
+      <div style={{padding:'0 16px',marginBottom:6}}>
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>🛠️ Outils</div>
+      </div>
+      <div className="icon-grid">
+        <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('planning')}>
+          <div className="icon-tile-emoji">📅</div>
+          <div className="icon-tile-label" style={{color:'#60a5fa'}}>Planning</div>
+          <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Voir & modifier</div>
+        </button>
+        <button className="icon-tile" style={{background:'rgba(20,184,166,.1)',borderColor:'rgba(20,184,166,.25)'}} onClick={()=>onNavigate('messages')}>
+          <div className="icon-tile-emoji">💬</div>
+          <div className="icon-tile-label" style={{color:'#2dd4bf'}}>Messages</div>
+          <div className="icon-tile-sub" style={{color:'#2dd4bf'}}>Tous chauffeurs</div>
+        </button>
+        <button className="icon-tile" style={{background:'rgba(245,158,11,.1)',borderColor:'rgba(245,158,11,.25)'}} onClick={()=>onNavigate('vehicles')}>
+          <div className="icon-tile-emoji">🚛</div>
+          <div className="icon-tile-label" style={{color:'#fbbf24'}}>Véhicules</div>
+          <div className="icon-tile-sub" style={{color:'#fbbf24'}}>Flotte complète</div>
+        </button>
+        <button className="icon-tile" style={{background:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.25)'}} onClick={()=>onNavigate('stats')}>
+          <div className="icon-tile-emoji">📊</div>
+          <div className="icon-tile-label" style={{color:'#c084fc'}}>Statistiques</div>
+          <div className="icon-tile-sub" style={{color:'#c084fc'}}>Performance</div>
+        </button>
+      </div>
+
       {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}><div className="spin" style={{width:20,height:20,margin:'0 auto 8px'}}/>Synchronisation...</div>}
     </div>
   );
 }
+
 
 /* ══ FICHE DETAIL CHAUFFEUR — vue responsable ══ */
 function ResponsableDriverDetail({driver,onBack}){
@@ -801,13 +864,210 @@ function ResponsableDriverDetail({driver,onBack}){
   );
 }
 
+/* ══ PLANNING RESPONSABLE — voir et modifier ══ */
+function ResponsablePlanning({onBack}){
+  const [planning,setPlanning]=useState(null);
+  const [selectedDate,setSelectedDate]=useState(new Date().toISOString().slice(0,10));
+  const [loading,setLoading]=useState(true);
+  const [editMission,setEditMission]=useState(null);
+
+  const refresh=async()=>{setLoading(true);const p=await loadPlanning();if(p)setPlanning(p);setLoading(false);};
+  useEffect(()=>{refresh();},[]);
+
+  const liveDrivers=planning&&planning.drivers&&planning.drivers.length
+    ?DRIVERS.map((d,i)=>{const real=planning.drivers[i];return real?{...d,name:real.name,display:real.name.charAt(0)+real.name.slice(1).toLowerCase(),truck:real.truck||d.truck}:d;})
+    :DRIVERS;
+
+  return(
+    <>
+      <Header title="📅 Planning" onBack={onBack}/>
+      <div className="scroll">
+        <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}
+          style={{width:'100%',marginBottom:16,fontSize:14,fontWeight:700,padding:'10px 12px'}}/>
+        {loading&&<div className="loader"><div className="spin" style={{width:28,height:28}}/></div>}
+        {!loading&&liveDrivers.map(dr=>{
+          const ms=planning?getMissions(planning,dr.id,selectedDate):[];
+          if(!ms.length)return null;
+          return(
+            <div key={dr.id} style={{marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:800,color:dr.color,marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:dr.color}}/>{dr.display}
+              </div>
+              {ms.map((m,i)=>(
+                <div key={i} className="card" style={{padding:12,marginBottom:6,borderLeft:`3px solid ${m._statut==='done'?'var(--green)':'var(--dim)'}`}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span className="mono" style={{fontWeight:800}}>{m.heure}</span>
+                    <span style={{fontSize:10,color:'var(--muted)'}}>{m._statut==='done'?'✓ Livré':m._statut==='enroute'?'🚗 En route':'En attente'}</span>
+                  </div>
+                  <div style={{fontSize:13,fontWeight:700,marginTop:3}}>{m.client||m.task}</div>
+                  {m.adresse&&<div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{m.adresse}</div>}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+        <div style={{background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:12,padding:14,fontSize:12,color:'#93c5fd',marginTop:10,lineHeight:1.6}}>
+          💡 Pour ajouter ou modifier une mission en détail, utilisez le logiciel principal sur ordinateur — toutes les modifications apparaissent ici automatiquement.
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══ MESSAGES RESPONSABLE — vue tous chauffeurs ══ */
+function ResponsableMessages({onBack}){
+  const [msgs,setMsgs]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [text,setText]=useState('');
+
+  const refresh=async()=>{setLoading(true);const m=await loadMsgs();setMsgs(m.reverse());setLoading(false);};
+  useEffect(()=>{refresh();const iv=setInterval(refresh,15000);return()=>clearInterval(iv);},[]);
+
+  const sendBroadcast=async()=>{
+    if(!text.trim())return;
+    const msg={id:Date.now(),from:'resp',fromName:'Responsable',text:text.trim(),time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
+    await saveMsg(msg);
+    setText('');
+    refresh();
+  };
+
+  return(
+    <>
+      <Header title="💬 Messages équipe" onBack={onBack}/>
+      <div className="msgw">
+        <div className="msg-list" style={{flex:1}}>
+          {loading&&<div className="loader"><div className="spin" style={{width:28,height:28}}/></div>}
+          {!loading&&msgs.length===0&&<div style={{textAlign:'center',color:'var(--muted)',padding:30,fontSize:13}}>Aucun message</div>}
+          {msgs.map((m,i)=>(
+            <div key={i} className={`mb ${m.from==='resp'?'me':'them'}`}>
+              <div className="mb-in">{m.text}</div>
+              <div className="mb-meta">{m.fromName||m.chauffeur||'?'} · {m.time}</div>
+            </div>
+          ))}
+        </div>
+        <div className="msg-bar">
+          <textarea className="msg-in" placeholder="Message à toute l'équipe..." rows={1} value={text}
+            onChange={e=>setText(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBroadcast();}}}/>
+          <button className="msg-send" onClick={sendBroadcast}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══ VEHICULES RESPONSABLE ══ */
+function ResponsableVehicles({onBack}){
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    loadAllEvents().then(ev=>{setEvents(ev);setLoading(false);});
+  },[]);
+
+  const issues=events.filter(e=>e.type==='vehicule_issue').slice(0,20);
+  const kms=events.filter(e=>e.type==='kilometrage').slice(0,10);
+
+  return(
+    <>
+      <Header title="🚛 Véhicules" onBack={onBack}/>
+      <div className="scroll">
+        {loading&&<div className="loader"><div className="spin" style={{width:28,height:28}}/></div>}
+
+        <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>🚛 Flotte</div>
+        {DRIVERS.map(d=>(
+          <div key={d.id} className="card" style={{padding:12,marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+            <i className="fa-solid fa-truck" style={{color:d.color,fontSize:18}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>{d.truck}</div>
+              <div style={{fontSize:11,color:'var(--muted)'}}>Conducteur : {d.display}</div>
+            </div>
+          </div>
+        ))}
+
+        {issues.length>0&&(
+          <>
+            <div style={{fontSize:11,color:'var(--red)',fontWeight:700,textTransform:'uppercase',margin:'18px 0 10px'}}>⚠️ Problèmes signalés</div>
+            {issues.map((e,i)=>(
+              <div key={i} style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',borderRadius:10,padding:10,marginBottom:6,fontSize:12}}>
+                <b>{e.chauffeur}</b> ({e.truck}) — {e.issue}
+                <div style={{fontSize:10,color:'var(--muted)',marginTop:2}}>{e.date}</div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ══ STATISTIQUES RESPONSABLE ══ */
+function ResponsableStats({onBack}){
+  const [planning,setPlanning]=useState(null);
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    Promise.all([loadPlanning(),loadAllEvents()]).then(([p,ev])=>{
+      if(p)setPlanning(p);
+      setEvents(ev);
+      setLoading(false);
+    });
+  },[]);
+
+  const today=new Date().toISOString().slice(0,10);
+  const liveDrivers=planning&&planning.drivers?DRIVERS.map((d,i)=>({...d,name:(planning.drivers[i]||d).name})):DRIVERS;
+
+  const stats=liveDrivers.map(dr=>{
+    const ms=planning?getMissions(planning,dr.id,today):[];
+    const done=ms.filter(m=>m._statut==='done').length;
+    const pct=ms.length?Math.round(done/ms.length*100):100;
+    return{name:dr.name,missions:ms.length,done,pct};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  return(
+    <>
+      <Header title="📊 Statistiques" onBack={onBack}/>
+      <div className="scroll">
+        {loading&&<div className="loader"><div className="spin" style={{width:28,height:28}}/></div>}
+        {!loading&&(
+          <>
+            <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>🏆 Classement du jour</div>
+            {stats.map((s,i)=>(
+              <div key={i} className="card" style={{padding:12,marginBottom:8,display:'flex',alignItems:'center',gap:12}}>
+                <div style={{fontSize:16,width:26,textAlign:'center'}}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700}}>{s.name}</div>
+                  <div style={{fontSize:11,color:'var(--muted)'}}>{s.missions} missions · {s.done} livrées</div>
+                </div>
+                <div style={{fontSize:16,fontWeight:900,color:s.pct>=80?'var(--green)':s.pct>=50?'var(--amber)':'var(--red)'}}>{s.pct}%</div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 function ResponsableScreen({onLogout}){
   const [selectedDriver,setSelectedDriver]=useState(null);
+  const [view,setView]=useState('home');
+
+  const handleNav=(v)=>{setSelectedDriver(null);setView(v);};
+  const handleBack=()=>{setSelectedDriver(null);setView('home');};
+
   return(
     <div className="screen">
       {selectedDriver
-        ?<ResponsableDriverDetail driver={selectedDriver} onBack={()=>setSelectedDriver(null)}/>
-        :<ResponsableHome onLogout={onLogout} onSelectDriver={setSelectedDriver}/>
+        ?<ResponsableDriverDetail driver={selectedDriver} onBack={handleBack}/>
+        :view==='planning'?<ResponsablePlanning onBack={handleBack}/>
+        :view==='messages'?<ResponsableMessages onBack={handleBack}/>
+        :view==='vehicles'?<ResponsableVehicles onBack={handleBack}/>
+        :view==='stats'?<ResponsableStats onBack={handleBack}/>
+        :<ResponsableHome onLogout={onLogout} onSelectDriver={setSelectedDriver} onNavigate={handleNav}/>
       }
     </div>
   );
@@ -1921,45 +2181,9 @@ class ErrorBoundary extends React.Component{
   }
 }
 
-function RespCodeScreen({onUnlock,onCancel}){
-  const [code,setCode]=useState('');
-  const [err,setErr]=useState('');
-  const RESP_CODE='9999';
-  const add=d=>{
-    if(code.length>=4)return;
-    const nc=code+d;setCode(nc);setErr('');
-    if(nc.length===4){
-      if(nc===RESP_CODE){setTimeout(()=>onUnlock(),80);}
-      else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
-    }
-  };
-  return(
-    <div className="login">
-      <div className="logo" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
-        <span style={{fontSize:30}}>👔</span>
-      </div>
-      <h2 style={{fontSize:20,fontWeight:800,marginBottom:4,textAlign:'center'}}>Accès Responsable</h2>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Entrez le code responsable</p>
-      <div className="dots">{[0,1,2,3].map(i=><div key={i} className={`dot-c ${i<code.length?'on':''}`}/>)}</div>
-      <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:7,fontWeight:500}}>{err}</div>
-      <div className="numpad">
-        {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
-          k===''?<div key={i}/>:
-          <button key={i} className="nk" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
-            onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):add(String(k))}>
-            {k}
-          </button>
-        )}
-      </div>
-      <button onClick={onCancel} style={{marginTop:20,background:'transparent',border:'none',color:'var(--dim)',fontSize:12}}>← Retour</button>
-    </div>
-  );
-}
-
 function App(){
   const [ch,setCh]=useState(null);
   const [respMode,setRespMode]=useState(false);
-  const [respCodeScreen,setRespCodeScreen]=useState(false);
   useEffect(()=>{
     const checkNight=()=>{
       const h=new Date().getHours();
@@ -1971,8 +2195,7 @@ function App(){
     return()=>clearInterval(iv);
   },[]);
   if(respMode)return<ResponsableScreen onLogout={()=>setRespMode(false)}/>;
-  if(respCodeScreen)return<RespCodeScreen onUnlock={()=>{setRespCodeScreen(false);setRespMode(true);}} onCancel={()=>setRespCodeScreen(false)}/>;
-  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh} onResponsable={()=>setRespCodeScreen(true)}/>;
+  return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh} onResponsable={()=>setRespMode(true)}/>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
