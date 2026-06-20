@@ -254,19 +254,37 @@ async function db(path,opts={}){
   }catch(e){return null;}
 }
 
+async function loadCustomDriverConfig(){
+  try{
+    const rows=await db('planning?date=eq.CODES_CHAUFFEURS&select=donnees&limit=1');
+    if(rows&&rows.length&&rows[0].donnees)return rows[0].donnees;
+  }catch(e){}
+  return{};
+}
+
 async function loadPlanning(){
-  const today=new Date().toISOString().slice(0,10);
-  let rows=await db('planning?date=eq.'+today+'&select=donnees,date&limit=1');
-  if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.tasks)return rows[0].donnees;
-  rows=await db('planning?select=donnees,date&order=date.desc&limit=20');
-  if(rows){
-    for(const r of rows){
-      if(r.date&&r.date.match(/^\d{4}-\d{2}-\d{2}$/)&&r.donnees&&r.donnees.tasks){
-        if(Object.keys(r.donnees.tasks).length>0)return r.donnees;
-      }
-    }
-  }
-  return null;
+  /* Fusionne TOUTES les dates disponibles (passees et futures) en un seul planning */
+  const rows=await db('planning?select=donnees,date&order=date.desc&limit=60');
+  if(!rows||!rows.length)return null;
+
+  let merged={drivers:null,tasks:{},statuts:{},notes:{},library:null,tournees:[],conducteurs:{}};
+  let foundAny=false;
+
+  rows.forEach(r=>{
+    if(!r.date||!r.date.match(/^\d{4}-\d{2}-\d{2}$/))return; /* ignore EVENTS, MESSAGES, GEO_x */
+    const d=r.donnees;
+    if(!d||!d.tasks)return;
+    foundAny=true;
+    if(!merged.drivers&&d.drivers)merged.drivers=d.drivers;
+    if(!merged.library&&d.library)merged.library=d.library;
+    Object.assign(merged.tasks,d.tasks);
+    if(d.statuts)Object.assign(merged.statuts,d.statuts);
+    if(d.notes)Object.assign(merged.notes,d.notes);
+    if(d.conducteurs)Object.assign(merged.conducteurs,d.conducteurs);
+    if(d.tournees&&d.tournees.length)merged.tournees=merged.tournees.concat(d.tournees);
+  });
+
+  return foundAny?merged:null;
 }
 
 async function saveEvent(ev){
@@ -382,12 +400,38 @@ function Login({onLogin}){
   const [sel,setSel]=useState(null);
   const [code,setCode]=useState('');
   const [err,setErr]=useState('');
+  const [liveDrivers,setLiveDrivers]=useState(DRIVERS);
+  const [liveCodes,setLiveCodes]=useState({});
+  const [loaded,setLoaded]=useState(false);
+
+  /* Charger les noms/camions reels + codes depuis Supabase au demarrage */
+  useEffect(()=>{
+    const load=async()=>{
+      const planning=await loadPlanning();
+      const codes=await loadCustomDriverConfig();
+      if(planning&&planning.drivers&&planning.drivers.length){
+        const updated=DRIVERS.map((d,i)=>{
+          const real=planning.drivers[i];
+          if(real){
+            return{...d,name:real.name,display:real.name.charAt(0)+real.name.slice(1).toLowerCase(),ini:real.name.charAt(0),truck:real.truck||d.truck,start:real.start||d.start,end:real.end||d.end};
+          }
+          return d;
+        });
+        setLiveDrivers(updated);
+      }
+      if(codes&&Object.keys(codes).length)setLiveCodes(codes);
+      setLoaded(true);
+    };
+    load();
+  },[]);
+
   const add=d=>{
     if(code.length>=4)return;
     const nc=code+d;setCode(nc);setErr('');
     if(nc.length===4){
-      const ch=DRIVERS.find(c=>c.id===sel);
-      if(nc===ch.code||nc==='0000'){setTimeout(()=>onLogin(ch),80);}
+      const ch=liveDrivers.find(c=>c.id===sel);
+      const realCode=liveCodes[sel]||ch.code;
+      if(nc===realCode||nc==='0000'){setTimeout(()=>onLogin(ch),80);}
       else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
     }
   };
@@ -398,8 +442,9 @@ function Login({onLogin}){
       </div>
       <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,textAlign:'center'}}>La Table de Cana</h2>
       <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Application chauffeur</p>
+      {!loaded&&<div className="spin" style={{width:24,height:24,marginBottom:16}}/>}
       <div className="ch-grid">
-        {DRIVERS.map(ch=>(
+        {liveDrivers.map(ch=>(
           <button key={ch.id} className={`ch-btn ${sel===ch.id?'sel':''}`} onClick={()=>{setSel(ch.id);setCode('');setErr('');}}>
             <div className="av" style={{background:ch.color+'1e',border:`2px solid ${sel===ch.id?ch.color:ch.color+'44'}`,color:ch.color}}>{ch.ini}</div>
             <span style={{fontSize:12,fontWeight:700,color:sel===ch.id?'var(--text)':'var(--muted)'}}>{ch.display}</span>
