@@ -204,6 +204,11 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 
 /* Mode nuit auto (après 20h) */
 body.night-mode{--bg:#050810;--card:#0d1420;--raised:#141d2e}
+
+/* Garantir lisibilite des textes - certains navigateurs Android heritent mal */
+h1,h2,h3,h4,h5,h6,p,span,div{color:inherit}
+.mc-name,.crow-val,.hdr-title,.home-name{color:var(--text) !important}
+.icon-tile-label{color:inherit}
 </style>
 </head>
 <body>
@@ -616,7 +621,7 @@ function TodayList({ch,planning,onSelectMission,onBack}){
             <button key={i} onClick={()=>onSelectMission(m)} style={{width:'100%',textAlign:'left',background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${stColors[m._statut]}`,borderRadius:16,padding:14,marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
               <div className="mono" style={{fontSize:18,fontWeight:800,color:ch.color,flexShrink:0,width:54}}>{m.heure}</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.client||m.task}</div>
+                <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{m.client||m.task}</div>
                 <div style={{fontSize:11,color:'var(--muted)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.adresse||'—'}</div>
               </div>
               {proofComplete&&<span style={{background:'rgba(34,197,94,.15)',color:'var(--green)',fontSize:9,fontWeight:800,padding:'3px 7px',borderRadius:20,flexShrink:0}}>✓ Preuve OK</span>}
@@ -664,7 +669,7 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
             <div className="mc-truck" style={{color:ch.color,background:ch.color+'18'}}>{m.truck||ch.truck}</div>
           </div>
           <div className="mc-client" style={{cursor:'default'}}>
-            <div className="mc-name">{m.client||m.task}</div>
+            <div className="mc-name" style={{color:'var(--text)'}}>{m.client||m.task}</div>
             {m.adresse&&<div className="mc-addr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{flexShrink:0,marginTop:2}}><path d="M12 21s-8-6.5-8-11A8 8 0 0 1 20 10c0 4.5-8 11-8 11z"/><circle cx="12" cy="10" r="2"/></svg>{m.adresse}</div>}
           </div>
           {m.allergenes?.length>0&&<div className="allerg">🚨 ALLERGÈNES : {m.allergenes.join(', ')}</div>}
@@ -798,17 +803,18 @@ function SigModal({m,ch,onClose,onDone}){
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
 
-  const handleValidate=async()=>{
-    if(!ref.current||saving)return;
-    setSaving(true);
+  const handleValidate=()=>{
+    if(!ref.current||saved)return;
     const dataUrl=ref.current.toDataURL('image/png');
     const today=new Date().toISOString().slice(0,10);
+    /* Sauvegarde locale INSTANTANEE */
     saveMissionProof(ch.id,m.client||m.task,m.heure,today,'signature',dataUrl);
-    await saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:today,dataUrl});
-    setSaving(false);
     setSaved(true);
     if(navigator.vibrate)navigator.vibrate([80,40,80]);
-    setTimeout(()=>{onDone();},900);
+    /* Fermeture quasi immediate */
+    setTimeout(()=>{onDone();},250);
+    /* Envoi Supabase en arriere-plan, ne bloque rien */
+    saveEvent({type:'signature',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:today,dataUrl});
   };
 
   return(
@@ -829,10 +835,10 @@ function SigModal({m,ch,onClose,onDone}){
             onPointerUp={clear}>
             🗑️ Effacer
           </button>
-          <button type="button" className="sig-btn" style={{background:saved?'#16a34a':hasDrawn?'var(--green)':'var(--dim)',color:'#fff',opacity:saving?0.7:1}}
-            disabled={!hasDrawn||saving||saved}
+          <button type="button" className="sig-btn" style={{background:saved?'#16a34a':hasDrawn?'var(--green)':'var(--dim)',color:'#fff'}}
+            disabled={!hasDrawn||saved}
             onPointerUp={handleValidate}>
-            {saved?'✅ Enregistrée !':saving?'⏳ Enregistrement...':'✅ Valider'}
+            {saved?'✅ Enregistrée !':'✅ Valider'}
           </button>
         </div>
         <button onClick={onClose} style={{width:'100%',marginTop:10,padding:10,background:'transparent',color:'var(--muted)',fontSize:12,border:'none'}}>Annuler</button>
@@ -853,11 +859,12 @@ function MatModal({m,ch,onClose,onConfirm,aiPre,aiDesc}){
   const totL=Object.values(laisse).reduce((a,b)=>a+(b||0),0);
   const totR=Object.values(recupere).reduce((a,b)=>a+(b||0),0);
 
-  const confirm=async()=>{
+  const confirm=()=>{
     const todayD=new Date().toISOString().slice(0,10);
     saveMissionProof(ch.id,m.client||m.task,m.heure,todayD,'materiel',{laisse,recupere,note});
-    await saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:todayD,laisse,recupere,note});
     onConfirm({laisse,recupere,note});
+    /* Envoi Supabase en arriere-plan */
+    saveEvent({type:'materiel',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:todayD,laisse,recupere,note});
   };
 
   return(
@@ -981,7 +988,7 @@ function ClientsList({ch,planning,onSelectMission,onBack}){
               <span style={{fontSize:16,fontWeight:900,color:ch.color}}>{(m.client||m.task||'?')[0]}</span>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.client||m.task}</div>
+              <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{m.client||m.task}</div>
               <div style={{fontSize:11,color:'var(--muted)',marginTop:2}} className="mono">{m.heure}</div>
             </div>
             <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:13}}/>
@@ -1332,75 +1339,23 @@ function ChaufApp({ch,onLogout}){
   },[planning,ch.id]);
 
 
-  /* PHOTO + IA — corrigé avec gestion d'erreur complète */
+  /* PHOTO — rapide, instantanée, sans attente IA bloquante */
   useEffect(()=>{
     const inp=document.getElementById('photo-cap');if(!inp)return;
-    const handler=async e=>{
+    const handler=e=>{
       const file=e.target.files[0];if(!file)return;
       const m=photoRef.current;
-      t3("📷 Photo en cours d'analyse...",'var(--purple)');
       const reader=new FileReader();
-      reader.onload=async ev=>{
+      reader.onload=ev=>{
         const dataUrl=ev.target.result;
-        const base64=dataUrl.split(',')[1];
         const todayD=new Date().toISOString().slice(0,10);
+        /* Sauvegarde locale INSTANTANEE */
         saveMissionProof(ch.id,m?m.client||m.task:'',m?m.heure:'',todayD,'photo',dataUrl);
-        await saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:todayD});
-
+        vib([60]);
+        t3('📷 Photo enregistrée !','var(--green)');
         setRefreshKey(k=>k+1);
-        try{
-          const resp=await fetch('https://api.anthropic.com/v1/messages',{
-            method:'POST',
-            headers:{
-              'Content-Type':'application/json',
-              'anthropic-dangerous-direct-browser-access':'true',
-              'anthropic-version':'2023-06-01'
-            },
-            body:JSON.stringify({
-              model:'claude-sonnet-4-6',
-              max_tokens:400,
-              messages:[{role:'user',content:[
-                {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:base64}},
-                {type:'text',text:'Tu es un expert logistique traiteur. Analyse cette photo et compte précisément le matériel visible (bacs gastro inox rectangulaires, chariots, échelles pâtissières, containers, caisses, étuves, plateaux, nappes). Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans markdown, format exact: {"gastro":0,"chariot":0,"echelle":0,"container":0,"caisse":0,"etuve":0,"plateau":0,"nappe":0,"description":"description courte en français","confiance":"haute"}'}
-              ]}]
-            })
-          });
-
-          if(!resp.ok){
-            const errText=await resp.text();
-            console.log('Erreur API:',resp.status,errText);
-            t3('🤖 IA indisponible — saisie manuelle','var(--amber)');
-            if(m)setMatM(m);
-            return;
-          }
-
-          const data=await resp.json();
-          const txt=data.content?.[0]?.text||'{}';
-          let res={};
-          try{
-            const cleaned=txt.replace(/```json|```/g,'').trim();
-            res=JSON.parse(cleaned);
-          }catch(parseErr){
-            console.log('Erreur parsing JSON IA:',parseErr,txt);
-            res={};
-          }
-
-          const matKeys=['gastro','chariot','echelle','container','caisse','etuve','plateau','nappe'];
-          const tot=matKeys.reduce((a,k)=>a+(parseInt(res[k])||0),0);
-
-          if(tot>0){
-            t3(`🤖 IA : ${tot} item(s) détecté(s) !`,'var(--green)');
-            vib([100,50,200]);
-            if(m)setMatIA({mission:m,aiData:res,aiDesc:res.description});
-          }else{
-            t3(`🤖 ${res.description||'Aucun matériel détecté'} — saisissez manuellement`,'var(--amber)');
-            if(m)setMatM(m);
-          }
-        }catch(err){
-          console.log('Erreur réseau IA:',err);
-          t3('📷 Photo sauvegardée — IA indisponible','var(--purple)');
-          if(m)setMatM(m);
-        }
+        /* Envoi Supabase en arriere-plan, ne bloque rien */
+        saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:m?m.client||m.task:'',heure:m?m.heure:'',dataUrl,date:todayD});
       };
       reader.readAsDataURL(file);
       inp.value='';
