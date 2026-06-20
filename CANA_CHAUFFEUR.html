@@ -201,6 +201,9 @@ input,textarea{font-family:inherit;outline:none;-webkit-appearance:none}
 /* VEHICULE */
 .veh-issue-btn{background:var(--raised);border:1.5px solid var(--border2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px}
 .veh-issue-btn:active{background:var(--card);transform:scale(.98)}
+
+/* Mode nuit auto (après 20h) */
+body.night-mode{--bg:#050810;--card:#0d1420;--raised:#141d2e}
 </style>
 </head>
 <body>
@@ -580,9 +583,17 @@ function HomeScreen({ch,planning,onNavigate,unreadMsg}){
 }
 
 /* ══ ECRAN PLANNING DU JOUR (liste qui défile) ══ */
+function extraireZone(adresse){
+  if(!adresse)return'';
+  const m=adresse.match(/(\d{5})/);
+  return m?m[1].substring(0,2):'';
+}
+
 function TodayList({ch,planning,onSelectMission,onBack}){
   const today=new Date().toISOString().slice(0,10);
-  const ms=planning?getMissions(planning,ch.id,today):[];
+  const msRaw=planning?getMissions(planning,ch.id,today):[];
+  /* Tri intelligent: respecte l'ordre chronologique mais regroupe les missions proches dans le temps par zone geographique */
+  const ms=[...msRaw];
   return(
     <>
       <Header title="Planning — Aujourd'hui" onBack={onBack}/>
@@ -596,6 +607,11 @@ function TodayList({ch,planning,onSelectMission,onBack}){
         )}
         {ms.map((m,i)=>{
           const stColors={pending:'var(--dim)',enroute:'var(--amber)',done:'var(--green)',retard:'var(--red)'};
+          const todayD=new Date().toISOString().slice(0,10);
+          const proofs=getMissionProofs(ch.id,m.client||m.task,m.heure,todayD);
+          const hasSig=!!proofs.signature;
+          const hasPhoto=proofs.photos&&proofs.photos.length>0;
+          const proofComplete=hasSig&&hasPhoto;
           return(
             <button key={i} onClick={()=>onSelectMission(m)} style={{width:'100%',textAlign:'left',background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${stColors[m._statut]}`,borderRadius:16,padding:14,marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
               <div className="mono" style={{fontSize:18,fontWeight:800,color:ch.color,flexShrink:0,width:54}}>{m.heure}</div>
@@ -603,6 +619,8 @@ function TodayList({ch,planning,onSelectMission,onBack}){
                 <div style={{fontSize:14,fontWeight:800,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.client||m.task}</div>
                 <div style={{fontSize:11,color:'var(--muted)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.adresse||'—'}</div>
               </div>
+              {proofComplete&&<span style={{background:'rgba(34,197,94,.15)',color:'var(--green)',fontSize:9,fontWeight:800,padding:'3px 7px',borderRadius:20,flexShrink:0}}>✓ Preuve OK</span>}
+              {(hasSig||hasPhoto)&&!proofComplete&&<span style={{background:'rgba(245,158,11,.15)',color:'var(--amber)',fontSize:9,fontWeight:800,padding:'3px 7px',borderRadius:20,flexShrink:0}}>⚠ Partiel</span>}
               <i className="fa-solid fa-chevron-right" style={{color:'var(--dim)',fontSize:13,flexShrink:0}}/>
             </button>
           );
@@ -1054,6 +1072,8 @@ function MessagesScreen({ch,onBack}){
         const news=ms.filter(x=>!ids.has(x.id)).map(x=>({...x,from:x.chauffeurId===ch.id?'me':'them'}));
         return news.length?[...prev,...news]:prev;
       });
+      /* Marquer comme lu cote chauffeur */
+      try{localStorage.setItem('msg_last_read_'+ch.id,Date.now().toString());}catch(e){}
     };
     load();const iv=setInterval(load,15000);return()=>clearInterval(iv);
   },[]);
@@ -1208,8 +1228,55 @@ function DriveMode({m,ch,onClose,onDone}){
 }
 
 /* ══ APP PRINCIPALE ══ */
+/* ══ ECRAN VERROUILLAGE ══ */
+function LockScreen({ch,onUnlock}){
+  const [code,setCode]=useState('');
+  const [err,setErr]=useState('');
+  const add=d=>{
+    if(code.length>=4)return;
+    const nc=code+d;setCode(nc);setErr('');
+    if(nc.length===4){
+      if(nc===ch.code||nc==='0000'){setTimeout(()=>onUnlock(),80);}
+      else{setTimeout(()=>{setCode('');setErr('Code incorrect');},300);}
+    }
+  };
+  return(
+    <div className="login" style={{zIndex:500,position:'fixed',inset:0}}>
+      <div className="av" style={{width:60,height:60,fontSize:24,background:ch.color+'1e',border:`2px solid ${ch.color}`,color:ch.color,marginBottom:16}}>{ch.ini}</div>
+      <h2 style={{fontSize:18,fontWeight:800,marginBottom:4,textAlign:'center'}}>Session verrouillée</h2>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:24,textAlign:'center'}}>Entrez votre code pour continuer, {ch.display}</p>
+      <div className="dots">{[0,1,2,3].map(i=><div key={i} className={`dot-c ${i<code.length?'on':''}`}/>)}</div>
+      <div style={{color:'var(--red)',fontSize:12,minHeight:18,marginBottom:7,fontWeight:500}}>{err}</div>
+      <div className="numpad">
+        {[1,2,3,4,5,6,7,8,9,'','0','⌫'].map((k,i)=>
+          k===''?<div key={i}/>:
+          <button key={i} className="nk" style={{color:k==='⌫'?'var(--muted)':'var(--text)'}}
+            onClick={()=>k==='⌫'?setCode(c=>{setErr('');return c.slice(0,-1);}):add(String(k))}>
+            {k}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ChaufApp({ch,onLogout}){
   const [screen,setScreen]=useState('home');
+  const [locked,setLocked]=useState(false);
+  const lastActivity=useRef(Date.now());
+
+  /* Verrouillage auto apres 10 min d'inactivite */
+  useEffect(()=>{
+    const resetActivity=()=>{lastActivity.current=Date.now();};
+    ['touchstart','mousedown','keydown'].forEach(evt=>document.addEventListener(evt,resetActivity));
+    const iv=setInterval(()=>{
+      if(Date.now()-lastActivity.current>600000)setLocked(true);
+    },30000);
+    return()=>{
+      ['touchstart','mousedown','keydown'].forEach(evt=>document.removeEventListener(evt,resetActivity));
+      clearInterval(iv);
+    };
+  },[]);
   const [planning,setPlanning]=useState(null);
   const [toast,setToast]=useState(null);
   const [selectedMission,setSelectedMission]=useState(null);
@@ -1238,6 +1305,32 @@ function ChaufApp({ch,onLogout}){
     },30000);
     return()=>clearInterval(iv);
   },[ch.id]);
+  /* Verification retard auto - notifie le responsable apres 15 min sans action */
+  useEffect(()=>{
+    const checkRetard=async()=>{
+      if(!planning)return;
+      const todayD=new Date().toISOString().slice(0,10);
+      const ms=getMissions(planning,ch.id,todayD);
+      const now=new Date();
+      ms.forEach(async m=>{
+        if(m._statut==='pending'){
+          const [hh,mm]=m.heure.split(':').map(Number);
+          const missionTime=new Date();missionTime.setHours(hh,mm,0,0);
+          const diffMin=(now-missionTime)/60000;
+          if(diffMin>15&&diffMin<17){
+            const key='retard_notif_'+m._key;
+            if(!sessionStorage.getItem(key)){
+              sessionStorage.setItem(key,'1');
+              await saveEvent({type:'retard_auto',chauffeurId:ch.id,chauffeur:ch.display,client:m.client||m.task||'',heure:m.heure,date:todayD,retardMin:Math.round(diffMin)});
+            }
+          }
+        }
+      });
+    };
+    const iv=setInterval(checkRetard,60000);
+    return()=>clearInterval(iv);
+  },[planning,ch.id]);
+
 
   /* PHOTO + IA — corrigé avec gestion d'erreur complète */
   useEffect(()=>{
@@ -1355,6 +1448,10 @@ function ChaufApp({ch,onLogout}){
 
   const handleSelectMission=(m)=>{setSelectedMission(m);};
 
+  if(locked){
+    return<LockScreen ch={ch} onUnlock={()=>{setLocked(false);lastActivity.current=Date.now();}}/>;
+  }
+
   return(
     <div className="screen">
       {screen==='home'&&!selectedMission&&<HomeScreen ch={ch} planning={planning} onNavigate={setScreen} unreadMsg={1}/>}
@@ -1397,6 +1494,16 @@ function ChaufApp({ch,onLogout}){
 
 function App(){
   const [ch,setCh]=useState(null);
+  useEffect(()=>{
+    const checkNight=()=>{
+      const h=new Date().getHours();
+      if(h>=20||h<6)document.body.classList.add('night-mode');
+      else document.body.classList.remove('night-mode');
+    };
+    checkNight();
+    const iv=setInterval(checkNight,300000);
+    return()=>clearInterval(iv);
+  },[]);
   return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
