@@ -1486,57 +1486,92 @@ function ChaufApp({ch,onLogout}){
   },[planning,ch.id]);
 
 
-  /* PHOTO — instantanee + compressee + IA en arriere-plan fiable */
+  /* PHOTO — blindee contre tout crash, jamais de deconnexion */
   useEffect(()=>{
     const inp=document.getElementById('photo-cap');if(!inp)return;
     const handler=e=>{
-      const file=e.target.files[0];if(!file)return;
-      const m=photoRef.current;
-      const img=new Image();
-      const reader=new FileReader();
-      reader.onload=ev=>{
-        img.onload=()=>{
-          /* Compresser l'image pour eviter le quota localStorage (max 900px de large) */
-          const canvas=document.createElement('canvas');
-          const maxW=900;
-          const scale=Math.min(1,maxW/img.width);
-          canvas.width=img.width*scale;
-          canvas.height=img.height*scale;
-          const cx=canvas.getContext('2d');
-          cx.drawImage(img,0,0,canvas.width,canvas.height);
-          const dataUrl=canvas.toDataURL('image/jpeg',0.75);
+      try{
+        const file=e.target.files[0];if(!file){inp.value='';return;}
+        const m=photoRef.current;
+        const reader=new FileReader();
 
-          const todayD=new Date().toISOString().slice(0,10);
-          const clientKey=m?m.client||m.task:'';
-          const heureKey=m?m.heure:'';
-
-          /* Sauvegarde locale INSTANTANEE - visible immediatement */
-          const updatedProof=saveMissionProof(ch.id,clientKey,heureKey,todayD,'photo',dataUrl);
-          const savedPhotoId=updatedProof&&updatedProof.photos&&updatedProof.photos.length
-            ?updatedProof.photos[updatedProof.photos.length-1].id:null;
-          vib([60]);
-          t3('📷 Photo enregistrée !','var(--green)');
-          setRefreshKey(k=>k+1);
-
-          /* Envoi Supabase en arriere-plan */
-          saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl,date:todayD});
-
-          /* IA en arriere-plan - ne bloque jamais l'interface */
-          analyserPhotoIA(dataUrl,file.type||'image/jpeg').then(res=>{
-            if(res&&res.total>0){
-              t3(`🤖 IA : ${res.total} item(s) détecté(s) — vérifiez`,'var(--purple)');
-              vib([80,40,80]);
-              if(savedPhotoId)saveMissionProof(ch.id,clientKey,heureKey,todayD,'ia_result',{photoId:savedPhotoId,result:res});
-              setRefreshKey(k=>k+1);
-            }
-          }).catch(err=>{
-            console.log('IA non disponible:',err);
-          });
+        reader.onerror=()=>{
+          t3('❌ Erreur lecture photo','var(--red)');
+          inp.value='';
         };
-        img.src=ev.target.result;
-      };
-      reader.readAsDataURL(file);
-      inp.value='';
+
+        reader.onload=ev=>{
+          try{
+            const rawDataUrl=ev.target.result;
+            const todayD=new Date().toISOString().slice(0,10);
+            const clientKey=m?(m.client||m.task||''):'';
+            const heureKey=m?m.heure:'';
+
+            const finishSave=(finalDataUrl)=>{
+              try{
+                const updatedProof=saveMissionProof(ch.id,clientKey,heureKey,todayD,'photo',finalDataUrl);
+                const savedPhotoId=updatedProof&&updatedProof.photos&&updatedProof.photos.length
+                  ?updatedProof.photos[updatedProof.photos.length-1].id:null;
+                vib([60]);
+                t3('📷 Photo enregistrée !','var(--green)');
+                setRefreshKey(k=>k+1);
+
+                saveEvent({type:'photo',chauffeurId:ch.id,chauffeur:ch.display,client:clientKey,heure:heureKey,dataUrl:finalDataUrl,date:todayD}).catch(()=>{});
+
+                analyserPhotoIA(finalDataUrl,file.type||'image/jpeg').then(res=>{
+                  if(res&&res.total>0){
+                    t3(`🤖 IA : ${res.total} item(s) détecté(s)`,'var(--purple)');
+                    if(navigator.vibrate)navigator.vibrate([80,40,80]);
+                    if(savedPhotoId)saveMissionProof(ch.id,clientKey,heureKey,todayD,'ia_result',{photoId:savedPhotoId,result:res});
+                    setRefreshKey(k=>k+1);
+                  }
+                }).catch(err=>{console.log('IA non disponible:',err);});
+              }catch(saveErr){
+                console.log('Erreur sauvegarde:',saveErr);
+                t3('⚠️ Photo prise mais non sauvegardée','var(--amber)');
+              }
+            };
+
+            /* Tenter la compression, avec fallback sur l'image brute si ca echoue */
+            try{
+              const img=new Image();
+              img.onload=()=>{
+                try{
+                  const canvas=document.createElement('canvas');
+                  const maxW=900;
+                  const scale=Math.min(1,maxW/(img.width||900));
+                  canvas.width=Math.max(1,Math.round((img.width||900)*scale));
+                  canvas.height=Math.max(1,Math.round((img.height||900)*scale));
+                  const cx=canvas.getContext('2d');
+                  cx.drawImage(img,0,0,canvas.width,canvas.height);
+                  const compressed=canvas.toDataURL('image/jpeg',0.75);
+                  finishSave(compressed);
+                }catch(compressErr){
+                  console.log('Compression echouee, utilisation image brute:',compressErr);
+                  finishSave(rawDataUrl);
+                }
+              };
+              img.onerror=()=>{
+                console.log('Chargement image echoue, utilisation brute');
+                finishSave(rawDataUrl);
+              };
+              img.src=rawDataUrl;
+            }catch(imgErr){
+              console.log('Erreur creation image, utilisation brute:',imgErr);
+              finishSave(rawDataUrl);
+            }
+          }catch(loadErr){
+            console.log('Erreur traitement photo:',loadErr);
+            t3('❌ Erreur traitement photo','var(--red)');
+          }
+        };
+        reader.readAsDataURL(file);
+      }catch(globalErr){
+        console.log('Erreur globale photo:',globalErr);
+        t3('❌ Erreur photo','var(--red)');
+      }finally{
+        inp.value='';
+      }
     };
     inp.addEventListener('change',handler);
     return()=>inp.removeEventListener('change',handler);
@@ -1626,6 +1661,29 @@ function ChaufApp({ch,onLogout}){
   );
 }
 
+/* ══ ERROR BOUNDARY — empeche les crashs de deconnecter le chauffeur ══ */
+class ErrorBoundary extends React.Component{
+  constructor(props){super(props);this.state={hasError:false,errorMsg:''};}
+  static getDerivedStateFromError(error){return{hasError:true,errorMsg:error.message||'Erreur inconnue'};}
+  componentDidCatch(error,info){console.log('Erreur capturee:',error,info);}
+  render(){
+    if(this.state.hasError){
+      return(
+        <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:30,background:'var(--bg)',color:'var(--text)',textAlign:'center'}}>
+          <div style={{fontSize:50,marginBottom:16}}>⚠️</div>
+          <div style={{fontSize:16,fontWeight:800,marginBottom:8}}>Une erreur est survenue</div>
+          <div style={{fontSize:12,color:'var(--muted)',marginBottom:24}}>{this.state.errorMsg}</div>
+          <button onClick={()=>this.setState({hasError:false,errorMsg:''})}
+            style={{background:'var(--orange)',color:'#fff',borderRadius:14,padding:'14px 28px',fontSize:14,fontWeight:700}}>
+            🔄 Continuer
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App(){
   const [ch,setCh]=useState(null);
   useEffect(()=>{
@@ -1640,7 +1698,7 @@ function App(){
   },[]);
   return ch?<ChaufApp ch={ch} onLogout={()=>setCh(null)}/>:<Login onLogin={setCh}/>;
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 </body>
 </html>
