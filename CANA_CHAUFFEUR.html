@@ -386,7 +386,7 @@ function getMissionProofs(chId,client,heure,date){
   }catch(e){return{photos:[],signature:null,materiel:null};}
 }
 function saveMissionProof(chId,client,heure,date,type,data){
-  try{
+  function tentative(){
     const key=getProofKey(chId,client,heure,date);
     const current=getMissionProofs(chId,client,heure,date);
     if(type==='photo'){
@@ -405,31 +405,47 @@ function saveMissionProof(chId,client,heure,date,type,data){
       if(photo)photo.ia=data.result;
     }
     localStorage.setItem(key,JSON.stringify(current));
-    /* Index global pour retrouver toutes les missions ayant des preuves aujourd'hui */
-    try{
-      const idxKey='proof_index_'+chId+'_'+date;
-      const idx=JSON.parse(localStorage.getItem(idxKey)||'[]');
-      if(!idx.includes(key)){idx.push(key);localStorage.setItem(idxKey,JSON.stringify(idx));}
-    }catch(e2){}
+    const idxKey='proof_index_'+chId+'_'+date;
+    const idx=JSON.parse(localStorage.getItem(idxKey)||'[]');
+    if(!idx.includes(key)){idx.push(key);localStorage.setItem(idxKey,JSON.stringify(idx));}
     return current;
+  }
+
+  try{
+    return tentative();
   }catch(e){
-    console.log('Erreur sauvegarde preuve:',e);
-    /* Si quota depasse, nettoyer les plus vieilles photos */
-    if(e.name==='QuotaExceededError'){
-      try{nettoyerVieillesPreuves(chId);}catch(e3){}
+    console.log('Erreur sauvegarde preuve (1ere tentative):',e.name,e.message);
+    /* Quota depasse OU autre erreur de stockage -> nettoyer agressivement et reessayer */
+    try{
+      nettoyerVieillesPreuves(chId);
+      return tentative();
+    }catch(e2){
+      console.log('Erreur sauvegarde preuve (apres nettoyage):',e2.name,e2.message);
+      /* Dernier recours: vider TOUT le localStorage des preuves et reessayer */
+      try{
+        Object.keys(localStorage).filter(k=>k.startsWith('proof_')).forEach(k=>localStorage.removeItem(k));
+        return tentative();
+      }catch(e3){
+        console.log('Erreur sauvegarde preuve (echec final):',e3.name,e3.message);
+        return null;
+      }
     }
-    return null;
   }
 }
 
 function nettoyerVieillesPreuves(chId){
   const keys=Object.keys(localStorage).filter(k=>k.startsWith('proof_')&&!k.startsWith('proof_index_'));
-  /* Garder seulement les preuves des 3 derniers jours */
-  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-3);
-  const cutoffStr=cutoff.toISOString().slice(0,10);
+  /* Garder seulement les preuves d'aujourd'hui */
+  const today=new Date().toISOString().slice(0,10);
   keys.forEach(k=>{
     const parts=k.split('_');
-    if(parts[2]&&parts[2]<cutoffStr){localStorage.removeItem(k);}
+    if(parts[2]&&parts[2]!==today){localStorage.removeItem(k);}
+  });
+  /* Nettoyer aussi les vieux index */
+  Object.keys(localStorage).filter(k=>k.startsWith('proof_index_')).forEach(k=>{
+    const parts=k.split('_');
+    const d=parts[parts.length-1];
+    if(d&&d!==today)localStorage.removeItem(k);
   });
 }
 
