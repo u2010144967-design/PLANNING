@@ -529,6 +529,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirPhotosSignatures();fermerMenu()" class="menu-item" style="color:#a855f7;font-weight:700">📸 Photos & Signatures chauffeurs</button>
 <button tabindex="0" onclick="ouvrirRechercheHistorique();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">🔍 Recherche historique (infractions)</button>
 <button tabindex="0" onclick="ouvrirGestionChauffeurs();fermerMenu()" class="menu-item" style="color:#3b82f6;font-weight:700">👥 Gestion des chauffeurs</button>
 <button tabindex="0" onclick="voirHistoriqueConducteurs();fermerMenu()" class="menu-item" style="color:#f59e0b;font-weight:700">🔑 Historique conducteurs désignés</button>\n<button tabindex="0" onclick="ouvrirGestionVehicules();fermerMenu()" class="menu-item">🚗 Gestion véhicules</button>
@@ -22468,6 +22469,130 @@ function afficherResultatsRecherche(date,container){
 
     container.innerHTML=html;
   });
+}
+
+/* ══════════════════════════════════════════════════
+   VISUALISEUR PHOTOS & SIGNATURES — vue complete chauffeurs
+══════════════════════════════════════════════════ */
+function ouvrirPhotosSignatures(){
+  var existing=document.getElementById('m-photos-sig');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-photos-sig';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='720px';box.style.maxHeight='90vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='📸 Photos & Signatures chauffeurs';
+  box.appendChild(h);
+
+  var controlRow=document.createElement('div');
+  controlRow.style.cssText='display:flex;gap:8px;margin:14px 0';
+
+  var dateInput=document.createElement('input');
+  dateInput.type='date';dateInput.value=ST.cur;dateInput.id='ps-date';
+  dateInput.style.cssText='flex:1;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;font-weight:700';
+  controlRow.appendChild(dateInput);
+
+  var refreshBtn=document.createElement('button');
+  refreshBtn.textContent='🔄';
+  refreshBtn.style.cssText='background:#1d4ed8;border:none;border-radius:8px;width:42px;color:#fff;font-size:14px;cursor:pointer';
+  controlRow.appendChild(refreshBtn);
+
+  box.appendChild(controlRow);
+
+  var filterRow=document.createElement('div');
+  filterRow.id='ps-filters';
+  filterRow.style.cssText='display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px';
+  box.appendChild(filterRow);
+
+  var results=document.createElement('div');
+  results.id='ps-results';
+  box.appendChild(results);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:14px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-photos-sig');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  var currentFilter='tous';
+
+  function chargerEtAfficher(){
+    results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:12px">Chargement...</div>';
+    supaFetch('planning?date=eq.EVENTS&select=donnees&limit=1').then(function(rows){
+      var events=[];
+      if(rows&&rows.length&&rows[0].donnees){
+        try{events=JSON.parse(typeof rows[0].donnees==='string'?rows[0].donnees:JSON.stringify(rows[0].donnees))||[];}catch(e){}
+      }
+      if(!Array.isArray(events))events=[];
+
+      var date=document.getElementById('ps-date').value;
+      var dayEvents=events.filter(function(e){return e.date===date&&(e.type==='photo'||e.type==='signature');});
+
+      /* Construire les filtres chauffeurs */
+      var names=[];
+      dayEvents.forEach(function(e){if(e.chauffeur&&names.indexOf(e.chauffeur)<0)names.push(e.chauffeur);});
+
+      filterRow.innerHTML='';
+      var allBtn=document.createElement('button');
+      allBtn.textContent='Tous';
+      allBtn.style.cssText='flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid '+(currentFilter==='tous'?'#f97316':'#334155')+';background:'+(currentFilter==='tous'?'#f97316':'#1e293b')+';color:'+(currentFilter==='tous'?'#fff':'#94a3b8');
+      allBtn.addEventListener('click',function(){currentFilter='tous';chargerEtAfficher();});
+      filterRow.appendChild(allBtn);
+
+      names.forEach(function(name){
+        var b=document.createElement('button');
+        b.textContent=name;
+        b.style.cssText='flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid '+(currentFilter===name?'#f97316':'#334155')+';background:'+(currentFilter===name?'#f97316':'#1e293b')+';color:'+(currentFilter===name?'#fff':'#94a3b8');
+        b.addEventListener('click',function(){currentFilter=name;chargerEtAfficher();});
+        filterRow.appendChild(b);
+      });
+
+      var filtered=currentFilter==='tous'?dayEvents:dayEvents.filter(function(e){return e.chauffeur===currentFilter;});
+      var photos=filtered.filter(function(e){return e.type==='photo';});
+      var signatures=filtered.filter(function(e){return e.type==='signature';});
+
+      if(!photos.length&&!signatures.length){
+        results.innerHTML='<div style="text-align:center;padding:40px;color:#64748b;font-size:13px">📭 Aucune preuve pour cette date</div>';
+        return;
+      }
+
+      var html='';
+
+      if(photos.length){
+        html+='<div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin:14px 0 10px">📸 Photos ('+photos.length+')</div>';
+        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px">';
+        photos.forEach(function(p){
+          html+='<div style="border-radius:12px;overflow:hidden;border:1px solid #334155;position:relative;cursor:pointer" onclick="window.open(this.dataset.src)" data-src="'+p.dataUrl+'">'
+            +'<img src="'+p.dataUrl+'" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">'
+            +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:16px 8px 6px;color:#fff">'
+            +'<div style="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.chauffeur||'?')+'</div>'
+            +'<div style="font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.client||'')+'</div>'
+            +'<div style="font-size:9px;opacity:.7">'+(p.heure||'')+'</div>'
+            +'</div></div>';
+        });
+        html+='</div>';
+      }
+
+      if(signatures.length){
+        html+='<div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin:14px 0 10px">✍️ Signatures ('+signatures.length+')</div>';
+        signatures.forEach(function(s){
+          html+='<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:10px">'
+            +'<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+            +'<div><div style="font-size:13px;font-weight:800;color:#f1f5f9">'+(s.chauffeur||'?')+'</div>'
+            +'<div style="font-size:11px;color:#64748b">'+(s.client||'')+' — '+(s.heure||'')+'</div></div></div>'
+            +'<div style="background:#fff;border-radius:8px;padding:6px"><img src="'+s.dataUrl+'" style="width:100%;height:60px;object-fit:contain"></div>'
+            +'</div>';
+        });
+      }
+
+      results.innerHTML=html;
+    });
+  }
+
+  refreshBtn.addEventListener('click',chargerEtAfficher);
+  dateInput.addEventListener('change',chargerEtAfficher);
+  chargerEtAfficher();
 }
 </script>
 </body>
