@@ -805,6 +805,11 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
           <div className="icon-tile-label" style={{color:'#c084fc'}}>Statistiques</div>
           <div className="icon-tile-sub" style={{color:'#c084fc'}}>Performance</div>
         </button>
+        <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('archives')}>
+          <div className="icon-tile-emoji">📂</div>
+          <div className="icon-tile-label" style={{color:'#60a5fa'}}>Archives</div>
+          <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Historique complet</div>
+        </button>
       </div>
 
       {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}><div className="spin" style={{width:20,height:20,margin:'0 auto 8px'}}/>Synchronisation...</div>}
@@ -1126,6 +1131,175 @@ function ResponsableStats({onBack}){
   );
 }
 
+/* ══ CENTRE D'ARCHIVES RESPONSABLE — recherche client/date/chauffeur ══ */
+function ResponsableArchives({onBack}){
+  const [tab,setTab]=useState('client');
+  const [searchVal,setSearchVal]=useState('');
+  const [planning,setPlanning]=useState(null);
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [results,setResults]=useState([]);
+  const [selectedBL,setSelectedBL]=useState(null);
+
+  useEffect(()=>{
+    Promise.all([loadPlanning(),loadAllEvents()]).then(([p,ev])=>{
+      if(p)setPlanning(p);
+      setEvents(ev);
+    });
+  },[]);
+
+  const liveDrivers=planning&&planning.drivers&&planning.drivers.length
+    ?DRIVERS.map((d,i)=>{const real=planning.drivers[i];return real?{...d,name:real.name}:d;})
+    :DRIVERS;
+
+  const lancerRecherche=(val)=>{
+    setSearchVal(val);
+    if(!val||!planning){setResults([]);return;}
+    setLoading(true);
+    let matches=[];
+
+    if(tab==='client'){
+      const valUp=val.toUpperCase();
+      Object.keys(planning.tasks||{}).forEach(k=>{
+        (planning.tasks[k]||[]).forEach((t,ti)=>{
+          if(t.client&&t.client.toUpperCase().includes(valUp)){
+            const parts=k.split('|');
+            matches.push({date:parts[0],di:parseInt(parts[1]),heure:parts[2],ti,task:t});
+          }
+        });
+      });
+    } else if(tab==='date'){
+      Object.keys(planning.tasks||{}).forEach(k=>{
+        const parts=k.split('|');
+        if(parts[0]===val){
+          (planning.tasks[k]||[]).forEach((t,ti)=>{
+            if(t.client)matches.push({date:parts[0],di:parseInt(parts[1]),heure:parts[2],ti,task:t});
+          });
+        }
+      });
+    } else if(tab==='chauffeur'){
+      const di=liveDrivers.findIndex(d=>d.name===val);
+      Object.keys(planning.tasks||{}).forEach(k=>{
+        const parts=k.split('|');
+        if(parseInt(parts[1])===di){
+          (planning.tasks[k]||[]).forEach((t,ti)=>{
+            if(t.client)matches.push({date:parts[0],di,heure:parts[2],ti,task:t});
+          });
+        }
+      });
+    }
+
+    matches.sort((a,b)=>b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure));
+    setResults(matches.slice(0,50));
+    setLoading(false);
+  };
+
+  const hasProof=(m)=>events.some(e=>e.date===m.date&&e.client&&m.task.client&&e.client.toUpperCase().includes(m.task.client.toUpperCase().substring(0,8)));
+
+  const getProofsFor=(m)=>{
+    return events.filter(e=>e.date===m.date&&e.client&&m.task.client&&e.client.toUpperCase().includes(m.task.client.toUpperCase().substring(0,8)));
+  };
+
+  if(selectedBL){
+    const m=selectedBL;
+    const dr=liveDrivers[m.di];
+    const proofs=getProofsFor(m);
+    const photo=proofs.find(e=>e.type==='photo');
+    const sig=proofs.find(e=>e.type==='signature');
+    return(
+      <>
+        <Header title="📄 Bon de livraison" onBack={()=>setSelectedBL(null)}/>
+        <div className="scroll">
+          <div style={{background:'#fff',color:'#111',borderRadius:14,padding:18}}>
+            <div style={{borderBottom:'3px solid #f97316',paddingBottom:12,marginBottom:14}}>
+              <div style={{fontSize:17,fontWeight:900,color:'#f97316'}}>LA TABLE DE CANA</div>
+              <div style={{fontSize:11,color:'#666'}}>{new Date(m.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+            </div>
+            <div style={{fontSize:14,fontWeight:900,textAlign:'center',marginBottom:14}}>BON DE LIVRAISON</div>
+            <div style={{fontSize:10,color:'#999',textTransform:'uppercase'}}>Client</div>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>{m.task.client}</div>
+            {m.task.adresse&&<div style={{fontSize:12,color:'#555'}}>{m.task.adresse}</div>}
+            <div style={{fontSize:10,color:'#999',textTransform:'uppercase',marginTop:12}}>Livraison</div>
+            <div style={{fontSize:13,fontWeight:700}}>{m.heure} — {dr.name}</div>
+            {m.task.note_liv&&<div style={{background:'#f8fafc',borderRadius:8,padding:10,marginTop:12,fontSize:12}}>{m.task.note_liv}</div>}
+
+            {photo&&(
+              <div style={{marginTop:16}}>
+                <div style={{fontSize:10,color:'#999',textTransform:'uppercase',marginBottom:6}}>Photo</div>
+                <img src={photo.dataUrl} style={{width:'100%',borderRadius:8}}/>
+              </div>
+            )}
+            {sig&&(
+              <div style={{marginTop:16}}>
+                <div style={{fontSize:10,color:'#999',textTransform:'uppercase',marginBottom:6}}>Signature client</div>
+                <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:8,padding:8}}>
+                  <img src={sig.dataUrl} style={{width:'100%',height:60,objectFit:'contain'}}/>
+                </div>
+              </div>
+            )}
+            {!photo&&!sig&&<div style={{textAlign:'center',color:'#94a3b8',fontSize:12,marginTop:20}}>Aucune preuve disponible pour cette livraison</div>}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return(
+    <>
+      <Header title="📂 Centre d'Archives" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,background:'var(--raised)',borderRadius:10,padding:4,marginBottom:14}}>
+          {[{id:'client',lbl:'🏢 Client'},{id:'date',lbl:'📅 Date'},{id:'chauffeur',lbl:'👤 Chauffeur'}].map(t=>(
+            <button key={t.id} onClick={()=>{setTab(t.id);setSearchVal('');setResults([]);}}
+              style={{background:tab===t.id?'var(--card)':'transparent',border:tab===t.id?'1px solid var(--border2)':'1px solid transparent',borderRadius:8,padding:'9px 4px',fontSize:11,fontWeight:700,color:tab===t.id?'var(--green)':'var(--muted)'}}>
+              {t.lbl}
+            </button>
+          ))}
+        </div>
+
+        {tab==='client'&&(
+          <input type="text" placeholder="Nom du client..." value={searchVal}
+            onChange={e=>lancerRecherche(e.target.value)}
+            style={{width:'100%',marginBottom:14,fontSize:14,padding:'10px 12px'}}/>
+        )}
+        {tab==='date'&&(
+          <input type="date" value={searchVal||new Date().toISOString().slice(0,10)}
+            onChange={e=>lancerRecherche(e.target.value)}
+            style={{width:'100%',marginBottom:14,fontSize:14,fontWeight:700,padding:'10px 12px'}}/>
+        )}
+        {tab==='chauffeur'&&(
+          <select value={searchVal} onChange={e=>lancerRecherche(e.target.value)}
+            style={{width:'100%',marginBottom:14,fontSize:14,fontWeight:700,padding:'10px 12px'}}>
+            <option value="">-- Choisir --</option>
+            {liveDrivers.map(dr=><option key={dr.id} value={dr.name}>{dr.name}</option>)}
+          </select>
+        )}
+
+        {loading&&<div className="loader"><div className="spin" style={{width:24,height:24}}/></div>}
+
+        {!loading&&results.length>0&&(
+          <div style={{fontSize:11,color:'var(--muted)',marginBottom:8}}>{results.length} résultat(s)</div>
+        )}
+
+        {results.map((m,i)=>{
+          const dr=liveDrivers[m.di];
+          const proof=hasProof(m);
+          return(
+            <button key={i} onClick={()=>setSelectedBL(m)}
+              style={{width:'100%',textAlign:'left',background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${proof?'var(--green)':'var(--dim)'}`,borderRadius:12,padding:12,marginBottom:8}}>
+              <div style={{display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontSize:13,fontWeight:800}}>{m.task.client}</span>
+                {proof&&<span style={{fontSize:10,color:'var(--green)',fontWeight:700}}>✓ Preuves</span>}
+              </div>
+              <div style={{fontSize:11,color:'var(--muted)',marginTop:3}}>{m.date} à {m.heure} — {dr.name}</div>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function ResponsableScreen({onLogout}){
   const [selectedDriver,setSelectedDriver]=useState(null);
   const [view,setView]=useState('home');
@@ -1141,6 +1315,7 @@ function ResponsableScreen({onLogout}){
         :view==='messages'?<ResponsableMessages onBack={handleBack}/>
         :view==='vehicles'?<ResponsableVehicles onBack={handleBack}/>
         :view==='stats'?<ResponsableStats onBack={handleBack}/>
+        :view==='archives'?<ResponsableArchives onBack={handleBack}/>
         :<ResponsableHome onLogout={onLogout} onSelectDriver={setSelectedDriver} onNavigate={handleNav}/>
       }
     </div>
