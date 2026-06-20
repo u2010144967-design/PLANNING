@@ -532,6 +532,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirRechercheBL();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">📄 Bons de livraison</button>
 <button tabindex="0" onclick="ouvrirDashboardMateriel();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">📦 Tableau de bord matériel</button>
 <button tabindex="0" onclick="ouvrirNettoyageSupabase();fermerMenu()" class="menu-item" style="color:#ef4444;font-weight:700">🧹 Nettoyage stockage Supabase</button>
 <button tabindex="0" onclick="ouvrirPhotosSignatures();fermerMenu()" class="menu-item" style="color:#a855f7;font-weight:700">📸 Photos & Signatures chauffeurs</button>
@@ -22916,6 +22917,162 @@ function ouvrirDashboardMateriel(){
 
     results.innerHTML=html;
   });
+}
+
+/* ══════════════════════════════════════════════════
+   BON DE LIVRAISON NUMERIQUE — fusion auto mission + preuves
+══════════════════════════════════════════════════ */
+function ouvrirBonLivraison(date,di,heure,taskIdx){
+  var k=date+'|'+di+'|'+heure;
+  var task=ST.tasks[k]&&ST.tasks[k][taskIdx];
+  if(!task){showT('Mission introuvable','#ef4444');return;}
+
+  var dr=ST.drivers[di];
+  var numeroBL='BL-'+date.replace(/-/g,'')+'-'+di+'-'+heure.replace(':','');
+
+  var existing=document.getElementById('m-bl');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-bl';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='560px';box.style.maxHeight='90vh';box.style.overflowY='auto';
+
+  box.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:12px">Chargement des preuves...</div>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  /* Chercher photo et signature correspondantes dans les evenements */
+  Promise.all([
+    supaFetch('planning?date=like.EV_*&select=donnees&order=date.desc&limit=500')
+  ]).then(function(res){
+    var events=(res[0]||[]).map(function(r){return r.donnees;}).filter(function(d){return d&&d._isEvent;});
+    var matching=events.filter(function(e){
+      return e.date===date&&e.heure===heure&&e.client&&task.client&&e.client.toUpperCase().indexOf(task.client.toUpperCase().substring(0,8))>=0;
+    });
+    var photo=matching.find(function(e){return e.type==='photo';});
+    var signature=matching.find(function(e){return e.type==='signature';});
+    var doneEvent=matching.find(function(e){return e.type==='done';});
+
+    var html='<div style="background:#fff;color:#111;border-radius:14px;padding:24px;font-family:Arial,sans-serif">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #f97316;padding-bottom:14px;margin-bottom:18px">';
+    html+='<div><div style="font-size:20px;font-weight:900;color:#f97316">LA TABLE DE CANA</div><div style="font-size:11px;color:#666">Traiteur — Logistique</div></div>';
+    html+='<div style="text-align:right"><div style="font-size:11px;color:#666">N° '+numeroBL+'</div><div style="font-size:13px;font-weight:700">'+new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div></div>';
+    html+='</div>';
+
+    html+='<div style="font-size:16px;font-weight:900;text-align:center;margin-bottom:18px;letter-spacing:1px">BON DE LIVRAISON</div>';
+
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">';
+    html+='<div><div style="font-size:10px;color:#999;text-transform:uppercase;margin-bottom:4px">Client</div><div style="font-size:14px;font-weight:700">'+(task.client||'—')+'</div>';
+    if(task.adresse)html+='<div style="font-size:12px;color:#555;margin-top:2px">'+task.adresse+'</div>';
+    if(task.contact)html+='<div style="font-size:12px;color:#555">'+task.contact+'</div>';
+    html+='</div>';
+    html+='<div><div style="font-size:10px;color:#999;text-transform:uppercase;margin-bottom:4px">Livraison</div>';
+    html+='<div style="font-size:14px;font-weight:700">'+heure+(doneEvent?' (livré à '+(doneEvent.heure||heure)+')':'')+'</div>';
+    html+='<div style="font-size:12px;color:#555;margin-top:2px">Chauffeur : '+dr.name+'</div>';
+    html+='<div style="font-size:12px;color:#555">Véhicule : '+(task.truck||dr.truck)+'</div>';
+    html+='</div></div>';
+
+    if(task.note_liv){
+      html+='<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:18px"><div style="font-size:10px;color:#999;text-transform:uppercase;margin-bottom:3px">Détail</div><div style="font-size:13px">'+task.note_liv+'</div></div>';
+    }
+
+    if(task.allergenes&&task.allergenes.length){
+      html+='<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:18px"><div style="font-size:11px;color:#dc2626;font-weight:700">🚨 Allergènes : '+task.allergenes.join(', ')+'</div></div>';
+    }
+
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px">';
+
+    html+='<div><div style="font-size:10px;color:#999;text-transform:uppercase;margin-bottom:6px">Photo de livraison</div>';
+    if(photo){
+      html+='<img src="'+photo.dataUrl+'" style="width:100%;border-radius:8px;border:1px solid #e5e7eb">';
+    }else{
+      html+='<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:20px;text-align:center;color:#94a3b8;font-size:11px">Aucune photo</div>';
+    }
+    html+='</div>';
+
+    html+='<div><div style="font-size:10px;color:#999;text-transform:uppercase;margin-bottom:6px">Signature client</div>';
+    if(signature){
+      html+='<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px"><img src="'+signature.dataUrl+'" style="width:100%;height:80px;object-fit:contain"></div>';
+    }else{
+      html+='<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:20px;text-align:center;color:#94a3b8;font-size:11px">Aucune signature</div>';
+    }
+    html+='</div></div>';
+
+    html+='<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:10px;color:#999;text-align:center">Document généré automatiquement — La Table de Cana Logistique</div>';
+    html+='</div>';
+
+    box.innerHTML=html;
+
+    var btnRow=document.createElement('div');
+    btnRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px';
+
+    var printBtn=document.createElement('button');
+    printBtn.textContent='🖨️ Imprimer / PDF';
+    printBtn.style.cssText='background:#1d4ed8;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer';
+    printBtn.addEventListener('click',function(){
+      var w=window.open('','_blank');
+      w.document.write('<html><head><title>'+numeroBL+'</title></head><body>'+box.innerHTML+'</body></html>');
+      w.document.close();
+      setTimeout(function(){w.print();},300);
+    });
+    btnRow.appendChild(printBtn);
+
+    var closeBtn=document.createElement('button');
+    closeBtn.textContent='Fermer';
+    closeBtn.style.cssText='background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+    closeBtn.addEventListener('click',function(){closeMod('m-bl');});
+    btnRow.appendChild(closeBtn);
+
+    box.appendChild(btnRow);
+  });
+}
+
+/* ══ RECHERCHE BON DE LIVRAISON par date/client ══ */
+function ouvrirRechercheBL(){
+  var existing=document.getElementById('m-rech-bl');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-rech-bl';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='550px';box.style.maxHeight='85vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='📄 Bons de livraison';
+  box.appendChild(h);
+
+  var dateInput=document.createElement('input');
+  dateInput.type='date';dateInput.value=ST.cur;dateInput.id='bl-date';
+  dateInput.style.cssText='width:100%;margin:14px 0;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px 12px;font-size:14px;font-weight:700';
+  box.appendChild(dateInput);
+
+  var results=document.createElement('div');
+  results.id='bl-results';
+  box.appendChild(results);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:10px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-rech-bl');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  function afficherMissionsJour(){
+    var date=document.getElementById('bl-date').value;
+    var html='';
+    var count=0;
+    ST.drivers.forEach(function(dr,di){
+      SL.forEach(function(h){
+        var k=date+'|'+di+'|'+h;
+        (ST.tasks[k]||[]).forEach(function(t,ti){
+          if(!t.client)return;
+          count++;
+          html+='<button onclick=\'ouvrirBonLivraison("'+date+'",'+di+',"'+h+'",'+ti+')\' style="width:100%;text-align:left;background:#1e293b;border:1px solid #334155;border-left:3px solid #f97316;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;color:#fff">'
+            +'<div style="display:flex;justify-content:space-between"><span style="font-family:monospace;font-weight:800;color:#f97316">'+h+'</span><span style="font-size:11px;color:#64748b">'+dr.name+'</span></div>'
+            +'<div style="font-size:13px;font-weight:700;margin-top:4px">'+t.client+'</div>'
+            +'</button>';
+        });
+      });
+    });
+    results.innerHTML=count?html:'<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">Aucune mission ce jour</div>';
+  }
+
+  dateInput.addEventListener('change',afficherMissionsJour);
+  afficherMissionsJour();
 }
 </script>
 </body>
