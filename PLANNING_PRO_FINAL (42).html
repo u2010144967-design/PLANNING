@@ -532,6 +532,7 @@ input[type="time"]{
 <div style="font-size:9px;font-weight:700;color:#f472b6;text-transform:uppercase;padding:8px 10px 4px;letter-spacing:.8px">🏢 Gestion & Direction</div>
 <button tabindex="0" onclick="ouvrirModuleDirection();fermerMenu()" class="menu-item">⭐ Module Direction</button>
 <button tabindex="0" onclick="ouvrirAgenda();fermerMenu()" class="menu-item">📓 Agenda partagé</button>
+<button tabindex="0" onclick="ouvrirDashboardMateriel();fermerMenu()" class="menu-item" style="color:#f97316;font-weight:700">📦 Tableau de bord matériel</button>
 <button tabindex="0" onclick="ouvrirNettoyageSupabase();fermerMenu()" class="menu-item" style="color:#ef4444;font-weight:700">🧹 Nettoyage stockage Supabase</button>
 <button tabindex="0" onclick="ouvrirPhotosSignatures();fermerMenu()" class="menu-item" style="color:#a855f7;font-weight:700">📸 Photos & Signatures chauffeurs</button>
 <button tabindex="0" onclick="ouvrirRechercheHistorique();fermerMenu()" class="menu-item" style="color:#22c55e;font-weight:700">🔍 Recherche historique (infractions)</button>
@@ -22578,14 +22579,23 @@ function ouvrirPhotosSignatures(){
       if(photos.length){
         html+='<div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin:14px 0 10px">📸 Photos ('+photos.length+')</div>';
         html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px">';
-        photos.forEach(function(p){
-          html+='<div style="border-radius:12px;overflow:hidden;border:1px solid #334155;position:relative;cursor:pointer" onclick="window.open(this.dataset.src)" data-src="'+p.dataUrl+'">'
-            +'<img src="'+p.dataUrl+'" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">'
-            +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:16px 8px 6px;color:#fff">'
+        window._psPhotos=photos;
+        photos.forEach(function(p,pidx){
+          var matInfo='';
+          if(p.materielDetecte){
+            var mc=Object.entries(p.materielDetecte).filter(function(e){return e[1]>0;}).map(function(e){return e[1]+' '+e[0];}).join(', ');
+            if(mc)matInfo='<div style="font-size:9px;color:#22c55e;font-weight:700;margin-top:2px">🤖 '+mc+'</div>';
+          }
+          html+='<div style="border-radius:12px;overflow:hidden;border:1px solid #334155;position:relative">'
+            +'<img src="'+p.dataUrl+'" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;cursor:pointer" onclick="window.open(this.dataset.src)" data-src="'+p.dataUrl+'">'
+            +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:18px 8px 6px;color:#fff;pointer-events:none">'
             +'<div style="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.chauffeur||'?')+'</div>'
             +'<div style="font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.client||'')+'</div>'
             +'<div style="font-size:9px;opacity:.7">'+(p.heure||'')+'</div>'
-            +'</div></div>';
+            +matInfo
+            +'</div>'
+            +'<button onclick="ouvrirEnvoiReprise('+pidx+')" style="position:absolute;top:6px;right:6px;background:rgba(249,115,22,.95);border:none;border-radius:8px;width:30px;height:30px;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)">📤</button>'
+            +'</div>';
         });
         html+='</div>';
       }
@@ -22748,6 +22758,165 @@ function ouvrirNettoyageSupabase(){
     }
   }, {passive:true});
 })();
+
+/* ══════════════════════════════════════════════════
+   ENVOI DE REPRISE — assigner une photo + instruction
+   directement dans l'app d'un chauffeur
+══════════════════════════════════════════════════ */
+function ouvrirEnvoiReprise(photoIdx){
+  var photo=window._psPhotos[photoIdx];
+  if(!photo)return;
+
+  var existing=document.getElementById('m-envoi-reprise');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-envoi-reprise';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='420px';
+
+  var h=document.createElement('h3');h.textContent='📤 Envoyer comme reprise';
+  box.appendChild(h);
+
+  var preview=document.createElement('div');
+  preview.style.cssText='display:flex;gap:10px;align-items:center;background:#1e293b;border-radius:10px;padding:10px;margin:12px 0';
+  preview.innerHTML='<img src="'+photo.dataUrl+'" style="width:60px;height:60px;border-radius:8px;object-fit:cover">'
+    +'<div><div style="font-size:12px;font-weight:700">'+(photo.client||'Client')+'</div>'
+    +'<div style="font-size:11px;color:#64748b">Photo de '+(photo.chauffeur||'?')+' — '+(photo.heure||'')+'</div></div>';
+  box.appendChild(preview);
+
+  var label1=document.createElement('label');
+  label1.style.cssText='font-size:11px;color:#64748b;display:block;margin-bottom:6px';
+  label1.textContent='Quel chauffeur doit récupérer ?';
+  box.appendChild(label1);
+
+  var select=document.createElement('select');
+  select.id='reprise-chauffeur';
+  select.style.cssText='width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px;font-size:13px;font-weight:700;margin-bottom:12px';
+  ST.drivers.forEach(function(dr,i){
+    var opt=document.createElement('option');opt.value=i;opt.textContent=dr.name;select.appendChild(opt);
+  });
+  box.appendChild(select);
+
+  var label2=document.createElement('label');
+  label2.style.cssText='font-size:11px;color:#64748b;display:block;margin-bottom:6px';
+  label2.textContent='Instruction pour le chauffeur';
+  box.appendChild(label2);
+
+  var textarea=document.createElement('textarea');
+  textarea.id='reprise-instruction';
+  textarea.placeholder='Ex: Récupérer 4 bacs gastro et 2 caisses chez '+(photo.client||'le client');
+  textarea.style.cssText='width:100%;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;padding:10px;font-size:13px;height:70px;resize:none;margin-bottom:14px';
+  if(photo.materielDetecte){
+    var mc=Object.entries(photo.materielDetecte).filter(function(e){return e[1]>0;}).map(function(e){return e[1]+' '+e[0];}).join(', ');
+    if(mc)textarea.value='Récupérer : '+mc+' chez '+(photo.client||'le client');
+  }
+  box.appendChild(textarea);
+
+  var sendBtn=document.createElement('button');
+  sendBtn.textContent='📤 Envoyer au chauffeur';
+  sendBtn.style.cssText='width:100%;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer';
+  sendBtn.addEventListener('click',function(){
+    var di=parseInt(select.value);
+    var instruction=textarea.value.trim();
+    if(!instruction){showT('Ajoutez une instruction','#f59e0b');return;}
+
+    var reprise={
+      di:di,
+      driverName:ST.drivers[di].name,
+      client:photo.client||'',
+      instruction:instruction,
+      photoUrl:photo.dataUrl,
+      photoSource:photo.chauffeur||'',
+      date:document.getElementById('ps-date')?document.getElementById('ps-date').value:ST.cur,
+      createdAt:new Date().toISOString(),
+      statut:'a_faire'
+    };
+
+    var key='REPRISE_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    supaFetch('planning',{method:'POST',body:JSON.stringify({date:key,donnees:reprise})}).then(function(){
+      showT('✅ Reprise envoyée à '+ST.drivers[di].name,'#22c55e');
+      closeMod('m-envoi-reprise');
+    });
+  });
+  box.appendChild(sendBtn);
+
+  var cancelBtn=document.createElement('button');
+  cancelBtn.textContent='Annuler';
+  cancelBtn.style.cssText='width:100%;margin-top:8px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer';
+  cancelBtn.addEventListener('click',function(){closeMod('m-envoi-reprise');});
+  box.appendChild(cancelBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+/* ══════════════════════════════════════════════════
+   TABLEAU DE BORD MATERIEL — vue d'ensemble + alertes 48h
+══════════════════════════════════════════════════ */
+function ouvrirDashboardMateriel(){
+  var existing=document.getElementById('m-dash-mat');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-dash-mat';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='650px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='📦 Tableau de bord matériel';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px';
+  sub.textContent='Matériel laissé chez les clients, non encore récupéré';
+  box.appendChild(sub);
+
+  var results=document.createElement('div');
+  results.id='dm-results';
+  results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:12px">Chargement...</div>';
+  box.appendChild(results);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:14px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-dash-mat');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  /* Charger tous les evenements materiel des 14 derniers jours */
+  Promise.all([
+    supaFetch('planning?date=like.EV_*&select=donnees&order=date.desc&limit=500'),
+    supaFetch('planning?date=like.REPRISE_*&select=donnees,date&order=date.desc&limit=200')
+  ]).then(function(res){
+    var events=(res[0]||[]).map(function(r){return r.donnees;}).filter(function(d){return d&&d._isEvent;});
+    var reprises=(res[1]||[]).map(function(r){return {...r.donnees,_key:r.date};});
+
+    /* Items materiel laisses non encore recuperes via une reprise */
+    var laisses=events.filter(function(e){return e.type==='materiel'&&e.laisse&&Object.values(e.laisse).some(function(v){return v>0;});});
+    var recuperesViaReprise=reprises.filter(function(r){return r.statut==='fait';}).map(function(r){return r.client;});
+
+    var enAttente=laisses.filter(function(l){return recuperesViaReprise.indexOf(l.client)<0;});
+
+    if(!enAttente.length){
+      results.innerHTML='<div style="text-align:center;padding:30px;color:#22c55e;font-size:13px">✅ Aucun matériel en attente de reprise</div>';
+      return;
+    }
+
+    var html='';
+    var now=Date.now();
+    enAttente.forEach(function(item){
+      var itemDate=new Date(item.date+'T'+(item.heure||'12:00')).getTime();
+      var heuresEcoulees=Math.round((now-itemDate)/3600000);
+      var urgent=heuresEcoulees>48;
+      var mc=Object.entries(item.laisse).filter(function(e){return e[1]>0;}).map(function(e){return e[1]+' '+e[0];}).join(', ');
+
+      html+='<div style="background:#1e293b;border:1px solid '+(urgent?'#ef4444':'#334155')+';border-left:3px solid '+(urgent?'#ef4444':'#f59e0b')+';border-radius:10px;padding:12px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+        +'<div><div style="font-size:13px;font-weight:800;color:#f1f5f9">'+(item.client||'?')+'</div>'
+        +'<div style="font-size:11px;color:#64748b">Chauffeur : '+(item.chauffeur||'?')+' — '+item.date+'</div></div>'
+        +(urgent?'<span style="background:rgba(239,68,68,.15);color:#f87171;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px">⚠️ '+heuresEcoulees+'h</span>':'<span style="background:rgba(245,158,11,.15);color:#fbbf24;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">'+heuresEcoulees+'h</span>')
+        +'</div>'
+        +'<div style="font-size:12px;color:#cbd5e1;margin-top:8px">📦 '+mc+'</div>'
+        +'</div>';
+    });
+
+    results.innerHTML=html;
+  });
+}
 </script>
 </body>
 </html>
