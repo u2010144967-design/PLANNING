@@ -22675,6 +22675,62 @@ function ouvrirNettoyageSupabase(){
     deleteNext(0);
   });
 }
+
+/* ══════════════════════════════════════════════════
+   NAVIGATION CLAVIER — fleches pour scroller la page
+   et le menu, utile si l'ecran est petit ou le zoom eleve
+══════════════════════════════════════════════════ */
+(function(){
+  document.addEventListener('keydown', function(e){
+    /* Ne pas interferer si on tape dans un champ texte */
+    var tag=document.activeElement.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+
+    /* Touche M = ouvrir/fermer le menu principal, sans avoir a cliquer le bouton */
+    if(e.key==='m'||e.key==='M'){
+      e.preventDefault();
+      if(typeof toggleMenuPrincipal==='function')toggleMenuPrincipal();
+      return;
+    }
+
+    var menu=document.getElementById('menu-principal');
+    var menuOuvert=menu&&menu.style.display!=='none';
+    var scrollTarget=menuOuvert?menu:(document.querySelector('.planning-area')||document.querySelector('.main')||document.scrollingElement);
+
+    if(e.key==='ArrowDown'){
+      e.preventDefault();
+      if(scrollTarget)scrollTarget.scrollTop+=60;
+    }
+    if(e.key==='ArrowUp'){
+      e.preventDefault();
+      if(scrollTarget)scrollTarget.scrollTop-=60;
+    }
+    if(e.key==='PageDown'){
+      e.preventDefault();
+      if(scrollTarget)scrollTarget.scrollTop+=300;
+    }
+    if(e.key==='PageUp'){
+      e.preventDefault();
+      if(scrollTarget)scrollTarget.scrollTop-=300;
+    }
+    if(e.key==='Escape'&&menuOuvert){
+      menu.style.display='none';
+    }
+  });
+
+  /* Forcer la molette a fonctionner sur le menu meme si le curseur est ailleurs au moment du scroll */
+  window.addEventListener('wheel', function(e){
+    var menu=document.getElementById('menu-principal');
+    if(menu&&menu.style.display!=='none'){
+      var rect=menu.getBoundingClientRect();
+      var dansMenu=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+      if(!dansMenu){
+        /* Si la molette est utilisee hors du menu mais que le menu est ouvert, on scroll quand meme le menu */
+        menu.scrollTop+=e.deltaY;
+      }
+    }
+  }, {passive:true});
+})();
 </script>
 </body>
 </html>
