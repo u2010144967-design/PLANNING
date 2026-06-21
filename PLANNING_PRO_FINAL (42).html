@@ -23566,6 +23566,24 @@ function appliquerRestrictionsService(){
       }
       /* Si pas matche du tout (bouton non liste dans le Hub), on le laisse tel quel par defaut */
     });
+
+    /* Bloquer aussi tous les boutons de la barre du haut (.nb) — Controle, Memo, Sauv. */
+    document.querySelectorAll('.nb').forEach(function(btn){
+      var onclickAttr2=btn.getAttribute('onclick')||'';
+      /* Liste blanche stricte : rien d'autre que la nav de date n'est jamais autorise ici */
+      btn.style.display='none';
+    });
+
+    /* Bloquer les boutons Cloud / Recherche dans la barre du haut (hors menu) */
+    document.querySelectorAll('.nav button').forEach(function(btn){
+      var onclickAttr3=btn.getAttribute('onclick')||'';
+      var isDateNav=onclickAttr3.indexOf('chDay(')>=0||onclickAttr3.indexOf('goToday()')>=0;
+      var isMenuToggle=onclickAttr3.indexOf('toggleMenuPrincipal()')>=0;
+      if(!isDateNav && !isMenuToggle){
+        btn.style.display='none';
+      }
+    });
+
   },300);
 
   /* Securite supplementaire: bloquer l'appel direct des fonctions sensibles si non autorise */
@@ -23584,6 +23602,21 @@ function appliquerRestrictionsService(){
         showT('\uD83D\uDD12 Accès non autorisé pour votre service','#ef4444');
       };
       window['_secured_'+fnName]=true;
+    }
+  });
+
+  /* Securiser aussi les fonctions systeme critiques : sauvegarde, controle, memo, cloud */
+  var fonctionsSystemeBloquees=['doAutoSave','ouvrirTourDeControle','ouvrirMemo','chargerDepuisSupabase','doPrint','exportJSON','importJSON','ouvrirConfigSync','ouvrirNettoyageSupabase'];
+  fonctionsSystemeBloquees.forEach(function(fnName2){
+    if(typeof window[fnName2]==='function' && !window['_secured_'+fnName2]){
+      var origFn2=window[fnName2];
+      window[fnName2]=function(){
+        if(window._serviceActuel&&window._serviceActuel.niveau==='admin'){
+          return origFn2.apply(this,arguments);
+        }
+        showT('\\uD83D\\uDD12 Accès non autorisé pour votre service','#ef4444');
+      };
+      window['_secured_'+fnName2]=true;
     }
   });
 }
