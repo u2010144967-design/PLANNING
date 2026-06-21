@@ -23912,7 +23912,7 @@ function afficherHub(){
   /* LUEUR QUI SUIT LA SOURIS */
   var glow=document.createElement('div');
   glow.className='hub-glow';
-  document.body.appendChild(glow);
+  hub.appendChild(glow);
   var glowMoveHandler=function(e){
     glow.style.left=(e.clientX-250)+'px';
     glow.style.top=(e.clientY-250)+'px';
@@ -23966,7 +23966,7 @@ function afficherHub(){
         orb.style.height=saved.size+'px';
       }
 
-      document.body.appendChild(orb);
+      hub.appendChild(orb);
 
       /* DRAG & DROP */
       var isDragging=false,isResizing=false;
@@ -24066,8 +24066,6 @@ function afficherHub(){
 function fermerHub(){
   var hub=document.getElementById('cana-hub');
   if(hub)hub.remove();
-  document.querySelectorAll('.hub-orb').forEach(function(o){o.remove();});
-  document.querySelectorAll('.hub-glow').forEach(function(g){g.remove();});
   if(window._hubGlowHandler){document.removeEventListener('mousemove',window._hubGlowHandler);window._hubGlowHandler=null;}
   if(window._hubKeyHandler){document.removeEventListener('keydown',window._hubKeyHandler);window._hubKeyHandler=null;}
 }
