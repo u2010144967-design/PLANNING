@@ -23517,62 +23517,77 @@ var SERVICE_BADGES_VISIBLE=false;
 function appliquerRestrictionsService(){
   if(!window._serviceActuel)return;
   var niveau=window._serviceActuel.niveau;
+  if(niveau==='admin')return; /* Direction voit tout, aucune restriction */
 
-  /* Commercial: tout sauf RH/Direction confidentiel */
-  if(niveau==='commercial'||niveau==='restoco'){
-    setTimeout(function(){
-      document.querySelectorAll('.menu-item').forEach(function(btn){
-        var txt=btn.textContent;
-        if(txt.indexOf('RH')>=0||txt.indexOf('Evaluation')>=0||txt.indexOf('Salarié')>=0||txt.indexOf('Insertion')>=0){
-          btn.style.display='none';
+  /* Mapping outil -> nom de fonction JS appelee (doit correspondre aux fn des items du Hub) */
+  var toolToFunction={
+    sync:'syncVersGoogle', a4:'ouvrirFeuillesRoute', photos:'ouvrirPhotosSignatures',
+    archives:'ouvrirCentreArchives', bl:'ouvrirRechercheBL', histclient:'ouvrirHistorique',
+    materiel:'ouvrirDashboardMateriel', vehicules:'ouvrirGestionVehicules', tournees:'ouvrirTournees',
+    qr:'ouvrirTableauDepart', calendrier:'ouvrirCalendrier', ecranmatin:'ouvrirEcranMatin',
+    messages:'ouvrirMessagesChauffeurs', whatsapp:'copierPlanningWhatsApp', meteo:'afficherMeteo',
+    recherche:'ouvrirRechercheGlobale', chauffeurs:'ouvrirGestionChauffeurs', fiches:'ouvrirFiches',
+    progression:'ouvrirFicheProgression', suivi:'ouvrirSuiviChauffeur', statuts:'ouvrirStatutRapide',
+    infractions:'ouvrirInfractions', archiveschauf:'ouvrirArchives', chrono:'ouvrirChronogramme',
+    climat:'ouvrirAnalyseSociale', conducteurs:'voirHistoriqueConducteurs', rechinfr:'ouvrirRechercheHistorique',
+    stats:'afficherStatsMois', rapport:'ouvrirRapport', dashboard:'toggleDashboard',
+    dashannuel:'ouvrirDashboardAnnuel', audit:'ouvrirAudit', excel:'exportExcel',
+    agenda:'ouvrirAgenda', email:'ouvrirEnvoiTournees', briefing:'parlerBriefingMatin',
+    notifs:'ouvrirNotifications', cockpit:'ouvrirCockpit', simulateur:'ouvrirSimulateur',
+    moduledir:'ouvrirModuleDirection', acces:'ouvrirGestionAcces', validation:'ouvrirFenetreValidation',
+    backup:'exportJSON', restore:'importJSON', config:'ouvrirConfigSync', nettoyage:'ouvrirNettoyageSupabase'
+  };
+
+  var toolPermsKey='hub_tool_permissions';
+  var toolPerms=JSON.parse(localStorage.getItem(toolPermsKey)||'{}');
+  var monAcces=toolPerms[niveau]||{};
+
+  setTimeout(function(){
+    document.querySelectorAll('.menu-item').forEach(function(btn){
+      var onclickAttr=btn.getAttribute('onclick')||'';
+      var matched=false;
+      var autorise=false;
+
+      Object.keys(toolToFunction).forEach(function(toolId){
+        var fnName=toolToFunction[toolId];
+        if(onclickAttr.indexOf(fnName+'(')>=0){
+          matched=true;
+          if(monAcces[toolId]===true)autorise=true;
         }
       });
-    },300);
-  }
 
-  /* Compta: limite a BL, archives, vue financiere */
-  if(niveau==='compta'){
-    setTimeout(function(){
-      document.querySelectorAll('.menu-item').forEach(function(btn){
-        var txt=btn.textContent;
-        var autorise=txt.indexOf('Bon')>=0||txt.indexOf('Archives')>=0||txt.indexOf('Recherche')>=0;
-        if(!autorise)btn.style.display='none';
-      });
-    },300);
-  }
+      /* Boutons toujours visibles (planning de base, retour accueil) */
+      var alwaysVisible=onclickAttr.indexOf('ouvrirHub()')>=0||onclickAttr.indexOf('ouvrirTachesResponsable')>=0||onclickAttr.indexOf('syncVersGoogle')>=0;
 
-  /* RH: uniquement gestion chauffeurs, statuts, historique */
-  if(niveau==='rh'){
-    setTimeout(function(){
-      document.querySelectorAll('.menu-item').forEach(function(btn){
-        var txt=btn.textContent;
-        var autorise=txt.indexOf('Gestion des chauffeurs')>=0||txt.indexOf('Historique')>=0||txt.indexOf('Recherche')>=0;
-        if(!autorise)btn.style.display='none';
-      });
-    },300);
-  }
-
-  /* RSE: vue lecture seule planning + stats */
-  if(niveau==='rse'){
-    setTimeout(function(){
-      document.querySelectorAll('.menu-item').forEach(function(btn){
-        var txt=btn.textContent;
-        var autorise=txt.indexOf('Photos')>=0||txt.indexOf('Archives')>=0||txt.indexOf('Statistiques')>=0;
-        if(!autorise)btn.style.display='none';
-      });
-    },300);
-  }
-
-  /* Badge service visible en haut */
-  setTimeout(function(){
-    if(SERVICE_BADGES_VISIBLE)return;
-    SERVICE_BADGES_VISIBLE=true;
-    var badge=document.createElement('div');
-    badge.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #334155;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:#f97316;z-index:9999;display:flex;align-items:center;gap:6px';
-    badge.innerHTML='<span>'+window._serviceActuel.icone+'</span><span>'+window._serviceActuel.nom+'</span>';
-    document.body.appendChild(badge);
+      if(matched && !autorise && !alwaysVisible){
+        btn.style.display='none';
+      } else if(matched && autorise){
+        btn.style.display='';
+      }
+      /* Si pas matche du tout (bouton non liste dans le Hub), on le laisse tel quel par defaut */
+    });
   },300);
+
+  /* Securite supplementaire: bloquer l'appel direct des fonctions sensibles si non autorise */
+  Object.keys(toolToFunction).forEach(function(toolId){
+    var fnName=toolToFunction[toolId];
+    if(monAcces[toolId]!==true && typeof window[fnName]==='function' && !window['_secured_'+fnName]){
+      var origFn=window[fnName];
+      window[fnName]=function(){
+        if(window._serviceActuel&&window._serviceActuel.niveau==='admin'){
+          return origFn.apply(this,arguments);
+        }
+        var toolPermsKey2='hub_tool_permissions';
+        var toolPerms2=JSON.parse(localStorage.getItem(toolPermsKey2)||'{}');
+        var monAcces2=toolPerms2[window._serviceActuel?window._serviceActuel.niveau:'']||{};
+        if(monAcces2[toolId]===true)return origFn.apply(this,arguments);
+        showT('\uD83D\uDD12 Accès non autorisé pour votre service','#ef4444');
+      };
+      window['_secured_'+fnName]=true;
+    }
+  });
 }
+
 
 /* Journal d'audit - enregistre chaque action importante */
 function logAudit(action,detail){
