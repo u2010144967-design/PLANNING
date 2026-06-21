@@ -23643,91 +23643,135 @@ function ouvrirGestionAcces(){
   }
   var existing=document.getElementById('m-acces');if(existing)existing.remove();
   var modal=document.createElement('div');modal.id='m-acces';modal.className='mbg on';
-  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='600px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='720px';box.style.maxHeight='90vh';box.style.overflowY='auto';
 
-  var h=document.createElement('h3');h.textContent='\uD83D\uDD11 Gestion des acces — Recapitulatif';
+  var h=document.createElement('h3');h.textContent='\uD83D\uDD11 Gestion des accès — par outil';
   box.appendChild(h);
 
   var sub=document.createElement('div');
   sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.6';
-  sub.textContent='Liens et codes a transmettre a chaque service. Le lien est identique pour tous (le logiciel), seul le code change.';
+  sub.textContent='Choisissez précisément quels outils chaque service peut utiliser. Cochez/décochez librement, sans contrainte de catégorie.';
   box.appendChild(sub);
 
   var lienBase=window.location.href.split('?')[0];
 
-  var permsKey='hub_permissions';
-  var permissions=JSON.parse(localStorage.getItem(permsKey)||'{}');
-  var polesListe=[{id:'logistique',nom:'Logistique',color:'#3b82f6'},{id:'insertion',nom:'Insertion & Suivi',color:'#22c55e'},{id:'admin',nom:'Documents & Pilotage',color:'#a855f7'},{id:'direction',nom:'Direction',color:'#ef4444'}];
+  /* Liste complete des 48 outils, organisee par categorie d'origine (juste pour lisibilite visuelle) */
+  var toolGroups=[
+    {nom:'\uD83D\uDE9A Logistique',tools:[
+      {id:'planning',label:'Planning du jour'},{id:'planningfull',label:'Planning complet'},
+      {id:'sync',label:'Envoyer chauffeurs'},{id:'a4',label:'Imprimer A4'},
+      {id:'photos',label:'Photos & Signatures'},{id:'archives',label:'Centre Archives'},
+      {id:'bl',label:'Bons de livraison'},{id:'histclient',label:'Historique client'},
+      {id:'materiel',label:'Tableau matériel'},{id:'vehicules',label:'Gestion véhicules'},
+      {id:'tournees',label:'Tournées'},{id:'qr',label:'Tableau départ QR'},
+      {id:'calendrier',label:'Calendrier mensuel'},{id:'ecranmatin',label:'Écran du matin'},
+      {id:'messages',label:'Messages chauffeurs'},{id:'whatsapp',label:'Copier WhatsApp'},
+      {id:'meteo',label:'Météo du jour'},{id:'recherche',label:'Recherche globale'},
+    ]},
+    {nom:'\uD83D\uDC65 Insertion & Suivi',tools:[
+      {id:'chauffeurs',label:'Gestion chauffeurs'},{id:'fiches',label:'Fiches chauffeurs'},
+      {id:'progression',label:'Progression & Évaluation'},{id:'suivi',label:'Suivi rapide points'},
+      {id:'statuts',label:'Statuts absences'},{id:'infractions',label:'Infractions'},
+      {id:'archiveschauf',label:'Archives chauffeurs'},{id:'chrono',label:'Chronogramme insertion'},
+      {id:'climat',label:'Climat social'},{id:'conducteurs',label:'Conducteurs désignés'},
+      {id:'rechinfr',label:'Recherche infractions'},
+    ]},
+    {nom:'\uD83D\uDCCA Documents & Pilotage',tools:[
+      {id:'stats',label:'Statistiques du mois'},{id:'rapport',label:'Rapport activité'},
+      {id:'dashboard',label:'Tableau de bord'},{id:'dashannuel',label:'Dashboard annuel'},
+      {id:'audit',label:'Audit qualité'},{id:'excel',label:'Export Excel'},
+      {id:'agenda',label:'Agenda partagé'},{id:'email',label:'Envoyer par email'},
+      {id:'briefing',label:'Briefing vocal'},{id:'notifs',label:'Notifications'},
+    ]},
+    {nom:'\uD83D\uDC54 Direction',tools:[
+      {id:'cockpit',label:'Cockpit opérationnel'},{id:'simulateur',label:'Simulateur scénarios'},
+      {id:'moduledir',label:'Module Direction'},{id:'acces',label:'Gestion des accès'},
+      {id:'validation',label:'Validations en attente'},{id:'backup',label:'Sauvegarder'},
+      {id:'restore',label:'Restaurer backup'},{id:'config',label:'Config synchro'},
+      {id:'nettoyage',label:'Nettoyage stockage'},
+    ]},
+  ];
+
+  var toolPermsKey='hub_tool_permissions';
+  var toolPerms=JSON.parse(localStorage.getItem(toolPermsKey)||'{}');
 
   Object.keys(window.SERVICES_CONFIG).forEach(function(code){
     if(code==='cana2026'||code==='direction2026')return;
     var srv=window.SERVICES_CONFIG[code];
     var niveau=srv.niveau;
-    if(!permissions[niveau])permissions[niveau]={logistique:false,insertion:false,admin:false,direction:false};
+    if(!toolPerms[niveau])toolPerms[niveau]={};
 
     var card=document.createElement('div');
-    card.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:10px';
+    card.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:14px';
 
     var topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
-    topRow.innerHTML='<span style="font-size:20px">'+srv.icone+'</span><span style="font-size:14px;font-weight:800;color:#fff">'+srv.nom+'</span>';
+    topRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer';
+    var leftPart=document.createElement('div');
+    leftPart.style.cssText='display:flex;align-items:center;gap:10px';
+    leftPart.innerHTML='<span style="font-size:20px">'+srv.icone+'</span><span style="font-size:14px;font-weight:800;color:#fff">'+srv.nom+'</span>';
+    var toggleArrow=document.createElement('span');
+    toggleArrow.textContent='\u25BC';
+    toggleArrow.style.cssText='color:#64748b;font-size:12px;transition:transform .2s';
+    topRow.appendChild(leftPart);
+    topRow.appendChild(toggleArrow);
     card.appendChild(topRow);
 
-    var linkDiv=document.createElement('div');
-    linkDiv.style.cssText='font-size:11px;color:#64748b;margin-bottom:4px';
-    linkDiv.textContent='Lien (identique pour tous) :';
-    card.appendChild(linkDiv);
+    var infoRow=document.createElement('div');
+    infoRow.style.cssText='font-size:10px;color:#64748b;margin-bottom:10px';
+    infoRow.innerHTML='Lien : <span style="color:#60a5fa">'+lienBase+'</span> — Code : <span style="color:#f97316;font-weight:800">'+code+'</span>';
+    card.appendChild(infoRow);
 
-    var linkVal=document.createElement('div');
-    linkVal.style.cssText='background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#60a5fa;word-break:break-all;margin-bottom:8px';
-    linkVal.textContent=lienBase;
-    card.appendChild(linkVal);
+    var toolsContainer=document.createElement('div');
+    toolsContainer.style.display='block';
 
-    var codeDiv=document.createElement('div');
-    codeDiv.style.cssText='font-size:11px;color:#64748b;margin-bottom:4px';
-    codeDiv.textContent='Code d\'acces :';
-    card.appendChild(codeDiv);
+    toolGroups.forEach(function(group){
+      var groupTitle=document.createElement('div');
+      groupTitle.style.cssText='font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;margin:10px 0 6px';
+      groupTitle.textContent=group.nom;
+      toolsContainer.appendChild(groupTitle);
 
-    var codeVal=document.createElement('div');
-    codeVal.style.cssText='background:#0f172a;border-radius:6px;padding:8px;font-size:14px;font-weight:900;color:#f97316;letter-spacing:1px;margin-bottom:12px';
-    codeVal.textContent=code;
-    card.appendChild(codeVal);
+      var toolGrid=document.createElement('div');
+      toolGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px';
 
-    var permTitle=document.createElement('div');
-    permTitle.style.cssText='font-size:11px;color:#64748b;margin-bottom:8px;font-weight:700;text-transform:uppercase';
-    permTitle.textContent='Acces autorises :';
-    card.appendChild(permTitle);
+      group.tools.forEach(function(tool){
+        var checked=toolPerms[niveau][tool.id]===true;
+        var label=document.createElement('label');
+        label.style.cssText='display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid '+(checked?'#f97316':'#334155')+';border-radius:7px;padding:6px 8px;cursor:pointer';
 
-    var permGrid=document.createElement('div');
-    permGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+        var checkbox=document.createElement('input');
+        checkbox.type='checkbox';
+        checkbox.checked=checked;
+        checkbox.style.cssText='width:14px;height:14px;cursor:pointer;flex-shrink:0';
+        checkbox.addEventListener('change',function(){
+          toolPerms[niveau][tool.id]=checkbox.checked;
+          localStorage.setItem(toolPermsKey,JSON.stringify(toolPerms));
+          label.style.borderColor=checkbox.checked?'#f97316':'#334155';
+          if(typeof logAudit==='function')logAudit('Modification acces outil',srv.nom+' — '+tool.label+' : '+(checkbox.checked?'autorise':'retire'));
+        });
 
-    polesListe.forEach(function(pole){
-      var checked=permissions[niveau][pole.id]===true;
-      var label=document.createElement('label');
-      label.style.cssText='display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid '+(checked?pole.color:'#334155')+';border-radius:8px;padding:8px 10px;cursor:pointer';
+        var span=document.createElement('span');
+        span.style.cssText='font-size:11px;color:#cbd5e1;font-weight:600';
+        span.textContent=tool.label;
 
-      var checkbox=document.createElement('input');
-      checkbox.type='checkbox';
-      checkbox.checked=checked;
-      checkbox.style.cssText='width:16px;height:16px;cursor:pointer';
-      checkbox.addEventListener('change',function(){
-        permissions[niveau][pole.id]=checkbox.checked;
-        localStorage.setItem(permsKey,JSON.stringify(permissions));
-        label.style.borderColor=checkbox.checked?pole.color:'#334155';
-        showT('Acces mis a jour pour '+srv.nom,'#22c55e');
-        if(typeof logAudit==='function')logAudit('Modification acces',srv.nom+' — '+pole.nom+' : '+(checkbox.checked?'autorise':'retire'));
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        toolGrid.appendChild(label);
       });
 
-      var span=document.createElement('span');
-      span.style.cssText='font-size:12px;color:#e2e8f0;font-weight:600';
-      span.textContent=pole.nom;
-
-      label.appendChild(checkbox);
-      label.appendChild(span);
-      permGrid.appendChild(label);
+      toolsContainer.appendChild(toolGrid);
     });
 
-    card.appendChild(permGrid);
+    card.appendChild(toolsContainer);
+
+    var collapsed=true;
+    toolsContainer.style.display='none';
+    toggleArrow.style.transform='rotate(-90deg)';
+    topRow.addEventListener('click',function(){
+      collapsed=!collapsed;
+      toolsContainer.style.display=collapsed?'none':'block';
+      toggleArrow.style.transform=collapsed?'rotate(-90deg)':'rotate(0deg)';
+    });
+
     box.appendChild(card);
   });
 
@@ -23746,6 +23790,7 @@ function ouvrirGestionAcces(){
   modal.appendChild(box);
   document.body.appendChild(modal);
 }
+
 
 /* ══════════════════════════════════════════════════
    HUB D'ACCUEIL — affichage au demarrage
@@ -23818,24 +23863,11 @@ function afficherHub(){
     ]},
   ];
 
-  var permsKey='hub_permissions';
-  var permsStored=localStorage.getItem(permsKey);
-  var permissions=permsStored?JSON.parse(permsStored):null;
-  if(!permissions){
-    permissions={
-      admin:{logistique:true,insertion:true,admin:true,direction:true},
-      commercial:{logistique:true,insertion:false,admin:false,direction:false},
-      restoco:{logistique:true,insertion:false,admin:false,direction:false},
-      compta:{logistique:false,insertion:false,admin:true,direction:false},
-      rh:{logistique:false,insertion:true,admin:false,direction:false},
-      rse:{logistique:false,insertion:true,admin:true,direction:false}
-    };
-    localStorage.setItem(permsKey,JSON.stringify(permissions));
-  }
-  window._hubPermissions=permissions;
-
-  var monAcces=permissions[niveau]||{};
-  var poleAutorise=function(poleId){return niveau==='admin'||monAcces[poleId];};
+  var toolPermsKey='hub_tool_permissions';
+  var toolPerms=JSON.parse(localStorage.getItem(toolPermsKey)||'{}');
+  if(!toolPerms[niveau])toolPerms[niveau]={};
+  var monAccesOutils=toolPerms[niveau];
+  var outilAutorise=function(toolId){return niveau==='admin'||monAccesOutils[toolId]===true;};
 
   var favKey='hub_favoris_'+niveau;
   var favoris=JSON.parse(localStorage.getItem(favKey)||'[]');
@@ -23906,8 +23938,9 @@ function afficherHub(){
   var secondairesGlobaux=[];
 
   poles.forEach(function(pole){
-    var autorise=poleAutorise(pole.id);
-    if(!autorise && niveau!=='admin')return;
+    var auMoinsUnOutilAutorise=pole.items.some(function(it){return outilAutorise(it.id);});
+    if(!auMoinsUnOutilAutorise && niveau!=='admin')return;
+    var autorise=auMoinsUnOutilAutorise;
 
     var col=document.createElement('div');
     col.className='hub-pole-col';
@@ -23927,16 +23960,17 @@ function afficherHub(){
 
     /* Collecter les items secondaires pour les ronds lateraux */
     pole.items.filter(function(it){return it.sec;}).forEach(function(it){
-      if(autorise)secondairesGlobaux.push({item:it,pole:pole});
+      if(outilAutorise(it.id))secondairesGlobaux.push({item:it,pole:pole});
     });
 
     itemsTries.forEach(function(it){
+      var itemAutorise=outilAutorise(it.id);
       var tile=document.createElement('div');
-      tile.className='hub-tile'+(autorise?'':' locked')+(it.sec?' hub-tile-sec':'');
+      tile.className='hub-tile'+(itemAutorise?'':' locked')+(it.sec?' hub-tile-sec':'');
       tile.dataset.search=(it.label+' '+it.sub).toLowerCase();
       tile.innerHTML='<div class="hub-tile-icon">'+it.icon+'</div><div class="hub-tile-text"><div class="hub-tile-label">'+it.label+'</div><div class="hub-tile-sub">'+it.sub+'</div></div>';
 
-      if(autorise){
+      if(itemAutorise){
         var pinBtn=document.createElement('div');
         pinBtn.className='hub-pin-btn'+(favoris.indexOf(it.id)>=0?' pinned':'');
         pinBtn.textContent='\u2605';
