@@ -503,11 +503,19 @@ input[type="time"]{
 .hub-tile.locked:hover{transform:none;border-color:rgba(255,255,255,.15);background:#1e2a3f}
 .hub-tile-icon{font-size:26px;flex-shrink:0}
 .hub-tile-text{flex:1;min-width:0}
-.hub-tile-label{font-size:15px;font-weight:900;color:#ffffff;line-height:1.35;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;letter-spacing:.01em}
+.hub-tile-label{font-size:14px;font-weight:900;color:#ffffff;line-height:1.35;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;letter-spacing:.03em;text-transform:uppercase}
 .hub-tile-sub{font-size:12px;color:#b8c2d4;margin-top:3px;-webkit-font-smoothing:antialiased;font-weight:600}
 .hub-pin-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;background:rgba(0,0,0,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;opacity:0;transition:opacity .15s;color:#fff}
 .hub-tile:hover .hub-pin-btn{opacity:1}
 .hub-pin-btn.pinned{opacity:1;background:#f97316}
+
+.hub-tile-sec{padding:10px 12px;opacity:.7;margin-top:2px}
+.hub-tile-sec .hub-tile-icon{font-size:18px}
+.hub-tile-sec .hub-tile-label{font-size:11px;font-weight:700}
+.hub-tile-sec .hub-tile-sub{font-size:9px}
+.hub-tile-sec:hover{opacity:1}
+.hub-pole-items{display:flex;flex-direction:column}
+.hub-pole-items .hub-tile:not(.hub-tile-sec) ~ .hub-tile-sec{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.12)}
 
 .hub-enter-btn{margin-top:28px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:16px;padding:16px 44px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.4)}
 
@@ -23685,13 +23693,13 @@ function afficherHub(){
       {id:'materiel',icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel'},
       {id:'vehicules',icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules'},
       {id:'tournees',icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees'},
-      {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart'},
+      {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart',sec:true},
       {id:'calendrier',icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier'},
-      {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
+      {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin',sec:true},
       {id:'messages',icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs'},
-      {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp'},
-      {id:'meteo',icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo'},
-      {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale'},
+      {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp',sec:true},
+      {id:'meteo',icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo',sec:true},
+      {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale',sec:true},
     ]},
     {id:'insertion',nom:'\uD83D\uDC65 INSERTION & SUIVI',color:'#22c55e',bg:'rgba(34,197,94,.1)',border:'#22c55e',items:[
       {id:'chauffeurs',icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs'},
@@ -23700,33 +23708,33 @@ function afficherHub(){
       {id:'suivi',icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur'},
       {id:'statuts',icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide'},
       {id:'infractions',icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions'},
-      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives'},
+      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives',sec:true},
       {id:'chrono',icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme'},
-      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale'},
+      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale',sec:true},
       {id:'conducteurs',icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs'},
-      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique'},
+      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique',sec:true},
     ]},
     {id:'admin',nom:'\uD83D\uDCCA DOCUMENTS & PILOTAGE',color:'#a855f7',bg:'rgba(168,85,247,.1)',border:'#a855f7',items:[
       {id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois'},
       {id:'rapport',icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport'},
       {id:'dashboard',icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard'},
-      {id:'dashannuel',icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel'},
-      {id:'audit',icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit'},
+      {id:'dashannuel',icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel',sec:true},
+      {id:'audit',icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit',sec:true},
       {id:'excel',icon:'\uD83D\uDCCA',label:'Export Excel',sub:'Rapport mensuel',fn:'exportExcel'},
-      {id:'agenda',icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda'},
-      {id:'email',icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees'},
-      {id:'briefing',icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin'},
-      {id:'notifs',icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications'},
+      {id:'agenda',icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda',sec:true},
+      {id:'email',icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees',sec:true},
+      {id:'briefing',icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin',sec:true},
+      {id:'notifs',icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications',sec:true},
     ]},
     {id:'direction',nom:'\uD83D\uDC54 DIRECTION',color:'#ef4444',bg:'rgba(239,68,68,.1)',border:'#ef4444',items:[
       {id:'cockpit',icon:'\uD83D\uDE80',label:'Cockpit opérationnel',sub:'Pilotage temps réel',fn:'ouvrirCockpit'},
-      {id:'simulateur',icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur'},
+      {id:'simulateur',icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur',sec:true},
       {id:'moduledir',icon:'\u2B50',label:'Module Direction',sub:'Outils avancés',fn:'ouvrirModuleDirection'},
       {id:'acces',icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Codes services',fn:'ouvrirGestionAcces'},
       {id:'backup',icon:'\uD83D\uDCBE',label:'Sauvegarder',sub:'Export backup',fn:'exportJSON'},
       {id:'restore',icon:'\u2B06',label:'Restaurer backup',sub:'Import données',fn:'importJSON'},
-      {id:'config',icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync'},
-      {id:'nettoyage',icon:'\uD83E\uDDF9',label:'Nettoyage stockage',sub:'Libérer espace',fn:'ouvrirNettoyageSupabase'},
+      {id:'config',icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync',sec:true},
+      {id:'nettoyage',icon:'\uD83E\uDDF9',label:'Nettoyage stockage',sub:'Libérer espace',fn:'ouvrirNettoyageSupabase',sec:true},
     ]},
   ];
 
@@ -23834,9 +23842,19 @@ function afficherHub(){
     var itemsWrap=document.createElement('div');
     itemsWrap.className='hub-pole-items';
 
-    pole.items.forEach(function(it){
+    var itemsTries=pole.items.slice().sort(function(a,b){return(a.sec?1:0)-(b.sec?1:0);});
+    var premierSecAjoute=false;
+
+    itemsTries.forEach(function(it){
+      if(it.sec && !premierSecAjoute){
+        premierSecAjoute=true;
+        var sep=document.createElement('div');
+        sep.style.cssText='font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 2px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.12)';
+        sep.textContent='\u2699\uFE0F Outils complémentaires';
+        itemsWrap.appendChild(sep);
+      }
       var tile=document.createElement('div');
-      tile.className='hub-tile'+(autorise?'':' locked');
+      tile.className='hub-tile'+(autorise?'':' locked')+(it.sec?' hub-tile-sec':'');
       tile.dataset.search=(it.label+' '+it.sub).toLowerCase();
       tile.innerHTML='<div class="hub-tile-icon">'+it.icon+'</div><div class="hub-tile-text"><div class="hub-tile-label">'+it.label+'</div><div class="hub-tile-sub">'+it.sub+'</div></div>';
 
