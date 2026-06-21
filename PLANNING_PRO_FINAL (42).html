@@ -470,7 +470,7 @@ input[type="time"]{
 /* ══════════════════════════════════════════════════
    HUB D'ACCUEIL — refonte visuelle moderne
 ══════════════════════════════════════════════════ */
-#cana-hub{position:fixed;inset:0;background:#0f1623;z-index:99998;display:flex;flex-direction:column;align-items:center;padding:30px 24px;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
+#cana-hub{position:fixed;inset:0;background:#0f1623;z-index:99998;display:flex;flex-direction:column;align-items:center;padding:30px 24px;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .hub-logo{width:64px;height:64px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 16px 40px rgba(249,115,22,.4)}
 .hub-title{font-size:26px;font-weight:900;color:#ffffff;margin-bottom:4px;text-align:center}
 .hub-sub{font-size:14px;color:#cbd5e1;margin-bottom:8px;text-align:center}
@@ -487,13 +487,13 @@ input[type="time"]{
 .hub-pole-items{display:flex;flex-direction:column;gap:10px}
 
 .hub-tile{position:relative;background:#1e2a3f;border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}
-.hub-tile:hover{transform:translateX(4px);border-color:#f97316;background:#243349}
+.hub-tile:hover{border-color:#f97316;background:#243349}
 .hub-tile.locked{opacity:.4;cursor:not-allowed}
 .hub-tile.locked:hover{transform:none;border-color:rgba(255,255,255,.15);background:#1e2a3f}
 .hub-tile-icon{font-size:26px;flex-shrink:0}
 .hub-tile-text{flex:1;min-width:0}
-.hub-tile-label{font-size:14px;font-weight:800;color:#ffffff;line-height:1.3}
-.hub-tile-sub{font-size:11px;color:#9ca8bc;margin-top:2px}
+.hub-tile-label{font-size:14px;font-weight:800;color:#ffffff;line-height:1.3;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.hub-tile-sub{font-size:11px;color:#9ca8bc;margin-top:2px;-webkit-font-smoothing:antialiased}
 .hub-pin-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;background:rgba(0,0,0,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;opacity:0;transition:opacity .15s;color:#fff}
 .hub-tile:hover .hub-pin-btn{opacity:1}
 .hub-pin-btn.pinned{opacity:1;background:#f97316}
@@ -23865,25 +23865,33 @@ function afficherHub(){
   enterBtn.addEventListener('click',fermerHub);
   hub.appendChild(enterBtn);
 
-  /* NAVIGATION CLAVIER - fleches pour scroller le hub */
-  hub.addEventListener('keydown',function(e){
-    if(e.key==='ArrowDown'){e.preventDefault();hub.scrollTop+=80;}
-    if(e.key==='ArrowUp'){e.preventDefault();hub.scrollTop-=80;}
-  });
-  setTimeout(function(){hub.focus();},100);
-
-  var hubScrollHandler=function(e){
-    if(document.getElementById('cana-hub')){
-      if(e.key==='ArrowDown'){e.preventDefault();hub.scrollTop+=80;}
-      if(e.key==='ArrowUp'){e.preventDefault();hub.scrollTop-=80;}
+  /* NAVIGATION CLAVIER - fleches pour scroller le hub, ecoute globale fiable */
+  if(window._hubKeyHandler)document.removeEventListener('keydown',window._hubKeyHandler);
+  window._hubKeyHandler=function(e){
+    var hubEl=document.getElementById('cana-hub');
+    if(!hubEl)return;
+    var tag=document.activeElement?document.activeElement.tagName:'';
+    if(tag==='INPUT'||tag==='TEXTAREA')return;
+    if(e.key==='ArrowDown'){
+      e.preventDefault();
+      hubEl.scrollTop+=80;
+      window.scrollBy(0,80);
     }
+    if(e.key==='ArrowUp'){
+      e.preventDefault();
+      hubEl.scrollTop-=80;
+      window.scrollBy(0,-80);
+    }
+    if(e.key==='PageDown'){e.preventDefault();hubEl.scrollTop+=300;window.scrollBy(0,300);}
+    if(e.key==='PageUp'){e.preventDefault();hubEl.scrollTop-=300;window.scrollBy(0,-300);}
   };
-  document.addEventListener('keydown',hubScrollHandler);
+  document.addEventListener('keydown',window._hubKeyHandler);
 }
 
 function fermerHub(){
   var hub=document.getElementById('cana-hub');
   if(hub)hub.remove();
+  if(window._hubKeyHandler){document.removeEventListener('keydown',window._hubKeyHandler);window._hubKeyHandler=null;}
 }
 
 function ouvrirHub(){
