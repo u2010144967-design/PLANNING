@@ -44,6 +44,9 @@
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')afficherHub();
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
+        if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
+          setTimeout(function(){ouvrirFenetreValidation(false);},900);
+        }
       },500);
     };
     if(document.readyState==='complete'||document.readyState==='interactive'){
@@ -85,6 +88,9 @@
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')setTimeout(afficherHub,300);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
+        if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
+          setTimeout(function(){ouvrirFenetreValidation(false);},900);
+        }
       } else {
         err.style.display='block';
         inp.value='';
@@ -1433,7 +1439,20 @@ function saveTask(){
   if(client&&cat&&cat!=='truck'&&!(ST.library[cat]||[]).includes(client)){if(!ST.library[cat])ST.library[cat]=[];ST.library[cat].push(client);}
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
 }
-function delT(k,ti){if(!ST.tasks[k])return;var t=ST.tasks[k][ti];var nomClient=t&&(t.client||t.task)||'?';ST.tasks[k].splice(ti,1);if(!ST.tasks[k].length)delete ST.tasks[k];save();rGrid();rStats();rCounters();showT('✓ Supprimé','#dc2626');if(typeof logAudit==='function')logAudit('Suppression mission',nomClient+' — '+k);}
+function delT(k,ti){
+  if(!ST.tasks[k])return;
+  var t=ST.tasks[k][ti];
+  var nomClient=t&&(t.client||t.task)||'?';
+
+  if(typeof necessiteValidation==='function' && necessiteValidation()){
+    var parts=k.split('|');
+    var dr3=ST.drivers[parseInt(parts[1])];
+    var desc3='Suppression mission : '+nomClient+' — '+dr3.name+' '+parts[2]+' ('+cap(fmtCourt(parts[0]))+')';
+    creerDemandeValidation('suppression',{cle:k,index:ti},desc3);
+    return;
+  }
+
+  ST.tasks[k].splice(ti,1);if(!ST.tasks[k].length)delete ST.tasks[k];save();rGrid();rStats();rCounters();showT('✓ Supprimé','#dc2626');if(typeof logAudit==='function')logAudit('Suppression mission',nomClient+' — '+k);}
 
 /* SUPPRESSION / TRANSFERT */
 function openDelMod(){document.getElementById('del-date').value=ST.cur;document.getElementById('m-del').classList.add('on');loadDel();}
@@ -21996,6 +22015,35 @@ var _origSaveTask=saveTask;
 saveTask=function(){
   var clientVal=document.getElementById('m-client')?document.getElementById('m-client').value:'';
   var taskVal=document.getElementById('m-task')?document.getElementById('m-task').value:'';
+
+  /* Si le service necessite validation, creer une demande au lieu d'appliquer */
+  if(typeof necessiteValidation==='function' && necessiteValidation()){
+    var task2=(taskVal||'').trim().toUpperCase();
+    var client2=(clientVal||'').trim().toUpperCase();
+    if(!task2&&!client2){showT('\u26A0 T\u00e2che ou client requis','#dc2626');return;}
+    var cat2=document.getElementById('m-cat').value;
+    var k2=gk(MC.date,MC.di,MC.hour);
+    var allergStr2=(document.getElementById('m-allergenes').value||'').trim();
+    var allergArr2=allergStr2?allergStr2.split(',').map(function(a){return a.trim();}).filter(Boolean):[];
+    var newTask={
+      task:task2,client:client2,category:cat2,
+      truck:(document.getElementById('m-truck').value||'').trim(),
+      end:document.getElementById('m-end').value,
+      bold:document.getElementById('m-bold').checked,
+      priority:document.getElementById('m-prio').value,
+      adresse:(document.getElementById('m-adresse').value||'').trim(),
+      contact:(document.getElementById('m-contact').value||'').trim(),
+      convives:(document.getElementById('m-convives').value||'').trim(),
+      note_liv:(document.getElementById('m-note').value||'').trim(),
+      allergenes:allergArr2,ts:Date.now()
+    };
+    var dr2=ST.drivers[MC.di];
+    var desc2='Ajout mission : '+(client2||task2)+' — '+dr2.name+' '+MC.hour+' ('+cap(fmtCourt(MC.date))+')';
+    creerDemandeValidation('ajout',{cle:k2,task:newTask},desc2);
+    closeMod('m-add');
+    return;
+  }
+
   _origSaveTask.apply(this,arguments);
   setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
   if(typeof logAudit==='function')logAudit('Ajout mission',(clientVal||taskVal||'?'));
@@ -23762,6 +23810,7 @@ function afficherHub(){
       {id:'simulateur',icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur',sec:true},
       {id:'moduledir',icon:'\u2B50',label:'Module Direction',sub:'Outils avancés',fn:'ouvrirModuleDirection'},
       {id:'acces',icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Codes services',fn:'ouvrirGestionAcces'},
+      {id:'validation',icon:'\u23F3',label:'Validations en attente',sub:'Demandes Commercial',fn:function(){fermerHub();setTimeout(function(){ouvrirFenetreValidation(true);},200);}},
       {id:'backup',icon:'\uD83D\uDCBE',label:'Sauvegarder',sub:'Export backup',fn:'exportJSON'},
       {id:'restore',icon:'\u2B06',label:'Restaurer backup',sub:'Import données',fn:'importJSON'},
       {id:'config',icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync',sec:true},
@@ -24174,6 +24223,158 @@ function ouvrirPlanningSimplifie(){
   var listDiv=document.createElement('div');
   listDiv.innerHTML=html;
   results.appendChild(listDiv);
+}
+
+/* ══════════════════════════════════════════════════
+   SYSTEME DE VALIDATION — modifications Commercial
+   en attente d'autorisation Direction
+══════════════════════════════════════════════════ */
+
+/* Services qui doivent passer par validation (modifiable ici) */
+var SERVICES_SOUMIS_VALIDATION = ['commercial'];
+
+function necessiteValidation(){
+  if(!window._serviceActuel)return false;
+  return SERVICES_SOUMIS_VALIDATION.indexOf(window._serviceActuel.niveau) >= 0;
+}
+
+/* Creer une demande en attente au lieu d'appliquer directement */
+function creerDemandeValidation(type,donnees,description){
+  var key='DEMANDE_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  var demande={
+    type:type,
+    donnees:donnees,
+    description:description,
+    service:window._serviceActuel.nom,
+    date:new Date().toISOString().slice(0,10),
+    heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+    statut:'en_attente',
+    _isDemande:true
+  };
+  supaFetch('planning',{method:'POST',body:JSON.stringify({date:key,donnees:demande})});
+  showT('\u23F3 Modification envoyee pour validation à la Direction','#f59e0b');
+  return key;
+}
+
+/* Charger toutes les demandes en attente */
+function chargerDemandesEnAttente(callback){
+  supaFetch('planning?date=like.DEMANDE_*&select=donnees,date&order=date.desc&limit=100').then(function(rows){
+    var demandes=(rows||[]).map(function(r){return{...r.donnees,_key:r.date};}).filter(function(d){return d.statut==='en_attente';});
+    callback(demandes);
+  });
+}
+
+/* Valider une demande - applique reellement la modification */
+function validerDemande(demandeKey,demande){
+  if(demande.type==='ajout'){
+    var k=demande.donnees.cle;
+    if(!ST.tasks[k])ST.tasks[k]=[];
+    ST.tasks[k].push(demande.donnees.task);
+    save();render();
+  }
+  if(demande.type==='suppression'){
+    var k2=demande.donnees.cle;
+    var ti=demande.donnees.index;
+    if(ST.tasks[k2]&&ST.tasks[k2][ti]){
+      ST.tasks[k2].splice(ti,1);
+      if(!ST.tasks[k2].length)delete ST.tasks[k2];
+      save();render();
+    }
+  }
+  if(demande.type==='modification'){
+    var k3=demande.donnees.cle;
+    var ti3=demande.donnees.index;
+    if(ST.tasks[k3]&&ST.tasks[k3][ti3]){
+      ST.tasks[k3][ti3]=demande.donnees.nouvelleTask;
+      save();render();
+    }
+  }
+  supaFetch('planning?date=eq.'+encodeURIComponent(demandeKey),{method:'PATCH',body:JSON.stringify({donnees:{...demande,statut:'validee'}})});
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},800);
+  if(typeof logAudit==='function')logAudit('Validation demande',demande.description+' ('+demande.service+')');
+  showT('\u2705 Modification validée et appliquée','#22c55e');
+}
+
+/* Refuser une demande */
+function refuserDemande(demandeKey,demande){
+  supaFetch('planning?date=eq.'+encodeURIComponent(demandeKey),{method:'PATCH',body:JSON.stringify({donnees:{...demande,statut:'refusee'}})});
+  if(typeof logAudit==='function')logAudit('Refus demande',demande.description+' ('+demande.service+')');
+  showT('\u274C Modification refusée','#ef4444');
+}
+
+/* Fenetre de validation — s'ouvre automatiquement, impossible a ignorer */
+function ouvrirFenetreValidation(forceOpen){
+  chargerDemandesEnAttente(function(demandes){
+    if(!demandes.length && !forceOpen)return;
+
+    var existing=document.getElementById('m-validation');if(existing)existing.remove();
+    var modal=document.createElement('div');modal.id='m-validation';modal.className='mbg on';
+    modal.style.zIndex='9999999';
+    var box=document.createElement('div');box.className='mbox';box.style.maxWidth='650px';box.style.maxHeight='90vh';box.style.overflowY='auto';
+    box.style.border='3px solid #f59e0b';
+
+    var h=document.createElement('h3');
+    h.innerHTML='\u23F3 Demandes en attente de validation';
+    h.style.color='#f59e0b';
+    box.appendChild(h);
+
+    if(!demandes.length){
+      var empty=document.createElement('div');
+      empty.style.cssText='text-align:center;padding:30px;color:#22c55e;font-size:14px;font-weight:700';
+      empty.textContent='\u2705 Aucune demande en attente';
+      box.appendChild(empty);
+    }
+
+    demandes.forEach(function(d){
+      var card=document.createElement('div');
+      card.style.cssText='background:#1e293b;border:2px solid #f59e0b;border-radius:12px;padding:16px;margin-bottom:12px';
+
+      var topRow=document.createElement('div');
+      topRow.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+      topRow.innerHTML='<span style="font-size:13px;font-weight:900;color:#f59e0b">'+d.service+'</span><span style="font-size:11px;color:#64748b">'+d.date+' '+d.heure+'</span>';
+      card.appendChild(topRow);
+
+      var desc=document.createElement('div');
+      desc.style.cssText='font-size:14px;color:#fff;font-weight:700;margin-bottom:14px';
+      desc.textContent=d.description;
+      card.appendChild(desc);
+
+      var btnRow=document.createElement('div');
+      btnRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+
+      var validBtn=document.createElement('button');
+      validBtn.textContent='\u2705 Valider';
+      validBtn.style.cssText='background:#22c55e;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:800;color:#fff;cursor:pointer';
+      validBtn.addEventListener('click',function(){
+        validerDemande(d._key,d);
+        card.remove();
+        if(box.querySelectorAll('[data-demande]').length===0)setTimeout(function(){closeMod('m-validation');},500);
+      });
+
+      var refuseBtn=document.createElement('button');
+      refuseBtn.textContent='\u274C Refuser';
+      refuseBtn.style.cssText='background:#ef4444;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:800;color:#fff;cursor:pointer';
+      refuseBtn.addEventListener('click',function(){
+        refuserDemande(d._key,d);
+        card.remove();
+      });
+
+      card.dataset.demande='1';
+      btnRow.appendChild(validBtn);
+      btnRow.appendChild(refuseBtn);
+      card.appendChild(btnRow);
+      box.appendChild(card);
+    });
+
+    var closeBtn=document.createElement('button');
+    closeBtn.textContent='Fermer';
+    closeBtn.style.cssText='width:100%;margin-top:10px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+    closeBtn.addEventListener('click',function(){closeMod('m-validation');});
+    box.appendChild(closeBtn);
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+  });
 }
 </script>
 </body>
