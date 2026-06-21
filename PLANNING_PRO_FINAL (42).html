@@ -39,13 +39,19 @@
   if(dejaConnecte && window.SERVICES_CONFIG[dejaConnecte]){
     window._serviceActuel = window.SERVICES_CONFIG[dejaConnecte];
     window._codeActuel = dejaConnecte;
-    window.addEventListener('load',function(){
+    var lancerHubAuDemarrage=function(){
       setTimeout(function(){
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')afficherHub();
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
       },500);
-    });
+    };
+    if(document.readyState==='complete'||document.readyState==='interactive'){
+      lancerHubAuDemarrage();
+    } else {
+      window.addEventListener('load',lancerHubAuDemarrage);
+      document.addEventListener('DOMContentLoaded',lancerHubAuDemarrage);
+    }
     return;
   }
 
