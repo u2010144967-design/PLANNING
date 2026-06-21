@@ -470,18 +470,30 @@ input[type="time"]{
 /* ══════════════════════════════════════════════════
    HUB D'ACCUEIL — refonte visuelle moderne
 ══════════════════════════════════════════════════ */
-#cana-hub{position:fixed;inset:0;background:radial-gradient(ellipse 140% 70% at 50% 0%,#1A2332,#0B1220 65%);z-index:99998;display:flex;flex-direction:column;align-items:center;padding:40px 20px;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+#cana-hub{position:fixed;inset:0;background:linear-gradient(180deg,#1e293b,#0f172a 50%);z-index:99998;display:flex;flex-direction:column;align-items:center;padding:36px 20px;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .hub-logo{width:72px;height:72px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 16px 40px rgba(249,115,22,.35)}
 .hub-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;text-align:center}
 .hub-sub{font-size:13px;color:#8B96A8;margin-bottom:8px;text-align:center}
 .hub-service{display:inline-flex;align-items:center;gap:8px;background:#1A2332;border:1px solid #334155;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:#f97316;margin-bottom:32px}
 .hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;max-width:900px;width:100%}
-.hub-tile{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:transform .15s,border-color .15s}
-.hub-tile:hover{transform:translateY(-3px);border-color:rgba(249,115,22,.4)}
-.hub-tile-icon{font-size:26px}
-.hub-tile-label{font-size:12px;font-weight:800;color:#fff;text-align:center;line-height:1.25}
-.hub-tile-sub{font-size:10px;color:#8B96A8;text-align:center}
+.hub-tile{background:#293548;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.hub-tile:hover{transform:translateY(-3px);border-color:rgba(249,115,22,.5);background:#324158}
+.hub-tile.locked{opacity:.45;cursor:not-allowed}
+.hub-tile.locked:hover{transform:none;border-color:rgba(255,255,255,.12);background:#293548}
+.hub-tile-icon{font-size:28px}
+.hub-tile-label{font-size:13px;font-weight:800;color:#fff;text-align:center;line-height:1.3}
+.hub-tile-sub{font-size:11px;color:#a8b3c5;text-align:center}
 .hub-enter-btn{margin-top:32px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:16px;padding:16px 40px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.3)}
+.hub-search{width:100%;max-width:500px;background:#293548;border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 18px;font-size:14px;color:#fff;margin-bottom:28px}
+.hub-search::placeholder{color:#8B96A8}
+.hub-pole-section{width:100%;max-width:980px;margin-bottom:28px;border-radius:18px;padding:20px;border:1px solid rgba(255,255,255,.08)}
+.hub-pole-title{font-size:15px;font-weight:900;letter-spacing:.02em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.hub-fav-bar{width:100%;max-width:980px;display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:24px}
+.hub-fav-tile{flex-shrink:0;background:#f97316;border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:800;color:#fff}
+.hub-pin-btn{position:absolute;top:6px;right:6px;width:20px;height:20px;background:rgba(0,0,0,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;opacity:0;transition:opacity .15s}
+.hub-tile{position:relative}
+.hub-tile:hover .hub-pin-btn{opacity:1}
+.hub-pin-btn.pinned{opacity:1;background:#f97316}
 @media(max-width:900px){.hub-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.hub-grid{grid-template-columns:repeat(2,1fr)}}
 
@@ -12713,8 +12725,7 @@ function saveRestrictions(r){
 }
 
 /* ══ PANNEAU DE GESTION DES ACCES ══ */
-function ouvrirGestionAcces(){
-  if(!estAdmin()){showT('Acces reserve a l administrateur','#ef4444');return;}
+function ouvrirGestionAccesSectionsMenu(){
   var existing=document.getElementById('m-acces');if(existing)existing.remove();
   var modal=document.createElement('div');modal.id='m-acces';modal.className='mbg on';
   var restrictions=getRestrictions();
@@ -23544,16 +23555,79 @@ function ouvrirGestionAcces(){
 
   var lienBase=window.location.href.split('?')[0];
 
+  var permsKey='hub_permissions';
+  var permissions=JSON.parse(localStorage.getItem(permsKey)||'{}');
+  var polesListe=[{id:'logistique',nom:'Logistique',color:'#3b82f6'},{id:'insertion',nom:'Insertion & Suivi',color:'#22c55e'},{id:'admin',nom:'Documents & Pilotage',color:'#a855f7'},{id:'direction',nom:'Direction',color:'#ef4444'}];
+
   Object.keys(window.SERVICES_CONFIG).forEach(function(code){
     if(code==='cana2026'||code==='direction2026')return;
     var srv=window.SERVICES_CONFIG[code];
+    var niveau=srv.niveau;
+    if(!permissions[niveau])permissions[niveau]={logistique:false,insertion:false,admin:false,direction:false};
+
     var card=document.createElement('div');
     card.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:10px';
-    card.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:20px">'+srv.icone+'</span><span style="font-size:14px;font-weight:800;color:#fff">'+srv.nom+'</span></div>'
-      +'<div style="font-size:11px;color:#64748b;margin-bottom:4px">Lien (identique pour tous) :</div>'
-      +'<div style="background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#60a5fa;word-break:break-all;margin-bottom:8px">'+lienBase+'</div>'
-      +'<div style="font-size:11px;color:#64748b;margin-bottom:4px">Code d\'acces :</div>'
-      +'<div style="background:#0f172a;border-radius:6px;padding:8px;font-size:14px;font-weight:900;color:#f97316;letter-spacing:1px">'+code+'</div>';
+
+    var topRow=document.createElement('div');
+    topRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
+    topRow.innerHTML='<span style="font-size:20px">'+srv.icone+'</span><span style="font-size:14px;font-weight:800;color:#fff">'+srv.nom+'</span>';
+    card.appendChild(topRow);
+
+    var linkDiv=document.createElement('div');
+    linkDiv.style.cssText='font-size:11px;color:#64748b;margin-bottom:4px';
+    linkDiv.textContent='Lien (identique pour tous) :';
+    card.appendChild(linkDiv);
+
+    var linkVal=document.createElement('div');
+    linkVal.style.cssText='background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#60a5fa;word-break:break-all;margin-bottom:8px';
+    linkVal.textContent=lienBase;
+    card.appendChild(linkVal);
+
+    var codeDiv=document.createElement('div');
+    codeDiv.style.cssText='font-size:11px;color:#64748b;margin-bottom:4px';
+    codeDiv.textContent='Code d\'acces :';
+    card.appendChild(codeDiv);
+
+    var codeVal=document.createElement('div');
+    codeVal.style.cssText='background:#0f172a;border-radius:6px;padding:8px;font-size:14px;font-weight:900;color:#f97316;letter-spacing:1px;margin-bottom:12px';
+    codeVal.textContent=code;
+    card.appendChild(codeVal);
+
+    var permTitle=document.createElement('div');
+    permTitle.style.cssText='font-size:11px;color:#64748b;margin-bottom:8px;font-weight:700;text-transform:uppercase';
+    permTitle.textContent='Acces autorises :';
+    card.appendChild(permTitle);
+
+    var permGrid=document.createElement('div');
+    permGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+
+    polesListe.forEach(function(pole){
+      var checked=permissions[niveau][pole.id]===true;
+      var label=document.createElement('label');
+      label.style.cssText='display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid '+(checked?pole.color:'#334155')+';border-radius:8px;padding:8px 10px;cursor:pointer';
+
+      var checkbox=document.createElement('input');
+      checkbox.type='checkbox';
+      checkbox.checked=checked;
+      checkbox.style.cssText='width:16px;height:16px;cursor:pointer';
+      checkbox.addEventListener('change',function(){
+        permissions[niveau][pole.id]=checkbox.checked;
+        localStorage.setItem(permsKey,JSON.stringify(permissions));
+        label.style.borderColor=checkbox.checked?pole.color:'#334155';
+        showT('Acces mis a jour pour '+srv.nom,'#22c55e');
+        if(typeof logAudit==='function')logAudit('Modification acces',srv.nom+' — '+pole.nom+' : '+(checkbox.checked?'autorise':'retire'));
+      });
+
+      var span=document.createElement('span');
+      span.style.cssText='font-size:12px;color:#e2e8f0;font-weight:600';
+      span.textContent=pole.nom;
+
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      permGrid.appendChild(label);
+    });
+
+    card.appendChild(permGrid);
     box.appendChild(card);
   });
 
@@ -23582,6 +23656,88 @@ function afficherHub(){
   var srv=window._serviceActuel||{nom:'Direction',icone:'\uD83D\uDC54',niveau:'admin'};
   var niveau=srv.niveau;
 
+  /* ══ DEFINITION DES POLES METIER ══ */
+  var poles=[
+    {id:'logistique',nom:'\uD83D\uDE9A Logistique',color:'#3b82f6',bg:'rgba(59,130,246,.07)',border:'rgba(59,130,246,.25)',items:[
+      {id:'planning',icon:'\uD83D\uDCC5',label:'Planning',sub:'Vue du jour',fn:function(){fermerHub();}},
+      {id:'sync',icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle'},
+      {id:'a4',icon:'\uD83D\uDDA8',label:'Imprimer A4',sub:'Feuilles de route',fn:'ouvrirFeuillesRoute'},
+      {id:'photos',icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',fn:'ouvrirPhotosSignatures'},
+      {id:'archives',icon:'\uD83D\uDCC2',label:'Centre Archives',sub:'Historique complet',fn:'ouvrirCentreArchives'},
+      {id:'bl',icon:'\uD83D\uDCC4',label:'Bons de livraison',sub:'Documents officiels',fn:'ouvrirRechercheBL'},
+      {id:'histclient',icon:'\uD83D\uDD0D',label:'Historique client',sub:'Recherche',fn:'ouvrirHistorique'},
+      {id:'materiel',icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel'},
+      {id:'vehicules',icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules'},
+      {id:'tournees',icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees'},
+      {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart'},
+      {id:'calendrier',icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier'},
+      {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
+      {id:'messages',icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs'},
+      {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp'},
+      {id:'meteo',icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo'},
+      {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale'},
+    ]},
+    {id:'insertion',nom:'\uD83D\uDC65 Insertion & Suivi',color:'#22c55e',bg:'rgba(34,197,94,.07)',border:'rgba(34,197,94,.25)',items:[
+      {id:'chauffeurs',icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs'},
+      {id:'fiches',icon:'\uD83D\uDCC4',label:'Fiches chauffeurs',sub:'Dossiers',fn:'ouvrirFiches'},
+      {id:'progression',icon:'\u2B50',label:'Progression & Évaluation',sub:'Suivi insertion',fn:'ouvrirFicheProgression'},
+      {id:'suivi',icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur'},
+      {id:'statuts',icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide'},
+      {id:'infractions',icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions'},
+      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives'},
+      {id:'chrono',icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme'},
+      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale'},
+      {id:'conducteurs',icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs'},
+      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique'},
+    ]},
+    {id:'admin',nom:'\uD83D\uDCCA Documents & Pilotage',color:'#a855f7',bg:'rgba(168,85,247,.07)',border:'rgba(168,85,247,.25)',items:[
+      {id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois'},
+      {id:'rapport',icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport'},
+      {id:'dashboard',icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard'},
+      {id:'dashannuel',icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel'},
+      {id:'audit',icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit'},
+      {id:'excel',icon:'\uD83D\uDCCA',label:'Export Excel',sub:'Rapport mensuel',fn:'exportExcel'},
+      {id:'agenda',icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda'},
+      {id:'email',icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees'},
+      {id:'briefing',icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin'},
+      {id:'notifs',icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications'},
+    ]},
+    {id:'direction',nom:'\uD83D\uDC54 Direction',color:'#ef4444',bg:'rgba(239,68,68,.07)',border:'rgba(239,68,68,.25)',items:[
+      {id:'cockpit',icon:'\uD83D\uDE80',label:'Cockpit opérationnel',sub:'Pilotage temps réel',fn:'ouvrirCockpit'},
+      {id:'simulateur',icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur'},
+      {id:'moduledir',icon:'\u2B50',label:'Module Direction',sub:'Outils avancés',fn:'ouvrirModuleDirection'},
+      {id:'acces',icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Codes services',fn:'ouvrirGestionAcces'},
+      {id:'backup',icon:'\uD83D\uDCBE',label:'Sauvegarder',sub:'Export backup',fn:'exportJSON'},
+      {id:'restore',icon:'\u2B06',label:'Restaurer backup',sub:'Import données',fn:'importJSON'},
+      {id:'config',icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync'},
+      {id:'nettoyage',icon:'\uD83E\uDDF9',label:'Nettoyage stockage',sub:'Libérer espace',fn:'ouvrirNettoyageSupabase'},
+    ]},
+  ];
+
+  /* ══ PERMISSIONS — definies par defaut, modifiables via Gestion des acces ══ */
+  var permsKey='hub_permissions';
+  var permsStored=localStorage.getItem(permsKey);
+  var permissions=permsStored?JSON.parse(permsStored):null;
+  if(!permissions){
+    permissions={
+      admin:{logistique:true,insertion:true,admin:true,direction:true},
+      commercial:{logistique:true,insertion:false,admin:false,direction:false},
+      restoco:{logistique:true,insertion:false,admin:false,direction:false},
+      compta:{logistique:false,insertion:false,admin:true,direction:false},
+      rh:{logistique:false,insertion:true,admin:false,direction:false},
+      rse:{logistique:false,insertion:true,admin:true,direction:false}
+    };
+    localStorage.setItem(permsKey,JSON.stringify(permissions));
+  }
+  window._hubPermissions=permissions;
+
+  var monAcces=permissions[niveau]||{};
+  var poleAutorise=function(poleId){return niveau==='admin'||monAcces[poleId];};
+
+  /* ══ FAVORIS ══ */
+  var favKey='hub_favoris_'+niveau;
+  var favoris=JSON.parse(localStorage.getItem(favKey)||'[]');
+
   var hub=document.createElement('div');
   hub.id='cana-hub';
 
@@ -23593,107 +23749,116 @@ function afficherHub(){
   hub.innerHTML=html;
   document.body.appendChild(hub);
 
-  /* Toutes les fonctions du menu, organisees par categories, filtrees par niveau */
-  var categories=[
-    {nom:'\u26A1 Essentiels',color:'#f97316',items:[
-      {icon:'\uD83D\uDCC5',label:'Planning',sub:'Vue du jour',fn:function(){fermerHub();},niveaux:['admin','commercial','restoco','compta','rh','rse']},
-      {icon:'\uD83D\uDCCB',label:'Mes Tâches',sub:'A faire aujourd\'hui',fn:'ouvrirTachesResponsable',niveaux:['admin','commercial']},
-      {icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDDA8',label:'Imprimer A4',sub:'Feuilles de route',fn:'ouvrirFeuillesRoute',niveaux:['admin','commercial']},
-    ]},
-    {nom:'\uD83D\uDCF8 Preuves & Suivi',color:'#a855f7',items:[
-      {icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',fn:'ouvrirPhotosSignatures',niveaux:['admin','commercial','restoco']},
-      {icon:'\uD83D\uDCC2',label:'Centre Archives',sub:'Historique complet',fn:'ouvrirCentreArchives',niveaux:['admin','commercial','restoco','compta','rse']},
-      {icon:'\uD83D\uDCC4',label:'Bons de livraison',sub:'Documents officiels',fn:'ouvrirRechercheBL',niveaux:['admin','commercial','compta']},
-      {icon:'\uD83D\uDD0D',label:'Historique client',sub:'Recherche',fn:'ouvrirHistorique',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique',niveaux:['admin']},
-    ]},
-    {nom:'\uD83D\uDCE6 Matériel & Véhicules',color:'#f59e0b',items:[
-      {icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules',niveaux:['admin','commercial']},
-    ]},
-    {nom:'\uD83D\uDC65 Equipe & Chauffeurs',color:'#22c55e',items:[
-      {icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs',niveaux:['admin','rh']},
-      {icon:'\uD83D\uDCC4',label:'Fiches chauffeurs',sub:'Dossiers',fn:'ouvrirFiches',niveaux:['admin','rh']},
-      {icon:'\u2B50',label:'Progression & Évaluation',sub:'Suivi insertion',fn:'ouvrirFicheProgression',niveaux:['admin','rh']},
-      {icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur',niveaux:['admin','rh']},
-      {icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide',niveaux:['admin','rh']},
-      {icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions',niveaux:['admin','rh']},
-      {icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives',niveaux:['admin','rh']},
-      {icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs',niveaux:['admin']},
-    ]},
-    {nom:'\uD83D\uDCAC Communication',color:'#14b8a6',items:[
-      {icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs',niveaux:['admin','commercial','restoco']},
-      {icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications',niveaux:['admin']},
-      {icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin',niveaux:['admin','commercial']},
-    ]},
-    {nom:'\uD83D\uDCCA Statistiques & Pilotage',color:'#3b82f6',items:[
-      {icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois',niveaux:['admin','rse']},
-      {icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport',niveaux:['admin','rse']},
-      {icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard',niveaux:['admin']},
-      {icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel',niveaux:['admin']},
-      {icon:'\uD83D\uDE80',label:'Cockpit opérationnel',sub:'Pilotage temps réel',fn:'ouvrirCockpit',niveaux:['admin']},
-      {icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale',niveaux:['admin','rh','rse']},
-      {icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur',niveaux:['admin']},
-      {icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit',niveaux:['admin','rse']},
-    ]},
-    {nom:'\uD83D\uDDD3 Planning avancé',color:'#06b6d4',items:[
-      {icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart',niveaux:['admin','commercial']},
-      {icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda',niveaux:['admin']},
-      {icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme',niveaux:['admin','rh']},
-    ]},
-    {nom:'\u2699\uFE0F Outils & Système',color:'#64748b',items:[
-      {icon:'\uD83D\uDCBE',label:'Sauvegarder',sub:'Export backup',fn:'exportJSON',niveaux:['admin']},
-      {icon:'\u2B06',label:'Restaurer backup',sub:'Import données',fn:'importJSON',niveaux:['admin']},
-      {icon:'\uD83D\uDCCA',label:'Export Excel',sub:'Rapport mensuel',fn:'exportExcel',niveaux:['admin','compta']},
-      {icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale',niveaux:['admin','commercial']},
-      {icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo',niveaux:['admin','commercial']},
-      {icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync',niveaux:['admin']},
-      {icon:'\uD83E\uDDF9',label:'Nettoyage stockage',sub:'Libérer espace',fn:'ouvrirNettoyageSupabase',niveaux:['admin']},
-    ]},
-    {nom:'\uD83D\uDD11 Direction',color:'#ef4444',items:[
-      {icon:'\u2B50',label:'Module Direction',sub:'Outils avancés',fn:'ouvrirModuleDirection',niveaux:['admin']},
-      {icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Codes services',fn:'ouvrirGestionAcces',niveaux:['admin']},
-    ]}
-  ];
+  /* Recherche */
+  var search=document.createElement('input');
+  search.type='text';search.className='hub-search';
+  search.placeholder='\uD83D\uDD0D Rechercher un outil...';
+  hub.appendChild(search);
 
-  categories.forEach(function(cat){
-    var visibleItems=cat.items.filter(function(it){return it.niveaux.indexOf(niveau)>=0;});
-    if(!visibleItems.length)return;
+  /* Trouver un item par id dans tous les poles */
+  function trouverItem(id){
+    for(var p=0;p<poles.length;p++){
+      for(var i=0;i<poles[p].items.length;i++){
+        if(poles[p].items[i].id===id)return{item:poles[p].items[i],pole:poles[p]};
+      }
+    }
+    return null;
+  }
+
+  /* Barre favoris */
+  if(favoris.length){
+    var favBar=document.createElement('div');
+    favBar.className='hub-fav-bar';
+    favoris.forEach(function(favId){
+      var found=trouverItem(favId);
+      if(!found)return;
+      var ft=document.createElement('div');
+      ft.className='hub-fav-tile';
+      ft.innerHTML='<span>'+found.item.icon+'</span><span>'+found.item.label+'</span>';
+      ft.addEventListener('click',function(){lancerOutil(found.item);});
+      favBar.appendChild(ft);
+    });
+    hub.appendChild(favBar);
+  }
+
+  function lancerOutil(it){
+    if(typeof it.fn==='function'){it.fn();return;}
+    fermerHub();
+    setTimeout(function(){
+      if(typeof window[it.fn]==='function')window[it.fn]();
+      if(typeof logAudit==='function')logAudit('Ouverture outil',it.label);
+    },200);
+  }
+
+  function togglePin(id,btn){
+    var idx=favoris.indexOf(id);
+    if(idx>=0){favoris.splice(idx,1);btn.classList.remove('pinned');}
+    else{favoris.push(id);btn.classList.add('pinned');}
+    localStorage.setItem(favKey,JSON.stringify(favoris));
+  }
+
+  var allSections=[];
+
+  poles.forEach(function(pole){
+    var autorise=poleAutorise(pole.id);
+    if(!autorise && niveau!=='admin')return; /* Pole totalement masque si pas du tout accessible, sauf admin qui voit tout grise */
 
     var section=document.createElement('div');
-    section.style.cssText='width:100%;max-width:900px;margin-bottom:24px';
+    section.className='hub-pole-section';
+    section.style.background=pole.bg;
+    section.style.borderColor=pole.border;
+    section.dataset.pole=pole.id;
 
     var titre=document.createElement('div');
-    titre.style.cssText='font-size:12px;font-weight:800;color:'+cat.color+';text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;padding-left:4px';
-    titre.textContent=cat.nom;
+    titre.className='hub-pole-title';
+    titre.style.color=pole.color;
+    titre.textContent=pole.nom+(autorise?'':' \uD83D\uDD12');
     section.appendChild(titre);
 
     var grid=document.createElement('div');
     grid.className='hub-grid';
-    grid.style.maxWidth='900px';
 
-    visibleItems.forEach(function(it){
+    pole.items.forEach(function(it){
       var tile=document.createElement('div');
-      tile.className='hub-tile';
+      tile.className='hub-tile'+(autorise?'':' locked');
+      tile.dataset.search=(it.label+' '+it.sub).toLowerCase();
       tile.innerHTML='<div class="hub-tile-icon">'+it.icon+'</div><div class="hub-tile-label">'+it.label+'</div><div class="hub-tile-sub">'+it.sub+'</div>';
-      tile.addEventListener('click',function(){
-        if(typeof it.fn==='function'){it.fn();return;}
-        fermerHub();
-        setTimeout(function(){
-          if(typeof window[it.fn]==='function')window[it.fn]();
-        },200);
-      });
+
+      if(autorise){
+        var pinBtn=document.createElement('div');
+        pinBtn.className='hub-pin-btn'+(favoris.indexOf(it.id)>=0?' pinned':'');
+        pinBtn.textContent='\u2605';
+        pinBtn.addEventListener('click',function(e){e.stopPropagation();togglePin(it.id,pinBtn);});
+        tile.appendChild(pinBtn);
+
+        tile.addEventListener('click',function(){lancerOutil(it);});
+      } else {
+        tile.addEventListener('click',function(){
+          showT('\uD83D\uDD12 Accès non autorisé pour votre service','#ef4444');
+        });
+      }
+
       grid.appendChild(tile);
     });
 
     section.appendChild(grid);
     hub.appendChild(section);
+    allSections.push(section);
+  });
+
+  /* Filtre recherche en direct */
+  search.addEventListener('input',function(){
+    var q=search.value.toLowerCase().trim();
+    allSections.forEach(function(section){
+      var tiles=section.querySelectorAll('.hub-tile');
+      var visibleCount=0;
+      tiles.forEach(function(tile){
+        var match=!q||tile.dataset.search.indexOf(q)>=0;
+        tile.style.display=match?'':'none';
+        if(match)visibleCount++;
+      });
+      section.style.display=visibleCount>0?'':'none';
+    });
   });
 
   var enterBtn=document.createElement('button');
