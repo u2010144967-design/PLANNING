@@ -510,10 +510,11 @@ input[type="time"]{
 /* COLONNES COTE A COTE */
 .hub-columns{display:flex;gap:18px;width:100%;max-width:1300px;align-items:flex-start;overflow-x:auto;padding-bottom:20px}
 .hub-pole-col{flex:1;min-width:260px;max-width:320px;border-radius:18px;padding:18px;border:2px solid rgba(255,255,255,.1);box-shadow:0 10px 32px rgba(0,0,0,.3)}
-.hub-columns.cols-1 .hub-pole-col{max-width:560px;padding:32px}
-.hub-columns.cols-1 .hub-pole-items{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.hub-columns.cols-1 .hub-pole-title{font-size:22px;justify-content:center;text-align:center}
-.hub-columns.cols-1{justify-content:center}
+.hub-columns.cols-1 .hub-pole-col{max-width:980px;width:100%;padding:36px}
+.hub-columns.cols-1 .hub-pole-items{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.hub-columns.cols-1 .hub-pole-title{font-size:24px;justify-content:center;text-align:center}
+.hub-columns.cols-1{justify-content:center;width:100%}
+@media(max-width:900px){.hub-columns.cols-1 .hub-pole-items{grid-template-columns:repeat(2,1fr)}}
 .hub-columns.cols-2 .hub-pole-col{max-width:440px;padding:26px}
 .hub-columns.cols-2 .hub-pole-items{display:grid;grid-template-columns:repeat(1,1fr);gap:11px}
 .hub-columns.cols-2 .hub-pole-title{font-size:19px}
@@ -23712,7 +23713,8 @@ function afficherHub(){
 
   var poles=[
     {id:'logistique',nom:'\uD83D\uDE9A LOGISTIQUE',color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'#3b82f6',items:[
-      {id:'planning',icon:'\uD83D\uDCC5',label:'Planning',sub:'Vue du jour',fn:function(){fermerHub();}},
+      {id:'planning',icon:'\uD83D\uDCC5',label:'Planning du jour',sub:'Livraisons rapides',fn:'ouvrirPlanningSimplifie'},
+      {id:'planningfull',icon:'\uD83D\uDDD3',label:'Planning complet',sub:'Grille horaire',fn:function(){fermerHub();}},
       {id:'sync',icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle'},
       {id:'a4',icon:'\uD83D\uDDA8',label:'Imprimer A4',sub:'Feuilles de route',fn:'ouvrirFeuillesRoute'},
       {id:'photos',icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',fn:'ouvrirPhotosSignatures'},
@@ -24092,6 +24094,86 @@ function creerBoutonAccueilFlottant(){
     if(typeof ouvrirHub==='function')ouvrirHub();
   });
   document.body.appendChild(fab);
+}
+
+/* ══════════════════════════════════════════════════
+   PLANNING DU JOUR SIMPLIFIE — vue rapide livraisons
+══════════════════════════════════════════════════ */
+function ouvrirPlanningSimplifie(){
+  var existing=document.getElementById('m-plan-simple');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-plan-simple';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='600px';box.style.maxHeight='88vh';box.style.overflowY='auto';
+
+  var h=document.createElement('h3');h.textContent='\uD83D\uDCC5 Livraisons du jour';
+  box.appendChild(h);
+
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:12px;color:#64748b;margin-bottom:16px';
+  sub.textContent=cap(fmtCourt(ST.cur));
+  box.appendChild(sub);
+
+  var results=document.createElement('div');
+  box.appendChild(results);
+
+  var fullBtn=document.createElement('button');
+  fullBtn.textContent='\uD83D\uDDD3 Voir le planning complet';
+  fullBtn.style.cssText='width:100%;background:#1d4ed8;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-top:14px';
+  fullBtn.addEventListener('click',function(){closeMod('m-plan-simple');if(typeof fermerHub==='function')fermerHub();});
+  box.appendChild(fullBtn);
+
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='Fermer';
+  closeBtn.style.cssText='width:100%;margin-top:8px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.addEventListener('click',function(){closeMod('m-plan-simple');});
+  box.appendChild(closeBtn);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  /* Construire la liste des livraisons du jour, triees par heure */
+  var date=ST.cur;
+  var livraisons=[];
+  ST.drivers.forEach(function(dr,di){
+    SL.forEach(function(h){
+      var k=date+'|'+di+'|'+h;
+      (ST.tasks[k]||[]).forEach(function(t){
+        if(t.client)livraisons.push({heure:h,client:t.client,truck:t.truck||dr.truck,driver:dr.name,statut:t._statut||'pending'});
+      });
+    });
+  });
+  livraisons.sort(function(a,b){return a.heure.localeCompare(b.heure);});
+
+  if(!livraisons.length){
+    results.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">Aucune livraison aujourd\'hui</div>';
+    return;
+  }
+
+  var statutLabels={done:{l:'\u2713 Livr\u00e9',c:'#22c55e'},enroute:{l:'\uD83D\uDE97 En route',c:'#f59e0b'},pending:{l:'En attente',c:'#64748b'}};
+
+  var html='';
+  livraisons.forEach(function(liv){
+    var st=statutLabels[liv.statut]||statutLabels.pending;
+    html+='<div style="background:#1e293b;border-left:3px solid '+st.c+';border-radius:10px;padding:12px 14px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-family:monospace;font-size:15px;font-weight:900;color:#f97316">'+liv.heure+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+st.c+'">'+st.l+'</span>'
+      +'</div>'
+      +'<div style="font-size:14px;font-weight:800;color:#fff;margin-top:5px">'+liv.client+'</div>'
+      +'<div style="font-size:12px;color:#94a3b8;margin-top:3px">\uD83D\uDE9A '+liv.truck+' \u2014 \uD83D\uDC64 '+liv.driver+'</div>'
+      +'</div>';
+  });
+
+  var totalLivre=livraisons.filter(function(l){return l.statut==='done';}).length;
+  var resume=document.createElement('div');
+  resume.style.cssText='display:flex;gap:8px;margin-bottom:16px';
+  resume.innerHTML='<div style="flex:1;background:#1e293b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:900;color:#f97316">'+livraisons.length+'</div><div style="font-size:10px;color:#64748b">Total</div></div>'
+    +'<div style="flex:1;background:#1e293b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:900;color:#22c55e">'+totalLivre+'</div><div style="font-size:10px;color:#64748b">Livr\u00e9es</div></div>';
+
+  results.innerHTML='';
+  results.appendChild(resume);
+  var listDiv=document.createElement('div');
+  listDiv.innerHTML=html;
+  results.appendChild(listDiv);
 }
 </script>
 </body>
