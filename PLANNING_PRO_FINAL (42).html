@@ -475,14 +475,15 @@ input[type="time"]{
 .hub-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;text-align:center}
 .hub-sub{font-size:13px;color:#8B96A8;margin-bottom:8px;text-align:center}
 .hub-service{display:inline-flex;align-items:center;gap:8px;background:#1A2332;border:1px solid #334155;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:#f97316;margin-bottom:32px}
-.hub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;width:100%}
-.hub-tile{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:transform .15s,border-color .15s}
+.hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;max-width:900px;width:100%}
+.hub-tile{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:transform .15s,border-color .15s}
 .hub-tile:hover{transform:translateY(-3px);border-color:rgba(249,115,22,.4)}
-.hub-tile-icon{font-size:34px}
-.hub-tile-label{font-size:14px;font-weight:800;color:#fff;text-align:center}
-.hub-tile-sub{font-size:11px;color:#8B96A8;text-align:center}
+.hub-tile-icon{font-size:26px}
+.hub-tile-label{font-size:12px;font-weight:800;color:#fff;text-align:center;line-height:1.25}
+.hub-tile-sub{font-size:10px;color:#8B96A8;text-align:center}
 .hub-enter-btn{margin-top:32px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:16px;padding:16px 40px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.3)}
-@media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.hub-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.hub-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* Bouton Accueil flottant - toujours visible */
 #hub-fab{position:fixed;bottom:24px;left:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#f97316,#c2540a);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(249,115,22,.4);cursor:pointer;z-index:9997;border:none;transition:transform .15s}
@@ -23588,47 +23589,118 @@ function afficherHub(){
   html+='<div class="hub-title">La Table de Cana</div>';
   html+='<div class="hub-sub">Centre de pilotage logistique</div>';
   html+='<div class="hub-service">'+srv.icone+' '+srv.nom+'</div>';
-  html+='<div class="hub-grid" id="hub-grid"></div>';
-  html+='<button class="hub-enter-btn" id="hub-enter-btn">\uD83D\uDCC5 Ouvrir le Planning</button>';
 
   hub.innerHTML=html;
   document.body.appendChild(hub);
 
-  var grid=document.getElementById('hub-grid');
-
-  var tuiles=[
-    {id:'planning',icon:'\uD83D\uDCC5',label:'Planning',sub:'Vue du jour',action:function(){fermerHub();}},
+  /* Toutes les fonctions du menu, organisees par categories, filtrees par niveau */
+  var categories=[
+    {nom:'\u26A1 Essentiels',color:'#f97316',items:[
+      {icon:'\uD83D\uDCC5',label:'Planning',sub:'Vue du jour',fn:function(){fermerHub();},niveaux:['admin','commercial','restoco','compta','rh','rse']},
+      {icon:'\uD83D\uDCCB',label:'Mes Tâches',sub:'A faire aujourd\'hui',fn:'ouvrirTachesResponsable',niveaux:['admin','commercial']},
+      {icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDDA8',label:'Imprimer A4',sub:'Feuilles de route',fn:'ouvrirFeuillesRoute',niveaux:['admin','commercial']},
+    ]},
+    {nom:'\uD83D\uDCF8 Preuves & Suivi',color:'#a855f7',items:[
+      {icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',fn:'ouvrirPhotosSignatures',niveaux:['admin','commercial','restoco']},
+      {icon:'\uD83D\uDCC2',label:'Centre Archives',sub:'Historique complet',fn:'ouvrirCentreArchives',niveaux:['admin','commercial','restoco','compta','rse']},
+      {icon:'\uD83D\uDCC4',label:'Bons de livraison',sub:'Documents officiels',fn:'ouvrirRechercheBL',niveaux:['admin','commercial','compta']},
+      {icon:'\uD83D\uDD0D',label:'Historique client',sub:'Recherche',fn:'ouvrirHistorique',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique',niveaux:['admin']},
+    ]},
+    {nom:'\uD83D\uDCE6 Matériel & Véhicules',color:'#f59e0b',items:[
+      {icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules',niveaux:['admin','commercial']},
+    ]},
+    {nom:'\uD83D\uDC65 Equipe & Chauffeurs',color:'#22c55e',items:[
+      {icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs',niveaux:['admin','rh']},
+      {icon:'\uD83D\uDCC4',label:'Fiches chauffeurs',sub:'Dossiers',fn:'ouvrirFiches',niveaux:['admin','rh']},
+      {icon:'\u2B50',label:'Progression & Évaluation',sub:'Suivi insertion',fn:'ouvrirFicheProgression',niveaux:['admin','rh']},
+      {icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur',niveaux:['admin','rh']},
+      {icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide',niveaux:['admin','rh']},
+      {icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions',niveaux:['admin','rh']},
+      {icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives',niveaux:['admin','rh']},
+      {icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs',niveaux:['admin']},
+    ]},
+    {nom:'\uD83D\uDCAC Communication',color:'#14b8a6',items:[
+      {icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs',niveaux:['admin','commercial','restoco']},
+      {icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications',niveaux:['admin']},
+      {icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin',niveaux:['admin','commercial']},
+    ]},
+    {nom:'\uD83D\uDCCA Statistiques & Pilotage',color:'#3b82f6',items:[
+      {icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois',niveaux:['admin','rse']},
+      {icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport',niveaux:['admin','rse']},
+      {icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard',niveaux:['admin']},
+      {icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel',niveaux:['admin']},
+      {icon:'\uD83D\uDE80',label:'Cockpit opérationnel',sub:'Pilotage temps réel',fn:'ouvrirCockpit',niveaux:['admin']},
+      {icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale',niveaux:['admin','rh','rse']},
+      {icon:'\uD83C\uDFB2',label:'Simulateur scénarios',sub:'Anticipation',fn:'ouvrirSimulateur',niveaux:['admin']},
+      {icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit',niveaux:['admin','rse']},
+    ]},
+    {nom:'\uD83D\uDDD3 Planning avancé',color:'#06b6d4',items:[
+      {icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart',niveaux:['admin','commercial']},
+      {icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda',niveaux:['admin']},
+      {icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme',niveaux:['admin','rh']},
+    ]},
+    {nom:'\u2699\uFE0F Outils & Système',color:'#64748b',items:[
+      {icon:'\uD83D\uDCBE',label:'Sauvegarder',sub:'Export backup',fn:'exportJSON',niveaux:['admin']},
+      {icon:'\u2B06',label:'Restaurer backup',sub:'Import données',fn:'importJSON',niveaux:['admin']},
+      {icon:'\uD83D\uDCCA',label:'Export Excel',sub:'Rapport mensuel',fn:'exportExcel',niveaux:['admin','compta']},
+      {icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale',niveaux:['admin','commercial']},
+      {icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo',niveaux:['admin','commercial']},
+      {icon:'\u2699\uFE0F',label:'Config synchro',sub:'Paramètres',fn:'ouvrirConfigSync',niveaux:['admin']},
+      {icon:'\uD83E\uDDF9',label:'Nettoyage stockage',sub:'Libérer espace',fn:'ouvrirNettoyageSupabase',niveaux:['admin']},
+    ]},
+    {nom:'\uD83D\uDD11 Direction',color:'#ef4444',items:[
+      {icon:'\u2B50',label:'Module Direction',sub:'Outils avancés',fn:'ouvrirModuleDirection',niveaux:['admin']},
+      {icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Codes services',fn:'ouvrirGestionAcces',niveaux:['admin']},
+    ]}
   ];
 
-  if(niveau==='admin'||niveau==='commercial'||niveau==='restoco'){
-    tuiles.push({id:'photos',icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',action:function(){fermerHub();setTimeout(ouvrirPhotosSignatures,200);}});
-    tuiles.push({id:'archives',icon:'\uD83D\uDCC2',label:'Archives',sub:'Historique complet',action:function(){fermerHub();setTimeout(ouvrirCentreArchives,200);}});
-    tuiles.push({id:'bl',icon:'\uD83D\uDCC4',label:'Bons de livraison',sub:'Documents officiels',action:function(){fermerHub();setTimeout(ouvrirRechercheBL,200);}});
-    tuiles.push({id:'materiel',icon:'\uD83D\uDCE6',label:'Matériel',sub:'Reprises & alertes',action:function(){fermerHub();setTimeout(ouvrirDashboardMateriel,200);}});
-    tuiles.push({id:'messages',icon:'\uD83D\uDCAC',label:'Messages',sub:'Équipe chauffeurs',action:function(){fermerHub();setTimeout(ouvrirMessagesChauffeurs,200);}});
-  }
+  categories.forEach(function(cat){
+    var visibleItems=cat.items.filter(function(it){return it.niveaux.indexOf(niveau)>=0;});
+    if(!visibleItems.length)return;
 
-  if(niveau==='admin'||niveau==='rh'){
-    tuiles.push({id:'chauffeurs',icon:'\uD83D\uDC65',label:'Chauffeurs',sub:'Gestion équipe',action:function(){fermerHub();setTimeout(ouvrirGestionChauffeurs,200);}});
-  }
+    var section=document.createElement('div');
+    section.style.cssText='width:100%;max-width:900px;margin-bottom:24px';
 
-  if(niveau==='admin'||niveau==='rse'){
-    tuiles.push({id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques',sub:'Performance',action:function(){fermerHub();showT('Ouvrez via le menu','#3b82f6');}});
-  }
+    var titre=document.createElement('div');
+    titre.style.cssText='font-size:12px;font-weight:800;color:'+cat.color+';text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;padding-left:4px';
+    titre.textContent=cat.nom;
+    section.appendChild(titre);
 
-  if(niveau==='admin'){
-    tuiles.push({id:'acces',icon:'\uD83D\uDD11',label:'Gestion des accès',sub:'Direction uniquement',action:function(){fermerHub();setTimeout(ouvrirGestionAcces,200);}});
-  }
+    var grid=document.createElement('div');
+    grid.className='hub-grid';
+    grid.style.maxWidth='900px';
 
-  tuiles.forEach(function(t){
-    var tile=document.createElement('div');
-    tile.className='hub-tile';
-    tile.innerHTML='<div class="hub-tile-icon">'+t.icon+'</div><div class="hub-tile-label">'+t.label+'</div><div class="hub-tile-sub">'+t.sub+'</div>';
-    tile.addEventListener('click',t.action);
-    grid.appendChild(tile);
+    visibleItems.forEach(function(it){
+      var tile=document.createElement('div');
+      tile.className='hub-tile';
+      tile.innerHTML='<div class="hub-tile-icon">'+it.icon+'</div><div class="hub-tile-label">'+it.label+'</div><div class="hub-tile-sub">'+it.sub+'</div>';
+      tile.addEventListener('click',function(){
+        if(typeof it.fn==='function'){it.fn();return;}
+        fermerHub();
+        setTimeout(function(){
+          if(typeof window[it.fn]==='function')window[it.fn]();
+        },200);
+      });
+      grid.appendChild(tile);
+    });
+
+    section.appendChild(grid);
+    hub.appendChild(section);
   });
 
-  document.getElementById('hub-enter-btn').addEventListener('click',fermerHub);
+  var enterBtn=document.createElement('button');
+  enterBtn.className='hub-enter-btn';
+  enterBtn.textContent='\uD83D\uDCC5 Ouvrir le Planning';
+  enterBtn.addEventListener('click',fermerHub);
+  hub.appendChild(enterBtn);
 }
 
 function fermerHub(){
