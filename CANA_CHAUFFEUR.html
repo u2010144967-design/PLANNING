@@ -276,14 +276,15 @@ async function loadCustomDriverConfig(){
 
 async function loadPlanning(){
   /* Fusionne TOUTES les dates disponibles (passees et futures) en un seul planning */
-  const rows=await db('planning?select=donnees,date&order=date.desc&limit=60');
+  /* Charger toutes les lignes de dates (YYYY-MM-DD) + augmenter limite */
+  const rows=await db('planning?select=donnees,date&order=date.asc&limit=200');
   if(!rows||!rows.length)return null;
 
   let merged={drivers:null,tasks:{},statuts:{},notes:{},library:null,tournees:[],conducteurs:{}};
   let foundAny=false;
 
   rows.forEach(r=>{
-    if(!r.date||!r.date.match(/^\d{4}-\d{2}-\d{2}$/))return; /* ignore EVENTS, MESSAGES, GEO_x */
+    if(!r.date||!r.date.match(/^\d{4}-\d{2}-\d{2}$/))return; /* ignore EVENTS, MESSAGES, GEO_x, EV_, DEMANDE_, AUDIT_ */
     const d=r.donnees;
     if(!d||!d.tasks)return;
     foundAny=true;
@@ -350,8 +351,13 @@ function getMissions(planning,di,date){
   SL.forEach(h=>{
     const k=date+'|'+di+'|'+h;
     const tasks=planning.tasks[k];
-    if(tasks&&tasks.length)tasks.forEach((t,ti)=>ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'}));
+    if(tasks&&tasks.length)tasks.forEach((t,ti)=>{
+      /* Filtrer les demandes en attente de validation */
+      if(t._isDemande)return;
+      ms.push({...t,heure:h,_key:k,_ti:ti,_statut:t._statut||'pending'});
+    });
   });
+  ms.sort((a,b)=>a.heure.localeCompare(b.heure));
   return ms;
 }
 function getStatut(planning,di,date){
