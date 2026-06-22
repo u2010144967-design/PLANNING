@@ -47,6 +47,7 @@
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
         }
+        if(typeof majBadgeValidation==='function')setTimeout(majBadgeValidation,1200);
       },500);
     };
     if(document.readyState==='complete'||document.readyState==='interactive'){
@@ -565,6 +566,8 @@ input[type="time"]{
   button:not(.print-ok), .sidebar, .gh-cnt-pill { display:none!important }
   .gcell { page-break-inside: avoid }
 }
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 </style>
 </head>
 <body>
@@ -22098,7 +22101,7 @@ saveTask=function(){
   }
 
   _origSaveTask.apply(this,arguments);
-  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
+  setTimeout(function(){if(typeof sauverToutesLesDates==='function')sauverToutesLesDates();else if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
   if(typeof logAudit==='function')logAudit('Ajout mission',(clientVal||taskVal||'?'));
 };
 
@@ -22106,7 +22109,7 @@ var _origDelT=delT;
 if(typeof delT==='function'){
   delT=function(){
     _origDelT.apply(this,arguments);
-    setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
+    setTimeout(function(){if(typeof sauverToutesLesDates==='function')sauverToutesLesDates();else if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1500);
   };
 }
 
@@ -23919,13 +23922,13 @@ function afficherHub(){
       {id:'materiel',icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel'},
       {id:'vehicules',icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules'},
       {id:'tournees',icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees'},
-      {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart',sec:true},
+      {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart'},
       {id:'calendrier',icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier'},
-      {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin',sec:true},
+      {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
       {id:'messages',icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs'},
-      {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp',sec:true},
+      {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp'},
       {id:'meteo',icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo',sec:true},
-      {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale',sec:true},
+      {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale'},
     ]},
     {id:'insertion',nom:'\uD83D\uDC65 INSERTION & SUIVI',color:'#22c55e',bg:'rgba(34,197,94,.1)',border:'#22c55e',items:[
       {id:'chauffeurs',icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs'},
@@ -23934,23 +23937,23 @@ function afficherHub(){
       {id:'suivi',icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur'},
       {id:'statuts',icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide'},
       {id:'infractions',icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions'},
-      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives',sec:true},
+      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives'},
       {id:'chrono',icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme'},
-      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale',sec:true},
+      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale'},
       {id:'conducteurs',icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs'},
-      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique',sec:true},
+      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique'},
     ]},
     {id:'admin',nom:'\uD83D\uDCCA DOCUMENTS & PILOTAGE',color:'#a855f7',bg:'rgba(168,85,247,.1)',border:'#a855f7',items:[
       {id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois'},
       {id:'rapport',icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport'},
       {id:'dashboard',icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard'},
-      {id:'dashannuel',icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel',sec:true},
-      {id:'audit',icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit',sec:true},
+      {id:'dashannuel',icon:'\uD83D\uDCCA',label:'Dashboard annuel',sub:'Vision long terme',fn:'ouvrirDashboardAnnuel'},
+      {id:'audit',icon:'\uD83D\uDCCB',label:'Audit qualité',sub:'Contrôle',fn:'ouvrirAudit'},
       {id:'excel',icon:'\uD83D\uDCCA',label:'Export Excel',sub:'Rapport mensuel',fn:'exportExcel'},
-      {id:'agenda',icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda',sec:true},
-      {id:'email',icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees',sec:true},
-      {id:'briefing',icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin',sec:true},
-      {id:'notifs',icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications',sec:true},
+      {id:'agenda',icon:'\uD83D\uDCD3',label:'Agenda partagé',sub:'Rendez-vous',fn:'ouvrirAgenda'},
+      {id:'email',icon:'\uD83D\uDCE8',label:'Envoyer par email',sub:'Tournées',fn:'ouvrirEnvoiTournees'},
+      {id:'briefing',icon:'\uD83D\uDD0A',label:'Briefing vocal',sub:'Lecture audio',fn:'parlerBriefingMatin'},
+      {id:'notifs',icon:'\uD83D\uDD14',label:'Notifications',sub:'Alertes système',fn:'ouvrirNotifications'},
     ]},
     {id:'direction',nom:'\uD83D\uDC54 DIRECTION',color:'#ef4444',bg:'rgba(239,68,68,.1)',border:'#ef4444',items:[
       {id:'cockpit',icon:'\uD83D\uDE80',label:'Cockpit opérationnel',sub:'Pilotage temps réel',fn:'ouvrirCockpit'},
@@ -24536,6 +24539,87 @@ function copierMissionVousTous(k, ti){
   showT('✅ Copié vers '+nbCopies+' chauffeur(s) à '+heure,'#22c55e');
   if(typeof sauverDansSupabase==='function')setTimeout(sauverDansSupabase,800);
 }
+
+/* ══════════════════════════════════════════════════
+   AMÉLIORATIONS — proposées par Claude
+══════════════════════════════════════════════════ */
+
+/* 1. BARRE DE RECHERCHE dans le Hub — filtre en temps réel */
+function filtrerHub(q){
+  q=(q||'').toLowerCase().trim();
+  document.querySelectorAll('#hub-columns .hub-tile').forEach(function(tile){
+    var match=!q||tile.dataset.search.indexOf(q)>=0;
+    tile.style.display=match?'':'none';
+  });
+  document.querySelectorAll('#hub-columns .hub-pole-col').forEach(function(col){
+    var visible=col.querySelectorAll('.hub-tile:not([style*="display: none"])').length;
+    col.style.display=visible?'':'none';
+  });
+}
+
+/* 2. COMPTEUR LIVRAISONS sur la tuile Planning du jour */
+function majBadgePlanningJour(){
+  var date=ST&&ST.cur?ST.cur:new Date().toISOString().slice(0,10);
+  if(!ST||!ST.tasks)return;
+  var total=0;
+  Object.keys(ST.tasks).forEach(function(k){
+    if(k.startsWith(date))total+=ST.tasks[k].length;
+  });
+  var badge=document.getElementById('badge-planning-jour');
+  if(badge&&total>0)badge.textContent=total+' livraison'+(total>1?'s':'');
+}
+
+/* 3. ALERTE si demandes en attente — badge rouge sur le Hub */
+function majBadgeValidation(){
+  if(!window._serviceActuel||window._serviceActuel.niveau!=='admin')return;
+  chargerDemandesEnAttente(function(demandes){
+    if(!demandes.length)return;
+    var badge=document.createElement('div');
+    badge.style.cssText='position:fixed;top:16px;right:70px;background:#ef4444;color:#fff;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:900;z-index:9999;box-shadow:0 4px 14px rgba(239,68,68,.4);cursor:pointer;animation:pulse 2s infinite';
+    badge.textContent='⏳ '+demandes.length+' validation'+(demandes.length>1?'s':'')+' en attente';
+    badge.addEventListener('click',function(){ouvrirFenetreValidation(true);});
+    document.body.appendChild(badge);
+  });
+}
+
+/* 4. SAUVEGARDER SUR TOUTES LES DATES FUTURES — correction bug planning vierge */
+function sauverToutesLesDates(){
+  /* Récupérer toutes les dates présentes dans ST.tasks */
+  var dates={};
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var parts=k.split('|');
+    if(parts[0])dates[parts[0]]=true;
+  });
+  var datesList=Object.keys(dates);
+  if(!datesList.length)return;
+
+  /* Sauvegarder chaque date individuellement dans Supabase */
+  datesList.forEach(function(date){
+    var tasksForDate={};
+    Object.keys(ST.tasks).forEach(function(k){
+      if(k.startsWith(date+'|'))tasksForDate[k]=ST.tasks[k];
+    });
+    var data={
+      drivers:ST.drivers,
+      tasks:ST.tasks,
+      statuts:ST.statuts||{},
+      notes:ST.notes||{},
+      cur:ST.cur,
+      library:ST.library,
+      tournees:ST.tournees||[]
+    };
+    supaFetch('planning?date=eq.'+date+'&select=id').then(function(rows){
+      if(rows&&rows.length>0){
+        supaFetch('planning?date=eq.'+date,{method:'PATCH',body:JSON.stringify({donnees:data})});
+      } else {
+        supaFetch('planning',{method:'POST',body:JSON.stringify({date:date,donnees:data})});
+      }
+    });
+  });
+  showT('\uD83D\uDCBE Sauvegardé sur '+datesList.length+' date(s)','#22c55e');
+}
+
+/* CSS pour l'animation pulse */
 </script>
 </body>
 </html>
