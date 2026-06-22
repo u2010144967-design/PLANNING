@@ -558,6 +558,13 @@ input[type="time"]{
 #hub-fab{position:fixed;bottom:24px;left:24px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#f97316,#c2540a);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(249,115,22,.4);cursor:pointer;z-index:9997;border:none;transition:transform .15s}
 #hub-fab:hover{transform:scale(1.08)}
 #hub-fab:active{transform:scale(.92)}
+
+@media print {
+  .hub-fab, #hub-fab, .nav, .mbg, #menu-principal-wrap,
+  [onclick*="toggleMenuPrincipal"], .nb, .nd, .nsp,
+  button:not(.print-ok), .sidebar, .gh-cnt-pill { display:none!important }
+  .gcell { page-break-inside: avoid }
+}
 </style>
 </head>
 <body>
@@ -1313,7 +1320,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'+(dr.tournee?'<div style="font-size:9px;font-weight:900;padding:2px 7px;border-radius:10px;border:1px solid '+(dr.tourneeColor||'#64748b')+';color:'+(dr.tourneeColor||'#64748b')+';background:'+(dr.tourneeColor||'#64748b')+'22;white-space:nowrap;cursor:pointer" data-di="'+i+'" data-action="tournee">'+dr.tournee.toUpperCase()+'</div>':'')      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -1332,7 +1339,7 @@ function rGrid(){
         var meta=(t.truck&&t.truck!==dr.truck?' · '+t.truck:'')+(t.end?' fin '+t.end:'');
         return '<div class="pill '+catCls+(urg?' urg':'')+(done?' done':'')+'" data-key="'+k+'" data-idx="'+ti+'" style="'+bld+'">'
           +'<div class="ptxt">'+content+(meta?'<div class="pmeta">'+meta+'</div>':'')+'</div>'
-          +'<button class="xb" onclick="event.stopPropagation();delT(\''+k+'\','+ti+')">\u2715</button></div>';
+          +'<button class="xb" title="Copier vers tous" style="background:rgba(34,197,94,.18);color:#22c55e;margin-right:2px" onclick="event.stopPropagation();copierMissionVousTous(\''+k+'\','+ti+')">&#8853;</button><button class="xb" onclick="event.stopPropagation();delT(\''+k+'\','+ti+')">\u2715</button></div>';
       }).join('');
       html+='<div class="gcw'+(done?' past-col':'')+'"><div class="gcell" tabindex="0" data-key="'+gk(d,i,hour)+'" onclick="openAdd(\''+d+'\','+i+',\''+hour+'\')">';
       html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'</div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
@@ -21976,9 +21983,55 @@ function setStatutDrv(di,type){
   setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
 }
 
+/* Tournees colorees */
+var TOURNEES=[
+  {id:'',label:'Aucune tournée',color:'#64748b',bg:'rgba(100,116,139,.1)'},
+  {id:'bleue',label:'🔵 Tournée Bleue',color:'#3b82f6',bg:'rgba(59,130,246,.15)'},
+  {id:'jaune',label:'🟡 Tournée Jaune',color:'#f59e0b',bg:'rgba(245,158,11,.15)'},
+  {id:'verte',label:'🟢 Tournée Verte',color:'#22c55e',bg:'rgba(34,197,94,.15)'},
+  {id:'rose',label:'🩷 Tournée Rose',color:'#ec4899',bg:'rgba(236,72,153,.15)'},
+  {id:'violette',label:'🟣 Tournée Violette',color:'#a855f7',bg:'rgba(168,85,247,.15)'},
+  {id:'rouge',label:'🔴 Tournée Rouge',color:'#ef4444',bg:'rgba(239,68,68,.15)'},
+  {id:'orange',label:'🟠 Tournée Orange',color:'#f97316',bg:'rgba(249,115,22,.15)'},
+];
+
+function changerTourneeDrv(di){
+  var dr=ST.drivers[di];
+  var existing=document.getElementById('m-tournee-drv');if(existing)existing.remove();
+  var modal=document.createElement('div');modal.id='m-tournee-drv';modal.className='mbg on';
+  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='360px';
+  var h=document.createElement('h3');h.textContent='Tournée — '+dr.name;
+  box.appendChild(h);
+  var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';
+  sub.textContent='Tournée actuelle : '+(dr.tournee||'Aucune');
+  box.appendChild(sub);
+  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  TOURNEES.forEach(function(t){
+    var sel=(dr.tournee||'')===(t.id);
+    var b=document.createElement('button');
+    b.textContent=t.label||'Aucune';
+    b.style.cssText='background:'+(sel?t.bg:'rgba(30,41,59,.5)')+';border:1px solid '+(sel?t.color:'#334155')+';color:'+(sel?t.color:'#94a3b8')+';border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer';
+    (function(tid,tcolor){b.addEventListener('click',function(){
+      ST.drivers[di].tournee=tid;
+      ST.drivers[di].tourneeColor=tcolor;
+      save();rGrid();
+      closeMod('m-tournee-drv');
+      if(typeof sauverDansSupabase==='function')setTimeout(sauverDansSupabase,500);
+    });})(t.id,t.color);
+    grid.appendChild(b);
+  });
+  box.appendChild(grid);
+  var cancel=document.createElement('button');
+  cancel.textContent='Annuler';
+  cancel.style.cssText='width:100%;margin-top:8px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer';
+  cancel.addEventListener('click',function(){closeMod('m-tournee-drv');});
+  box.appendChild(cancel);
+  modal.appendChild(box);document.body.appendChild(modal);
+}
+
 function changerCamionDrv(di){
   var dr=ST.drivers[di];
-  var camions=['JUMPY','VIVARO 1','VIVARO 2','IVECO','VIVARO LOCATION','CAMION 5'];
+  var camions=['VIVARO 1','VIVARO 2','JUMPY','IVECO','VIVARO LOCATION','CAMION LOCATION','IVECO LOCATION','SANS CAMION','AUCUN','COMME TU VEUX'];
   var existing=document.getElementById('m-camion-drv');if(existing)existing.remove();
   var modal=document.createElement('div');modal.id='m-camion-drv';modal.className='mbg on';
   var box=document.createElement('div');box.className='mbox';box.style.maxWidth='360px';
@@ -22100,6 +22153,7 @@ window.addEventListener('load', function(){
     if(isNaN(di)) return;
     if(action === 'statut') changerStatutDrv(di);
     if(action === 'camion') changerCamionDrv(di);
+    if(action === 'tournee') changerTourneeDrv(di);
     if(action === 'fiche') ouvrirFicheChauffeur(di);
   });
 });
@@ -24457,6 +24511,30 @@ function ouvrirFenetreValidation(forceOpen){
     modal.appendChild(box);
     document.body.appendChild(modal);
   });
+}
+
+/* Copier une mission vers tous les chauffeurs à la même heure */
+function copierMissionVousTous(k, ti){
+  if(!ST.tasks[k]||!ST.tasks[k][ti])return;
+  var t=ST.tasks[k][ti];
+  var parts=k.split('|');
+  var date=parts[0];
+  var heure=parts[2];
+  var nbCopies=0;
+  ST.drivers.forEach(function(dr,di){
+    var newKey=gk(date,di,heure);
+    if(newKey===k)return; // pas la source
+    if(!ST.tasks[newKey])ST.tasks[newKey]=[];
+    // Vérifier si pas déjà là
+    var dejaLa=ST.tasks[newKey].some(function(x){return (x.client||x.task)===(t.client||t.task);});
+    if(!dejaLa){
+      ST.tasks[newKey].push(JSON.parse(JSON.stringify(t)));
+      nbCopies++;
+    }
+  });
+  save();rGrid();rStats();rCounters();
+  showT('✅ Copié vers '+nbCopies+' chauffeur(s) à '+heure,'#22c55e');
+  if(typeof sauverDansSupabase==='function')setTimeout(sauverDansSupabase,800);
 }
 </script>
 </body>
