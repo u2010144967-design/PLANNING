@@ -6,113 +6,151 @@
 <title>CANA Insertion</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
-:root{
-  --bg:#0f1623;--card:#1a2236;--raised:#243048;--border:#2d3d5a;--border2:#3a4d6e;
-  --text:#e8edf5;--muted:#8a9ab8;--dim:#5a6a82;
-  --orange:#f97316;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;
-  --amber:#f59e0b;--purple:#a855f7;--teal:#14b8a6;
-}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;min-height:100vh}
+body{background:#0f1623;color:#e8edf5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.header{background:#111827;border-bottom:2px solid var(--orange);padding:0 20px;height:56px;display:flex;align-items:center;gap:14px;flex-shrink:0}
-.header-logo{width:38px;height:38px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.header-title{font-size:17px;font-weight:900;color:#fff;letter-spacing:.02em}
-.header-sub{font-size:11px;color:var(--muted);flex:1}
-.header-badge{background:rgba(249,115,22,.15);border:1px solid var(--orange);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--orange)}
-.nav-tabs{background:#0d1320;border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:2px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
-.tab{padding:12px 16px;font-size:12px;font-weight:800;color:var(--muted);border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s;text-transform:uppercase;letter-spacing:.04em}
-.tab.active{color:var(--orange);border-bottom-color:var(--orange)}
-.content{flex:1;overflow-y:auto;padding:20px;max-width:1000px;margin:0 auto;width:100%}
-.section{display:none}.section.active{display:block}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
-.card-title{font-size:13px;font-weight:900;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.05em;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
-.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.field input,.field select,.field textarea{background:var(--raised);border:1px solid var(--border2);border-radius:9px;color:var(--text);padding:10px 13px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s;width:100%}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange)}
-.field textarea{resize:vertical;min-height:72px}
-select option{background:#1a2236;color:#e8edf5}
+/* HEADER */
+.hdr{background:#111827;border-bottom:2px solid #f97316;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hdr-logo{width:36px;height:36px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-title{font-size:16px;font-weight:900;color:#fff}
+.hdr-sub{font-size:11px;color:#8a9ab8;flex:1}
+.hdr-code{background:rgba(249,115,22,.12);border:1px solid #f97316;border-radius:16px;padding:4px 12px;font-size:11px;font-weight:700;color:#f97316}
+.hdr-logout{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;font-size:11px;color:#94a3b8;cursor:pointer}
+/* TABS */
+.tabs{background:#0d1320;border-bottom:1px solid #1e293b;display:flex;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.tab{padding:12px 16px;font-size:11px;font-weight:800;color:#64748b;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;transition:all .15s}
+.tab.on{color:#f97316;border-bottom-color:#f97316}
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px}
+.section{display:none}.section.on{display:block}
+/* CARDS */
+.card{background:#1a2236;border:1px solid #2d3d5a;border-radius:14px;padding:16px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:900;color:#e8edf5;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #2d3d5a;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+/* FIELDS */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.f label{font-size:10px;font-weight:700;color:#8a9ab8;text-transform:uppercase;letter-spacing:.06em}
+.f input,.f select,.f textarea{background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:10px 13px;font-size:13px;font-family:inherit;outline:none;width:100%;transition:border-color .15s}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:#f97316}
+.f textarea{resize:vertical;min-height:70px}
+select option{background:#1a2236}
+/* BUTTONS */
 .btn{border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:opacity .15s}
 .btn:hover{opacity:.85}
-.btn-primary{background:linear-gradient(135deg,#f97316,#c2540a);color:#fff}
-.btn-secondary{background:var(--raised);border:1px solid var(--border2);color:var(--text)}
-.btn-success{background:#22c55e;color:#fff}
-.btn-danger{background:#ef4444;color:#fff}
-.btn-blue{background:#3b82f6;color:#fff}
-.btn-sm{padding:7px 13px;font-size:11px;border-radius:8px}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
-.badge-green{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
-.badge-red{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
-.badge-amber{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
-.badge-blue{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
-.badge-purple{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
-.counter-box{background:var(--raised);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--border)}
-.counter-num{font-size:30px;font-weight:900;margin-bottom:3px}
-.counter-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.alert{border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
-.alert-warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
-.alert-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#f87171}
-.alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#4ade80}
-.alert-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
-.modal-box{background:var(--card);border:1px solid var(--border2);border-radius:18px;padding:24px;max-width:580px;width:100%;max-height:88vh;overflow-y:auto}
-.modal-box h3{font-size:16px;font-weight:900;margin-bottom:18px;color:var(--orange);display:flex;align-items:center;gap:8px}
-.hidden{display:none!important}
-.row-flex{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap}
-.row-flex h2{font-size:16px;font-weight:900}
-.row-flex .actions{display:flex;gap:8px;flex-wrap:wrap}
-.driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px}
-.driver-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:all .15s}
-.driver-card:hover{border-color:var(--orange);transform:translateY(-2px)}
-.driver-avatar{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;margin-bottom:9px}
-.driver-name{font-size:14px;font-weight:800;margin-bottom:3px}
-.driver-meta{font-size:11px;color:var(--muted);margin-bottom:3px}
-.eval-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
-.eval-row:last-child{border-bottom:none}
-.eval-label{flex:1;font-size:13px;font-weight:600;color:var(--text)}
-.stars{display:flex;gap:3px}
-.star{font-size:24px;cursor:pointer;color:var(--border2);transition:color .1s,transform .1s}
-.star:hover{transform:scale(1.15)}
-.star.on{color:#f59e0b}
-.timeline{position:relative;padding-left:22px}
-.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
+.btn-p{background:linear-gradient(135deg,#f97316,#c2540a);color:#fff}
+.btn-s{background:#243048;border:1px solid #3a4d6e;color:#e8edf5}
+.btn-g{background:#22c55e;color:#fff}
+.btn-r{background:#ef4444;color:#fff}
+.btn-sm{padding:7px 12px;font-size:11px;border-radius:8px}
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800}
+.bg-green{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.bg-red{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.bg-amber{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.bg-blue{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
+.bg-purple{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
+/* COUNTERS */
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.cbox{background:#243048;border-radius:12px;padding:14px;text-align:center;border:1px solid #2d3d5a}
+.cnum{font-size:28px;font-weight:900;margin-bottom:3px}
+.clbl{font-size:10px;color:#8a9ab8;font-weight:700;text-transform:uppercase}
+/* ALERTS */
+.alert{border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5}
+.alert-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
+.alert-d{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#f87171}
+.alert-i{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
+.alert-g{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#4ade80}
+/* DRIVERS GRID */
+.drivers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-bottom:20px}
+.dcard{background:#1a2236;border:2px solid #2d3d5a;border-radius:14px;padding:14px;cursor:pointer;transition:all .15s}
+.dcard:hover{border-color:#f97316;transform:translateY(-2px)}
+.davatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;margin-bottom:9px}
+.dname{font-size:14px;font-weight:800;margin-bottom:3px}
+.dmeta{font-size:11px;color:#8a9ab8;margin-bottom:3px}
+/* TIMELINE */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:#1e293b}
 .tl-item{position:relative;margin-bottom:16px}
-.tl-dot{position:absolute;left:-19px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card)}
-.tl-date{font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:700}
-.tl-body{background:var(--raised);border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
-.checklist-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
-.checklist-item:last-child{border-bottom:none}
-.checklist-item input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--orange);flex-shrink:0}
-.checklist-item label{font-size:13px;cursor:pointer}
+.tl-dot{position:absolute;left:-19px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid #1a2236}
+.tl-date{font-size:10px;color:#8a9ab8;margin-bottom:3px;font-weight:700}
+.tl-body{background:#243048;border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
+/* EVAL STARS */
+.eval-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #1e293b}
+.eval-row:last-child{border-bottom:none}
+.eval-lbl{flex:1;font-size:13px;font-weight:600}
+.stars-wrap{display:flex;gap:3px}
+.star{font-size:22px;cursor:pointer;color:#2d3d5a;transition:color .1s}
+.star.on{color:#f59e0b}
+/* SECTION HEADER */
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:gap}
+.sec-hdr h2{font-size:16px;font-weight:900}
+.sec-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* SELECT INLINE */
+.sel-inline{background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:8px 12px;font-size:12px;font-family:inherit;outline:none}
+.sel-inline:focus{border-color:#f97316}
+/* INCIDENT CARD */
+.inc-card{background:#1a2236;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b}
+/* CHECKLIST */
+.chk-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
+.chk-item:last-child{border-bottom:none}
+.chk-item input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#f97316}
+.chk-item label{font-size:13px;cursor:pointer}
+/* GUIDE */
 .guide-block{margin-bottom:24px}
-.guide-block h3{font-size:13px;font-weight:900;color:var(--orange);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
-.guide-item{background:var(--raised);border-left:3px solid var(--orange);border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.65;color:var(--text)}
+.guide-block h3{font-size:13px;font-weight:900;color:#f97316;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.guide-item{background:#243048;border-left:3px solid #f97316;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.65}
 .guide-item strong{color:#fff}
-.inc-card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid var(--amber)}
-.obj-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+/* OBJECTIVES */
+.obj-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
 .obj-item:last-child{border-bottom:none}
-input[type=checkbox]{accent-color:var(--orange)}
-select.inline{background:var(--raised);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;font-family:inherit;outline:none}
-@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}}
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.modal-box{background:#1a2236;border:1px solid #3a4d6e;border-radius:18px;padding:24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-box h3{font-size:15px;font-weight:900;margin-bottom:16px;color:#f97316}
+.hidden{display:none!important}
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:#0f1623;z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:#1a2236;border:1px solid #3a4d6e;border-radius:18px;padding:32px;max-width:340px;width:90%;text-align:center}
+.login-icon{font-size:48px;margin-bottom:14px}
+.login-title{font-size:20px;font-weight:900;color:#fff;margin-bottom:6px}
+.login-sub{font-size:13px;color:#8a9ab8;margin-bottom:24px}
+.login-input{width:100%;background:#0f1623;border:2px solid #3a4d6e;border-radius:12px;color:#fff;font-size:18px;padding:14px;text-align:center;letter-spacing:.1em;font-family:inherit;outline:none;margin-bottom:12px}
+.login-input:focus{border-color:#f97316}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer}
+.login-err{color:#ef4444;font-size:12px;margin-top:10px;display:none}
+@media(max-width:700px){.row2,.row3{grid-template-columns:1fr}.counters{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<div class="app">
 
-<div class="header">
-  <div class="header-logo">🏗️</div>
-  <div style="flex:1">
-    <div class="header-title">CANA Insertion</div>
-    <div class="header-sub">Suivi & Accompagnement Socio-Professionnel — La Table de Cana</div>
+<!-- ÉCRAN DE CONNEXION -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-icon">🏗️</div>
+    <div class="login-title">CANA Insertion</div>
+    <div class="login-sub">Suivi & Accompagnement Socio-Professionnel<br>La Table de Cana — Marseille</div>
+    <input type="password" class="login-input" id="login-code" placeholder="• • • • • •" maxlength="20">
+    <button class="login-btn" onclick="tryLogin()">Accéder</button>
+    <div class="login-err" id="login-err">Code incorrect</div>
   </div>
-  <a href="javascript:history.back()" style="color:var(--muted);font-size:12px;text-decoration:none">← Retour</a>
 </div>
 
-<div class="nav-tabs">
-  <button class="tab active" onclick="showTab('dossiers',this)">📁 Dossiers</button>
+<!-- APPLICATION PRINCIPALE -->
+<div class="app hidden" id="main-app">
+
+<div class="hdr">
+  <div class="hdr-logo">🏗️</div>
+  <div>
+    <div class="hdr-title">CANA Insertion</div>
+    <div class="hdr-sub">La Table de Cana — Marseille</div>
+  </div>
+  <span class="hdr-code" id="hdr-service-badge">RH</span>
+  <button class="hdr-logout" onclick="logout()">Déconnexion</button>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="showTab('dossiers',this)">📁 Dossiers</button>
   <button class="tab" onclick="showTab('suivi',this)">📈 Suivi</button>
   <button class="tab" onclick="showTab('evaluation',this)">⭐ Évaluation</button>
   <button class="tab" onclick="showTab('incidents',this)">⚠️ Incidents</button>
@@ -123,263 +161,201 @@ select.inline{background:var(--raised);border:1px solid var(--border2);border-ra
 <div class="content">
 
 <!-- ═══ DOSSIERS ═══ -->
-<div id="tab-dossiers" class="section active">
-  <div class="row-flex">
+<div id="sec-dossiers" class="section on">
+  <div class="sec-hdr">
     <h2>📁 Dossiers individuels</h2>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="ouvrirModalDossier(null)">+ Nouveau dossier</button>
+    <div class="sec-actions">
+      <button class="btn btn-p btn-sm" onclick="ouvrirModalDossier(null)">+ Nouveau dossier</button>
     </div>
   </div>
-  <div class="driver-grid" id="dossiers-grid">
-    <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;font-size:13px">Chargement...</div>
+  <div class="drivers-grid" id="dossiers-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px">Chargement...</div>
   </div>
 </div>
 
 <!-- ═══ SUIVI ═══ -->
-<div id="tab-suivi" class="section">
-  <div class="row-flex">
+<div id="sec-suivi" class="section">
+  <div class="sec-hdr">
     <h2>📈 Suivi socio-professionnel</h2>
-    <div class="actions">
-      <select class="inline" id="suivi-sel" onchange="chargerSuivi()">
+    <div class="sec-actions">
+      <select class="sel-inline" id="suivi-sel" onchange="chargerSuivi()">
         <option value="">-- Choisir un salarié --</option>
       </select>
-      <button class="btn btn-primary btn-sm" onclick="ouvrirModalEntretien()">+ Entretien</button>
+      <button class="btn btn-p btn-sm" onclick="ouvrirModalEntretien()">+ Entretien</button>
     </div>
   </div>
-  <div class="alert alert-info" id="suivi-empty">Sélectionnez un salarié pour voir son suivi complet.</div>
+  <div class="alert alert-i" id="suivi-empty">Sélectionnez un salarié pour voir son suivi.</div>
   <div id="suivi-body" class="hidden">
-    <div class="grid4" id="suivi-counters"></div>
+    <div class="counters" id="suivi-counters"></div>
     <div id="suivi-alertes"></div>
-
     <div class="card">
       <div class="card-title">🏠 Situation socio-personnelle actuelle</div>
-      <div class="grid3">
-        <div class="field"><label>Logement</label>
-          <select id="sit-logement">
-            <option>Stable</option><option>Précaire</option><option>Sans logement</option>
-            <option>Hébergé tiers</option><option>En cours de relogement</option>
-          </select>
+      <div class="row3">
+        <div class="f"><label>Logement</label>
+          <select id="sit-logement"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé tiers</option><option>En cours de relogement</option></select>
         </div>
-        <div class="field"><label>Mobilité</label>
-          <select id="sit-mobilite">
-            <option>Véhicule personnel</option><option>Transports en commun</option>
-            <option>Vélo</option><option>Covoiturage</option><option>Aucune</option>
-          </select>
+        <div class="f"><label>Mobilité</label>
+          <select id="sit-mobilite"><option>Véhicule personnel</option><option>Transports en commun</option><option>Vélo</option><option>Covoiturage</option><option>Aucune</option></select>
         </div>
-        <div class="field"><label>Santé</label>
-          <select id="sit-sante">
-            <option>Bonne</option><option>Contraintes ponctuelles</option>
-            <option>Suivi médical en cours</option><option>RQTH</option><option>Difficultés importantes</option>
-          </select>
+        <div class="f"><label>Santé</label>
+          <select id="sit-sante"><option>Bonne</option><option>Contraintes ponctuelles</option><option>Suivi médical</option><option>RQTH</option><option>Difficultés importantes</option></select>
         </div>
-        <div class="field"><label>Situation familiale</label>
-          <select id="sit-famille">
-            <option>Célibataire</option><option>En couple</option><option>Marié(e)</option>
-            <option>Séparé(e)/divorcé(e)</option><option>Famille monoparentale</option>
-          </select>
+        <div class="f"><label>Situation familiale</label>
+          <select id="sit-famille"><option>Célibataire</option><option>En couple</option><option>Marié(e)</option><option>Séparé(e)</option><option>Famille monoparentale</option></select>
         </div>
-        <div class="field"><label>Enfants à charge</label>
-          <input type="number" id="sit-enfants" min="0" max="20" placeholder="0">
-        </div>
-        <div class="field"><label>Allocations / Droits</label>
-          <select id="sit-alloc">
-            <option>Aucun</option><option>RSA</option><option>ARE (chômage)</option>
-            <option>AAH</option><option>Prime activité</option><option>Autre</option>
-          </select>
+        <div class="f"><label>Enfants à charge</label><input type="number" id="sit-enfants" min="0" max="20" placeholder="0"></div>
+        <div class="f"><label>Allocations / Droits</label>
+          <select id="sit-alloc"><option>Aucun</option><option>RSA</option><option>ARE</option><option>AAH</option><option>Prime activité</option><option>Autre</option></select>
         </div>
       </div>
-      <div class="field"><label>Démarches en cours / Points d'attention</label>
-        <textarea id="sit-remarques" placeholder="Rdv CAF, dossier logement, renouvellement titre de séjour, démarches santé..."></textarea>
+      <div class="f"><label>Démarches en cours / Points d'attention</label>
+        <textarea id="sit-remarques" placeholder="Rdv CAF, dossier logement, renouvellement titre de séjour..."></textarea>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="sauverSituation()">💾 Sauvegarder la situation</button>
+      <button class="btn btn-p btn-sm" onclick="sauverSituation()">💾 Sauvegarder la situation</button>
     </div>
-
     <div class="card">
       <div class="card-title">📅 Historique des entretiens</div>
-      <div class="timeline" id="entretiens-tl">
-        <div style="color:var(--muted);font-size:13px">Aucun entretien enregistré.</div>
-      </div>
+      <div class="tl" id="entretiens-tl"><div style="color:#8a9ab8;font-size:13px;padding:10px 0">Aucun entretien enregistré.</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ EVALUATION ═══ -->
-<div id="tab-evaluation" class="section">
-  <div class="row-flex">
+<!-- ═══ ÉVALUATION ═══ -->
+<div id="sec-evaluation" class="section">
+  <div class="sec-hdr">
     <h2>⭐ Grille d'évaluation</h2>
-    <div class="actions">
-      <select class="inline" id="eval-sel" onchange="chargerEval()">
+    <div class="sec-actions">
+      <select class="sel-inline" id="eval-sel" onchange="chargerEval()">
         <option value="">-- Choisir un salarié --</option>
       </select>
-      <button class="btn btn-primary btn-sm" onclick="sauverEval()">💾 Sauvegarder</button>
+      <button class="btn btn-p btn-sm" onclick="sauverEval()">💾 Sauvegarder</button>
     </div>
   </div>
-  <div class="alert alert-info" id="eval-empty">Sélectionnez un salarié pour l'évaluer.</div>
+  <div class="alert alert-i" id="eval-empty">Sélectionnez un salarié pour l'évaluer.</div>
   <div id="eval-body" class="hidden">
-
+    <div class="card"><div class="card-title">🚗 Compétences professionnelles</div><div id="eval-pro"></div></div>
+    <div class="card"><div class="card-title">🤝 Comportement & Relationnel</div><div id="eval-comp"></div></div>
+    <div class="card"><div class="card-title">🎯 Projet professionnel</div><div id="eval-proj"></div></div>
     <div class="card">
-      <div class="card-title">🚗 Compétences professionnelles chauffeur</div>
-      <div id="eval-bloc-pro"></div>
+      <div class="card-title">🎯 Objectifs fixés</div>
+      <div id="obj-list"></div>
+      <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="ajouterObj()">+ Ajouter un objectif</button>
     </div>
-    <div class="card">
-      <div class="card-title">🤝 Comportement & Relationnel</div>
-      <div id="eval-bloc-comportement"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🎯 Projet professionnel & Progression personnelle</div>
-      <div id="eval-bloc-projet"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🎯 Objectifs fixés avec le salarié</div>
-      <div id="objectifs-list"></div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="ajouterObjectif()">+ Ajouter un objectif</button>
-    </div>
-
     <div class="card">
       <div class="card-title">📝 Bilan & Recommandation</div>
-      <div class="field"><label>Commentaire global de l'encadrant</label>
-        <textarea id="eval-comment" placeholder="Points forts, axes d'amélioration, attitude générale, recommandations pour la suite..."></textarea>
+      <div class="f"><label>Commentaire global</label>
+        <textarea id="eval-comment" placeholder="Points forts, axes d'amélioration, recommandations..."></textarea>
       </div>
-      <div class="grid2" style="margin-top:12px">
-        <div style="background:var(--raised);border-radius:12px;padding:16px;text-align:center">
-          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">Score global</div>
-          <div id="score-global" style="font-size:36px;font-weight:900;color:var(--orange)">—</div>
-          <div style="font-size:11px;color:var(--muted)">/5</div>
+      <div class="row2" style="margin-top:12px">
+        <div style="background:#243048;border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:#8a9ab8;font-weight:700;text-transform:uppercase;margin-bottom:8px">Score global</div>
+          <div id="score-global" style="font-size:36px;font-weight:900;color:#f97316">—</div>
+          <div style="font-size:11px;color:#8a9ab8">/5</div>
         </div>
-        <div class="field"><label>Recommandation sortie de parcours</label>
+        <div class="f"><label>Recommandation sortie</label>
           <select id="eval-reco">
             <option>Maintien en parcours</option>
             <option>Renouvellement de contrat</option>
             <option>Sortie vers emploi classique</option>
-            <option>Sortie vers formation qualifiante</option>
+            <option>Sortie vers formation</option>
             <option>Rupture de contrat</option>
           </select>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
 <!-- ═══ INCIDENTS ═══ -->
-<div id="tab-incidents" class="section">
-  <div class="row-flex">
+<div id="sec-incidents" class="section">
+  <div class="sec-hdr">
     <h2>⚠️ Incidents & Retards</h2>
-    <div class="actions">
-      <select class="inline" id="inc-filtre" onchange="chargerIncidents()">
+    <div class="sec-actions">
+      <select class="sel-inline" id="inc-filtre" onchange="chargerIncidents()">
         <option value="">Tous les salariés</option>
       </select>
-      <button class="btn btn-danger btn-sm" onclick="ouvrirModalIncident()">⚠️ Signaler</button>
+      <button class="btn btn-r btn-sm" onclick="ouvrirModalIncident()">⚠️ Signaler</button>
     </div>
   </div>
   <div id="alertes-recap"></div>
-  <div id="incidents-list">
-    <div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">Chargement...</div>
-  </div>
+  <div id="inc-list"><div style="text-align:center;padding:30px;color:#8a9ab8;font-size:13px">Chargement...</div></div>
 </div>
 
 <!-- ═══ RECRUTEMENT ═══ -->
-<div id="tab-recrutement" class="section">
-  <div class="row-flex">
+<div id="sec-recrutement" class="section">
+  <div class="sec-hdr">
     <h2>🤝 Fiche d'entretien de recrutement</h2>
-    <div class="actions">
-      <input type="text" id="recr-nom-candidat" placeholder="Nom du candidat" style="background:var(--raised);border:1px solid var(--border2);border-radius:9px;color:var(--text);padding:9px 13px;font-size:13px;width:180px">
-      <button class="btn btn-success btn-sm" onclick="sauverRecr()">💾 Sauvegarder</button>
-      <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+    <div class="sec-actions">
+      <input type="text" id="recr-nom" placeholder="Nom du candidat" style="background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:9px 13px;font-size:13px;width:160px">
+      <button class="btn btn-g btn-sm" onclick="sauverRecr()">💾 Sauvegarder</button>
+      <button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">📋 Informations générales</div>
-    <div class="grid3">
-      <div class="field"><label>Date de l'entretien</label><input type="date" id="recr-date"></div>
-      <div class="field"><label>Encadrant</label><input type="text" id="recr-encadrant" placeholder="Votre nom"></div>
-      <div class="field"><label>Poste proposé</label><input type="text" id="recr-poste" value="Chauffeur livreur — CDDI"></div>
+    <div class="row3">
+      <div class="f"><label>Date entretien</label><input type="date" id="recr-date"></div>
+      <div class="f"><label>Encadrant</label><input type="text" id="recr-enc" placeholder="Votre nom"></div>
+      <div class="f"><label>Poste proposé</label><input type="text" id="recr-poste" value="Chauffeur livreur — CDDI"></div>
     </div>
-    <div class="grid3">
-      <div class="field"><label>Date de naissance</label><input type="date" id="recr-naiss"></div>
-      <div class="field"><label>Nationalité / Titre de séjour</label><input type="text" id="recr-nat" placeholder="Française / Titre valide jusqu'au..."></div>
-      <div class="field"><label>Permis B</label>
+    <div class="row3">
+      <div class="f"><label>Date de naissance</label><input type="date" id="recr-naiss"></div>
+      <div class="f"><label>Nationalité / Titre séjour</label><input type="text" id="recr-nat" placeholder="Française / Titre valide..."></div>
+      <div class="f"><label>Permis B</label>
         <select id="recr-permis"><option>Oui — valide</option><option>Oui — points réduits</option><option>Non</option><option>En cours</option></select>
       </div>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">🏠 Situation personnelle & Freins à l'emploi</div>
-    <div class="grid2">
-      <div class="field"><label>Logement</label>
-        <select id="recr-log"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé</option></select>
-      </div>
-      <div class="field"><label>Mobilité</label>
-        <select id="recr-mob"><option>Véhicule personnel</option><option>Transports en commun</option><option>Aucune</option></select>
-      </div>
-      <div class="field"><label>Situation familiale</label>
-        <select id="recr-fam"><option>Célibataire</option><option>En couple</option><option>Famille monoparentale</option><option>Marié(e)</option></select>
-      </div>
-      <div class="field"><label>Droits ouverts</label>
-        <input type="text" id="recr-droits" placeholder="RSA, fin de droits ARE, aucun...">
-      </div>
+    <div class="card-title">🏠 Situation personnelle & Freins</div>
+    <div class="row2">
+      <div class="f"><label>Logement</label><select id="recr-log"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé</option></select></div>
+      <div class="f"><label>Mobilité</label><select id="recr-mob"><option>Véhicule personnel</option><option>Transports en commun</option><option>Aucune</option></select></div>
+      <div class="f"><label>Situation familiale</label><select id="recr-fam"><option>Célibataire</option><option>En couple</option><option>Famille monoparentale</option><option>Marié(e)</option></select></div>
+      <div class="f"><label>Droits ouverts</label><input type="text" id="recr-droits" placeholder="RSA, fin de droits ARE..."></div>
     </div>
-    <div class="field"><label>Freins identifiés à l'emploi</label>
-      <textarea id="recr-freins" placeholder="Isolement social, illettrisme, dette, garde d'enfants, santé, justice, logement instable, addictions..."></textarea>
+    <div class="f"><label>Freins identifiés à l'emploi</label>
+      <textarea id="recr-freins" placeholder="Isolement, logement, garde enfants, santé, dette, addictions..."></textarea>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">💼 Parcours professionnel</div>
-    <div class="field"><label>Dernière expérience professionnelle</label>
-      <input type="text" id="recr-exp" placeholder="Poste — Durée — Raison de fin">
+    <div class="card-title">💼 Parcours & Compétences</div>
+    <div class="f"><label>Dernière expérience professionnelle</label><input type="text" id="recr-exp" placeholder="Poste — Durée — Raison de fin"></div>
+    <div class="row2">
+      <div class="f"><label>Durée d'éloignement de l'emploi</label>
+        <select id="recr-eloig"><option>Moins de 6 mois</option><option>6 mois à 1 an</option><option>1 à 2 ans</option><option>2 à 5 ans</option><option>Plus de 5 ans</option></select>
+      </div>
+      <div class="f"><label>Formation / Diplômes</label><input type="text" id="recr-form" placeholder="CAP, BEP, sans diplôme..."></div>
     </div>
-    <div class="field"><label>Durée d'éloignement de l'emploi</label>
-      <select id="recr-eloig"><option>Moins de 6 mois</option><option>6 mois à 1 an</option><option>1 à 2 ans</option><option>2 à 5 ans</option><option>Plus de 5 ans</option></select>
-    </div>
-    <div class="field"><label>Compétences / Savoir-faire identifiés</label>
-      <textarea id="recr-compt" placeholder="Conduite, livraison, relationnel client, sens de l'organisation, mécanique, informatique..."></textarea>
-    </div>
-    <div class="field"><label>Formations / Diplômes</label>
-      <input type="text" id="recr-form" placeholder="CAP, BEP, FIMO, permis PL... ou sans diplôme">
+    <div class="f"><label>Compétences identifiées</label>
+      <textarea id="recr-compt" placeholder="Conduite, relationnel, ponctualité, livraison..."></textarea>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">🎯 Motivation & Projet professionnel</div>
-    <div class="field"><label>Pourquoi postuler ici ? (réponse du candidat)</label>
-      <textarea id="recr-motiv"></textarea>
-    </div>
-    <div class="field"><label>Projet professionnel à moyen terme</label>
-      <textarea id="recr-projet" placeholder="Ce que le candidat envisage après ce contrat insertion (1-2 ans)..."></textarea>
-    </div>
-    <div class="field"><label>Disponibilités & Contraintes horaires</label>
-      <input type="text" id="recr-dispo" placeholder="Ex: Disponible dès 6h — contrainte mercredi garde enfants">
-    </div>
+    <div class="card-title">🎯 Motivation & Projet</div>
+    <div class="f"><label>Pourquoi postuler ici ?</label><textarea id="recr-motiv"></textarea></div>
+    <div class="f"><label>Projet professionnel à moyen terme</label><textarea id="recr-projet" placeholder="Ce que le candidat envisage après ce contrat..."></textarea></div>
+    <div class="f"><label>Disponibilités & Contraintes horaires</label><input type="text" id="recr-dispo" placeholder="Dès 6h, contrainte mercredi garde enfants..."></div>
   </div>
-
   <div class="card">
     <div class="card-title">✅ Checklist — Pièces à vérifier</div>
-    <div class="checklist-item"><input type="checkbox" id="c1"><label for="c1">Permis B valide (copie recto-verso)</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c2"><label for="c2">Pièce d'identité valide</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c3"><label for="c3">Éligibilité SIAE confirmée (prescripteur Pôle Emploi / Mission Locale / SPIP...)</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c4"><label for="c4">Numéro de Sécurité Sociale</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c5"><label for="c5">RIB pour virement du salaire</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c6"><label for="c6">Casier judiciaire B3 si requis</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c7"><label for="c7">Visite médicale d'embauche planifiée</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c8"><label for="c8">Dossier ASP (Aide au Poste) initié</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c9"><label for="c9">Contrat CDDI signé en double exemplaire</label></div>
-    <div class="checklist-item"><input type="checkbox" id="c10"><label for="c10">DPAE (Déclaration Préalable à l'Embauche) effectuée</label></div>
+    <div class="chk-item"><input type="checkbox" id="c1"><label for="c1">Permis B valide (copie recto-verso)</label></div>
+    <div class="chk-item"><input type="checkbox" id="c2"><label for="c2">Pièce d'identité valide</label></div>
+    <div class="chk-item"><input type="checkbox" id="c3"><label for="c3">Éligibilité SIAE confirmée (prescripteur)</label></div>
+    <div class="chk-item"><input type="checkbox" id="c4"><label for="c4">Numéro de Sécurité Sociale</label></div>
+    <div class="chk-item"><input type="checkbox" id="c5"><label for="c5">RIB pour virement du salaire</label></div>
+    <div class="chk-item"><input type="checkbox" id="c6"><label for="c6">Casier judiciaire si requis</label></div>
+    <div class="chk-item"><input type="checkbox" id="c7"><label for="c7">Visite médicale planifiée</label></div>
+    <div class="chk-item"><input type="checkbox" id="c8"><label for="c8">Dossier ASP (Aide au Poste) initié</label></div>
+    <div class="chk-item"><input type="checkbox" id="c9"><label for="c9">Contrat CDDI signé en double exemplaire</label></div>
+    <div class="chk-item"><input type="checkbox" id="c10"><label for="c10">DPAE effectuée avant prise de poste</label></div>
   </div>
-
   <div class="card">
-    <div class="card-title">📝 Avis de l'encadrant & Décision</div>
-    <div class="field"><label>Points positifs observés pendant l'entretien</label>
-      <textarea id="recr-positifs"></textarea>
-    </div>
-    <div class="field"><label>Points de vigilance / Risques identifiés</label>
-      <textarea id="recr-vigilance"></textarea>
-    </div>
-    <div class="grid2" style="margin-top:10px">
-      <div class="field"><label>Décision finale</label>
+    <div class="card-title">📝 Avis & Décision</div>
+    <div class="f"><label>Points positifs observés</label><textarea id="recr-positifs"></textarea></div>
+    <div class="f"><label>Points de vigilance / Risques</label><textarea id="recr-vigilance"></textarea></div>
+    <div class="row2" style="margin-top:10px">
+      <div class="f"><label>Décision</label>
         <select id="recr-decision">
           <option value="">— En cours —</option>
           <option value="embauche">✅ EMBAUCHE</option>
@@ -387,127 +363,105 @@ select.inline{background:var(--raised);border:1px solid var(--border2);border-ra
           <option value="refus">❌ REFUS</option>
         </select>
       </div>
-      <div class="field"><label>Date de prise de poste prévue</label>
-        <input type="date" id="recr-debut">
-      </div>
+      <div class="f"><label>Date de prise de poste prévue</label><input type="date" id="recr-debut"></div>
     </div>
-    <div class="field"><label>Commentaire final</label>
-      <textarea id="recr-final"></textarea>
-    </div>
+    <div class="f"><label>Commentaire final</label><textarea id="recr-final"></textarea></div>
   </div>
 </div>
 
 <!-- ═══ GUIDE ═══ -->
-<div id="tab-guide" class="section">
-  <div class="row-flex"><h2>📚 Guide pratique — Encadrant en insertion</h2></div>
-
-  <div class="alert alert-info" style="margin-bottom:20px">
-    ℹ️ Ce guide est un mémo pratique de l'accompagnement en insertion professionnelle. Il complète votre expérience terrain et ne remplace pas une formation professionnelle de CIP.
-  </div>
-
+<div id="sec-guide" class="section">
+  <div class="sec-hdr"><h2>📚 Guide pratique — Encadrant en insertion</h2></div>
+  <div class="alert alert-i" style="margin-bottom:20px">ℹ️ Ce guide est un mémo pratique. Il complète votre expérience terrain et ne remplace pas une formation professionnelle de CIP.</div>
   <div class="guide-block">
     <h3>🎯 Votre rôle d'encadrant technique</h3>
-    <div class="guide-item">Vous n'êtes pas thérapeute ni travailleur social. Votre rôle est de <strong>transmettre des compétences professionnelles</strong> tout en restant attentif aux difficultés personnelles qui impactent le travail.</div>
-    <div class="guide-item">Maintenez une posture <strong>bienveillante mais cadrée</strong> : exigence professionnelle + humanité. Pas de psychologie, juste un bon encadrement.</div>
-    <div class="guide-item">Votre premier outil : <strong>l'exemplarité</strong>. Ponctualité, respect, engagement — ce que vous exigez, vous le montrez chaque jour.</div>
-    <div class="guide-item">Toujours <strong>signaler les difficultés importantes</strong> au référent social (CAF, Pôle Emploi, Mission Locale) — ne portez pas seul des problèmes qui dépassent votre rôle.</div>
-    <div class="guide-item"><strong>Chaque personne en insertion est une personne en reconstruction.</strong> Certains ont des parcours très difficiles derrière eux. La patience et la constance dans le cadre sont les deux outils les plus puissants.</div>
+    <div class="guide-item">Vous n'êtes pas thérapeute ni travailleur social. Votre rôle est de <strong>transmettre des compétences professionnelles</strong> tout en restant attentif aux difficultés qui impactent le travail.</div>
+    <div class="guide-item">Maintenez une posture <strong>bienveillante mais cadrée</strong> : exigence professionnelle + humanité. Votre premier outil : <strong>l'exemplarité</strong>.</div>
+    <div class="guide-item">Signalez toujours les difficultés importantes au référent social. Ne portez pas seul des problèmes qui dépassent votre rôle.</div>
   </div>
-
   <div class="guide-block">
     <h3>🚨 Signaux d'alerte à surveiller</h3>
-    <div class="guide-item"><strong>Absentéisme soudain :</strong> plus de 2 absences injustifiées en 1 mois = entretien obligatoire. Pas de sanction immédiate, d'abord comprendre.</div>
-    <div class="guide-item"><strong>Retards chroniques :</strong> plus de 3 retards en 2 semaines = entretien de recadrage. Notez toujours l'heure exacte d'arrivée dans le dossier.</div>
-    <div class="guide-item"><strong>Changement de comportement soudain :</strong> personne habituellement dynamique qui se replie, s'isole, devient irritable → prendre 5 minutes à part, informellement. Souvent suffisant pour débloquer quelque chose.</div>
-    <div class="guide-item"><strong>Difficultés financières visibles :</strong> ne pas manger le midi, demandes d'avance répétées → orienter vers le CCAS de la mairie ou le référent social. Ne pas prêter d'argent personnellement.</div>
-    <div class="guide-item"><strong>Violence conjugale ou familiale :</strong> ne pas minimiser. Orienter vers le 3919 (violences femmes, gratuit 24h/24). Signalement possible si enfants en danger.</div>
-    <div class="guide-item"><strong>Addiction visible au travail :</strong> odeur d'alcool, comportement incohérent → <strong>ne pas envoyer au volant</strong>. Entretien le jour même, fiche incident, signalement interne. C'est une question de sécurité routière avant tout.</div>
-    <div class="guide-item"><strong>Propos alarmants sur soi-même :</strong> si quelqu'un exprime des idées sombres ou désespérées → écouter sans panique, contacter le 15 (SAMU) ou le 3114 (numéro national prévention suicide) si nécessaire.</div>
+    <div class="guide-item"><strong>Absentéisme :</strong> +2 absences injustifiées en 1 mois = entretien obligatoire. 3 = signalement écrit.</div>
+    <div class="guide-item"><strong>Retards chroniques :</strong> +3 retards en 2 semaines = entretien de recadrage. Notez toujours l'heure exacte.</div>
+    <div class="guide-item"><strong>Changement de comportement soudain :</strong> repli sur soi, irritabilité, désengagement → prendre 5 minutes informellement.</div>
+    <div class="guide-item"><strong>Difficultés financières visibles :</strong> orienter vers CCAS de la mairie, ne pas prêter personnellement.</div>
+    <div class="guide-item"><strong>Violence conjugale :</strong> 3919 (gratuit, 24h/24). Signalement possible si enfants en danger.</div>
+    <div class="guide-item"><strong>Addiction visible au travail :</strong> <strong>ne pas envoyer au volant</strong>. Entretien le jour même, fiche incident obligatoire.</div>
   </div>
-
   <div class="guide-block">
-    <h3>💬 Mener un entretien de suivi efficacement</h3>
-    <div class="guide-item"><strong>Fréquence minimum :</strong> 1 entretien mensuel par personne, + entretien d'accueil (J1), mi-parcours et fin de parcours.</div>
-    <div class="guide-item"><strong>Lieu :</strong> bureau fermé, porte close. Pas au milieu de l'atelier ou du couloir. La confidentialité conditionne la confiance.</div>
-    <div class="guide-item"><strong>Structure simple en 4 questions :</strong> (1) Comment ça va au travail ? (2) Est-ce qu'il y a des choses qui te freinent ? (3) Comment ça va personnellement en ce moment ? (4) Qu'est-ce qu'on peut faire ensemble ?</div>
-    <div class="guide-item"><strong>Ne pas promettre ce qu'on ne peut pas tenir.</strong> Si une demande dépasse vos moyens : "Je vais en parler à [référent], je ne peux pas décider seul." C'est honnête et ça respecte la personne.</div>
-    <div class="guide-item"><strong>Toujours conclure par une action concrète</strong> notée dans le dossier : rdv CAF fixé, objectif de ponctualité, contact formation. Sans action = entretien sans suite.</div>
-    <div class="guide-item">Posture d'écoute : <strong>ne pas couper, ne pas juger</strong>. Reformuler ce que vous entendez : "Si je comprends bien, tu me dis que...". Ça montre que vous avez entendu et aide la personne à clarifier elle-même sa situation.</div>
+    <h3>💬 Mener un entretien de suivi</h3>
+    <div class="guide-item"><strong>Fréquence :</strong> 1 entretien mensuel minimum + J1 accueil + mi-parcours + fin de parcours.</div>
+    <div class="guide-item"><strong>4 questions clés :</strong> Comment ça va au travail ? Qu'est-ce qui te freine ? Comment ça va personnellement ? Qu'est-ce qu'on peut faire ensemble ?</div>
+    <div class="guide-item"><strong>Toujours conclure par une action concrète</strong> notée dans le dossier. Sans action = entretien sans suite.</div>
+    <div class="guide-item">Ne jamais promettre ce qu'on ne peut pas tenir. Si ça dépasse votre rôle : "Je vais en parler au référent."</div>
   </div>
-
   <div class="guide-block">
-    <h3>⚠️ Gérer les difficultés professionnelles répétées</h3>
-    <div class="guide-item"><strong>1er retard :</strong> rappel oral informel, bienveillant mais clair. "Tu arrives à 6h47, c'est noté. Tout va bien ?"</div>
-    <div class="guide-item"><strong>2ème retard dans le mois :</strong> entretien formel, inscription dans le dossier numérique, objectif fixé ensemble (ex: "Pour le mois prochain, l'objectif c'est zéro retard").</div>
-    <div class="guide-item"><strong>3ème retard :</strong> entretien de recadrage, rappel du règlement intérieur, possibilité d'avertissement écrit selon convention collective.</div>
-    <div class="guide-item"><strong>Distinguer toujours :</strong> difficulté surmontable avec accompagnement (pas de voiture, garde d'enfant) vs comportement délibéré. La réponse n'est pas la même et la confondre nuit à tout le monde.</div>
-    <div class="guide-item"><strong>Ne jamais gérer une situation disciplinaire à chaud.</strong> Si vous êtes en colère ou sous pression, attendez. La réponse posée après réflexion est toujours plus efficace — et juridiquement plus solide.</div>
-    <div class="guide-item">En cas de faute grave : <strong>ne rien décider seul</strong>. Contacter la direction et si besoin un juriste RH. La procédure disciplinaire a des règles strictes.</div>
+    <h3>⚠️ Gérer les difficultés répétées</h3>
+    <div class="guide-item"><strong>1er retard :</strong> rappel oral bienveillant. "Tu arrives à 6h47, c'est noté. Tout va bien ?"</div>
+    <div class="guide-item"><strong>2ème retard dans le mois :</strong> entretien formel, inscription dans le dossier, objectif fixé ensemble.</div>
+    <div class="guide-item"><strong>3ème retard :</strong> entretien de recadrage, rappel règlement, possibilité d'avertissement écrit.</div>
+    <div class="guide-item"><strong>Ne jamais gérer à chaud.</strong> Attendez 24h si nécessaire. La réponse posée est toujours plus efficace et juridiquement plus solide.</div>
   </div>
-
   <div class="guide-block">
     <h3>🎓 Préparer la sortie du parcours</h3>
-    <div class="guide-item"><strong>Dès le 3ème mois :</strong> commencer à parler du "après". "Tu as pensé à ce que tu voudrais faire après ici ?" Pas de pression, juste ouvrir la réflexion.</div>
-    <div class="guide-item"><strong>Outils à mobiliser :</strong> aide à la rédaction du CV (valoriser les compétences acquises ici), lettre de motivation, simulation d'entretien, lien avec Pôle Emploi / Mission Locale.</div>
-    <div class="guide-item"><strong>L'attestation employeur compte.</strong> Une attestation qui valorise la conduite, la ponctualité, le sens du service et la rigueur d'un chauffeur de la Table de Cana, ça pèse sur un CV dans la livraison.</div>
-    <div class="guide-item"><strong>Réseau :</strong> si vous connaissez un transporteur ou employeur qui recrute, signalez-le. L'accompagnement ne s'arrête pas au dernier jour de contrat.</div>
-    <div class="guide-item"><strong>Sortie positive même si difficile :</strong> même une rupture de contrat peut se conclure avec dignité — entretien de clôture, lettre de recommandation partielle si possible, orientation vers d'autres structures.</div>
+    <div class="guide-item">Dès le 3ème mois : parler du "après". Pas de pression, juste ouvrir la réflexion.</div>
+    <div class="guide-item">Aide à la rédaction du CV, simulation d'entretien, lien Pôle Emploi / Mission Locale.</div>
+    <div class="guide-item"><strong>L'attestation employeur compte.</strong> Valorisez les compétences acquises : conduite, ponctualité, sens du service.</div>
   </div>
-
   <div class="guide-block">
-    <h3>📋 Contacts & Ressources utiles Marseille</h3>
-    <div class="guide-item"><strong>Violences conjugales :</strong> 3919 (gratuit, anonyme, 24h/24)</div>
-    <div class="guide-item"><strong>Prévention suicide :</strong> 3114 (gratuit, 24h/24)</div>
-    <div class="guide-item"><strong>Urgence sociale / sans-abri :</strong> 115</div>
-    <div class="guide-item"><strong>Difficultés financières urgentes :</strong> CCAS de la mairie, Secours Catholique, Croix-Rouge Française Marseille</div>
-    <div class="guide-item"><strong>Addictions :</strong> CSAPA (Centre de Soins Accompagnement Prévention Addictologie) — sur prescription ou accès direct</div>
-    <div class="guide-item"><strong>Mal-logement :</strong> SIAO 13 — siao13.fr / 04 91 31 81 96</div>
-    <div class="guide-item"><strong>Droits sociaux :</strong> CAF 13, CPAM 13, Point Conseil Budget (surendettement)</div>
-    <div class="guide-item"><strong>Accompagnement emploi :</strong> Pôle Emploi, Mission Locale Marseille (moins de 26 ans), Cap Emploi (RQTH)</div>
+    <h3>📋 Contacts utiles Marseille</h3>
+    <div class="guide-item"><strong>Violences conjugales :</strong> 3919 — <strong>Prévention suicide :</strong> 3114 — <strong>Urgence sociale :</strong> 115</div>
+    <div class="guide-item"><strong>Difficultés financières :</strong> CCAS mairie, Secours Catholique, Croix-Rouge Marseille</div>
+    <div class="guide-item"><strong>Addictions :</strong> CSAPA — <strong>Mal-logement :</strong> SIAO 13 (04 91 31 81 96)</div>
+    <div class="guide-item"><strong>Emploi / Formation :</strong> Pôle Emploi, Mission Locale Marseille, Cap Emploi (RQTH)</div>
   </div>
 </div>
-</div></div>
+
+</div><!-- fin content -->
+</div><!-- fin main-app -->
+
 <!-- ═══ MODALS ═══ -->
-<div id="modal-dossier" class="modal-bg hidden">
+<div id="modal-dossier" class="modal hidden">
 <div class="modal-box">
   <h3 id="modal-dos-title">📁 Nouveau dossier salarié</h3>
   <input type="hidden" id="dos-id">
-  <div class="grid2">
-    <div class="field"><label>Prénom *</label><input type="text" id="dos-prenom" placeholder="Prénom"></div>
-    <div class="field"><label>Nom *</label><input type="text" id="dos-nom" placeholder="NOM EN MAJUSCULES"></div>
+  <div class="row2">
+    <div class="f"><label>Prénom *</label><input type="text" id="dos-prenom" placeholder="Prénom"></div>
+    <div class="f"><label>Nom *</label><input type="text" id="dos-nom" placeholder="NOM"></div>
   </div>
-  <div class="grid3">
-    <div class="field"><label>Date de naissance</label><input type="date" id="dos-naiss"></div>
-    <div class="field"><label>Téléphone</label><input type="tel" id="dos-tel" placeholder="06..."></div>
-    <div class="field"><label>Email</label><input type="email" id="dos-email" placeholder="email@..."></div>
+  <div class="row3">
+    <div class="f"><label>Date de naissance</label><input type="date" id="dos-naiss"></div>
+    <div class="f"><label>Téléphone</label><input type="tel" id="dos-tel" placeholder="06..."></div>
+    <div class="f"><label>Email</label><input type="email" id="dos-email" placeholder="email@..."></div>
   </div>
-  <div class="grid3">
-    <div class="field"><label>Date d'entrée *</label><input type="date" id="dos-entree"></div>
-    <div class="field"><label>Fin de parcours prévue</label><input type="date" id="dos-sortie"></div>
-    <div class="field"><label>Type de contrat</label>
+  <div class="row3">
+    <div class="f"><label>Date d'entrée *</label><input type="date" id="dos-entree"></div>
+    <div class="f"><label>Fin de parcours prévue</label><input type="date" id="dos-sortie"></div>
+    <div class="f"><label>Type de contrat</label>
       <select id="dos-contrat"><option>CDDI</option><option>CDD ACI</option><option>CDDU</option><option>Autre</option></select>
     </div>
   </div>
-  <div class="grid2">
-    <div class="field"><label>Camion assigné</label><input type="text" id="dos-camion" placeholder="VIVARO 1, JUMP 2..."></div>
-    <div class="field"><label>Référent externe</label><input type="text" id="dos-ref" placeholder="Nom — Organisme"></div>
+  <div class="row2">
+    <div class="f"><label>Camion assigné</label><input type="text" id="dos-camion" placeholder="VIVARO 1..."></div>
+    <div class="f"><label>Référent externe</label><input type="text" id="dos-ref" placeholder="Nom — Organisme"></div>
   </div>
-  <div class="field"><label>Objectif principal du parcours</label>
-    <textarea id="dos-obj" placeholder="Ex: Retour à l'emploi dans la livraison — Obtention permis poids lourd — Stabilisation situation sociale..."></textarea>
+  <div class="f"><label>Objectif principal du parcours</label>
+    <textarea id="dos-obj" placeholder="Retour à l'emploi dans la livraison, obtention permis PL..."></textarea>
   </div>
-  <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn btn-primary" onclick="sauverDossier()">💾 Enregistrer</button>
-    <button class="btn btn-secondary" onclick="fermerModal('modal-dossier')">Annuler</button>
+  <div class="btn-row">
+    <button class="btn btn-p" onclick="sauverDossier()">💾 Enregistrer</button>
+    <button class="btn btn-s" onclick="fermerModal('modal-dossier')">Annuler</button>
+    <button class="btn btn-r btn-sm" id="dos-del-btn" style="margin-left:auto" onclick="supprimerDossier()">🗑 Supprimer</button>
   </div>
 </div>
 </div>
 
-<div id="modal-entretien" class="modal-bg hidden">
+<div id="modal-entretien" class="modal hidden">
 <div class="modal-box">
   <h3>📝 Enregistrer un entretien de suivi</h3>
-  <div class="grid2">
-    <div class="field"><label>Date *</label><input type="date" id="ent-date"></div>
-    <div class="field"><label>Type d'entretien</label>
+  <div class="row2">
+    <div class="f"><label>Date *</label><input type="date" id="ent-date"></div>
+    <div class="f"><label>Type d'entretien</label>
       <select id="ent-type">
         <option>Entretien mensuel de suivi</option>
         <option>Entretien d'accueil (J1)</option>
@@ -515,20 +469,19 @@ select.inline{background:var(--raised);border:1px solid var(--border2);border-ra
         <option>Entretien de fin de parcours</option>
         <option>Entretien de recadrage</option>
         <option>Entretien suite à incident</option>
-        <option>Entretien spontané</option>
-        <option>Entretien tripartite (référent)</option>
+        <option>Entretien tripartite</option>
       </select>
     </div>
   </div>
-  <div class="field"><label>Sujets abordés</label>
-    <textarea id="ent-sujets" placeholder="Situation professionnelle, points positifs, difficultés abordées, situation personnelle..."></textarea>
+  <div class="f"><label>Sujets abordés</label>
+    <textarea id="ent-sujets" placeholder="Situation professionnelle, difficultés, situation personnelle..."></textarea>
   </div>
-  <div class="field"><label>Actions décidées / Engagements pris</label>
-    <textarea id="ent-actions" placeholder="Rdv CAF le XX/XX, objectif ponctualité pour le mois suivant, contact formation..."></textarea>
+  <div class="f"><label>Actions décidées / Engagements pris</label>
+    <textarea id="ent-actions" placeholder="Rdv CAF, objectif ponctualité, contact formation..."></textarea>
   </div>
-  <div class="grid2">
-    <div class="field"><label>Prochain entretien prévu</label><input type="date" id="ent-prochain"></div>
-    <div class="field"><label>Dynamique générale observée</label>
+  <div class="row2">
+    <div class="f"><label>Prochain entretien prévu</label><input type="date" id="ent-prochain"></div>
+    <div class="f"><label>Dynamique observée</label>
       <select id="ent-humeur">
         <option>😊 Bonne dynamique</option>
         <option>😐 Neutre / stable</option>
@@ -537,148 +490,200 @@ select.inline{background:var(--raised);border:1px solid var(--border2);border-ra
       </select>
     </div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn btn-primary" onclick="sauverEntretien()">💾 Enregistrer</button>
-    <button class="btn btn-secondary" onclick="fermerModal('modal-entretien')">Annuler</button>
+  <div class="btn-row">
+    <button class="btn btn-p" onclick="sauverEntretien()">💾 Enregistrer</button>
+    <button class="btn btn-s" onclick="fermerModal('modal-entretien')">Annuler</button>
   </div>
 </div>
 </div>
 
-<div id="modal-incident" class="modal-bg hidden">
+<div id="modal-incident" class="modal hidden">
 <div class="modal-box">
   <h3>⚠️ Signaler un incident ou retard</h3>
-  <div class="grid2">
-    <div class="field"><label>Salarié *</label><select id="inc-sel-modal"></select></div>
-    <div class="field"><label>Date *</label><input type="date" id="inc-date"></div>
+  <div class="row2">
+    <div class="f"><label>Salarié *</label><select id="inc-modal-sel"></select></div>
+    <div class="f"><label>Date *</label><input type="date" id="inc-date"></div>
   </div>
-  <div class="grid2">
-    <div class="field"><label>Type</label>
+  <div class="row2">
+    <div class="f"><label>Type</label>
       <select id="inc-type">
-        <option>Retard</option>
-        <option>Absence injustifiée</option>
-        <option>Absence justifiée</option>
-        <option>Comportement inapproprié</option>
-        <option>Qualité de travail insuffisante</option>
-        <option>Incident client</option>
-        <option>Incident véhicule / matériel</option>
-        <option>Non-respect des consignes</option>
-        <option>Autre</option>
+        <option>Retard</option><option>Absence injustifiée</option><option>Absence justifiée</option>
+        <option>Comportement inapproprié</option><option>Qualité de travail insuffisante</option>
+        <option>Incident client</option><option>Incident véhicule</option><option>Non-respect des consignes</option><option>Autre</option>
       </select>
     </div>
-    <div class="field"><label>Durée / Précision horaire</label>
-      <input type="text" id="inc-duree" placeholder="Ex: 45 min de retard, arrivée à 7h05...">
-    </div>
+    <div class="f"><label>Durée / Précision</label><input type="text" id="inc-duree" placeholder="Ex: 45 min de retard, arrivée à 7h05..."></div>
   </div>
-  <div class="field"><label>Description précise des faits *</label>
-    <textarea id="inc-desc" placeholder="Décrivez objectivement les faits observés — heure, lieu, contexte..."></textarea>
+  <div class="f"><label>Description des faits *</label>
+    <textarea id="inc-desc" placeholder="Décrivez précisément et objectivement les faits..."></textarea>
   </div>
-  <div class="grid2">
-    <div class="field"><label>Réponse apportée</label>
+  <div class="row2">
+    <div class="f"><label>Réponse apportée</label>
       <select id="inc-reponse">
-        <option>Rappel oral bienveillant</option>
-        <option>Entretien formel</option>
-        <option>Avertissement écrit</option>
-        <option>Mise à pied conservatoire</option>
-        <option>Sans suite immédiate</option>
-        <option>En cours de traitement</option>
+        <option>Rappel oral</option><option>Entretien formel</option><option>Avertissement écrit</option>
+        <option>Sans suite immédiate</option><option>En cours de traitement</option>
       </select>
     </div>
-    <div class="field"><label>Origine probable</label>
+    <div class="f"><label>Origine probable</label>
       <select id="inc-origine">
-        <option>Difficultés personnelles</option>
-        <option>Problème de transport / mobilité</option>
-        <option>Raison inconnue</option>
-        <option>Comportement délibéré</option>
-        <option>Santé</option>
-        <option>Situation familiale</option>
-        <option>Logement</option>
+        <option>Difficultés personnelles</option><option>Problème de transport</option>
+        <option>Raison inconnue</option><option>Comportement délibéré</option>
+        <option>Santé</option><option>Situation familiale</option>
       </select>
     </div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn btn-danger" onclick="sauverIncident()">⚠️ Enregistrer</button>
-    <button class="btn btn-secondary" onclick="fermerModal('modal-incident')">Annuler</button>
+  <div class="btn-row">
+    <button class="btn btn-r" onclick="sauverIncident()">⚠️ Enregistrer</button>
+    <button class="btn btn-s" onclick="fermerModal('modal-incident')">Annuler</button>
   </div>
 </div>
 </div>
 
 <script>
-const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co',KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+// ═══ CONFIG ═══
+var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+
+var CODES={
+  'rh2026':{nom:'RH Insertion',niveau:'rh'},
+  'cana2026':{nom:'Direction',niveau:'admin'},
+  'direction2026':{nom:'Direction',niveau:'admin'}
+};
+var SESSION=null;
+
+// ═══ LOGIN ═══
+document.getElementById('login-code').addEventListener('keydown',function(e){
+  if(e.key==='Enter')tryLogin();
+});
+
+function tryLogin(){
+  var code=document.getElementById('login-code').value.trim();
+  var srv=CODES[code];
+  if(!srv){
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-code').value='';
+    document.getElementById('login-code').focus();
+    return;
+  }
+  SESSION=srv;
+  sessionStorage.setItem('ins_auth',code);
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('hdr-service-badge').textContent=srv.nom;
+  init();
+}
+
+function logout(){
+  sessionStorage.removeItem('ins_auth');
+  location.reload();
+}
+
+// Vérifier session existante
+(function(){
+  var code=sessionStorage.getItem('ins_auth');
+  var srv=code?CODES[code]:null;
+  if(srv){
+    SESSION=srv;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('hdr-service-badge').textContent=srv.nom;
+  }
+})();
+
+// ═══ DB ═══
 async function db(path,opts){
   opts=opts||{};
   try{
-    const r=await fetch(SUPA+'/rest/v1/'+path,{
+    var r=await fetch(SUPA+'/rest/v1/'+path,{
       headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-      ...opts
+      method:opts.method||'GET',
+      body:opts.body
     });
-    if(!r.ok)return null;
-    const txt=await r.text();
-    return txt?JSON.parse(txt):null;
-  }catch(e){return null;}
+    if(!r.ok){console.error('DB error',r.status,path);return null;}
+    var txt=await r.text();
+    return txt?JSON.parse(txt):[];
+  }catch(e){console.error('DB exception',e);return null;}
 }
 
-/* TABS */
+function toast(msg,color){
+  var t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(color||'#22c55e')+';color:#fff;border-radius:12px;padding:12px 24px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},2500);
+}
+
+// ═══ TABS ═══
 function showTab(name,btn){
-  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.getElementById('tab-'+name).classList.add('active');
-  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.getElementById('sec-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
   if(name==='suivi'||name==='evaluation'||name==='incidents')remplirSelects();
+  if(name==='incidents')chargerIncidents();
+  if(name==='recrutement')document.getElementById('recr-date').value=new Date().toISOString().slice(0,10);
 }
 
 function fermerModal(id){document.getElementById(id).classList.add('hidden');}
 function ouvrirModal(id){document.getElementById(id).classList.remove('hidden');}
 
-/* ════════ DOSSIERS ════════ */
-async function chargerDossiers(){
-  const rows=await db('insertion_dossiers?order=nom.asc');
-  const grid=document.getElementById('dossiers-grid');
-  if(!rows||!rows.length){
-    grid.innerHTML='<div style="text-align:center;padding:50px;color:var(--muted);grid-column:1/-1"><div style="font-size:40px;margin-bottom:12px">👥</div><div style="font-size:14px">Aucun dossier — cliquez sur "+ Nouveau dossier"</div></div>';
-    return;
-  }
-  var colors=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#14b8a6','#f59e0b'];
-  grid.innerHTML=rows.map(function(d,i){
-    var col=colors[i%colors.length];
-    var ini=((d.prenom||'?').charAt(0)+((d.nom||'?').charAt(0))).toUpperCase();
-    var joursRestants=d.sortie_prevue?Math.ceil((new Date(d.sortie_prevue)-new Date())/86400000):null;
-    var bc=joursRestants===null?'blue':joursRestants<0?'purple':joursRestants<30?'red':joursRestants<60?'amber':'green';
-    var bt=joursRestants===null?'En cours':joursRestants<0?'Terminé':joursRestants+'j restants';
-    return '<div class="driver-card" onclick="selectionnerDossier(''+d.id+'')"><div class="driver-avatar" style="background:'+col+'22;color:'+col+'">'+ini+'</div><div class="driver-name">'+( d.prenom||'')+' '+(d.nom||'')+'</div><div class="driver-meta">'+(d.camion||'Pas de camion')+' &bull; '+(d.contrat||'CDDI')+'</div><div class="driver-meta">Entrée : '+(d.date_entree||'—')+'</div><div style="margin-top:8px"><span class="badge badge-'+bc+'">'+bt+'</span></div></div>';
-  }).join('');
+// ═══ INIT ═══
+function init(){
+  chargerDossiers();
 }
 
-function selectionnerDossier(id){
-  remplirSelects().then(function(){
-    document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
-    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-    document.getElementById('tab-suivi').classList.add('active');
-    document.querySelectorAll('.tab')[1].classList.add('active');
-    document.getElementById('suivi-sel').value=id;
-    chargerSuivi();
+// ═══ DOSSIERS ═══
+async function chargerDossiers(){
+  var rows=await db('insertion_dossiers?order=nom.asc');
+  var grid=document.getElementById('dossiers-grid');
+  if(!rows){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;font-size:13px">Erreur de connexion à la base de données.</div>';
+    return;
+  }
+  if(!rows.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px"><div style="font-size:40px;margin-bottom:12px">👥</div>Aucun dossier — cliquez sur "+ Nouveau dossier"</div>';
+    return;
+  }
+  var cols=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#14b8a6','#f59e0b'];
+  var html='';
+  rows.forEach(function(d,i){
+    var col=cols[i%cols.length];
+    var ini=((d.prenom||'?').charAt(0)+((d.nom||'?').charAt(0))).toUpperCase();
+    var jr=d.sortie_prevue?Math.ceil((new Date(d.sortie_prevue)-new Date())/86400000):null;
+    var bc=jr===null?'bg-blue':jr<0?'bg-purple':jr<30?'bg-red':jr<60?'bg-amber':'bg-green';
+    var bt=jr===null?'En cours':jr<0?'Terminé':jr+'j restants';
+    html+='<div class="dcard" onclick="ouvrirModalDossier(\''+d.id+'\')">'
+      +'<div class="davatar" style="background:'+col+'22;color:'+col+'">'+ini+'</div>'
+      +'<div class="dname">'+(d.prenom||'')+' '+(d.nom||'')+'</div>'
+      +'<div class="dmeta">'+(d.camion||'Pas de camion')+' &bull; '+(d.contrat||'CDDI')+'</div>'
+      +'<div class="dmeta">Entrée : '+(d.date_entree||'—')+'</div>'
+      +'<div style="margin-top:8px"><span class="badge '+bc+'">'+bt+'</span></div>'
+      +'</div>';
   });
+  grid.innerHTML=html;
 }
 
 function ouvrirModalDossier(id){
   document.getElementById('dos-id').value=id||'';
   document.getElementById('modal-dos-title').textContent=id?'✏️ Modifier le dossier':'📁 Nouveau dossier salarié';
+  document.getElementById('dos-del-btn').style.display=id?'':'none';
   ['dos-prenom','dos-nom','dos-tel','dos-email','dos-camion','dos-ref','dos-obj'].forEach(function(f){document.getElementById(f).value='';});
   ['dos-naiss','dos-entree','dos-sortie'].forEach(function(f){document.getElementById(f).value='';});
   if(id){
     db('insertion_dossiers?id=eq.'+id).then(function(rows){
-      if(rows&&rows[0]){
-        var d=rows[0];
-        ['prenom','nom','tel','email','camion'].forEach(function(k){
-          var el=document.getElementById('dos-'+k);
-          if(el)el.value=d[k]||'';
-        });
-        document.getElementById('dos-naiss').value=d.naissance||'';
-        document.getElementById('dos-entree').value=d.date_entree||'';
-        document.getElementById('dos-sortie').value=d.sortie_prevue||'';
-        document.getElementById('dos-ref').value=d.referent||'';
-        document.getElementById('dos-obj').value=d.objectif||'';
-        document.getElementById('dos-contrat').value=d.contrat||'CDDI';
-      }
+      if(!rows||!rows[0])return;
+      var d=rows[0];
+      document.getElementById('dos-prenom').value=d.prenom||'';
+      document.getElementById('dos-nom').value=d.nom||'';
+      document.getElementById('dos-tel').value=d.tel||'';
+      document.getElementById('dos-email').value=d.email||'';
+      document.getElementById('dos-camion').value=d.camion||'';
+      document.getElementById('dos-ref').value=d.referent||'';
+      document.getElementById('dos-obj').value=d.objectif||'';
+      document.getElementById('dos-naiss').value=d.naissance||'';
+      document.getElementById('dos-entree').value=d.date_entree||'';
+      document.getElementById('dos-sortie').value=d.sortie_prevue||'';
+      document.getElementById('dos-contrat').value=d.contrat||'CDDI';
     });
   }
   ouvrirModal('modal-dossier');
@@ -688,37 +693,59 @@ async function sauverDossier(){
   var id=document.getElementById('dos-id').value;
   var prenom=document.getElementById('dos-prenom').value.trim();
   var nom=document.getElementById('dos-nom').value.trim().toUpperCase();
-  if(!prenom||!nom){alert('Prénom et Nom obligatoires');return;}
+  if(!prenom||!nom){toast('Prénom et Nom obligatoires','#ef4444');return;}
   var data={
     prenom:prenom,nom:nom,
     tel:document.getElementById('dos-tel').value.trim(),
     email:document.getElementById('dos-email').value.trim(),
-    naissance:document.getElementById('dos-naiss').value,
-    date_entree:document.getElementById('dos-entree').value,
-    sortie_prevue:document.getElementById('dos-sortie').value,
+    naissance:document.getElementById('dos-naiss').value||null,
+    date_entree:document.getElementById('dos-entree').value||null,
+    sortie_prevue:document.getElementById('dos-sortie').value||null,
     contrat:document.getElementById('dos-contrat').value,
     camion:document.getElementById('dos-camion').value.trim(),
     referent:document.getElementById('dos-ref').value.trim(),
     objectif:document.getElementById('dos-obj').value.trim()
   };
-  if(id){await db('insertion_dossiers?id=eq.'+id,{method:'PATCH',body:JSON.stringify(data)});}
-  else{await db('insertion_dossiers',{method:'POST',body:JSON.stringify(data)});}
+  var r=id
+    ? await db('insertion_dossiers?id=eq.'+id,{method:'PATCH',body:JSON.stringify(data)})
+    : await db('insertion_dossiers',{method:'POST',body:JSON.stringify(data)});
+  if(r===null){toast('Erreur lors de la sauvegarde','#ef4444');return;}
   fermerModal('modal-dossier');
   chargerDossiers();
+  toast(id?'Dossier mis à jour':'Dossier créé');
 }
 
-/* ════════ SELECTS ════════ */
+async function supprimerDossier(){
+  var id=document.getElementById('dos-id').value;
+  if(!id)return;
+  if(!confirm('Supprimer ce dossier définitivement ? Toutes les données seront perdues.'))return;
+  await db('insertion_dossiers?id=eq.'+id,{method:'DELETE',body:''});
+  fermerModal('modal-dossier');
+  chargerDossiers();
+  toast('Dossier supprimé','#ef4444');
+}
+
+// ═══ SELECTS ═══
 async function remplirSelects(){
   var rows=await db('insertion_dossiers?order=nom.asc&select=id,prenom,nom');
   if(!rows)return;
-  var opts='<option value="">-- Choisir --</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
-  ['suivi-sel','eval-sel'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;});
-  var incOpts='<option value="">Tous</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  var opts='<option value="">-- Choisir --</option>'+rows.map(function(d){
+    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
+  }).join('');
+  ['suivi-sel','eval-sel'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.innerHTML=opts;
+  });
+  var incOpts='<option value="">Tous</option>'+rows.map(function(d){
+    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
+  }).join('');
   var fi=document.getElementById('inc-filtre');if(fi)fi.innerHTML=incOpts;
-  var mi=document.getElementById('inc-sel-modal');if(mi)mi.innerHTML='<option value="">-- Choisir --</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  var mi=document.getElementById('inc-modal-sel');
+  if(mi)mi.innerHTML='<option value="">-- Choisir --</option>'+rows.map(function(d){
+    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
+  }).join('');
 }
 
-/* ════════ SUIVI ════════ */
+// ═══ SUIVI ═══
 async function chargerSuivi(){
   var id=document.getElementById('suivi-sel').value;
   var empty=document.getElementById('suivi-empty');
@@ -726,73 +753,76 @@ async function chargerSuivi(){
   if(!id){empty.classList.remove('hidden');body.classList.add('hidden');return;}
   empty.classList.add('hidden');body.classList.remove('hidden');
 
-  var r=await Promise.all([
+  var results=await Promise.all([
     db('insertion_dossiers?id=eq.'+id),
     db('insertion_entretiens?dossier_id=eq.'+id+'&order=date.desc'),
     db('insertion_incidents?dossier_id=eq.'+id+'&order=date.desc'),
     db('insertion_situations?dossier_id=eq.'+id+'&order=created_at.desc&limit=1')
   ]);
-  var dossier=r[0]&&r[0][0];
-  var ents=r[1]||[];
-  var incs=r[2]||[];
-  var sit=r[3]&&r[3][0];
+  var dossier=results[0]&&results[0][0];
+  var ents=results[1]||[];
+  var incs=results[2]||[];
+  var sit=results[3]&&results[3][0];
 
   var retards=incs.filter(function(i){return i.type==='Retard';}).length;
   var absInj=incs.filter(function(i){return i.type==='Absence injustifiée';}).length;
   var jours=dossier&&dossier.date_entree?Math.ceil((new Date()-new Date(dossier.date_entree))/86400000):0;
 
   document.getElementById('suivi-counters').innerHTML=
-    '<div class="counter-box"><div class="counter-num" style="color:var(--orange)">'+jours+'</div><div class="counter-label">Jours parcours</div></div>'+
-    '<div class="counter-box"><div class="counter-num" style="color:var(--red)">'+retards+'</div><div class="counter-label">Retards</div></div>'+
-    '<div class="counter-box"><div class="counter-num" style="color:var(--amber)">'+absInj+'</div><div class="counter-label">Abs. injust.</div></div>'+
-    '<div class="counter-box"><div class="counter-num" style="color:var(--green)">'+ents.length+'</div><div class="counter-label">Entretiens</div></div>';
+    '<div class="cbox"><div class="cnum" style="color:#f97316">'+jours+'</div><div class="clbl">Jours parcours</div></div>'
+    +'<div class="cbox"><div class="cnum" style="color:#ef4444">'+retards+'</div><div class="clbl">Retards</div></div>'
+    +'<div class="cbox"><div class="cnum" style="color:#f59e0b">'+absInj+'</div><div class="clbl">Abs. injust.</div></div>'
+    +'<div class="cbox"><div class="cnum" style="color:#22c55e">'+ents.length+'</div><div class="clbl">Entretiens</div></div>';
 
   var alertDiv=document.getElementById('suivi-alertes');
-  var alertes=[];
-  if(retards>=3)alertes.push('<div class="alert alert-warning">⚠️ '+retards+' retards enregistrés — entretien de recadrage recommandé</div>');
-  if(absInj>=2)alertes.push('<div class="alert alert-danger">🚨 '+absInj+' absences injustifiées — action à envisager</div>');
-  alertDiv.innerHTML=alertes.join('');
+  alertDiv.innerHTML='';
+  if(retards>=3)alertDiv.innerHTML+='<div class="alert alert-w">⚠️ '+retards+' retards enregistrés — entretien de recadrage recommandé</div>';
+  if(absInj>=2)alertDiv.innerHTML+='<div class="alert alert-d">🚨 '+absInj+' absences injustifiées — action à envisager</div>';
 
   if(sit){
-    var keys=['logement','mobilite','sante','famille','enfants','alloc','remarques'];
-    keys.forEach(function(k){var el=document.getElementById('sit-'+k);if(el&&sit[k]!==undefined&&sit[k]!==null)el.value=sit[k];});
+    ['logement','mobilite','sante','famille','alloc','remarques'].forEach(function(k){
+      var el=document.getElementById('sit-'+k);
+      if(el&&sit[k])el.value=sit[k];
+    });
+    if(sit.enfants!==undefined)document.getElementById('sit-enfants').value=sit.enfants;
   }
 
   var tl=document.getElementById('entretiens-tl');
-  if(!ents.length){tl.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px 0">Aucun entretien enregistré.</div>';return;}
-  var dotColors={'Entretien mensuel de suivi':'#3b82f6','Entretien d\'accueil (J1)':'#22c55e','Entretien de recadrage':'#ef4444','Entretien suite à incident':'#f59e0b','Entretien de fin de parcours':'#a855f7','Entretien tripartite (référent)':'#14b8a6'};
+  if(!ents.length){tl.innerHTML='<div style="color:#8a9ab8;font-size:13px;padding:10px 0">Aucun entretien enregistré.</div>';return;}
+  var dotColors={'Entretien mensuel de suivi':'#3b82f6','Entretien d\'accueil (J1)':'#22c55e','Entretien de recadrage':'#ef4444','Entretien suite à incident':'#f59e0b','Entretien de fin de parcours':'#a855f7'};
   tl.innerHTML=ents.map(function(e){
     var col=dotColors[e.type]||'#8a9ab8';
-    return '<div class="tl-item"><div class="tl-dot" style="background:'+col+'"></div>'+
-      '<div class="tl-date">'+( e.date||'')+'  &bull;  '+(e.type||'')+' &bull; '+(e.humeur||'')+'</div>'+
-      '<div class="tl-body">'+
-      '<div style="margin-bottom:6px;color:var(--text)">'+( e.sujets||'')+'</div>'+
-      '<div style="font-size:12px;color:var(--green)">→ '+(e.actions||'Aucune action notée')+'</div>'+
-      (e.prochain_entretien?'<div style="font-size:11px;color:var(--muted);margin-top:4px">Prochain entretien : '+e.prochain_entretien+'</div>':'')+
-      '</div></div>';
+    return '<div class="tl-item"><div class="tl-dot" style="background:'+col+'"></div>'
+      +'<div class="tl-date">'+(e.date||'')+' &bull; '+(e.type||'')+' &bull; '+(e.humeur||'')+'</div>'
+      +'<div class="tl-body">'
+      +'<div style="margin-bottom:6px">'+(e.sujets||'')+'</div>'
+      +'<div style="font-size:12px;color:#22c55e">→ '+(e.actions||'Aucune action notée')+'</div>'
+      +(e.prochain_entretien?'<div style="font-size:11px;color:#8a9ab8;margin-top:4px">Prochain : '+e.prochain_entretien+'</div>':'')
+      +'</div></div>';
   }).join('');
 }
 
 async function sauverSituation(){
   var id=document.getElementById('suivi-sel').value;
-  if(!id)return;
-  await db('insertion_situations',{method:'POST',body:JSON.stringify({
+  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  var r=await db('insertion_situations',{method:'POST',body:JSON.stringify({
     dossier_id:id,
     logement:document.getElementById('sit-logement').value,
     mobilite:document.getElementById('sit-mobilite').value,
     sante:document.getElementById('sit-sante').value,
     famille:document.getElementById('sit-famille').value,
-    enfants:document.getElementById('sit-enfants').value||0,
+    enfants:parseInt(document.getElementById('sit-enfants').value)||0,
     alloc:document.getElementById('sit-alloc').value,
     remarques:document.getElementById('sit-remarques').value,
     created_at:new Date().toISOString()
   })});
-  alert('✅ Situation sauvegardée');
+  if(r)toast('Situation sauvegardée');
+  else toast('Erreur','#ef4444');
 }
 
 function ouvrirModalEntretien(){
   var id=document.getElementById('suivi-sel').value;
-  if(!id){alert('Sélectionnez d\'abord un salarié');return;}
+  if(!id){toast('Sélectionnez d\'abord un salarié','#ef4444');return;}
   document.getElementById('ent-date').value=new Date().toISOString().slice(0,10);
   document.getElementById('ent-sujets').value='';
   document.getElementById('ent-actions').value='';
@@ -802,21 +832,21 @@ function ouvrirModalEntretien(){
 
 async function sauverEntretien(){
   var id=document.getElementById('suivi-sel').value;
-  if(!document.getElementById('ent-date').value){alert('Date obligatoire');return;}
-  await db('insertion_entretiens',{method:'POST',body:JSON.stringify({
+  if(!document.getElementById('ent-date').value){toast('Date obligatoire','#ef4444');return;}
+  var r=await db('insertion_entretiens',{method:'POST',body:JSON.stringify({
     dossier_id:id,
     date:document.getElementById('ent-date').value,
     type:document.getElementById('ent-type').value,
     sujets:document.getElementById('ent-sujets').value,
     actions:document.getElementById('ent-actions').value,
-    prochain_entretien:document.getElementById('ent-prochain').value,
+    prochain_entretien:document.getElementById('ent-prochain').value||null,
     humeur:document.getElementById('ent-humeur').value
   })});
-  fermerModal('modal-entretien');
-  chargerSuivi();
+  if(r){fermerModal('modal-entretien');chargerSuivi();toast('Entretien enregistré');}
+  else toast('Erreur','#ef4444');
 }
 
-/* ════════ EVALUATION ════════ */
+// ═══ ÉVALUATION ═══
 var CRITERES={
   pro:[
     {id:'conduite',lb:'Conduite et sécurité routière'},
@@ -825,21 +855,20 @@ var CRITERES={
     {id:'relation_client',lb:'Relation client et sens du service'},
     {id:'soin_materiel',lb:'Soin du véhicule et du matériel'},
     {id:'autonomie',lb:'Autonomie dans les missions'},
-    {id:'qualite_livraison',lb:'Qualité et fiabilité des livraisons'},
+    {id:'qualite_liv',lb:'Qualité et fiabilité des livraisons'}
   ],
-  comportement:[
+  comp:[
     {id:'respect_consignes',lb:'Respect des consignes et règles'},
     {id:'esprit_equipe',lb:'Esprit d\'équipe et solidarité'},
     {id:'communication',lb:'Communication avec l\'encadrant'},
     {id:'adaptabilite',lb:'Adaptabilité face aux imprévus'},
-    {id:'engagement',lb:'Engagement et motivation au quotidien'},
-    {id:'respect_horaires',lb:'Respect des horaires de départ/retour'},
+    {id:'engagement',lb:'Engagement et motivation'}
   ],
-  projet:[
-    {id:'conscience_progres',lb:'Conscience de ses propres progrès'},
+  proj:[
+    {id:'conscience_progres',lb:'Conscience de ses progrès'},
     {id:'demarches_emploi',lb:'Démarches d\'insertion (emploi, formation)'},
-    {id:'projet_professionnel',lb:'Clarté du projet professionnel'},
-    {id:'confiance_en_soi',lb:'Confiance en soi et estime personnelle'},
+    {id:'projet_pro',lb:'Clarté du projet professionnel'},
+    {id:'confiance',lb:'Confiance en soi'}
   ]
 };
 var SCORES={};
@@ -852,13 +881,17 @@ function chargerEval(){
   empty.classList.add('hidden');body.classList.remove('hidden');
   SCORES={};
 
-  ['pro','comportement','projet'].forEach(function(cat){
-    var div=document.getElementById('eval-bloc-'+cat);
+  Object.keys(CRITERES).forEach(function(cat){
+    var div=document.getElementById('eval-'+cat);
     div.innerHTML=CRITERES[cat].map(function(cr){
-      return '<div class="eval-row"><div class="eval-label">'+cr.lb+'</div>'+
-        '<div class="stars" id="st-'+cr.id+'">'+
-        [1,2,3,4,5].map(function(n){return '<span class="star" onclick="setStar(''+cr.id+'','+n+')">★</span>';}).join('')+
-        '</div><span style="font-size:11px;color:var(--muted);width:32px;text-align:right" id="sc-'+cr.id+'">0/5</span></div>';
+      return '<div class="eval-row"><div class="eval-lbl">'+cr.lb+'</div>'
+        +'<div class="stars-wrap" id="st-'+cr.id+'">'
+        +'<span class="star" onclick="setStar(\''+cr.id+'\',1)">★</span>'
+        +'<span class="star" onclick="setStar(\''+cr.id+'\',2)">★</span>'
+        +'<span class="star" onclick="setStar(\''+cr.id+'\',3)">★</span>'
+        +'<span class="star" onclick="setStar(\''+cr.id+'\',4)">★</span>'
+        +'<span class="star" onclick="setStar(\''+cr.id+'\',5)">★</span>'
+        +'</div><span id="sc-'+cr.id+'" style="font-size:11px;color:#8a9ab8;width:32px;text-align:right">0/5</span></div>';
     }).join('');
   });
 
@@ -871,7 +904,7 @@ function chargerEval(){
     }
     majScore();
   });
-  chargerObjectifs(id);
+  chargerObj(id);
 }
 
 function setStar(id,val){SCORES[id]=val;refreshStars(id);majScore();}
@@ -879,7 +912,9 @@ function setStar(id,val){SCORES[id]=val;refreshStars(id);majScore();}
 function refreshStars(id){
   var div=document.getElementById('st-'+id);
   if(!div)return;
-  div.querySelectorAll('.star').forEach(function(s,i){s.classList.toggle('on',(SCORES[id]||0)>i);});
+  div.querySelectorAll('.star').forEach(function(s,i){
+    s.classList.toggle('on',(SCORES[id]||0)>i);
+  });
   var sc=document.getElementById('sc-'+id);
   if(sc)sc.textContent=(SCORES[id]||0)+'/5';
 }
@@ -893,86 +928,92 @@ function majScore(){
 
 async function sauverEval(){
   var id=document.getElementById('eval-sel').value;
-  if(!id){alert('Sélectionnez un salarié');return;}
+  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
   var vals=Object.values(SCORES).filter(function(v){return v>0;});
   var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
-  await db('insertion_evaluations',{method:'POST',body:JSON.stringify({
+  var r=await db('insertion_evaluations',{method:'POST',body:JSON.stringify({
     dossier_id:id,scores:SCORES,score_global:moy,
     commentaire:document.getElementById('eval-comment').value,
     recommandation:document.getElementById('eval-reco').value,
     created_at:new Date().toISOString()
   })});
-  alert('✅ Évaluation sauvegardée');
+  if(r)toast('Évaluation sauvegardée');
+  else toast('Erreur','#ef4444');
 }
 
-async function chargerObjectifs(id){
+async function chargerObj(id){
   var rows=await db('insertion_objectifs?dossier_id=eq.'+id+'&order=created_at.asc');
-  var div=document.getElementById('objectifs-list');
-  if(!rows||!rows.length){div.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">Aucun objectif défini.</div>';return;}
+  var div=document.getElementById('obj-list');
+  if(!rows||!rows.length){div.innerHTML='<div style="color:#8a9ab8;font-size:13px;padding:8px 0">Aucun objectif défini.</div>';return;}
   div.innerHTML=rows.map(function(o){
     var done=o.statut==='atteint';
-    return '<div class="obj-item"><input type="checkbox"'+(done?' checked':'')+' onchange="toggleObj(''+o.id+'',this.checked)" style="width:17px;height:17px;flex-shrink:0">'+
-      '<div style="flex:1"><div style="font-size:13px'+(done?';text-decoration:line-through;color:var(--muted)':'')+'">'+o.libelle+'</div>'+
-      (o.echeance?'<div style="font-size:10px;color:var(--muted)">Échéance : '+o.echeance+'</div>':'')+
-      '</div><span class="badge '+(done?'badge-green':'badge-amber')+'">'+(done?'Atteint':'En cours')+'</span></div>';
+    return '<div class="obj-item">'
+      +'<input type="checkbox"'+(done?' checked':'')+' onchange="toggleObj(\''+o.id+'\',this.checked)" style="width:17px;height:17px;flex-shrink:0;accent-color:#f97316">'
+      +'<div style="flex:1"><div style="font-size:13px'+(done?';text-decoration:line-through;color:#8a9ab8':'')+'">'+o.libelle+'</div>'
+      +(o.echeance?'<div style="font-size:10px;color:#8a9ab8">Échéance : '+o.echeance+'</div>':'')
+      +'</div><span class="badge '+(done?'bg-green':'bg-amber')+'">'+(done?'Atteint':'En cours')+'</span></div>';
   }).join('');
 }
 
-function ajouterObjectif(){
+function ajouterObj(){
   var id=document.getElementById('eval-sel').value;
-  if(!id)return;
+  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
   var lib=prompt('Objectif à fixer :');if(!lib)return;
-  var ech=prompt('Échéance (JJ/MM/AAAA) — Appuyez Entrée si aucune :','');
-  db('insertion_objectifs',{method:'POST',body:JSON.stringify({dossier_id:id,libelle:lib,echeance:ech,statut:'en_cours',created_at:new Date().toISOString()})})
-    .then(function(){chargerObjectifs(id);});
+  var ech=prompt('Échéance (laissez vide si aucune) :','');
+  db('insertion_objectifs',{method:'POST',body:JSON.stringify({
+    dossier_id:id,libelle:lib,echeance:ech||null,statut:'en_cours',created_at:new Date().toISOString()
+  })}).then(function(){chargerObj(id);});
 }
 
 async function toggleObj(id,done){
   await db('insertion_objectifs?id=eq.'+id,{method:'PATCH',body:JSON.stringify({statut:done?'atteint':'en_cours'})});
   var chId=document.getElementById('eval-sel').value;
-  if(chId)chargerObjectifs(chId);
+  if(chId)chargerObj(chId);
 }
 
-/* ════════ INCIDENTS ════════ */
+// ═══ INCIDENTS ═══
 async function chargerIncidents(){
-  var id=document.getElementById('inc-filtre').value;
+  var id=document.getElementById('inc-filtre')?document.getElementById('inc-filtre').value:'';
   var url='insertion_incidents?order=date.desc'+(id?'&dossier_id=eq.'+id:'');
   var rows=await db(url)||[];
 
   var alertDiv=document.getElementById('alertes-recap');
+  alertDiv.innerHTML='';
   var compteurs={};
   rows.forEach(function(i){if(i.type==='Retard')compteurs[i.dossier_id]=(compteurs[i.dossier_id]||0)+1;});
-  var alertes=Object.entries(compteurs).filter(function(e){return e[1]>=3;}).map(function(e){return '<div class="alert alert-warning">⚠️ Chauffeur ID '+e[0]+' : '+e[1]+' retards enregistrés — action recommandée</div>';});
-  alertDiv.innerHTML=alertes.join('');
+  Object.entries(compteurs).forEach(function(e){
+    if(e[1]>=3)alertDiv.innerHTML+='<div class="alert alert-w">⚠️ '+e[1]+' retards enregistrés pour ce salarié — action recommandée</div>';
+  });
 
-  var list=document.getElementById('incidents-list');
-  if(!rows.length){list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">Aucun incident enregistré.</div>';return;}
-
-  var typeColor={'Retard':'#f59e0b','Absence injustifiée':'#ef4444','Comportement inapproprié':'#a855f7','Absence justifiée':'#8a9ab8','Incident client':'#f97316','Incident véhicule / matériel':'#3b82f6'};
+  var list=document.getElementById('inc-list');
+  if(!rows.length){list.innerHTML='<div style="text-align:center;padding:30px;color:#8a9ab8;font-size:13px">Aucun incident enregistré.</div>';return;}
+  var typeColor={'Retard':'#f59e0b','Absence injustifiée':'#ef4444','Comportement inapproprié':'#a855f7','Incident client':'#f97316','Incident véhicule':'#3b82f6'};
   list.innerHTML=rows.map(function(i){
     var col=typeColor[i.type]||'#8a9ab8';
-    return '<div class="inc-card" style="border-left-color:'+col+'">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
-      '<span class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+i.type+'</span>'+
-      '<span style="font-size:12px;color:var(--muted)">'+( i.date||'')+( i.duree?' &bull; '+i.duree:'')+' </span></div>'+
-      '<div style="font-size:13px;margin-bottom:6px;color:var(--text)">'+( i.description||'')+'</div>'+
-      '<div style="font-size:11px;color:var(--muted)">Réponse : '+(i.reponse||'—')+' &bull; Origine : '+(i.origine||'—')+'</div></div>';
+    return '<div class="inc-card" style="border-left-color:'+col+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+      +'<span class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+i.type+'</span>'
+      +'<span style="font-size:12px;color:#8a9ab8">'+(i.date||'')+(i.duree?' &bull; '+i.duree:'')+'</span>'
+      +'</div>'
+      +'<div style="font-size:13px;margin-bottom:6px">'+(i.description||'')+'</div>'
+      +'<div style="font-size:11px;color:#8a9ab8">Réponse : '+(i.reponse||'—')+' &bull; Origine : '+(i.origine||'—')+'</div>'
+      +'</div>';
   }).join('');
 }
 
-function ouvrirModalIncident(){
-  remplirSelects().then(function(){
-    document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
-    document.getElementById('inc-desc').value='';
-    document.getElementById('inc-duree').value='';
-    ouvrirModal('modal-incident');
-  });
+async function ouvrirModalIncident(){
+  await remplirSelects();
+  document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('inc-desc').value='';
+  document.getElementById('inc-duree').value='';
+  ouvrirModal('modal-incident');
 }
 
 async function sauverIncident(){
-  var id=document.getElementById('inc-sel-modal').value;
-  if(!id){alert('Sélectionnez un salarié');return;}
-  await db('insertion_incidents',{method:'POST',body:JSON.stringify({
+  var id=document.getElementById('inc-modal-sel').value;
+  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  if(!document.getElementById('inc-desc').value.trim()){toast('Description obligatoire','#ef4444');return;}
+  var r=await db('insertion_incidents',{method:'POST',body:JSON.stringify({
     dossier_id:id,
     date:document.getElementById('inc-date').value,
     type:document.getElementById('inc-type').value,
@@ -981,20 +1022,20 @@ async function sauverIncident(){
     reponse:document.getElementById('inc-reponse').value,
     origine:document.getElementById('inc-origine').value
   })});
-  fermerModal('modal-incident');
-  chargerIncidents();
+  if(r){fermerModal('modal-incident');chargerIncidents();toast('Incident enregistré');}
+  else toast('Erreur','#ef4444');
 }
 
-/* ════════ RECRUTEMENT ════════ */
+// ═══ RECRUTEMENT ═══
 async function sauverRecr(){
-  var nom=document.getElementById('recr-nom-candidat').value.trim();
-  if(!nom){alert('Entrez le nom du candidat');return;}
-  var data={
+  var nom=document.getElementById('recr-nom').value.trim();
+  if(!nom){toast('Entrez le nom du candidat','#ef4444');return;}
+  var r=await db('insertion_recrutements',{method:'POST',body:JSON.stringify({
     nom:nom,
-    date_entretien:document.getElementById('recr-date').value,
-    encadrant:document.getElementById('recr-encadrant').value,
+    date_entretien:document.getElementById('recr-date').value||null,
+    encadrant:document.getElementById('recr-enc').value,
     poste:document.getElementById('recr-poste').value,
-    naissance:document.getElementById('recr-naiss').value,
+    naissance:document.getElementById('recr-naiss').value||null,
     nationalite:document.getElementById('recr-nat').value,
     permis:document.getElementById('recr-permis').value,
     logement:document.getElementById('recr-log').value,
@@ -1012,17 +1053,17 @@ async function sauverRecr(){
     positifs:document.getElementById('recr-positifs').value,
     vigilance:document.getElementById('recr-vigilance').value,
     decision:document.getElementById('recr-decision').value,
-    debut:document.getElementById('recr-debut').value,
+    debut:document.getElementById('recr-debut').value||null,
     commentaire_final:document.getElementById('recr-final').value,
     created_at:new Date().toISOString()
-  };
-  await db('insertion_recrutements',{method:'POST',body:JSON.stringify(data)});
-  alert('✅ Fiche de recrutement sauvegardée');
+  })});
+  if(r)toast('Fiche de recrutement sauvegardée');
+  else toast('Erreur lors de la sauvegarde','#ef4444');
 }
 
-/* ════════ INIT ════════ */
+// ═══ DÉMARRAGE ═══
 document.getElementById('recr-date').value=new Date().toISOString().slice(0,10);
-chargerDossiers();
-chargerIncidents();
+if(SESSION)init();
 </script>
-</body></html>
+</body>
+</html>
