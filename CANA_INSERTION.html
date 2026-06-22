@@ -3,1067 +3,887 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CANA Insertion</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+<title>CANA Insertion — Logiciel CIP</title>
+<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 body{background:#0f1623;color:#e8edf5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-/* HEADER */
 .hdr{background:#111827;border-bottom:2px solid #f97316;padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .hdr-logo{width:36px;height:36px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.hdr-title{font-size:16px;font-weight:900;color:#fff}
-.hdr-sub{font-size:11px;color:#8a9ab8;flex:1}
-.hdr-code{background:rgba(249,115,22,.12);border:1px solid #f97316;border-radius:16px;padding:4px 12px;font-size:11px;font-weight:700;color:#f97316}
-.hdr-logout{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;font-size:11px;color:#94a3b8;cursor:pointer}
-/* TABS */
-.tabs{background:#0d1320;border-bottom:1px solid #1e293b;display:flex;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
-.tab{padding:12px 16px;font-size:11px;font-weight:800;color:#64748b;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;transition:all .15s}
-.tab.on{color:#f97316;border-bottom-color:#f97316}
-/* CONTENT */
+.hdr-title{font-size:16px;font-weight:900;color:#fff}.hdr-sub{font-size:11px;color:#8a9ab8;flex:1}
+.hdr-badge{background:rgba(249,115,22,.12);border:1px solid #f97316;border-radius:16px;padding:4px 12px;font-size:11px;font-weight:700;color:#f97316}
+.hdr-out{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;font-size:11px;color:#94a3b8;cursor:pointer}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:210px;background:#0d1320;border-right:1px solid #1e293b;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.stitle{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;padding:12px 14px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;font-weight:600;color:#94a3b8;cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:rgba(249,115,22,.06);color:#e8edf5}
+.nav-item.on{background:rgba(249,115,22,.1);color:#f97316;border-left-color:#f97316;font-weight:800}
+.ni{font-size:14px;width:18px;text-align:center}
 .content{flex:1;overflow-y:auto;padding:20px}
 .section{display:none}.section.on{display:block}
-/* CARDS */
-.card{background:#1a2236;border:1px solid #2d3d5a;border-radius:14px;padding:16px;margin-bottom:14px}
-.card-title{font-size:12px;font-weight:900;color:#e8edf5;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #2d3d5a;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
-/* FIELDS */
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.card{background:#1a2236;border:1px solid #2d3d5a;border-radius:14px;padding:18px;margin-bottom:14px}
+.ct{font-size:12px;font-weight:900;color:#e8edf5;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #2d3d5a;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.r4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .f{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .f label{font-size:10px;font-weight:700;color:#8a9ab8;text-transform:uppercase;letter-spacing:.06em}
 .f input,.f select,.f textarea{background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:10px 13px;font-size:13px;font-family:inherit;outline:none;width:100%;transition:border-color .15s}
 .f input:focus,.f select:focus,.f textarea:focus{border-color:#f97316}
 .f textarea{resize:vertical;min-height:70px}
 select option{background:#1a2236}
-/* BUTTONS */
 .btn{border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:opacity .15s}
 .btn:hover{opacity:.85}
-.btn-p{background:linear-gradient(135deg,#f97316,#c2540a);color:#fff}
-.btn-s{background:#243048;border:1px solid #3a4d6e;color:#e8edf5}
-.btn-g{background:#22c55e;color:#fff}
-.btn-r{background:#ef4444;color:#fff}
-.btn-sm{padding:7px 12px;font-size:11px;border-radius:8px}
-.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
-/* BADGES */
+.bp{background:linear-gradient(135deg,#f97316,#c2540a);color:#fff}
+.bs{background:#243048;border:1px solid #3a4d6e;color:#e8edf5}
+.bg{background:#22c55e;color:#fff}
+.br{background:#ef4444;color:#fff}
+.bb{background:#3b82f6;color:#fff}
+.bai{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff}
+.sm{padding:7px 12px;font-size:11px;border-radius:8px}
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800}
-.bg-green{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
-.bg-red{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
-.bg-amber{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
-.bg-blue{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
-.bg-purple{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
-/* COUNTERS */
-.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.bg-g{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.bg-r{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.bg-a{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.bg-b{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
+.bg-p{background:rgba(168,85,247,.15);color:#a855f7;border:1px solid rgba(168,85,247,.3)}
 .cbox{background:#243048;border-radius:12px;padding:14px;text-align:center;border:1px solid #2d3d5a}
 .cnum{font-size:28px;font-weight:900;margin-bottom:3px}
 .clbl{font-size:10px;color:#8a9ab8;font-weight:700;text-transform:uppercase}
-/* ALERTS */
-.alert{border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5}
-.alert-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
-.alert-d{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#f87171}
-.alert-i{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
-.alert-g{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#4ade80}
-/* DRIVERS GRID */
-.drivers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-bottom:20px}
-.dcard{background:#1a2236;border:2px solid #2d3d5a;border-radius:14px;padding:14px;cursor:pointer;transition:all .15s}
-.dcard:hover{border-color:#f97316;transform:translateY(-2px)}
-.davatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;margin-bottom:9px}
-.dname{font-size:14px;font-weight:800;margin-bottom:3px}
-.dmeta{font-size:11px;color:#8a9ab8;margin-bottom:3px}
-/* TIMELINE */
+.al{border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;line-height:1.5}
+.al-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
+.al-d{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#f87171}
+.al-i{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
+.al-g{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);color:#4ade80}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.mbox{background:#1a2236;border:1px solid #3a4d6e;border-radius:18px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto}
+.mbox h3{font-size:15px;font-weight:900;margin-bottom:16px;color:#f97316}
+.hidden{display:none!important}
+.er{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #1e293b}
+.er:last-child{border-bottom:none}
+.el{flex:1;font-size:13px;font-weight:600}
+.st{display:flex;gap:3px}
+.star{font-size:22px;cursor:pointer;color:#2d3d5a}.star.on{color:#f59e0b}
 .tl{position:relative;padding-left:22px}
 .tl::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:#1e293b}
-.tl-item{position:relative;margin-bottom:16px}
-.tl-dot{position:absolute;left:-19px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid #1a2236}
-.tl-date{font-size:10px;color:#8a9ab8;margin-bottom:3px;font-weight:700}
-.tl-body{background:#243048;border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
-/* EVAL STARS */
-.eval-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #1e293b}
-.eval-row:last-child{border-bottom:none}
-.eval-lbl{flex:1;font-size:13px;font-weight:600}
-.stars-wrap{display:flex;gap:3px}
-.star{font-size:22px;cursor:pointer;color:#2d3d5a;transition:color .1s}
-.star.on{color:#f59e0b}
-/* SECTION HEADER */
-.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:gap}
-.sec-hdr h2{font-size:16px;font-weight:900}
-.sec-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-/* SELECT INLINE */
-.sel-inline{background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:8px 12px;font-size:12px;font-family:inherit;outline:none}
-.sel-inline:focus{border-color:#f97316}
-/* INCIDENT CARD */
-.inc-card{background:#1a2236;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b}
-/* CHECKLIST */
-.chk-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
-.chk-item:last-child{border-bottom:none}
-.chk-item input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#f97316}
-.chk-item label{font-size:13px;cursor:pointer}
-/* GUIDE */
-.guide-block{margin-bottom:24px}
-.guide-block h3{font-size:13px;font-weight:900;color:#f97316;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
-.guide-item{background:#243048;border-left:3px solid #f97316;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.65}
-.guide-item strong{color:#fff}
-/* OBJECTIVES */
-.obj-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
-.obj-item:last-child{border-bottom:none}
-/* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
-.modal-box{background:#1a2236;border:1px solid #3a4d6e;border-radius:18px;padding:24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto}
-.modal-box h3{font-size:15px;font-weight:900;margin-bottom:16px;color:#f97316}
-.hidden{display:none!important}
-/* LOGIN */
-.login-screen{position:fixed;inset:0;background:#0f1623;z-index:9999;display:flex;align-items:center;justify-content:center}
-.login-box{background:#1a2236;border:1px solid #3a4d6e;border-radius:18px;padding:32px;max-width:340px;width:90%;text-align:center}
-.login-icon{font-size:48px;margin-bottom:14px}
-.login-title{font-size:20px;font-weight:900;color:#fff;margin-bottom:6px}
-.login-sub{font-size:13px;color:#8a9ab8;margin-bottom:24px}
-.login-input{width:100%;background:#0f1623;border:2px solid #3a4d6e;border-radius:12px;color:#fff;font-size:18px;padding:14px;text-align:center;letter-spacing:.1em;font-family:inherit;outline:none;margin-bottom:12px}
-.login-input:focus{border-color:#f97316}
+.tli{position:relative;margin-bottom:16px}
+.tld{position:absolute;left:-19px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid #1a2236}
+.tldate{font-size:10px;color:#8a9ab8;margin-bottom:3px;font-weight:700}
+.tlb{background:#243048;border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.cc{background:#1a2236;border:2px solid #2d3d5a;border-radius:14px;padding:14px;cursor:pointer;transition:all .15s;text-align:center}
+.cc:hover{border-color:#f97316;transform:translateY(-2px)}
+.av{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;margin:0 auto 9px}
+.ci{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
+.ci:last-child{border-bottom:none}
+.ci input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:#f97316;flex-shrink:0;margin-top:2px}
+.ci label{font-size:13px;cursor:pointer;line-height:1.45}
+.gb{margin-bottom:22px}
+.gb h3{font-size:13px;font-weight:900;color:#f97316;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.gi{background:#243048;border-left:3px solid #f97316;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.65}
+.gi strong{color:#fff}
+.oi{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1e293b}
+.oi:last-child{border-bottom:none}
+.ic{background:#1a2236;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b}
+.dc{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px;margin-bottom:16px}
+.dcard{background:#243048;border:1px solid #3a4d6e;border-radius:12px;padding:14px;cursor:pointer;transition:all .15s}
+.dcard:hover{border-color:#f97316}
+.dicon{font-size:28px;margin-bottom:8px}
+.dtitle{font-size:13px;font-weight:800;color:#fff;margin-bottom:4px}
+.dsub{font-size:11px;color:#8a9ab8}
+.ai-chat{display:flex;flex-direction:column;gap:12px;max-height:380px;overflow-y:auto;padding:4px 0;margin-bottom:12px}
+.ai-msg{padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:88%}
+.ai-msg.user{background:#1d4ed8;color:#fff;align-self:flex-end;border-radius:12px 12px 2px 12px}
+.ai-msg.asst{background:#243048;color:#e8edf5;align-self:flex-start;border-radius:12px 12px 12px 2px}
+.ai-row{display:flex;gap:8px}
+.ai-inp{flex:1;background:#243048;border:1px solid #3a4d6e;border-radius:10px;color:#e8edf5;padding:10px 14px;font-size:13px;font-family:inherit;outline:none}
+.ai-inp:focus{border-color:#7c3aed}
+.pa{background:#fff;color:#000;border-radius:12px;padding:20px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.pa h1{font-size:17px;font-weight:900;color:#111;margin-bottom:4px}
+.pa h2{font-size:13px;font-weight:800;color:#374151;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #f97316;margin-top:16px}
+.sig{background:#f9fafb;border:1px solid #d1d5db;border-radius:6px;height:52px;margin-top:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px}
+.login-s{position:fixed;inset:0;background:#0f1623;z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-b{background:#1a2236;border:1px solid #3a4d6e;border-radius:20px;padding:36px;max-width:360px;width:90%;text-align:center}
+.login-ico{font-size:52px;margin-bottom:16px}
+.login-t{font-size:22px;font-weight:900;color:#fff;margin-bottom:6px}
+.login-sub{font-size:13px;color:#8a9ab8;margin-bottom:28px;line-height:1.5}
+.login-inp{width:100%;background:#0f1623;border:2px solid #3a4d6e;border-radius:12px;color:#fff;font-size:20px;padding:14px;text-align:center;letter-spacing:.15em;font-family:inherit;outline:none;margin-bottom:12px}
+.login-inp:focus{border-color:#f97316}
 .login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer}
 .login-err{color:#ef4444;font-size:12px;margin-top:10px;display:none}
-@media(max-width:700px){.row2,.row3{grid-template-columns:1fr}.counters{grid-template-columns:1fr 1fr}}
-</style>
+.si{background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:8px 12px;font-size:12px;outline:none;font-family:inherit}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.sh h2{font-size:16px;font-weight:900}
+.sa{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media print{.sidebar,.hdr,.login-s{display:none!important}.content{padding:0}}
+@media(max-width:768px){.sidebar{display:none}.r2,.r3,.r4{grid-template-columns:1fr}}</style>
 </head>
 <body>
-
-<!-- ÉCRAN DE CONNEXION -->
-<div class="login-screen" id="login-screen">
-  <div class="login-box">
-    <div class="login-icon">🏗️</div>
-    <div class="login-title">CANA Insertion</div>
-    <div class="login-sub">Suivi & Accompagnement Socio-Professionnel<br>La Table de Cana — Marseille</div>
-    <input type="password" class="login-input" id="login-code" placeholder="• • • • • •" maxlength="20">
-    <button class="login-btn" onclick="tryLogin()">Accéder</button>
-    <div class="login-err" id="login-err">Code incorrect</div>
-  </div>
+<div class="login-s" id="ls">
+<div class="login-b">
+  <div class="login-ico">🏗️</div>
+  <div class="login-t">CANA Insertion</div>
+  <div class="login-sub">Logiciel CIP — Suivi & Accompagnement<br>La Table de Cana · Marseille</div>
+  <input type="password" class="login-inp" id="lc" placeholder="• • • • • •" maxlength="20">
+  <button class="login-btn" onclick="tryLogin()">Accéder</button>
+  <div class="login-err" id="le">Code incorrect</div>
 </div>
-
-<!-- APPLICATION PRINCIPALE -->
-<div class="app hidden" id="main-app">
-
+</div>
+<div class="app hidden" id="app">
 <div class="hdr">
   <div class="hdr-logo">🏗️</div>
-  <div>
-    <div class="hdr-title">CANA Insertion</div>
-    <div class="hdr-sub">La Table de Cana — Marseille</div>
-  </div>
-  <span class="hdr-code" id="hdr-service-badge">RH</span>
-  <button class="hdr-logout" onclick="logout()">Déconnexion</button>
+  <div><div class="hdr-title">CANA Insertion</div><div class="hdr-sub">Logiciel CIP · La Table de Cana · Marseille</div></div>
+  <span class="hdr-badge" id="hb">RH</span>
+  <button class="hdr-out" onclick="logout()">Déconnexion</button>
 </div>
-
-<div class="tabs">
-  <button class="tab on" onclick="showTab('dossiers',this)">📁 Dossiers</button>
-  <button class="tab" onclick="showTab('suivi',this)">📈 Suivi</button>
-  <button class="tab" onclick="showTab('evaluation',this)">⭐ Évaluation</button>
-  <button class="tab" onclick="showTab('incidents',this)">⚠️ Incidents</button>
-  <button class="tab" onclick="showTab('recrutement',this)">🤝 Recrutement</button>
-  <button class="tab" onclick="showTab('guide',this)">📚 Guide</button>
+<div class="layout">
+<div class="sidebar">
+  <div class="stitle">Salariés</div>
+  <div class="nav-item on" onclick="ss('tdb',this)"><span class="ni">📊</span>Tableau de bord</div>
+  <div class="nav-item" onclick="ss('dos',this)"><span class="ni">📁</span>Dossiers</div>
+  <div class="nav-item" onclick="ss('suivi',this)"><span class="ni">📈</span>Suivi & Entretiens</div>
+  <div class="nav-item" onclick="ss('eval',this)"><span class="ni">⭐</span>Évaluation</div>
+  <div class="nav-item" onclick="ss('inc',this)"><span class="ni">⚠️</span>Incidents & Retards</div>
+  <div class="stitle" style="margin-top:8px">Recrutement</div>
+  <div class="nav-item" onclick="ss('recr',this)"><span class="ni">🤝</span>Fiche entretien</div>
+  <div class="stitle" style="margin-top:8px">Documents</div>
+  <div class="nav-item" onclick="ss('docs',this)"><span class="ni">📋</span>Supports & Fiches</div>
+  <div class="nav-item" onclick="ss('secu',this)"><span class="ni">🚗</span>Sécurité & Conduite</div>
+  <div class="nav-item" onclick="ss('regl',this)"><span class="ni">📜</span>Règlement intérieur</div>
+  <div class="stitle" style="margin-top:8px">Outils</div>
+  <div class="nav-item" onclick="ss('ia',this)"><span class="ni">🤖</span>Assistant IA</div>
+  <div class="nav-item" onclick="ss('guide',this)"><span class="ni">📚</span>Guide encadrant</div>
 </div>
-
 <div class="content">
-
-<!-- ═══ DOSSIERS ═══ -->
-<div id="sec-dossiers" class="section on">
-  <div class="sec-hdr">
-    <h2>📁 Dossiers individuels</h2>
-    <div class="sec-actions">
-      <button class="btn btn-p btn-sm" onclick="ouvrirModalDossier(null)">+ Nouveau dossier</button>
-    </div>
+<!-- ═══ SECTIONS ═══ -->
+<div id="s-tdb" class="section on">
+  <div class="sh"><h2>📊 Tableau de bord</h2><div class="sa"><button class="btn bp sm" onclick="ss('dos',null);ouvrirModalDossier(null)">+ Nouveau dossier</button></div></div>
+  <div class="r4" style="margin-bottom:20px">
+    <div class="cbox"><div class="cnum" style="color:#f97316" id="td-tot">—</div><div class="clbl">Actifs</div></div>
+    <div class="cbox"><div class="cnum" style="color:#22c55e" id="td-ent">—</div><div class="clbl">Entretiens/mois</div></div>
+    <div class="cbox"><div class="cnum" style="color:#ef4444" id="td-al">—</div><div class="clbl">Alertes</div></div>
+    <div class="cbox"><div class="cnum" style="color:#3b82f6" id="td-fin">—</div><div class="clbl">Fins &lt;60j</div></div>
   </div>
-  <div class="drivers-grid" id="dossiers-grid">
-    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px">Chargement...</div>
-  </div>
+  <div id="td-albl"></div>
+  <div class="card"><div class="ct">👥 Vue d'ensemble</div><div id="td-sal"><div style="text-align:center;padding:30px;color:#8a9ab8;font-size:13px">Chargement...</div></div></div>
 </div>
 
-<!-- ═══ SUIVI ═══ -->
-<div id="sec-suivi" class="section">
-  <div class="sec-hdr">
-    <h2>📈 Suivi socio-professionnel</h2>
-    <div class="sec-actions">
-      <select class="sel-inline" id="suivi-sel" onchange="chargerSuivi()">
-        <option value="">-- Choisir un salarié --</option>
-      </select>
-      <button class="btn btn-p btn-sm" onclick="ouvrirModalEntretien()">+ Entretien</button>
+<div id="s-dos" class="section">
+  <div class="sh"><h2>📁 Dossiers individuels</h2><div class="sa"><button class="btn bp sm" onclick="ouvrirModalDossier(null)">+ Nouveau dossier</button></div></div>
+  <div class="cg" id="dos-grid"><div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px">Chargement...</div></div>
+</div>
+
+<div id="s-suivi" class="section">
+  <div class="sh"><h2>📈 Suivi socio-professionnel</h2>
+    <div class="sa">
+      <select class="si" id="suivi-sel" onchange="chargerSuivi()"><option value="">-- Choisir --</option></select>
+      <button class="btn bp sm" onclick="ouvrirModalEntretien()">+ Entretien</button>
     </div>
   </div>
-  <div class="alert alert-i" id="suivi-empty">Sélectionnez un salarié pour voir son suivi.</div>
+  <div class="al al-i" id="suivi-empty">Sélectionnez un salarié pour voir son suivi.</div>
   <div id="suivi-body" class="hidden">
-    <div class="counters" id="suivi-counters"></div>
-    <div id="suivi-alertes"></div>
-    <div class="card">
-      <div class="card-title">🏠 Situation socio-personnelle actuelle</div>
-      <div class="row3">
-        <div class="f"><label>Logement</label>
-          <select id="sit-logement"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé tiers</option><option>En cours de relogement</option></select>
-        </div>
-        <div class="f"><label>Mobilité</label>
-          <select id="sit-mobilite"><option>Véhicule personnel</option><option>Transports en commun</option><option>Vélo</option><option>Covoiturage</option><option>Aucune</option></select>
-        </div>
-        <div class="f"><label>Santé</label>
-          <select id="sit-sante"><option>Bonne</option><option>Contraintes ponctuelles</option><option>Suivi médical</option><option>RQTH</option><option>Difficultés importantes</option></select>
-        </div>
-        <div class="f"><label>Situation familiale</label>
-          <select id="sit-famille"><option>Célibataire</option><option>En couple</option><option>Marié(e)</option><option>Séparé(e)</option><option>Famille monoparentale</option></select>
-        </div>
-        <div class="f"><label>Enfants à charge</label><input type="number" id="sit-enfants" min="0" max="20" placeholder="0"></div>
-        <div class="f"><label>Allocations / Droits</label>
-          <select id="sit-alloc"><option>Aucun</option><option>RSA</option><option>ARE</option><option>AAH</option><option>Prime activité</option><option>Autre</option></select>
-        </div>
+    <div class="r4" id="suivi-ctrs" style="margin-bottom:16px"></div>
+    <div id="suivi-als"></div>
+    <div class="card"><div class="ct">🏠 Situation socio-personnelle</div>
+      <div class="r3">
+        <div class="f"><label>Logement</label><select id="sit-log"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé tiers</option><option>En cours de relogement</option></select></div>
+        <div class="f"><label>Mobilité</label><select id="sit-mob"><option>Véhicule personnel</option><option>Transports en commun</option><option>Vélo</option><option>Covoiturage</option><option>Aucune</option></select></div>
+        <div class="f"><label>Santé</label><select id="sit-san"><option>Bonne</option><option>Contraintes ponctuelles</option><option>Suivi médical</option><option>RQTH</option><option>Difficultés importantes</option></select></div>
+        <div class="f"><label>Situation familiale</label><select id="sit-fam"><option>Célibataire</option><option>En couple</option><option>Marié(e)</option><option>Séparé(e)</option><option>Famille monoparentale</option></select></div>
+        <div class="f"><label>Enfants à charge</label><input type="number" id="sit-enf" min="0" max="20" placeholder="0"></div>
+        <div class="f"><label>Allocations</label><select id="sit-all"><option>Aucun</option><option>RSA</option><option>ARE</option><option>AAH</option><option>Prime activité</option><option>Autre</option></select></div>
       </div>
-      <div class="f"><label>Démarches en cours / Points d'attention</label>
-        <textarea id="sit-remarques" placeholder="Rdv CAF, dossier logement, renouvellement titre de séjour..."></textarea>
-      </div>
-      <button class="btn btn-p btn-sm" onclick="sauverSituation()">💾 Sauvegarder la situation</button>
+      <div class="f"><label>Démarches en cours / Points d'attention</label><textarea id="sit-rem" placeholder="Rdv CAF, dossier logement, titre de séjour, démarches santé..."></textarea></div>
+      <button class="btn bp sm" onclick="sauverSit()">💾 Sauvegarder la situation</button>
     </div>
-    <div class="card">
-      <div class="card-title">📅 Historique des entretiens</div>
-      <div class="tl" id="entretiens-tl"><div style="color:#8a9ab8;font-size:13px;padding:10px 0">Aucun entretien enregistré.</div></div>
+    <div class="card"><div class="ct">📅 Historique des entretiens</div>
+      <div class="tl" id="ent-tl"><div style="color:#8a9ab8;font-size:13px;padding:10px 0">Aucun entretien enregistré.</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ ÉVALUATION ═══ -->
-<div id="sec-evaluation" class="section">
-  <div class="sec-hdr">
-    <h2>⭐ Grille d'évaluation</h2>
-    <div class="sec-actions">
-      <select class="sel-inline" id="eval-sel" onchange="chargerEval()">
-        <option value="">-- Choisir un salarié --</option>
-      </select>
-      <button class="btn btn-p btn-sm" onclick="sauverEval()">💾 Sauvegarder</button>
+<div id="s-eval" class="section">
+  <div class="sh"><h2>⭐ Grille d'évaluation</h2>
+    <div class="sa">
+      <select class="si" id="eval-sel" onchange="loadEval()"><option value="">-- Choisir --</option></select>
+      <button class="btn bp sm" onclick="saveEval()">💾 Sauvegarder</button>
+      <button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
-  <div class="alert alert-i" id="eval-empty">Sélectionnez un salarié pour l'évaluer.</div>
+  <div class="al al-i" id="eval-empty">Sélectionnez un salarié.</div>
   <div id="eval-body" class="hidden">
-    <div class="card"><div class="card-title">🚗 Compétences professionnelles</div><div id="eval-pro"></div></div>
-    <div class="card"><div class="card-title">🤝 Comportement & Relationnel</div><div id="eval-comp"></div></div>
-    <div class="card"><div class="card-title">🎯 Projet professionnel</div><div id="eval-proj"></div></div>
-    <div class="card">
-      <div class="card-title">🎯 Objectifs fixés</div>
+    <div class="card"><div class="ct">🚗 Compétences professionnelles</div><div id="ev-pro"></div></div>
+    <div class="card"><div class="ct">🤝 Comportement & Relationnel</div><div id="ev-comp"></div></div>
+    <div class="card"><div class="ct">🎯 Projet professionnel</div><div id="ev-proj"></div></div>
+    <div class="card"><div class="ct">🎯 Objectifs personnalisés</div>
       <div id="obj-list"></div>
-      <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="ajouterObj()">+ Ajouter un objectif</button>
+      <button class="btn bs sm" style="margin-top:10px" onclick="addObj()">+ Objectif</button>
     </div>
-    <div class="card">
-      <div class="card-title">📝 Bilan & Recommandation</div>
-      <div class="f"><label>Commentaire global</label>
-        <textarea id="eval-comment" placeholder="Points forts, axes d'amélioration, recommandations..."></textarea>
-      </div>
-      <div class="row2" style="margin-top:12px">
-        <div style="background:#243048;border-radius:12px;padding:16px;text-align:center">
-          <div style="font-size:11px;color:#8a9ab8;font-weight:700;text-transform:uppercase;margin-bottom:8px">Score global</div>
-          <div id="score-global" style="font-size:36px;font-weight:900;color:#f97316">—</div>
-          <div style="font-size:11px;color:#8a9ab8">/5</div>
-        </div>
-        <div class="f"><label>Recommandation sortie</label>
-          <select id="eval-reco">
-            <option>Maintien en parcours</option>
-            <option>Renouvellement de contrat</option>
-            <option>Sortie vers emploi classique</option>
-            <option>Sortie vers formation</option>
-            <option>Rupture de contrat</option>
-          </select>
+    <div class="card"><div class="ct">📝 Bilan & Recommandation</div>
+      <div class="r2">
+        <div class="f"><label>Commentaire encadrant</label><textarea id="ev-com" placeholder="Points forts, axes d'amélioration..."></textarea></div>
+        <div>
+          <div style="background:#243048;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">
+            <div style="font-size:10px;color:#8a9ab8;font-weight:700;text-transform:uppercase;margin-bottom:8px">Score global</div>
+            <div id="sc-glob" style="font-size:40px;font-weight:900;color:#f97316">—</div>
+            <div style="font-size:11px;color:#8a9ab8">/5</div>
+          </div>
+          <div class="f"><label>Recommandation</label>
+            <select id="ev-reco"><option>Maintien en parcours</option><option>Renouvellement contrat</option><option>Sortie vers emploi</option><option>Sortie vers formation</option><option>Rupture de contrat</option></select>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ INCIDENTS ═══ -->
-<div id="sec-incidents" class="section">
-  <div class="sec-hdr">
-    <h2>⚠️ Incidents & Retards</h2>
-    <div class="sec-actions">
-      <select class="sel-inline" id="inc-filtre" onchange="chargerIncidents()">
-        <option value="">Tous les salariés</option>
-      </select>
-      <button class="btn btn-r btn-sm" onclick="ouvrirModalIncident()">⚠️ Signaler</button>
+<div id="s-inc" class="section">
+  <div class="sh"><h2>⚠️ Incidents & Retards</h2>
+    <div class="sa">
+      <select class="si" id="inc-f" onchange="loadInc()"><option value="">Tous</option></select>
+      <button class="btn br sm" onclick="openIncModal()">⚠️ Signaler</button>
     </div>
   </div>
-  <div id="alertes-recap"></div>
+  <div id="inc-als"></div>
   <div id="inc-list"><div style="text-align:center;padding:30px;color:#8a9ab8;font-size:13px">Chargement...</div></div>
 </div>
 
-<!-- ═══ RECRUTEMENT ═══ -->
-<div id="sec-recrutement" class="section">
-  <div class="sec-hdr">
-    <h2>🤝 Fiche d'entretien de recrutement</h2>
-    <div class="sec-actions">
-      <input type="text" id="recr-nom" placeholder="Nom du candidat" style="background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:9px 13px;font-size:13px;width:160px">
-      <button class="btn btn-g btn-sm" onclick="sauverRecr()">💾 Sauvegarder</button>
-      <button class="btn btn-s btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+<div id="s-recr" class="section">
+  <div class="sh"><h2>🤝 Fiche de recrutement</h2>
+    <div class="sa">
+      <input type="text" id="rc-nom" placeholder="Nom du candidat" style="background:#243048;border:1px solid #3a4d6e;border-radius:9px;color:#e8edf5;padding:9px 13px;font-size:13px;width:150px">
+      <button class="btn bg sm" onclick="saveRecr()">💾 Sauvegarder</button>
+      <button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title">📋 Informations générales</div>
-    <div class="row3">
-      <div class="f"><label>Date entretien</label><input type="date" id="recr-date"></div>
-      <div class="f"><label>Encadrant</label><input type="text" id="recr-enc" placeholder="Votre nom"></div>
-      <div class="f"><label>Poste proposé</label><input type="text" id="recr-poste" value="Chauffeur livreur — CDDI"></div>
+  <div class="card"><div class="ct">📋 Informations générales</div>
+    <div class="r3">
+      <div class="f"><label>Date entretien</label><input type="date" id="rc-date"></div>
+      <div class="f"><label>Encadrant</label><input type="text" id="rc-enc" placeholder="Votre nom"></div>
+      <div class="f"><label>Poste</label><input type="text" id="rc-poste" value="Chauffeur livreur — CDDI"></div>
     </div>
-    <div class="row3">
-      <div class="f"><label>Date de naissance</label><input type="date" id="recr-naiss"></div>
-      <div class="f"><label>Nationalité / Titre séjour</label><input type="text" id="recr-nat" placeholder="Française / Titre valide..."></div>
-      <div class="f"><label>Permis B</label>
-        <select id="recr-permis"><option>Oui — valide</option><option>Oui — points réduits</option><option>Non</option><option>En cours</option></select>
-      </div>
+    <div class="r3">
+      <div class="f"><label>Naissance</label><input type="date" id="rc-naiss"></div>
+      <div class="f"><label>Nationalité / Titre</label><input type="text" id="rc-nat"></div>
+      <div class="f"><label>Permis B</label><select id="rc-perm"><option>Oui — valide</option><option>Oui — points réduits</option><option>Non</option><option>En cours</option></select></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title">🏠 Situation personnelle & Freins</div>
-    <div class="row2">
-      <div class="f"><label>Logement</label><select id="recr-log"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé</option></select></div>
-      <div class="f"><label>Mobilité</label><select id="recr-mob"><option>Véhicule personnel</option><option>Transports en commun</option><option>Aucune</option></select></div>
-      <div class="f"><label>Situation familiale</label><select id="recr-fam"><option>Célibataire</option><option>En couple</option><option>Famille monoparentale</option><option>Marié(e)</option></select></div>
-      <div class="f"><label>Droits ouverts</label><input type="text" id="recr-droits" placeholder="RSA, fin de droits ARE..."></div>
+  <div class="card"><div class="ct">🏠 Situation & Freins</div>
+    <div class="r2">
+      <div class="f"><label>Logement</label><select id="rc-log"><option>Stable</option><option>Précaire</option><option>Sans logement</option><option>Hébergé</option></select></div>
+      <div class="f"><label>Mobilité</label><select id="rc-mob"><option>Véhicule personnel</option><option>Transports en commun</option><option>Aucune</option></select></div>
+      <div class="f"><label>Situation familiale</label><select id="rc-fam"><option>Célibataire</option><option>En couple</option><option>Famille monoparentale</option><option>Marié(e)</option></select></div>
+      <div class="f"><label>Droits ouverts</label><input type="text" id="rc-droits" placeholder="RSA, ARE..."></div>
     </div>
-    <div class="f"><label>Freins identifiés à l'emploi</label>
-      <textarea id="recr-freins" placeholder="Isolement, logement, garde enfants, santé, dette, addictions..."></textarea>
+    <div class="f"><label>Freins identifiés</label><textarea id="rc-freins" placeholder="Logement, mobilité, santé, garde d'enfants, dette, addictions..."></textarea></div>
+  </div>
+  <div class="card"><div class="ct">💼 Parcours</div>
+    <div class="f"><label>Dernière expérience</label><input type="text" id="rc-exp" placeholder="Poste — Durée — Raison de fin"></div>
+    <div class="r2">
+      <div class="f"><label>Éloignement emploi</label><select id="rc-el"><option>-6 mois</option><option>6m-1an</option><option>1-2 ans</option><option>2-5 ans</option><option>+5 ans</option></select></div>
+      <div class="f"><label>Formation / Diplôme</label><input type="text" id="rc-form" placeholder="CAP, sans diplôme, FIMO..."></div>
     </div>
+    <div class="f"><label>Compétences identifiées</label><textarea id="rc-comp" placeholder="Conduite, relationnel, organisation..."></textarea></div>
   </div>
-  <div class="card">
-    <div class="card-title">💼 Parcours & Compétences</div>
-    <div class="f"><label>Dernière expérience professionnelle</label><input type="text" id="recr-exp" placeholder="Poste — Durée — Raison de fin"></div>
-    <div class="row2">
-      <div class="f"><label>Durée d'éloignement de l'emploi</label>
-        <select id="recr-eloig"><option>Moins de 6 mois</option><option>6 mois à 1 an</option><option>1 à 2 ans</option><option>2 à 5 ans</option><option>Plus de 5 ans</option></select>
-      </div>
-      <div class="f"><label>Formation / Diplômes</label><input type="text" id="recr-form" placeholder="CAP, BEP, sans diplôme..."></div>
-    </div>
-    <div class="f"><label>Compétences identifiées</label>
-      <textarea id="recr-compt" placeholder="Conduite, relationnel, ponctualité, livraison..."></textarea>
-    </div>
+  <div class="card"><div class="ct">🎯 Motivation & Projet</div>
+    <div class="f"><label>Pourquoi postuler ici ?</label><textarea id="rc-motiv"></textarea></div>
+    <div class="f"><label>Projet professionnel à 1-2 ans</label><textarea id="rc-proj"></textarea></div>
+    <div class="f"><label>Disponibilités & Contraintes</label><input type="text" id="rc-dispo" placeholder="Dès 6h, mercredi garde enfants..."></div>
   </div>
-  <div class="card">
-    <div class="card-title">🎯 Motivation & Projet</div>
-    <div class="f"><label>Pourquoi postuler ici ?</label><textarea id="recr-motiv"></textarea></div>
-    <div class="f"><label>Projet professionnel à moyen terme</label><textarea id="recr-projet" placeholder="Ce que le candidat envisage après ce contrat..."></textarea></div>
-    <div class="f"><label>Disponibilités & Contraintes horaires</label><input type="text" id="recr-dispo" placeholder="Dès 6h, contrainte mercredi garde enfants..."></div>
+  <div class="card"><div class="ct">✅ Checklist embauche</div>
+    <div class="ci"><input type="checkbox" id="c1"><label for="c1">Permis B valide — solde de points vérifié (copie recto-verso)</label></div>
+    <div class="ci"><input type="checkbox" id="c2"><label for="c2">Pièce d'identité valide</label></div>
+    <div class="ci"><input type="checkbox" id="c3"><label for="c3">Éligibilité SIAE confirmée par prescripteur</label></div>
+    <div class="ci"><input type="checkbox" id="c4"><label for="c4">Numéro de Sécurité Sociale</label></div>
+    <div class="ci"><input type="checkbox" id="c5"><label for="c5">RIB pour virement du salaire</label></div>
+    <div class="ci"><input type="checkbox" id="c6"><label for="c6">Casier judiciaire si requis</label></div>
+    <div class="ci"><input type="checkbox" id="c7"><label for="c7">Visite médicale planifiée</label></div>
+    <div class="ci"><input type="checkbox" id="c8"><label for="c8">Dossier ASP initié</label></div>
+    <div class="ci"><input type="checkbox" id="c9"><label for="c9">CDDI signé en double exemplaire</label></div>
+    <div class="ci"><input type="checkbox" id="c10"><label for="c10">DPAE effectuée avant prise de poste</label></div>
+    <div class="ci"><input type="checkbox" id="c11"><label for="c11">Règlement intérieur remis et signé</label></div>
+    <div class="ci"><input type="checkbox" id="c12"><label for="c12">Charte sécurité routière signée</label></div>
   </div>
-  <div class="card">
-    <div class="card-title">✅ Checklist — Pièces à vérifier</div>
-    <div class="chk-item"><input type="checkbox" id="c1"><label for="c1">Permis B valide (copie recto-verso)</label></div>
-    <div class="chk-item"><input type="checkbox" id="c2"><label for="c2">Pièce d'identité valide</label></div>
-    <div class="chk-item"><input type="checkbox" id="c3"><label for="c3">Éligibilité SIAE confirmée (prescripteur)</label></div>
-    <div class="chk-item"><input type="checkbox" id="c4"><label for="c4">Numéro de Sécurité Sociale</label></div>
-    <div class="chk-item"><input type="checkbox" id="c5"><label for="c5">RIB pour virement du salaire</label></div>
-    <div class="chk-item"><input type="checkbox" id="c6"><label for="c6">Casier judiciaire si requis</label></div>
-    <div class="chk-item"><input type="checkbox" id="c7"><label for="c7">Visite médicale planifiée</label></div>
-    <div class="chk-item"><input type="checkbox" id="c8"><label for="c8">Dossier ASP (Aide au Poste) initié</label></div>
-    <div class="chk-item"><input type="checkbox" id="c9"><label for="c9">Contrat CDDI signé en double exemplaire</label></div>
-    <div class="chk-item"><input type="checkbox" id="c10"><label for="c10">DPAE effectuée avant prise de poste</label></div>
-  </div>
-  <div class="card">
-    <div class="card-title">📝 Avis & Décision</div>
-    <div class="f"><label>Points positifs observés</label><textarea id="recr-positifs"></textarea></div>
-    <div class="f"><label>Points de vigilance / Risques</label><textarea id="recr-vigilance"></textarea></div>
-    <div class="row2" style="margin-top:10px">
+  <div class="card"><div class="ct">📝 Avis & Décision</div>
+    <div class="f"><label>Points positifs observés</label><textarea id="rc-pos"></textarea></div>
+    <div class="f"><label>Points de vigilance</label><textarea id="rc-vig"></textarea></div>
+    <div class="r2" style="margin-top:10px">
       <div class="f"><label>Décision</label>
-        <select id="recr-decision">
-          <option value="">— En cours —</option>
-          <option value="embauche">✅ EMBAUCHE</option>
-          <option value="attente">⏳ LISTE D'ATTENTE</option>
-          <option value="refus">❌ REFUS</option>
-        </select>
+        <select id="rc-dec" style="font-size:14px;font-weight:800"><option value="">— En cours —</option><option value="embauche">✅ EMBAUCHE</option><option value="attente">⏳ LISTE D'ATTENTE</option><option value="refus">❌ REFUS</option></select>
       </div>
-      <div class="f"><label>Date de prise de poste prévue</label><input type="date" id="recr-debut"></div>
+      <div class="f"><label>Prise de poste prévue</label><input type="date" id="rc-deb"></div>
     </div>
-    <div class="f"><label>Commentaire final</label><textarea id="recr-final"></textarea></div>
+    <div class="f"><label>Commentaire final</label><textarea id="rc-fin"></textarea></div>
   </div>
 </div>
 
-<!-- ═══ GUIDE ═══ -->
-<div id="sec-guide" class="section">
-  <div class="sec-hdr"><h2>📚 Guide pratique — Encadrant en insertion</h2></div>
-  <div class="alert alert-i" style="margin-bottom:20px">ℹ️ Ce guide est un mémo pratique. Il complète votre expérience terrain et ne remplace pas une formation professionnelle de CIP.</div>
-  <div class="guide-block">
-    <h3>🎯 Votre rôle d'encadrant technique</h3>
-    <div class="guide-item">Vous n'êtes pas thérapeute ni travailleur social. Votre rôle est de <strong>transmettre des compétences professionnelles</strong> tout en restant attentif aux difficultés qui impactent le travail.</div>
-    <div class="guide-item">Maintenez une posture <strong>bienveillante mais cadrée</strong> : exigence professionnelle + humanité. Votre premier outil : <strong>l'exemplarité</strong>.</div>
-    <div class="guide-item">Signalez toujours les difficultés importantes au référent social. Ne portez pas seul des problèmes qui dépassent votre rôle.</div>
+<div id="s-docs" class="section">
+  <div class="sh"><h2>📋 Supports & Fiches prêts à l'emploi</h2>
+    <div class="sa"><select class="si" id="doc-ch"><option value="">-- Choisir un salarié --</option></select></div>
   </div>
-  <div class="guide-block">
-    <h3>🚨 Signaux d'alerte à surveiller</h3>
-    <div class="guide-item"><strong>Absentéisme :</strong> +2 absences injustifiées en 1 mois = entretien obligatoire. 3 = signalement écrit.</div>
-    <div class="guide-item"><strong>Retards chroniques :</strong> +3 retards en 2 semaines = entretien de recadrage. Notez toujours l'heure exacte.</div>
-    <div class="guide-item"><strong>Changement de comportement soudain :</strong> repli sur soi, irritabilité, désengagement → prendre 5 minutes informellement.</div>
-    <div class="guide-item"><strong>Difficultés financières visibles :</strong> orienter vers CCAS de la mairie, ne pas prêter personnellement.</div>
-    <div class="guide-item"><strong>Violence conjugale :</strong> 3919 (gratuit, 24h/24). Signalement possible si enfants en danger.</div>
-    <div class="guide-item"><strong>Addiction visible au travail :</strong> <strong>ne pas envoyer au volant</strong>. Entretien le jour même, fiche incident obligatoire.</div>
+  <div class="dc">
+    <div class="dcard" onclick="showDoc('eval')"><div class="dicon">📊</div><div class="dtitle">Grille d'évaluation trimestrielle</div><div class="dsub">17 critères — À imprimer & signer</div></div>
+    <div class="dcard" onclick="showDoc('entretien')"><div class="dicon">📝</div><div class="dtitle">Compte-rendu d'entretien</div><div class="dsub">Template mensuel standard</div></div>
+    <div class="dcard" onclick="showDoc('objectifs')"><div class="dicon">🎯</div><div class="dtitle">Fiche d'objectifs</div><div class="dsub">Objectifs + suivi d'atteinte</div></div>
+    <div class="dcard" onclick="showDoc('bilan')"><div class="dicon">🎓</div><div class="dtitle">Bilan de sortie de parcours</div><div class="dsub">Fin de contrat — Compétences acquises</div></div>
+    <div class="dcard" onclick="showDoc('attest')"><div class="dicon">📜</div><div class="dtitle">Attestation de compétences</div><div class="dsub">À remettre au salarié</div></div>
+    <div class="dcard" onclick="showDoc('avert')"><div class="dicon">⚠️</div><div class="dtitle">Lettre d'avertissement</div><div class="dsub">Template à personnaliser</div></div>
+    <div class="dcard" onclick="showDoc('plan')"><div class="dicon">🗺️</div><div class="dtitle">Plan d'accompagnement</div><div class="dsub">Feuille de route personnalisée</div></div>
+    <div class="dcard" onclick="showDoc('signal')"><div class="dicon">🚨</div><div class="dtitle">Fiche de signalement</div><div class="dsub">Incident — À archiver dans le dossier</div></div>
   </div>
-  <div class="guide-block">
-    <h3>💬 Mener un entretien de suivi</h3>
-    <div class="guide-item"><strong>Fréquence :</strong> 1 entretien mensuel minimum + J1 accueil + mi-parcours + fin de parcours.</div>
-    <div class="guide-item"><strong>4 questions clés :</strong> Comment ça va au travail ? Qu'est-ce qui te freine ? Comment ça va personnellement ? Qu'est-ce qu'on peut faire ensemble ?</div>
-    <div class="guide-item"><strong>Toujours conclure par une action concrète</strong> notée dans le dossier. Sans action = entretien sans suite.</div>
-    <div class="guide-item">Ne jamais promettre ce qu'on ne peut pas tenir. Si ça dépasse votre rôle : "Je vais en parler au référent."</div>
+  <div id="doc-prev" class="hidden"></div>
+</div>
+
+<div id="s-secu" class="section">
+  <div class="sh"><h2>🚗 Sécurité routière & Conduite</h2>
+    <div class="sa">
+      <select class="si" id="secu-ch"><option value="">-- Choisir un salarié --</option></select>
+      <button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
   </div>
-  <div class="guide-block">
-    <h3>⚠️ Gérer les difficultés répétées</h3>
-    <div class="guide-item"><strong>1er retard :</strong> rappel oral bienveillant. "Tu arrives à 6h47, c'est noté. Tout va bien ?"</div>
-    <div class="guide-item"><strong>2ème retard dans le mois :</strong> entretien formel, inscription dans le dossier, objectif fixé ensemble.</div>
-    <div class="guide-item"><strong>3ème retard :</strong> entretien de recadrage, rappel règlement, possibilité d'avertissement écrit.</div>
-    <div class="guide-item"><strong>Ne jamais gérer à chaud.</strong> Attendez 24h si nécessaire. La réponse posée est toujours plus efficace et juridiquement plus solide.</div>
+  <div class="card"><div class="ct">🚗 Charte sécurité routière</div>
+    <div class="pa">
+      <h1>CHARTE DE SÉCURITÉ ROUTIÈRE</h1>
+      <p style="font-size:11px;color:#6b7280;margin-bottom:4px">La Table de Cana · Marseille</p>
+      <h2>1. Obligations du conducteur</h2>
+      <p>• Respecter le Code de la route en toutes circonstances.</p>
+      <p>• Ne jamais utiliser son téléphone en conduisant (même kit mains-libres pour les SMS).</p>
+      <p>• Taux d'alcool : zéro toléré pendant le service (limite légale 0,5 g/L mais tolérance zéro ici).</p>
+      <p>• Ne jamais conduire sous l'emprise de substances illicites ou médicaments altérant la vigilance.</p>
+      <p>• Porter systématiquement la ceinture de sécurité.</p>
+      <p>• Signaler immédiatement tout problème mécanique à l'encadrant.</p>
+      <p>• Adopter une conduite souple et économique.</p>
+      <p>• Verrouiller le véhicule systématiquement lors des livraisons.</p>
+      <p>• Signaler immédiatement tout accident ou accrochage, même mineur.</p>
+      <h2>2. Vérifications avant le départ</h2>
+      <p>• Tour du véhicule : pneus, feux, absence de dommages visibles.</p>
+      <p>• Vérifier le niveau de carburant.</p>
+      <p>• Chargement correctement arrimé, portes fermées.</p>
+      <p>• Avoir son permis de conduire valide sur soi.</p>
+      <h2>3. En cas d'accident</h2>
+      <p>• Protéger, alerter, secourir (triangle, gilet, appel 15 ou 18).</p>
+      <p>• Remplir le constat amiable.</p>
+      <p>• Appeler immédiatement l'encadrant.</p>
+      <p>• Ne jamais reconnaître sa responsabilité sur place.</p>
+      <p>• Prendre des photos des dégâts.</p>
+      <h2>4. Sanctions</h2>
+      <p>Tout manquement peut faire l'objet d'une procédure disciplinaire, pouvant aller jusqu'au licenciement pour faute grave en cas d'alcool ou stupéfiants au volant.</p>
+      <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div><div style="font-size:12px;margin-bottom:6px">Signature salarié (Lu et approuvé) :</div><div class="sig">Zone de signature</div></div>
+        <div><div style="font-size:12px;margin-bottom:6px">Signature encadrant :</div><div class="sig">Zone de signature</div></div>
+      </div>
+    </div>
   </div>
-  <div class="guide-block">
-    <h3>🎓 Préparer la sortie du parcours</h3>
-    <div class="guide-item">Dès le 3ème mois : parler du "après". Pas de pression, juste ouvrir la réflexion.</div>
-    <div class="guide-item">Aide à la rédaction du CV, simulation d'entretien, lien Pôle Emploi / Mission Locale.</div>
-    <div class="guide-item"><strong>L'attestation employeur compte.</strong> Valorisez les compétences acquises : conduite, ponctualité, sens du service.</div>
+  <div class="card"><div class="ct">🍺 Engagement zéro alcool au volant</div>
+    <div class="pa">
+      <h1>ENGAGEMENT ZÉRO ALCOOL AU VOLANT</h1>
+      <p style="font-size:11px;color:#6b7280;margin-bottom:12px">La Table de Cana · Marseille</p>
+      <p>Je soussigné(e) <strong style="text-decoration:underline">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong>, salarié(e) de La Table de Cana, m'engage formellement :</p>
+      <p style="margin-top:10px">• À ne jamais conduire un véhicule de l'entreprise sous l'influence de l'alcool ou de toute substance psychoactive.</p>
+      <p>• À signaler à mon encadrant si je ne suis pas en état de conduire.</p>
+      <p>• À accepter un test de dépistage si mon encadrant en fait la demande sur doute sérieux.</p>
+      <p>• À comprendre que tout manquement constitue une faute grave pouvant entraîner la rupture immédiate du contrat.</p>
+      <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div><div style="font-size:12px;margin-bottom:6px">Fait à Marseille, le ___________</div><div style="font-size:12px;margin-bottom:6px">Signature salarié :</div><div class="sig">Zone de signature</div></div>
+        <div><div style="font-size:12px;margin-bottom:6px;margin-top:22px">Signature encadrant :</div><div class="sig">Zone de signature</div></div>
+      </div>
+    </div>
   </div>
-  <div class="guide-block">
-    <h3>📋 Contacts utiles Marseille</h3>
-    <div class="guide-item"><strong>Violences conjugales :</strong> 3919 — <strong>Prévention suicide :</strong> 3114 — <strong>Urgence sociale :</strong> 115</div>
-    <div class="guide-item"><strong>Difficultés financières :</strong> CCAS mairie, Secours Catholique, Croix-Rouge Marseille</div>
-    <div class="guide-item"><strong>Addictions :</strong> CSAPA — <strong>Mal-logement :</strong> SIAO 13 (04 91 31 81 96)</div>
-    <div class="guide-item"><strong>Emploi / Formation :</strong> Pôle Emploi, Mission Locale Marseille, Cap Emploi (RQTH)</div>
+  <div class="card"><div class="ct">📋 Quiz sécurité routière</div>
+    <div style="font-size:13px;color:#8a9ab8;margin-bottom:14px">À faire avec le chauffeur lors de l'entretien d'accueil (J1)</div>
+    <div id="quiz-sec"></div>
   </div>
 </div>
 
-</div><!-- fin content -->
-</div><!-- fin main-app -->
-
-<!-- ═══ MODALS ═══ -->
-<div id="modal-dossier" class="modal hidden">
-<div class="modal-box">
-  <h3 id="modal-dos-title">📁 Nouveau dossier salarié</h3>
-  <input type="hidden" id="dos-id">
-  <div class="row2">
-    <div class="f"><label>Prénom *</label><input type="text" id="dos-prenom" placeholder="Prénom"></div>
-    <div class="f"><label>Nom *</label><input type="text" id="dos-nom" placeholder="NOM"></div>
-  </div>
-  <div class="row3">
-    <div class="f"><label>Date de naissance</label><input type="date" id="dos-naiss"></div>
-    <div class="f"><label>Téléphone</label><input type="tel" id="dos-tel" placeholder="06..."></div>
-    <div class="f"><label>Email</label><input type="email" id="dos-email" placeholder="email@..."></div>
-  </div>
-  <div class="row3">
-    <div class="f"><label>Date d'entrée *</label><input type="date" id="dos-entree"></div>
-    <div class="f"><label>Fin de parcours prévue</label><input type="date" id="dos-sortie"></div>
-    <div class="f"><label>Type de contrat</label>
-      <select id="dos-contrat"><option>CDDI</option><option>CDD ACI</option><option>CDDU</option><option>Autre</option></select>
+<div id="s-regl" class="section">
+  <div class="sh"><h2>📜 Règlement intérieur</h2>
+    <div class="sa">
+      <select class="si" id="regl-ch"><option value="">-- Choisir --</option></select>
+      <button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
-  <div class="row2">
-    <div class="f"><label>Camion assigné</label><input type="text" id="dos-camion" placeholder="VIVARO 1..."></div>
-    <div class="f"><label>Référent externe</label><input type="text" id="dos-ref" placeholder="Nom — Organisme"></div>
-  </div>
-  <div class="f"><label>Objectif principal du parcours</label>
-    <textarea id="dos-obj" placeholder="Retour à l'emploi dans la livraison, obtention permis PL..."></textarea>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-p" onclick="sauverDossier()">💾 Enregistrer</button>
-    <button class="btn btn-s" onclick="fermerModal('modal-dossier')">Annuler</button>
-    <button class="btn btn-r btn-sm" id="dos-del-btn" style="margin-left:auto" onclick="supprimerDossier()">🗑 Supprimer</button>
-  </div>
-</div>
-</div>
-
-<div id="modal-entretien" class="modal hidden">
-<div class="modal-box">
-  <h3>📝 Enregistrer un entretien de suivi</h3>
-  <div class="row2">
-    <div class="f"><label>Date *</label><input type="date" id="ent-date"></div>
-    <div class="f"><label>Type d'entretien</label>
-      <select id="ent-type">
-        <option>Entretien mensuel de suivi</option>
-        <option>Entretien d'accueil (J1)</option>
-        <option>Entretien mi-parcours</option>
-        <option>Entretien de fin de parcours</option>
-        <option>Entretien de recadrage</option>
-        <option>Entretien suite à incident</option>
-        <option>Entretien tripartite</option>
-      </select>
+  <div class="card"><div class="ct">📜 Extraits essentiels — À remettre à l'embauche</div>
+    <div class="pa">
+      <h1>RÈGLEMENT INTÉRIEUR — EXTRAITS ESSENTIELS</h1>
+      <p style="font-size:11px;color:#6b7280;margin-bottom:4px">La Table de Cana · À remettre à chaque salarié à l'embauche</p>
+      <h2>Horaires et ponctualité</h2>
+      <p>• Les horaires sont définis dans votre contrat. Tout retard doit être signalé avant l'heure de prise de poste.</p>
+      <p>• En cas d'absence imprévisible, prévenez l'encadrant dans un délai max de 2h après l'heure de démarrage prévue.</p>
+      <p>• Les retards répétés feront l'objet d'un entretien puis d'un avertissement.</p>
+      <h2>Comportement et discipline</h2>
+      <p>• Respect mutuel entre collègues, encadrants et clients est obligatoire.</p>
+      <p>• Tout comportement violent, menaçant ou discriminatoire constitue une faute grave.</p>
+      <p>• L'usage du téléphone personnel est interdit pendant les livraisons.</p>
+      <p>• L'utilisation des véhicules de l'entreprise à des fins personnelles est interdite.</p>
+      <h2>Hygiène et sécurité</h2>
+      <p>• Il est interdit de fumer dans les véhicules de l'entreprise.</p>
+      <p>• Tout accident ou incident doit être immédiatement signalé à l'encadrant.</p>
+      <p>• Le port des EPI est obligatoire si fournis.</p>
+      <h2>Matériel et véhicules</h2>
+      <p>• Tout salarié est responsable du matériel et du véhicule confié.</p>
+      <p>• Tout dommage doit être signalé immédiatement, même si vous n'en êtes pas responsable.</p>
+      <h2>Sanctions</h2>
+      <p>Les manquements peuvent entraîner : avertissement, mise à pied, ou licenciement selon la gravité et la répétition.</p>
+      <div style="margin-top:20px;font-style:italic;font-size:13px">Je reconnais avoir reçu et pris connaissance du règlement intérieur de La Table de Cana.</div>
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div><div style="font-size:12px;margin-bottom:6px">Nom et date :</div><div class="sig">Zone de signature salarié</div></div>
+        <div><div style="font-size:12px;margin-bottom:6px">Signature encadrant :</div><div class="sig">Zone de signature</div></div>
+      </div>
     </div>
   </div>
-  <div class="f"><label>Sujets abordés</label>
-    <textarea id="ent-sujets" placeholder="Situation professionnelle, difficultés, situation personnelle..."></textarea>
-  </div>
-  <div class="f"><label>Actions décidées / Engagements pris</label>
-    <textarea id="ent-actions" placeholder="Rdv CAF, objectif ponctualité, contact formation..."></textarea>
-  </div>
-  <div class="row2">
-    <div class="f"><label>Prochain entretien prévu</label><input type="date" id="ent-prochain"></div>
-    <div class="f"><label>Dynamique observée</label>
-      <select id="ent-humeur">
-        <option>😊 Bonne dynamique</option>
-        <option>😐 Neutre / stable</option>
-        <option>😟 Fragilité identifiée</option>
-        <option>🚨 Situation préoccupante</option>
-      </select>
-    </div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-p" onclick="sauverEntretien()">💾 Enregistrer</button>
-    <button class="btn btn-s" onclick="fermerModal('modal-entretien')">Annuler</button>
-  </div>
-</div>
 </div>
 
-<div id="modal-incident" class="modal hidden">
-<div class="modal-box">
-  <h3>⚠️ Signaler un incident ou retard</h3>
-  <div class="row2">
-    <div class="f"><label>Salarié *</label><select id="inc-modal-sel"></select></div>
-    <div class="f"><label>Date *</label><input type="date" id="inc-date"></div>
-  </div>
-  <div class="row2">
-    <div class="f"><label>Type</label>
-      <select id="inc-type">
-        <option>Retard</option><option>Absence injustifiée</option><option>Absence justifiée</option>
-        <option>Comportement inapproprié</option><option>Qualité de travail insuffisante</option>
-        <option>Incident client</option><option>Incident véhicule</option><option>Non-respect des consignes</option><option>Autre</option>
-      </select>
+<div id="s-ia" class="section">
+  <div class="sh"><h2>🤖 Assistant IA — CIP & Insertion</h2></div>
+  <div class="al al-i" style="margin-bottom:16px">💡 Posez vos questions sur l'accompagnement, demandez une grille d'évaluation, un plan personnalisé, une lettre d'avertissement, des conseils pour gérer une situation difficile...</div>
+  <div class="card"><div class="ct">🤖 Assistant spécialisé insertion</div>
+    <div class="ai-chat" id="ai-chat">
+      <div class="ai-msg asst">Bonjour ! Je suis votre assistant spécialisé en insertion professionnelle (SIAE, CDDI). Je peux vous aider à :<br><br>📊 Générer une grille d'évaluation adaptée<br>📝 Rédiger un compte-rendu d'entretien<br>🗺️ Proposer un plan d'accompagnement personnalisé<br>⚠️ Conseiller sur un comportement difficile<br>📜 Rédiger une lettre d'avertissement<br>🎓 Préparer une attestation de compétences<br><br>Comment puis-je vous aider ?</div>
     </div>
-    <div class="f"><label>Durée / Précision</label><input type="text" id="inc-duree" placeholder="Ex: 45 min de retard, arrivée à 7h05..."></div>
-  </div>
-  <div class="f"><label>Description des faits *</label>
-    <textarea id="inc-desc" placeholder="Décrivez précisément et objectivement les faits..."></textarea>
-  </div>
-  <div class="row2">
-    <div class="f"><label>Réponse apportée</label>
-      <select id="inc-reponse">
-        <option>Rappel oral</option><option>Entretien formel</option><option>Avertissement écrit</option>
-        <option>Sans suite immédiate</option><option>En cours de traitement</option>
-      </select>
+    <div class="ai-row">
+      <input type="text" class="ai-inp" id="ai-inp" placeholder="Ex: Génère une grille d'évaluation pour un chauffeur avec des problèmes de ponctualité...">
+      <button class="btn bai" onclick="sendAI()" id="ai-btn">Envoyer</button>
     </div>
-    <div class="f"><label>Origine probable</label>
-      <select id="inc-origine">
-        <option>Difficultés personnelles</option><option>Problème de transport</option>
-        <option>Raison inconnue</option><option>Comportement délibéré</option>
-        <option>Santé</option><option>Situation familiale</option>
-      </select>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bs sm" onclick="qr('Génère une grille d\'évaluation pour un chauffeur avec des difficultés de ponctualité et de motivation, avec une analyse et des recommandations')">📊 Grille ponctualité</button>
+      <button class="btn bs sm" onclick="qr('Rédige un plan d\'accompagnement pour un salarié en insertion avec des problèmes de logement instable et de mobilité réduite')">🗺️ Plan accompagnement</button>
+      <button class="btn bs sm" onclick="qr('Quels sont les signaux d\'alerte à surveiller chez un salarié en insertion en difficulté ? Comment réagir à chaque signal ?')">🚨 Signaux d'alerte</button>
+      <button class="btn bs sm" onclick="qr('Comment préparer un entretien de recadrage avec un chauffeur qui a eu 3 retards en un mois ? Donne-moi une trame précise.')">💬 Entretien recadrage</button>
+      <button class="btn bs sm" onclick="qr('Rédige une attestation de compétences acquises professionnelle pour un chauffeur livreur en fin de parcours insertion chez La Table de Cana à Marseille')">📜 Attestation</button>
+      <button class="btn bs sm" onclick="qr('Comment accompagner un salarié qui traverse une séparation difficile et qui commence à avoir des absences répétées ?')">👨‍👩‍👧 Situation familiale</button>
     </div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-r" onclick="sauverIncident()">⚠️ Enregistrer</button>
-    <button class="btn btn-s" onclick="fermerModal('modal-incident')">Annuler</button>
   </div>
 </div>
+
+<div id="s-guide" class="section">
+  <div class="sh"><h2>📚 Guide pratique encadrant</h2></div>
+  <div class="al al-i" style="margin-bottom:20px">Ce guide est un mémo pratique. Il complète votre expérience et ne remplace pas une formation de CIP.</div>
+  <div class="card"><div class="ct">🎯 Votre rôle d'encadrant technique</div>
+    <div class="gb"><div class="gi">Vous n'êtes pas thérapeute. Votre rôle : <strong>transmettre des compétences professionnelles</strong> tout en restant attentif aux difficultés qui impactent le travail.</div>
+    <div class="gi">Posture : <strong>bienveillante mais cadrée</strong>. Premier outil : <strong>l'exemplarité</strong>.</div>
+    <div class="gi">Signalez toujours les difficultés importantes au référent social. <strong>Ne portez pas seul</strong> des problèmes qui dépassent votre rôle.</div></div>
+  </div>
+  <div class="card"><div class="ct">🚨 Signaux d'alerte</div>
+    <div class="gb"><div class="gi"><strong>+2 absences injust./mois :</strong> entretien obligatoire. 3 → signalement écrit.</div>
+    <div class="gi"><strong>+3 retards/2 semaines :</strong> entretien recadrage. Notez l'heure exacte.</div>
+    <div class="gi"><strong>Changement de comportement :</strong> repli, irritabilité → 5 min informelles. Souvent suffisant.</div>
+    <div class="gi"><strong>Difficultés financières :</strong> ne pas manger → CCAS. Ne prêtez pas personnellement.</div>
+    <div class="gi"><strong>Violence conjugale :</strong> 3919 (24h/24). Signalement si enfants en danger.</div>
+    <div class="gi"><strong>Addiction au travail :</strong> <strong>Ne pas envoyer au volant.</strong> Entretien + fiche incident obligatoire.</div></div>
+  </div>
+  <div class="card"><div class="ct">💬 Mener un entretien</div>
+    <div class="gb"><div class="gi"><strong>4 questions clés :</strong> (1) Comment ça va au travail ? (2) Qu'est-ce qui te freine ? (3) Comment ça va perso ? (4) Qu'est-ce qu'on peut faire ensemble ?</div>
+    <div class="gi"><strong>Conclure par une action concrète</strong> notée dans le dossier. Sans action = entretien sans suite.</div>
+    <div class="gi">Lieu : bureau fermé. Confidentialité = confiance.</div></div>
+  </div>
+  <div class="card"><div class="ct">⚠️ Gérer les difficultés répétées</div>
+    <div class="gb"><div class="gi"><strong>1er retard :</strong> rappel oral bienveillant.</div>
+    <div class="gi"><strong>2ème dans le mois :</strong> entretien formel + inscription dossier + objectif fixé.</div>
+    <div class="gi"><strong>3ème :</strong> recadrage + rappel règlement + avertissement possible.</div>
+    <div class="gi"><strong>Ne jamais gérer à chaud.</strong> 24h de recul. La réponse posée est toujours plus efficace.</div></div>
+  </div>
+  <div class="card"><div class="ct">📋 Contacts utiles Marseille</div>
+    <div class="gb"><div class="gi"><strong>Violences :</strong> 3919 — <strong>Suicide :</strong> 3114 — <strong>Urgence sociale :</strong> 115</div>
+    <div class="gi"><strong>CCAS mairie</strong>, Secours Catholique, Croix-Rouge (difficultés financières)</div>
+    <div class="gi"><strong>CSAPA</strong> (addictions) — <strong>SIAO 13</strong> 04 91 31 81 96 (logement)</div>
+    <div class="gi"><strong>Pôle Emploi</strong>, Mission Locale Marseille, Cap Emploi (RQTH)</div></div>
+  </div>
 </div>
+
+</div></div></div>
+
+<!-- MODALS -->
+<div id="m-dos" class="modal hidden"><div class="mbox">
+  <h3 id="m-dos-t">📁 Nouveau dossier</h3><input type="hidden" id="di">
+  <div class="r2"><div class="f"><label>Prénom *</label><input type="text" id="dp" placeholder="Prénom"></div><div class="f"><label>Nom *</label><input type="text" id="dn" placeholder="NOM"></div></div>
+  <div class="r3">
+    <div class="f"><label>Naissance</label><input type="date" id="dnai"></div>
+    <div class="f"><label>Téléphone</label><input type="tel" id="dt" placeholder="06..."></div>
+    <div class="f"><label>Email</label><input type="email" id="de"></div>
+  </div>
+  <div class="r3">
+    <div class="f"><label>Date d'entrée *</label><input type="date" id="dent"></div>
+    <div class="f"><label>Fin prévue</label><input type="date" id="dsor"></div>
+    <div class="f"><label>Contrat</label><select id="dcon"><option>CDDI</option><option>CDD ACI</option><option>CDDU</option><option>Autre</option></select></div>
+  </div>
+  <div class="r2">
+    <div class="f"><label>Camion assigné</label><input type="text" id="dcam" placeholder="VIVARO 1..."></div>
+    <div class="f"><label>Référent externe</label><input type="text" id="dref" placeholder="Nom — Organisme"></div>
+  </div>
+  <div class="f"><label>Objectif du parcours</label><textarea id="dobj" placeholder="Retour à l'emploi dans la livraison, permis PL..."></textarea></div>
+  <div style="display:flex;gap:8px;margin-top:14px;align-items:center">
+    <button class="btn bp" onclick="saveDos()">💾 Enregistrer</button>
+    <button class="btn bs" onclick="cm('m-dos')">Annuler</button>
+    <button class="btn br sm" id="d-del" style="margin-left:auto" onclick="delDos()">🗑 Supprimer</button>
+  </div>
+</div></div>
+
+<div id="m-ent" class="modal hidden"><div class="mbox">
+  <h3>📝 Entretien de suivi</h3>
+  <div class="r2">
+    <div class="f"><label>Date *</label><input type="date" id="ed"></div>
+    <div class="f"><label>Type</label><select id="et"><option>Entretien mensuel de suivi</option><option>Entretien d'accueil (J1)</option><option>Entretien mi-parcours</option><option>Entretien de fin de parcours</option><option>Entretien de recadrage</option><option>Entretien suite à incident</option><option>Entretien tripartite</option></select></div>
+  </div>
+  <div class="f"><label>Sujets abordés</label><textarea id="es" placeholder="Situation pro, difficultés, situation perso..."></textarea></div>
+  <div class="f"><label>Actions décidées / Engagements</label><textarea id="ea" placeholder="Rdv CAF, objectif ponctualité, contact formation..."></textarea></div>
+  <div class="r2">
+    <div class="f"><label>Prochain entretien</label><input type="date" id="ep"></div>
+    <div class="f"><label>Dynamique observée</label><select id="eh"><option>😊 Bonne dynamique</option><option>😐 Neutre / stable</option><option>😟 Fragilité identifiée</option><option>🚨 Situation préoccupante</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn bp" onclick="saveEnt()">💾 Enregistrer</button>
+    <button class="btn bs" onclick="cm('m-ent')">Annuler</button>
+  </div>
+</div></div>
+
+<div id="m-inc" class="modal hidden"><div class="mbox">
+  <h3>⚠️ Signaler un incident</h3>
+  <div class="r2">
+    <div class="f"><label>Salarié *</label><select id="im-sel"></select></div>
+    <div class="f"><label>Date *</label><input type="date" id="im-d"></div>
+  </div>
+  <div class="r2">
+    <div class="f"><label>Type</label><select id="im-t"><option>Retard</option><option>Absence injustifiée</option><option>Absence justifiée</option><option>Comportement inapproprié</option><option>Qualité de travail insuffisante</option><option>Incident client</option><option>Incident véhicule</option><option>Non-respect consignes</option><option>Autre</option></select></div>
+    <div class="f"><label>Durée / Précision</label><input type="text" id="im-dur" placeholder="45 min de retard, arrivée 7h05..."></div>
+  </div>
+  <div class="f"><label>Description des faits *</label><textarea id="im-desc" placeholder="Décrivez précisément et objectivement..."></textarea></div>
+  <div class="r2">
+    <div class="f"><label>Réponse apportée</label><select id="im-rep"><option>Rappel oral</option><option>Entretien formel</option><option>Avertissement écrit</option><option>Sans suite immédiate</option><option>En cours de traitement</option></select></div>
+    <div class="f"><label>Origine probable</label><select id="im-ori"><option>Difficultés personnelles</option><option>Transport / mobilité</option><option>Raison inconnue</option><option>Comportement délibéré</option><option>Santé</option><option>Situation familiale</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn br" onclick="saveInc()">⚠️ Enregistrer</button>
+    <button class="btn bs" onclick="cm('m-inc')">Annuler</button>
+  </div>
+</div></div>
 
 <script>
-// ═══ CONFIG ═══
-var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
-var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var SU='https://lllzlidwtcjwsxbgkygn.supabase.co',SK='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var CODES={'rh2026':{nom:'RH Insertion',niv:'rh'},'cana2026':{nom:'Direction',niv:'admin'},'direction2026':{nom:'Direction',niv:'admin'},'rse2026':{nom:'RSE',niv:'rse'}};
+var SES=null;
+var SCORES={};
+var AI_H=[{role:'system',content:'Tu es un expert en insertion professionnelle, accompagnement SIAE et management d\'encadrement technique. Tu travailles avec des chauffeurs livreurs en CDDI chez La Table de Cana à Marseille. Réponds en français de manière professionnelle et pratique.'}];
 
-var CODES={
-  'rh2026':{nom:'RH Insertion',niveau:'rh'},
-  'cana2026':{nom:'Direction',niveau:'admin'},
-  'direction2026':{nom:'Direction',niveau:'admin'}
-};
-var SESSION=null;
-
-// ═══ LOGIN ═══
-document.getElementById('login-code').addEventListener('keydown',function(e){
-  if(e.key==='Enter')tryLogin();
-});
-
+document.getElementById('lc').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
 function tryLogin(){
-  var code=document.getElementById('login-code').value.trim();
+  var code=document.getElementById('lc').value.trim();
   var srv=CODES[code];
-  if(!srv){
-    document.getElementById('login-err').style.display='block';
-    document.getElementById('login-code').value='';
-    document.getElementById('login-code').focus();
-    return;
-  }
-  SESSION=srv;
-  sessionStorage.setItem('ins_auth',code);
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('main-app').classList.remove('hidden');
-  document.getElementById('hdr-service-badge').textContent=srv.nom;
+  if(!srv){document.getElementById('le').style.display='block';document.getElementById('lc').value='';document.getElementById('lc').focus();return;}
+  SES=srv;sessionStorage.setItem('ia',code);
+  document.getElementById('ls').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('hb').textContent=srv.nom;
   init();
 }
+function logout(){sessionStorage.removeItem('ia');location.reload();}
+(function(){var c=sessionStorage.getItem('ia');var s=c?CODES[c]:null;if(s){SES=s;document.getElementById('ls').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('hb').textContent=s.nom;}})();
 
-function logout(){
-  sessionStorage.removeItem('ins_auth');
-  location.reload();
-}
+async function db(p,o){o=o||{};try{var r=await fetch(SU+'/rest/v1/'+p,{headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},method:o.method||'GET',body:o.body});if(!r.ok)return null;var t=await r.text();return t?JSON.parse(t):[];}catch(e){return null;}}
 
-// Vérifier session existante
-(function(){
-  var code=sessionStorage.getItem('ins_auth');
-  var srv=code?CODES[code]:null;
-  if(srv){
-    SESSION=srv;
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('hdr-service-badge').textContent=srv.nom;
-  }
-})();
+function toast(m,c){var t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(c||'#22c55e')+';color:#fff;border-radius:12px;padding:12px 24px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.3)';document.body.appendChild(t);setTimeout(function(){t.remove();},2500);}
 
-// ═══ DB ═══
-async function db(path,opts){
-  opts=opts||{};
-  try{
-    var r=await fetch(SUPA+'/rest/v1/'+path,{
-      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-      method:opts.method||'GET',
-      body:opts.body
-    });
-    if(!r.ok){console.error('DB error',r.status,path);return null;}
-    var txt=await r.text();
-    return txt?JSON.parse(txt):[];
-  }catch(e){console.error('DB exception',e);return null;}
-}
-
-function toast(msg,color){
-  var t=document.createElement('div');
-  t.textContent=msg;
-  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(color||'#22c55e')+';color:#fff;border-radius:12px;padding:12px 24px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.3)';
-  document.body.appendChild(t);
-  setTimeout(function(){t.remove();},2500);
-}
-
-// ═══ TABS ═══
-function showTab(name,btn){
+function ss(name,btn){
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('on');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
-  document.getElementById('sec-'+name).classList.add('on');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('on');});
+  var el=document.getElementById('s-'+name);if(el)el.classList.add('on');
   if(btn)btn.classList.add('on');
-  if(name==='suivi'||name==='evaluation'||name==='incidents')remplirSelects();
-  if(name==='incidents')chargerIncidents();
-  if(name==='recrutement')document.getElementById('recr-date').value=new Date().toISOString().slice(0,10);
+  if(name==='suivi'||name==='eval'||name==='inc')fillSels();
+  if(name==='docs'||name==='secu'||name==='regl')fillDocSels();
+  if(name==='inc')loadInc();
+  if(name==='tdb')loadTdb();
+  if(name==='recr')document.getElementById('rc-date').value=new Date().toISOString().slice(0,10);
+  if(name==='secu')buildQuiz();
+}
+function cm(id){document.getElementById(id).classList.add('hidden');}
+function om(id){document.getElementById(id).classList.remove('hidden');}
+
+function init(){loadTdb();loadDos();buildQuiz();}
+
+// ═══ TABLEAU DE BORD ═══
+async function loadTdb(){
+  var [dos,ents,incs]=await Promise.all([db('insertion_dossiers?order=nom.asc'),db('insertion_entretiens?order=date.desc&limit=100'),db('insertion_incidents?order=date.desc&limit=200')]);
+  dos=dos||[];ents=ents||[];incs=incs||[];
+  var mois=new Date().toISOString().slice(0,7);
+  var em=ents.filter(function(e){return(e.date||'').startsWith(mois);}).length;
+  var now=new Date();var al=0;var fi=0;
+  var rc={};incs.forEach(function(i){if(i.type==='Retard')rc[i.dossier_id]=(rc[i.dossier_id]||0)+1;});
+  Object.values(rc).forEach(function(v){if(v>=3)al++;});
+  dos.forEach(function(d){if(d.sortie_prevue){var j=Math.ceil((new Date(d.sortie_prevue)-now)/86400000);if(j>=0&&j<=60)fi++;}});
+  document.getElementById('td-tot').textContent=dos.length;
+  document.getElementById('td-ent').textContent=em;
+  document.getElementById('td-al').textContent=al;
+  document.getElementById('td-fin').textContent=fi;
+  var cols=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#14b8a6','#f59e0b'];
+  var g=document.getElementById('td-sal');
+  if(!dos.length){g.innerHTML='<div style="color:#8a9ab8;font-size:13px;padding:20px">Aucun dossier. Créez le premier dans "Dossiers".</div>';return;}
+  g.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">'+dos.map(function(d,i){
+    var col=cols[i%cols.length];
+    var ini=((d.prenom||'?').charAt(0)+((d.nom||'?').charAt(0))).toUpperCase();
+    var jr=d.sortie_prevue?Math.ceil((new Date(d.sortie_prevue)-now)/86400000):null;
+    var bc=jr===null?'bg-b':jr<0?'bg-p':jr<30?'bg-r':jr<60?'bg-a':'bg-g';
+    var bt=jr===null?'En cours':jr<0?'Terminé':jr+'j restants';
+    var ret=rc[d.id]||0;
+    return '<div style="background:#243048;border-radius:12px;padding:14px;cursor:pointer;border-left:4px solid '+col+'" onclick="goDos(this.dataset.id)" data-id='+d.id+'>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:'+col+'22;color:'+col+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0">'+ini+'</div>'
+      +'<div><div style="font-size:14px;font-weight:800">'+d.prenom+' '+d.nom+'</div>'
+      +'<div style="font-size:11px;color:#8a9ab8">'+(d.camion||'Pas de camion')+'</div></div></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge '+bc+'">'+bt+'</span>'
+      +(ret>=3?'<span class="badge bg-r">⚠️ '+ret+' retards</span>':'')+'</div></div>';
+  }).join('')+'</div>';
 }
 
-function fermerModal(id){document.getElementById(id).classList.add('hidden');}
-function ouvrirModal(id){document.getElementById(id).classList.remove('hidden');}
-
-// ═══ INIT ═══
-function init(){
-  chargerDossiers();
+function goDos(id){
+  ss('suivi',document.querySelectorAll('.nav-item')[2]);
+  fillSels().then(function(){document.getElementById('suivi-sel').value=id;chargerSuivi();});
 }
 
 // ═══ DOSSIERS ═══
-async function chargerDossiers(){
+async function loadDos(){
   var rows=await db('insertion_dossiers?order=nom.asc');
-  var grid=document.getElementById('dossiers-grid');
-  if(!rows){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;font-size:13px">Erreur de connexion à la base de données.</div>';
-    return;
-  }
-  if(!rows.length){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px"><div style="font-size:40px;margin-bottom:12px">👥</div>Aucun dossier — cliquez sur "+ Nouveau dossier"</div>';
-    return;
-  }
+  var g=document.getElementById('dos-grid');
+  if(!rows){g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;font-size:13px">Erreur de connexion.</div>';return;}
+  if(!rows.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#8a9ab8;font-size:13px"><div style="font-size:40px;margin-bottom:12px">👥</div>Aucun dossier. Cliquez sur "+ Nouveau dossier"</div>';return;}
   var cols=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#14b8a6','#f59e0b'];
-  var html='';
-  rows.forEach(function(d,i){
+  g.innerHTML=rows.map(function(d,i){
     var col=cols[i%cols.length];
     var ini=((d.prenom||'?').charAt(0)+((d.nom||'?').charAt(0))).toUpperCase();
     var jr=d.sortie_prevue?Math.ceil((new Date(d.sortie_prevue)-new Date())/86400000):null;
-    var bc=jr===null?'bg-blue':jr<0?'bg-purple':jr<30?'bg-red':jr<60?'bg-amber':'bg-green';
+    var bc=jr===null?'bg-b':jr<0?'bg-p':jr<30?'bg-r':jr<60?'bg-a':'bg-g';
     var bt=jr===null?'En cours':jr<0?'Terminé':jr+'j restants';
-    html+='<div class="dcard" onclick="ouvrirModalDossier(\''+d.id+'\')">'
-      +'<div class="davatar" style="background:'+col+'22;color:'+col+'">'+ini+'</div>'
-      +'<div class="dname">'+(d.prenom||'')+' '+(d.nom||'')+'</div>'
-      +'<div class="dmeta">'+(d.camion||'Pas de camion')+' &bull; '+(d.contrat||'CDDI')+'</div>'
-      +'<div class="dmeta">Entrée : '+(d.date_entree||'—')+'</div>'
-      +'<div style="margin-top:8px"><span class="badge '+bc+'">'+bt+'</span></div>'
-      +'</div>';
-  });
-  grid.innerHTML=html;
+    return '<div class="cc" onclick="ouvrirModalDossier(this.dataset.id)" data-id='+d.id+'>'
+      +'<div class="av" style="background:'+col+'22;color:'+col+'">'+ini+'</div>'
+      +'<div style="font-size:14px;font-weight:800;margin-bottom:3px">'+d.prenom+' '+d.nom+'</div>'
+      +'<div style="font-size:11px;color:#8a9ab8;margin-bottom:3px">'+(d.camion||'Pas de camion')+'</div>'
+      +'<div style="font-size:11px;color:#8a9ab8;margin-bottom:8px">Entrée : '+(d.date_entree||'—')+'</div>'
+      +'<span class="badge '+bc+'">'+bt+'</span></div>';
+  }).join('');
 }
 
 function ouvrirModalDossier(id){
-  document.getElementById('dos-id').value=id||'';
-  document.getElementById('modal-dos-title').textContent=id?'✏️ Modifier le dossier':'📁 Nouveau dossier salarié';
-  document.getElementById('dos-del-btn').style.display=id?'':'none';
-  ['dos-prenom','dos-nom','dos-tel','dos-email','dos-camion','dos-ref','dos-obj'].forEach(function(f){document.getElementById(f).value='';});
-  ['dos-naiss','dos-entree','dos-sortie'].forEach(function(f){document.getElementById(f).value='';});
-  if(id){
-    db('insertion_dossiers?id=eq.'+id).then(function(rows){
-      if(!rows||!rows[0])return;
-      var d=rows[0];
-      document.getElementById('dos-prenom').value=d.prenom||'';
-      document.getElementById('dos-nom').value=d.nom||'';
-      document.getElementById('dos-tel').value=d.tel||'';
-      document.getElementById('dos-email').value=d.email||'';
-      document.getElementById('dos-camion').value=d.camion||'';
-      document.getElementById('dos-ref').value=d.referent||'';
-      document.getElementById('dos-obj').value=d.objectif||'';
-      document.getElementById('dos-naiss').value=d.naissance||'';
-      document.getElementById('dos-entree').value=d.date_entree||'';
-      document.getElementById('dos-sortie').value=d.sortie_prevue||'';
-      document.getElementById('dos-contrat').value=d.contrat||'CDDI';
-    });
-  }
-  ouvrirModal('modal-dossier');
+  document.getElementById('di').value=id||'';
+  document.getElementById('m-dos-t').textContent=id?'✏️ Modifier':'📁 Nouveau dossier';
+  document.getElementById('d-del').style.display=id?'':'none';
+  ['dp','dn','dt','de','dcam','dref','dobj'].forEach(function(f){document.getElementById(f).value='';});
+  ['dnai','dent','dsor'].forEach(function(f){document.getElementById(f).value='';});
+  if(id){db('insertion_dossiers?id=eq.'+id).then(function(r){
+    if(!r||!r[0])return;var d=r[0];
+    document.getElementById('dp').value=d.prenom||'';document.getElementById('dn').value=d.nom||'';
+    document.getElementById('dt').value=d.tel||'';document.getElementById('de').value=d.email||'';
+    document.getElementById('dcam').value=d.camion||'';document.getElementById('dref').value=d.referent||'';
+    document.getElementById('dobj').value=d.objectif||'';document.getElementById('dnai').value=d.naissance||'';
+    document.getElementById('dent').value=d.date_entree||'';document.getElementById('dsor').value=d.sortie_prevue||'';
+    document.getElementById('dcon').value=d.contrat||'CDDI';
+  });}
+  om('m-dos');
 }
 
-async function sauverDossier(){
-  var id=document.getElementById('dos-id').value;
-  var prenom=document.getElementById('dos-prenom').value.trim();
-  var nom=document.getElementById('dos-nom').value.trim().toUpperCase();
+async function saveDos(){
+  var id=document.getElementById('di').value;
+  var prenom=document.getElementById('dp').value.trim();
+  var nom=document.getElementById('dn').value.trim().toUpperCase();
   if(!prenom||!nom){toast('Prénom et Nom obligatoires','#ef4444');return;}
-  var data={
-    prenom:prenom,nom:nom,
-    tel:document.getElementById('dos-tel').value.trim(),
-    email:document.getElementById('dos-email').value.trim(),
-    naissance:document.getElementById('dos-naiss').value||null,
-    date_entree:document.getElementById('dos-entree').value||null,
-    sortie_prevue:document.getElementById('dos-sortie').value||null,
-    contrat:document.getElementById('dos-contrat').value,
-    camion:document.getElementById('dos-camion').value.trim(),
-    referent:document.getElementById('dos-ref').value.trim(),
-    objectif:document.getElementById('dos-obj').value.trim()
-  };
-  var r=id
-    ? await db('insertion_dossiers?id=eq.'+id,{method:'PATCH',body:JSON.stringify(data)})
-    : await db('insertion_dossiers',{method:'POST',body:JSON.stringify(data)});
-  if(r===null){toast('Erreur lors de la sauvegarde','#ef4444');return;}
-  fermerModal('modal-dossier');
-  chargerDossiers();
-  toast(id?'Dossier mis à jour':'Dossier créé');
+  var data={prenom:prenom,nom:nom,tel:document.getElementById('dt').value.trim(),email:document.getElementById('de').value.trim(),naissance:document.getElementById('dnai').value||null,date_entree:document.getElementById('dent').value||null,sortie_prevue:document.getElementById('dsor').value||null,contrat:document.getElementById('dcon').value,camion:document.getElementById('dcam').value.trim(),referent:document.getElementById('dref').value.trim(),objectif:document.getElementById('dobj').value.trim()};
+  var r=id?await db('insertion_dossiers?id=eq.'+id,{method:'PATCH',body:JSON.stringify(data)}):await db('insertion_dossiers',{method:'POST',body:JSON.stringify(data)});
+  if(r===null){toast('Erreur','#ef4444');return;}
+  cm('m-dos');loadDos();loadTdb();toast(id?'Dossier mis à jour ✅':'Dossier créé ✅');
 }
 
-async function supprimerDossier(){
-  var id=document.getElementById('dos-id').value;
-  if(!id)return;
-  if(!confirm('Supprimer ce dossier définitivement ? Toutes les données seront perdues.'))return;
+async function delDos(){
+  var id=document.getElementById('di').value;if(!id)return;
+  if(!confirm('Supprimer ce dossier et toutes ses données ?'))return;
   await db('insertion_dossiers?id=eq.'+id,{method:'DELETE',body:''});
-  fermerModal('modal-dossier');
-  chargerDossiers();
-  toast('Dossier supprimé','#ef4444');
+  cm('m-dos');loadDos();loadTdb();toast('Dossier supprimé','#ef4444');
 }
 
 // ═══ SELECTS ═══
-async function remplirSelects(){
+async function fillSels(){
   var rows=await db('insertion_dossiers?order=nom.asc&select=id,prenom,nom');
   if(!rows)return;
-  var opts='<option value="">-- Choisir --</option>'+rows.map(function(d){
-    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
-  }).join('');
-  ['suivi-sel','eval-sel'].forEach(function(id){
-    var el=document.getElementById(id);if(el)el.innerHTML=opts;
-  });
-  var incOpts='<option value="">Tous</option>'+rows.map(function(d){
-    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
-  }).join('');
-  var fi=document.getElementById('inc-filtre');if(fi)fi.innerHTML=incOpts;
-  var mi=document.getElementById('inc-modal-sel');
-  if(mi)mi.innerHTML='<option value="">-- Choisir --</option>'+rows.map(function(d){
-    return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';
-  }).join('');
+  var opts='<option value="">-- Choisir --</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  ['suivi-sel','eval-sel'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;});
+  var io='<option value="">Tous</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  var fi=document.getElementById('inc-f');if(fi)fi.innerHTML=io;
+  var mi=document.getElementById('im-sel');if(mi)mi.innerHTML='<option value="">-- Choisir --</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  return rows;
+}
+
+async function fillDocSels(){
+  var rows=await db('insertion_dossiers?order=nom.asc&select=id,prenom,nom');
+  if(!rows)return;
+  var opts='<option value="">-- Choisir --</option>'+rows.map(function(d){return '<option value="'+d.id+'">'+d.prenom+' '+d.nom+'</option>';}).join('');
+  ['doc-ch','secu-ch','regl-ch'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;});
 }
 
 // ═══ SUIVI ═══
 async function chargerSuivi(){
   var id=document.getElementById('suivi-sel').value;
-  var empty=document.getElementById('suivi-empty');
-  var body=document.getElementById('suivi-body');
-  if(!id){empty.classList.remove('hidden');body.classList.add('hidden');return;}
-  empty.classList.add('hidden');body.classList.remove('hidden');
-
-  var results=await Promise.all([
-    db('insertion_dossiers?id=eq.'+id),
-    db('insertion_entretiens?dossier_id=eq.'+id+'&order=date.desc'),
-    db('insertion_incidents?dossier_id=eq.'+id+'&order=date.desc'),
-    db('insertion_situations?dossier_id=eq.'+id+'&order=created_at.desc&limit=1')
-  ]);
-  var dossier=results[0]&&results[0][0];
-  var ents=results[1]||[];
-  var incs=results[2]||[];
-  var sit=results[3]&&results[3][0];
-
-  var retards=incs.filter(function(i){return i.type==='Retard';}).length;
-  var absInj=incs.filter(function(i){return i.type==='Absence injustifiée';}).length;
-  var jours=dossier&&dossier.date_entree?Math.ceil((new Date()-new Date(dossier.date_entree))/86400000):0;
-
-  document.getElementById('suivi-counters').innerHTML=
-    '<div class="cbox"><div class="cnum" style="color:#f97316">'+jours+'</div><div class="clbl">Jours parcours</div></div>'
-    +'<div class="cbox"><div class="cnum" style="color:#ef4444">'+retards+'</div><div class="clbl">Retards</div></div>'
-    +'<div class="cbox"><div class="cnum" style="color:#f59e0b">'+absInj+'</div><div class="clbl">Abs. injust.</div></div>'
-    +'<div class="cbox"><div class="cnum" style="color:#22c55e">'+ents.length+'</div><div class="clbl">Entretiens</div></div>';
-
-  var alertDiv=document.getElementById('suivi-alertes');
-  alertDiv.innerHTML='';
-  if(retards>=3)alertDiv.innerHTML+='<div class="alert alert-w">⚠️ '+retards+' retards enregistrés — entretien de recadrage recommandé</div>';
-  if(absInj>=2)alertDiv.innerHTML+='<div class="alert alert-d">🚨 '+absInj+' absences injustifiées — action à envisager</div>';
-
-  if(sit){
-    ['logement','mobilite','sante','famille','alloc','remarques'].forEach(function(k){
-      var el=document.getElementById('sit-'+k);
-      if(el&&sit[k])el.value=sit[k];
-    });
-    if(sit.enfants!==undefined)document.getElementById('sit-enfants').value=sit.enfants;
-  }
-
-  var tl=document.getElementById('entretiens-tl');
+  if(!id){document.getElementById('suivi-empty').classList.remove('hidden');document.getElementById('suivi-body').classList.add('hidden');return;}
+  document.getElementById('suivi-empty').classList.add('hidden');document.getElementById('suivi-body').classList.remove('hidden');
+  var r=await Promise.all([db('insertion_dossiers?id=eq.'+id),db('insertion_entretiens?dossier_id=eq.'+id+'&order=date.desc'),db('insertion_incidents?dossier_id=eq.'+id+'&order=date.desc'),db('insertion_situations?dossier_id=eq.'+id+'&order=created_at.desc&limit=1')]);
+  var dos=r[0]&&r[0][0];var ents=r[1]||[];var incs=r[2]||[];var sit=r[3]&&r[3][0];
+  var ret=incs.filter(function(i){return i.type==='Retard';}).length;
+  var abs=incs.filter(function(i){return i.type==='Absence injustifiée';}).length;
+  var j=dos&&dos.date_entree?Math.ceil((new Date()-new Date(dos.date_entree))/86400000):0;
+  document.getElementById('suivi-ctrs').innerHTML='<div class="cbox"><div class="cnum" style="color:#f97316">'+j+'</div><div class="clbl">Jours parcours</div></div><div class="cbox"><div class="cnum" style="color:#ef4444">'+ret+'</div><div class="clbl">Retards</div></div><div class="cbox"><div class="cnum" style="color:#f59e0b">'+abs+'</div><div class="clbl">Abs. injust.</div></div><div class="cbox"><div class="cnum" style="color:#22c55e">'+ents.length+'</div><div class="clbl">Entretiens</div></div>';
+  var al=document.getElementById('suivi-als');al.innerHTML='';
+  if(ret>=3)al.innerHTML+='<div class="al al-w">⚠️ '+ret+' retards — entretien de recadrage recommandé</div>';
+  if(abs>=2)al.innerHTML+='<div class="al al-d">🚨 '+abs+' absences injustifiées — action à envisager</div>';
+  if(sit){['log','mob','san','fam','all','rem'].forEach(function(k){var el=document.getElementById('sit-'+k);if(el&&sit[k])el.value=sit[k];});if(sit.enfants!==undefined)document.getElementById('sit-enf').value=sit.enfants;}
+  var tl=document.getElementById('ent-tl');
   if(!ents.length){tl.innerHTML='<div style="color:#8a9ab8;font-size:13px;padding:10px 0">Aucun entretien enregistré.</div>';return;}
-  var dotColors={'Entretien mensuel de suivi':'#3b82f6','Entretien d\'accueil (J1)':'#22c55e','Entretien de recadrage':'#ef4444','Entretien suite à incident':'#f59e0b','Entretien de fin de parcours':'#a855f7'};
-  tl.innerHTML=ents.map(function(e){
-    var col=dotColors[e.type]||'#8a9ab8';
-    return '<div class="tl-item"><div class="tl-dot" style="background:'+col+'"></div>'
-      +'<div class="tl-date">'+(e.date||'')+' &bull; '+(e.type||'')+' &bull; '+(e.humeur||'')+'</div>'
-      +'<div class="tl-body">'
-      +'<div style="margin-bottom:6px">'+(e.sujets||'')+'</div>'
-      +'<div style="font-size:12px;color:#22c55e">→ '+(e.actions||'Aucune action notée')+'</div>'
-      +(e.prochain_entretien?'<div style="font-size:11px;color:#8a9ab8;margin-top:4px">Prochain : '+e.prochain_entretien+'</div>':'')
-      +'</div></div>';
-  }).join('');
+  var dc={'Entretien mensuel de suivi':'#3b82f6','Entretien d\'accueil (J1)':'#22c55e','Entretien de recadrage':'#ef4444','Entretien suite à incident':'#f59e0b','Entretien de fin de parcours':'#a855f7'};
+  tl.innerHTML=ents.map(function(e){var col=dc[e.type]||'#8a9ab8';return '<div class="tli"><div class="tld" style="background:'+col+'"></div><div class="tldate">'+(e.date||'')+' · '+(e.type||'')+' · '+(e.humeur||'')+'</div><div class="tlb"><div style="margin-bottom:6px">'+(e.sujets||'')+'</div><div style="font-size:12px;color:#22c55e">→ '+(e.actions||'Aucune action notée')+'</div>'+(e.prochain_entretien?'<div style="font-size:11px;color:#8a9ab8;margin-top:4px">Prochain : '+e.prochain_entretien+'</div>':'')+'</div></div>';}).join('');
 }
 
-async function sauverSituation(){
-  var id=document.getElementById('suivi-sel').value;
-  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
-  var r=await db('insertion_situations',{method:'POST',body:JSON.stringify({
-    dossier_id:id,
-    logement:document.getElementById('sit-logement').value,
-    mobilite:document.getElementById('sit-mobilite').value,
-    sante:document.getElementById('sit-sante').value,
-    famille:document.getElementById('sit-famille').value,
-    enfants:parseInt(document.getElementById('sit-enfants').value)||0,
-    alloc:document.getElementById('sit-alloc').value,
-    remarques:document.getElementById('sit-remarques').value,
-    created_at:new Date().toISOString()
-  })});
-  if(r)toast('Situation sauvegardée');
-  else toast('Erreur','#ef4444');
+async function sauverSit(){
+  var id=document.getElementById('suivi-sel').value;if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  var r=await db('insertion_situations',{method:'POST',body:JSON.stringify({dossier_id:id,logement:document.getElementById('sit-log').value,mobilite:document.getElementById('sit-mob').value,sante:document.getElementById('sit-san').value,famille:document.getElementById('sit-fam').value,enfants:parseInt(document.getElementById('sit-enf').value)||0,alloc:document.getElementById('sit-all').value,remarques:document.getElementById('sit-rem').value,created_at:new Date().toISOString()})});
+  if(r)toast('Situation sauvegardée ✅');else toast('Erreur','#ef4444');
 }
 
 function ouvrirModalEntretien(){
-  var id=document.getElementById('suivi-sel').value;
-  if(!id){toast('Sélectionnez d\'abord un salarié','#ef4444');return;}
-  document.getElementById('ent-date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('ent-sujets').value='';
-  document.getElementById('ent-actions').value='';
-  document.getElementById('ent-prochain').value='';
-  ouvrirModal('modal-entretien');
+  var id=document.getElementById('suivi-sel').value;if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  document.getElementById('ed').value=new Date().toISOString().slice(0,10);
+  document.getElementById('es').value='';document.getElementById('ea').value='';document.getElementById('ep').value='';
+  om('m-ent');
 }
 
-async function sauverEntretien(){
+async function saveEnt(){
   var id=document.getElementById('suivi-sel').value;
-  if(!document.getElementById('ent-date').value){toast('Date obligatoire','#ef4444');return;}
-  var r=await db('insertion_entretiens',{method:'POST',body:JSON.stringify({
-    dossier_id:id,
-    date:document.getElementById('ent-date').value,
-    type:document.getElementById('ent-type').value,
-    sujets:document.getElementById('ent-sujets').value,
-    actions:document.getElementById('ent-actions').value,
-    prochain_entretien:document.getElementById('ent-prochain').value||null,
-    humeur:document.getElementById('ent-humeur').value
-  })});
-  if(r){fermerModal('modal-entretien');chargerSuivi();toast('Entretien enregistré');}
-  else toast('Erreur','#ef4444');
+  if(!document.getElementById('ed').value){toast('Date obligatoire','#ef4444');return;}
+  var r=await db('insertion_entretiens',{method:'POST',body:JSON.stringify({dossier_id:id,date:document.getElementById('ed').value,type:document.getElementById('et').value,sujets:document.getElementById('es').value,actions:document.getElementById('ea').value,prochain_entretien:document.getElementById('ep').value||null,humeur:document.getElementById('eh').value})});
+  if(r){cm('m-ent');chargerSuivi();toast('Entretien enregistré ✅');}else toast('Erreur','#ef4444');
 }
 
 // ═══ ÉVALUATION ═══
-var CRITERES={
-  pro:[
-    {id:'conduite',lb:'Conduite et sécurité routière'},
-    {id:'ponctualite',lb:'Ponctualité et assiduité'},
-    {id:'organisation',lb:'Organisation et rigueur'},
-    {id:'relation_client',lb:'Relation client et sens du service'},
-    {id:'soin_materiel',lb:'Soin du véhicule et du matériel'},
-    {id:'autonomie',lb:'Autonomie dans les missions'},
-    {id:'qualite_liv',lb:'Qualité et fiabilité des livraisons'}
-  ],
-  comp:[
-    {id:'respect_consignes',lb:'Respect des consignes et règles'},
-    {id:'esprit_equipe',lb:'Esprit d\'équipe et solidarité'},
-    {id:'communication',lb:'Communication avec l\'encadrant'},
-    {id:'adaptabilite',lb:'Adaptabilité face aux imprévus'},
-    {id:'engagement',lb:'Engagement et motivation'}
-  ],
-  proj:[
-    {id:'conscience_progres',lb:'Conscience de ses progrès'},
-    {id:'demarches_emploi',lb:'Démarches d\'insertion (emploi, formation)'},
-    {id:'projet_pro',lb:'Clarté du projet professionnel'},
-    {id:'confiance',lb:'Confiance en soi'}
-  ]
-};
-var SCORES={};
+var CR={pro:[{id:'conduite',lb:'Conduite et sécurité routière'},{id:'ponctualite',lb:'Ponctualité et assiduité'},{id:'organisation',lb:'Organisation et rigueur'},{id:'relation_client',lb:'Relation client'},{id:'soin',lb:'Soin du véhicule'},{id:'autonomie',lb:'Autonomie dans les missions'},{id:'qualite',lb:'Qualité des livraisons'}],comp:[{id:'consignes',lb:'Respect des consignes'},{id:'equipe',lb:'Esprit d\'équipe'},{id:'comm',lb:'Communication avec l\'encadrant'},{id:'adapt',lb:'Adaptabilité aux imprévus'},{id:'engage',lb:'Engagement et motivation'}],proj:[{id:'progres',lb:'Conscience de ses progrès'},{id:'demarches',lb:'Démarches d\'insertion'},{id:'projet',lb:'Clarté du projet professionnel'},{id:'confiance',lb:'Confiance en soi'}]};
 
-function chargerEval(){
+function loadEval(){
   var id=document.getElementById('eval-sel').value;
-  var empty=document.getElementById('eval-empty');
-  var body=document.getElementById('eval-body');
-  if(!id){empty.classList.remove('hidden');body.classList.add('hidden');return;}
-  empty.classList.add('hidden');body.classList.remove('hidden');
+  if(!id){document.getElementById('eval-empty').classList.remove('hidden');document.getElementById('eval-body').classList.add('hidden');return;}
+  document.getElementById('eval-empty').classList.add('hidden');document.getElementById('eval-body').classList.remove('hidden');
   SCORES={};
-
-  Object.keys(CRITERES).forEach(function(cat){
-    var div=document.getElementById('eval-'+cat);
-    div.innerHTML=CRITERES[cat].map(function(cr){
-      return '<div class="eval-row"><div class="eval-lbl">'+cr.lb+'</div>'
-        +'<div class="stars-wrap" id="st-'+cr.id+'">'
-        +'<span class="star" onclick="setStar(\''+cr.id+'\',1)">★</span>'
-        +'<span class="star" onclick="setStar(\''+cr.id+'\',2)">★</span>'
-        +'<span class="star" onclick="setStar(\''+cr.id+'\',3)">★</span>'
-        +'<span class="star" onclick="setStar(\''+cr.id+'\',4)">★</span>'
-        +'<span class="star" onclick="setStar(\''+cr.id+'\',5)">★</span>'
-        +'</div><span id="sc-'+cr.id+'" style="font-size:11px;color:#8a9ab8;width:32px;text-align:right">0/5</span></div>';
+  Object.keys(CR).forEach(function(cat){
+    var div=document.getElementById('ev-'+cat);
+    div.innerHTML=CR[cat].map(function(c){
+      return '<div class="er"><div class="el">'+c.lb+'</div><div class="st" id="st-'+c.id+'">'+'<span class="star" onclick="setStar(this.parentNode.id.substring(3),1)">★</span><span class="star" onclick="setStar(this.parentNode.id.substring(3),2)">★</span><span class="star" onclick="setStar(this.parentNode.id.substring(3),3)">★</span><span class="star" onclick="setStar(this.parentNode.id.substring(3),4)">★</span><span class="star" onclick="setStar(this.parentNode.id.substring(3),5)">★</span></div><span id="sc-'+c.id+'" style="font-size:11px;color:#8a9ab8;width:30px;text-align:right">0/5</span></div>';
     }).join('');
   });
-
   db('insertion_evaluations?dossier_id=eq.'+id+'&order=created_at.desc&limit=1').then(function(rows){
-    if(rows&&rows[0]){
-      SCORES=rows[0].scores||{};
-      Object.keys(SCORES).forEach(function(k){refreshStars(k);});
-      document.getElementById('eval-comment').value=rows[0].commentaire||'';
-      document.getElementById('eval-reco').value=rows[0].recommandation||'Maintien en parcours';
-    }
-    majScore();
+    if(rows&&rows[0]){SCORES=rows[0].scores||{};Object.keys(SCORES).forEach(function(k){rS(k);});document.getElementById('ev-com').value=rows[0].commentaire||'';document.getElementById('ev-reco').value=rows[0].recommandation||'Maintien en parcours';}
+    mS();
   });
-  chargerObj(id);
+  loadObj(id);
 }
-
-function setStar(id,val){SCORES[id]=val;refreshStars(id);majScore();}
-
-function refreshStars(id){
-  var div=document.getElementById('st-'+id);
-  if(!div)return;
-  div.querySelectorAll('.star').forEach(function(s,i){
-    s.classList.toggle('on',(SCORES[id]||0)>i);
-  });
-  var sc=document.getElementById('sc-'+id);
-  if(sc)sc.textContent=(SCORES[id]||0)+'/5';
+function setStar(id,v){SCORES[id]=v;rS(id);mS();}
+function rS(id){var d=document.getElementById('st-'+id);if(!d)return;d.querySelectorAll('.star').forEach(function(s,i){s.classList.toggle('on',(SCORES[id]||0)>i);});var sc=document.getElementById('sc-'+id);if(sc)sc.textContent=(SCORES[id]||0)+'/5';}
+function mS(){var vs=Object.values(SCORES).filter(function(v){return v>0;});var m=vs.length?Math.round(vs.reduce(function(a,b){return a+b;},0)/vs.length*10)/10:0;var el=document.getElementById('sc-glob');if(el){el.textContent=m||'—';el.style.color=m>=4?'#22c55e':m>=3?'#f59e0b':'#ef4444';}}
+async function saveEval(){
+  var id=document.getElementById('eval-sel').value;if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  var vs=Object.values(SCORES).filter(function(v){return v>0;});
+  var m=vs.length?Math.round(vs.reduce(function(a,b){return a+b;},0)/vs.length*10)/10:0;
+  var r=await db('insertion_evaluations',{method:'POST',body:JSON.stringify({dossier_id:id,scores:SCORES,score_global:m,commentaire:document.getElementById('ev-com').value,recommandation:document.getElementById('ev-reco').value,created_at:new Date().toISOString()})});
+  if(r)toast('Évaluation sauvegardée ✅');else toast('Erreur','#ef4444');
 }
-
-function majScore(){
-  var vals=Object.values(SCORES).filter(function(v){return v>0;});
-  var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
-  var el=document.getElementById('score-global');
-  if(el){el.textContent=moy||'—';el.style.color=moy>=4?'#22c55e':moy>=3?'#f59e0b':'#ef4444';}
-}
-
-async function sauverEval(){
-  var id=document.getElementById('eval-sel').value;
-  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
-  var vals=Object.values(SCORES).filter(function(v){return v>0;});
-  var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
-  var r=await db('insertion_evaluations',{method:'POST',body:JSON.stringify({
-    dossier_id:id,scores:SCORES,score_global:moy,
-    commentaire:document.getElementById('eval-comment').value,
-    recommandation:document.getElementById('eval-reco').value,
-    created_at:new Date().toISOString()
-  })});
-  if(r)toast('Évaluation sauvegardée');
-  else toast('Erreur','#ef4444');
-}
-
-async function chargerObj(id){
+async function loadObj(id){
   var rows=await db('insertion_objectifs?dossier_id=eq.'+id+'&order=created_at.asc');
   var div=document.getElementById('obj-list');
   if(!rows||!rows.length){div.innerHTML='<div style="color:#8a9ab8;font-size:13px;padding:8px 0">Aucun objectif défini.</div>';return;}
-  div.innerHTML=rows.map(function(o){
-    var done=o.statut==='atteint';
-    return '<div class="obj-item">'
-      +'<input type="checkbox"'+(done?' checked':'')+' onchange="toggleObj(\''+o.id+'\',this.checked)" style="width:17px;height:17px;flex-shrink:0;accent-color:#f97316">'
-      +'<div style="flex:1"><div style="font-size:13px'+(done?';text-decoration:line-through;color:#8a9ab8':'')+'">'+o.libelle+'</div>'
-      +(o.echeance?'<div style="font-size:10px;color:#8a9ab8">Échéance : '+o.echeance+'</div>':'')
-      +'</div><span class="badge '+(done?'bg-green':'bg-amber')+'">'+(done?'Atteint':'En cours')+'</span></div>';
-  }).join('');
+  div.innerHTML=rows.map(function(o){var done=o.statut==='atteint';return '<div class="oi"><input type="checkbox"'+(done?' checked':'')+' onchange="togObj(this.dataset.id,this.checked)" data-id='+o.id+' style="width:17px;height:17px;flex-shrink:0;accent-color:#f97316"><div style="flex:1"><div style="font-size:13px'+(done?';text-decoration:line-through;color:#8a9ab8':'')+'">'+o.libelle+'</div>'+(o.echeance?'<div style="font-size:10px;color:#8a9ab8">Échéance : '+o.echeance+'</div>':'')+'</div><span class="badge '+(done?'bg-g':'bg-a')+'">'+(done?'Atteint':'En cours')+'</span></div>';}).join('');
 }
-
-function ajouterObj(){
-  var id=document.getElementById('eval-sel').value;
-  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
-  var lib=prompt('Objectif à fixer :');if(!lib)return;
-  var ech=prompt('Échéance (laissez vide si aucune) :','');
-  db('insertion_objectifs',{method:'POST',body:JSON.stringify({
-    dossier_id:id,libelle:lib,echeance:ech||null,statut:'en_cours',created_at:new Date().toISOString()
-  })}).then(function(){chargerObj(id);});
-}
-
-async function toggleObj(id,done){
-  await db('insertion_objectifs?id=eq.'+id,{method:'PATCH',body:JSON.stringify({statut:done?'atteint':'en_cours'})});
-  var chId=document.getElementById('eval-sel').value;
-  if(chId)chargerObj(chId);
-}
+function addObj(){var id=document.getElementById('eval-sel').value;if(!id){toast('Sélectionnez un salarié','#ef4444');return;}var l=prompt('Objectif :');if(!l)return;var e=prompt('Échéance (vide si aucune) :','');db('insertion_objectifs',{method:'POST',body:JSON.stringify({dossier_id:id,libelle:l,echeance:e||null,statut:'en_cours',created_at:new Date().toISOString()})}).then(function(){loadObj(id);});}
+async function togObj(id,done){await db('insertion_objectifs?id=eq.'+id,{method:'PATCH',body:JSON.stringify({statut:done?'atteint':'en_cours'})});var ci=document.getElementById('eval-sel').value;if(ci)loadObj(ci);}
 
 // ═══ INCIDENTS ═══
-async function chargerIncidents(){
-  var id=document.getElementById('inc-filtre')?document.getElementById('inc-filtre').value:'';
-  var url='insertion_incidents?order=date.desc'+(id?'&dossier_id=eq.'+id:'');
-  var rows=await db(url)||[];
-
-  var alertDiv=document.getElementById('alertes-recap');
-  alertDiv.innerHTML='';
-  var compteurs={};
-  rows.forEach(function(i){if(i.type==='Retard')compteurs[i.dossier_id]=(compteurs[i.dossier_id]||0)+1;});
-  Object.entries(compteurs).forEach(function(e){
-    if(e[1]>=3)alertDiv.innerHTML+='<div class="alert alert-w">⚠️ '+e[1]+' retards enregistrés pour ce salarié — action recommandée</div>';
-  });
-
+async function loadInc(){
+  var id=document.getElementById('inc-f')?document.getElementById('inc-f').value:'';
+  var rows=await db('insertion_incidents?order=date.desc'+(id?'&dossier_id=eq.'+id:''))||[];
+  var al=document.getElementById('inc-als');al.innerHTML='';
+  var rc={};rows.forEach(function(i){if(i.type==='Retard')rc[i.dossier_id]=(rc[i.dossier_id]||0)+1;});
+  Object.entries(rc).forEach(function(e){if(e[1]>=3)al.innerHTML+='<div class="al al-w">⚠️ '+e[1]+' retards — action recommandée</div>';});
   var list=document.getElementById('inc-list');
   if(!rows.length){list.innerHTML='<div style="text-align:center;padding:30px;color:#8a9ab8;font-size:13px">Aucun incident enregistré.</div>';return;}
-  var typeColor={'Retard':'#f59e0b','Absence injustifiée':'#ef4444','Comportement inapproprié':'#a855f7','Incident client':'#f97316','Incident véhicule':'#3b82f6'};
-  list.innerHTML=rows.map(function(i){
-    var col=typeColor[i.type]||'#8a9ab8';
-    return '<div class="inc-card" style="border-left-color:'+col+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-      +'<span class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+i.type+'</span>'
-      +'<span style="font-size:12px;color:#8a9ab8">'+(i.date||'')+(i.duree?' &bull; '+i.duree:'')+'</span>'
-      +'</div>'
-      +'<div style="font-size:13px;margin-bottom:6px">'+(i.description||'')+'</div>'
-      +'<div style="font-size:11px;color:#8a9ab8">Réponse : '+(i.reponse||'—')+' &bull; Origine : '+(i.origine||'—')+'</div>'
-      +'</div>';
-  }).join('');
+  var tc={'Retard':'#f59e0b','Absence injustifiée':'#ef4444','Comportement inapproprié':'#a855f7','Incident client':'#f97316','Incident véhicule':'#3b82f6'};
+  list.innerHTML=rows.map(function(i){var col=tc[i.type]||'#8a9ab8';return '<div class="ic" style="border-left-color:'+col+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><span class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+i.type+'</span><span style="font-size:12px;color:#8a9ab8">'+(i.date||'')+(i.duree?' · '+i.duree:'')+'</span></div><div style="font-size:13px;margin-bottom:6px">'+(i.description||'')+'</div><div style="font-size:11px;color:#8a9ab8">Réponse : '+(i.reponse||'—')+' · Origine : '+(i.origine||'—')+'</div></div>';}).join('');
 }
-
-async function ouvrirModalIncident(){
-  await remplirSelects();
-  document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('inc-desc').value='';
-  document.getElementById('inc-duree').value='';
-  ouvrirModal('modal-incident');
-}
-
-async function sauverIncident(){
-  var id=document.getElementById('inc-modal-sel').value;
-  if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
-  if(!document.getElementById('inc-desc').value.trim()){toast('Description obligatoire','#ef4444');return;}
-  var r=await db('insertion_incidents',{method:'POST',body:JSON.stringify({
-    dossier_id:id,
-    date:document.getElementById('inc-date').value,
-    type:document.getElementById('inc-type').value,
-    duree:document.getElementById('inc-duree').value,
-    description:document.getElementById('inc-desc').value,
-    reponse:document.getElementById('inc-reponse').value,
-    origine:document.getElementById('inc-origine').value
-  })});
-  if(r){fermerModal('modal-incident');chargerIncidents();toast('Incident enregistré');}
-  else toast('Erreur','#ef4444');
+async function openIncModal(){await fillSels();document.getElementById('im-d').value=new Date().toISOString().slice(0,10);document.getElementById('im-desc').value='';document.getElementById('im-dur').value='';om('m-inc');}
+async function saveInc(){
+  var id=document.getElementById('im-sel').value;if(!id){toast('Sélectionnez un salarié','#ef4444');return;}
+  if(!document.getElementById('im-desc').value.trim()){toast('Description obligatoire','#ef4444');return;}
+  var r=await db('insertion_incidents',{method:'POST',body:JSON.stringify({dossier_id:id,date:document.getElementById('im-d').value,type:document.getElementById('im-t').value,duree:document.getElementById('im-dur').value,description:document.getElementById('im-desc').value,reponse:document.getElementById('im-rep').value,origine:document.getElementById('im-ori').value})});
+  if(r){cm('m-inc');loadInc();toast('Incident enregistré ✅');}else toast('Erreur','#ef4444');
 }
 
 // ═══ RECRUTEMENT ═══
-async function sauverRecr(){
-  var nom=document.getElementById('recr-nom').value.trim();
-  if(!nom){toast('Entrez le nom du candidat','#ef4444');return;}
-  var r=await db('insertion_recrutements',{method:'POST',body:JSON.stringify({
-    nom:nom,
-    date_entretien:document.getElementById('recr-date').value||null,
-    encadrant:document.getElementById('recr-enc').value,
-    poste:document.getElementById('recr-poste').value,
-    naissance:document.getElementById('recr-naiss').value||null,
-    nationalite:document.getElementById('recr-nat').value,
-    permis:document.getElementById('recr-permis').value,
-    logement:document.getElementById('recr-log').value,
-    mobilite:document.getElementById('recr-mob').value,
-    famille:document.getElementById('recr-fam').value,
-    droits:document.getElementById('recr-droits').value,
-    freins:document.getElementById('recr-freins').value,
-    exp:document.getElementById('recr-exp').value,
-    eloignement:document.getElementById('recr-eloig').value,
-    competences:document.getElementById('recr-compt').value,
-    formation:document.getElementById('recr-form').value,
-    motivation:document.getElementById('recr-motiv').value,
-    projet:document.getElementById('recr-projet').value,
-    disponibilite:document.getElementById('recr-dispo').value,
-    positifs:document.getElementById('recr-positifs').value,
-    vigilance:document.getElementById('recr-vigilance').value,
-    decision:document.getElementById('recr-decision').value,
-    debut:document.getElementById('recr-debut').value||null,
-    commentaire_final:document.getElementById('recr-final').value,
-    created_at:new Date().toISOString()
-  })});
-  if(r)toast('Fiche de recrutement sauvegardée');
-  else toast('Erreur lors de la sauvegarde','#ef4444');
+async function saveRecr(){
+  var nom=document.getElementById('rc-nom').value.trim();if(!nom){toast('Entrez le nom du candidat','#ef4444');return;}
+  var r=await db('insertion_recrutements',{method:'POST',body:JSON.stringify({nom:nom,date_entretien:document.getElementById('rc-date').value||null,encadrant:document.getElementById('rc-enc').value,poste:document.getElementById('rc-poste').value,naissance:document.getElementById('rc-naiss').value||null,nationalite:document.getElementById('rc-nat').value,permis:document.getElementById('rc-perm').value,logement:document.getElementById('rc-log').value,mobilite:document.getElementById('rc-mob').value,famille:document.getElementById('rc-fam').value,droits:document.getElementById('rc-droits').value,freins:document.getElementById('rc-freins').value,exp:document.getElementById('rc-exp').value,eloignement:document.getElementById('rc-el').value,competences:document.getElementById('rc-comp').value,motivation:document.getElementById('rc-motiv').value,projet:document.getElementById('rc-proj').value,disponibilite:document.getElementById('rc-dispo').value,positifs:document.getElementById('rc-pos').value,vigilance:document.getElementById('rc-vig').value,decision:document.getElementById('rc-dec').value,debut:document.getElementById('rc-deb').value||null,commentaire_final:document.getElementById('rc-fin').value,created_at:new Date().toISOString()})});
+  if(r)toast('Fiche sauvegardée ✅');else toast('Erreur','#ef4444');
 }
 
+// ═══ DOCUMENTS ═══
+function showDoc(type){
+  var p=document.getElementById('doc-prev');p.classList.remove('hidden');
+  var fns={eval:docEval,entretien:docEnt,objectifs:docObj,bilan:docBilan,attest:docAttest,avert:docAvert,plan:docPlan,signal:docSignal};
+  if(fns[type])fns[type](p);
+}
+function docH(titre,contenu){return '<div class="pa"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h1>'+titre+'</h1><p style="font-size:11px;color:#6b7280">La Table de Cana · Marseille · '+new Date().toLocaleDateString('fr-FR')+'</p></div><button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button></div>'+contenu+'</div>';}
+function fl(label){return '<div style="margin-bottom:8px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:700;margin-bottom:2px">'+label+'</div><div style="border-bottom:1px solid #d1d5db;min-height:22px"></div></div>';}
+function sigRow(){return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px"><div><div style="font-size:12px;margin-bottom:6px">Signature salarié (Lu et approuvé) :</div><div class="sig">Zone de signature</div></div><div><div style="font-size:12px;margin-bottom:6px">Signature encadrant :</div><div class="sig">Zone de signature</div></div></div>';}
+function docEval(div){var rows=['Conduite et sécurité routière','Ponctualité et assiduité','Organisation et rigueur','Relation client','Soin du véhicule','Autonomie','Qualité des livraisons','Respect des consignes','Esprit d\'équipe','Communication encadrant','Adaptabilité','Engagement','Conscience progrès','Démarches insertion','Projet professionnel','Confiance en soi'].map(function(r){return '<tr><td style="border:1px solid #e5e7eb;padding:8px;font-size:13px">'+r+'</td>'+'<td style="border:1px solid #e5e7eb;text-align:center;width:36px">☐1</td><td style="border:1px solid #e5e7eb;text-align:center;width:36px">☐2</td><td style="border:1px solid #e5e7eb;text-align:center;width:36px">☐3</td><td style="border:1px solid #e5e7eb;text-align:center;width:36px">☐4</td><td style="border:1px solid #e5e7eb;text-align:center;width:36px">☐5</td><td style="border:1px solid #e5e7eb;padding:4px;width:180px"></td></tr>';}).join('');div.innerHTML=docH('GRILLE D\'ÉVALUATION TRIMESTRIELLE',fl('Salarié')+'<div class="r2">'+fl('Encadrant')+fl('Période')+'</div><table style="width:100%;border-collapse:collapse;margin:12px 0"><tr style="background:#f9fafb"><th style="border:1px solid #e5e7eb;padding:8px;text-align:left;font-size:12px">Critère</th><th style="border:1px solid #e5e7eb;font-size:11px">1</th><th style="border:1px solid #e5e7eb;font-size:11px">2</th><th style="border:1px solid #e5e7eb;font-size:11px">3</th><th style="border:1px solid #e5e7eb;font-size:11px">4</th><th style="border:1px solid #e5e7eb;font-size:11px">5</th><th style="border:1px solid #e5e7eb;font-size:12px;padding:8px">Commentaire</th></tr>'+rows+'</table><p style="font-size:11px;color:#6b7280;margin-bottom:12px">1=Insuffisant 2=À améliorer 3=Satisfaisant 4=Bien 5=Excellent</p><div class="r2"><div>Score global : _______ / 5</div><div>Recommandation : ☐ Maintien ☐ Renouvellement ☐ Sortie emploi ☐ Formation ☐ Rupture</div></div><div style="margin:12px 0">Commentaire général :<div style="border:1px solid #e5e7eb;min-height:60px;border-radius:6px;margin-top:6px;padding:8px"></div></div>'+sigRow());}
+function docEnt(div){div.innerHTML=docH('COMPTE-RENDU D\'ENTRETIEN DE SUIVI','<div class="r3">'+fl('Salarié')+fl('Date')+fl('Type d\'entretien')+'</div>'+['Situation au travail (points positifs, difficultés)','Situation personnelle (logement, famille, santé, mobilité)','Freins identifiés / Points d\'attention','Démarches en cours (emploi, formation, droits sociaux)','Actions décidées et engagements pris','Prochain entretien prévu le'].map(function(s){return '<div style="margin-bottom:12px"><strong style="font-size:12px">'+s+' :</strong><div style="border:1px solid #e5e7eb;min-height:48px;border-radius:6px;margin-top:4px;padding:6px"></div></div>';}).join('')+sigRow());}
+function docObj(div){var rows='';for(var i=1;i<=6;i++){rows+='<tr><td style="border:1px solid #e5e7eb;padding:8px;text-align:center;font-weight:700">'+i+'</td><td style="border:1px solid #e5e7eb;padding:8px"></td><td style="border:1px solid #e5e7eb;padding:8px;width:120px"></td><td style="border:1px solid #e5e7eb;padding:8px;text-align:center;font-size:12px">☐Atteint<br>☐En cours<br>☐Non atteint</td></tr>';}div.innerHTML=docH('FICHE D\'OBJECTIFS',fl('Salarié')+'<div class="r2">'+fl('Période du')+fl('au')+'</div><table style="width:100%;border-collapse:collapse;margin:12px 0"><tr style="background:#f9fafb"><th style="border:1px solid #e5e7eb;padding:8px;font-size:12px">N°</th><th style="border:1px solid #e5e7eb;padding:8px;text-align:left;font-size:12px">Objectif</th><th style="border:1px solid #e5e7eb;padding:8px;font-size:12px">Échéance</th><th style="border:1px solid #e5e7eb;padding:8px;font-size:12px">Statut</th></tr>'+rows+'</table>'+sigRow());}
+function docBilan(div){div.innerHTML=docH('BILAN DE SORTIE DE PARCOURS','<div class="r3">'+fl('Salarié')+fl('Date entrée')+fl('Date sortie')+'</div>'+['Type de sortie','Motif','Points forts développés','Difficultés rencontrées et gestion','Compétences acquises','Projet au moment de la sortie','Orientation proposée','Recommandations'].map(function(s){return '<div style="margin-bottom:12px"><strong style="font-size:12px">'+s+' :</strong><div style="border:1px solid #e5e7eb;min-height:48px;border-radius:6px;margin-top:4px;padding:6px"></div></div>';}).join('')+sigRow());}
+function docAttest(div){div.innerHTML=docH('ATTESTATION DE COMPÉTENCES',['Conduite sécurisée véhicule léger','Réalisation de tournées de livraison','Respect des délais et horaires','Gestion des bons de livraison','Relation client professionnelle','Soin et entretien du véhicule','Travail en équipe','Respect des consignes de sécurité'].map(function(c){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:13px"><span style="width:200px">'+c+'</span><span>☐ Maîtrisé &nbsp;☐ En cours &nbsp;☐ Non acquis</span></div>';}).join('')+'<div style="margin:16px 0"><strong>Appréciation :</strong><div style="border:1px solid #e5e7eb;min-height:60px;border-radius:6px;margin-top:6px;padding:8px"></div></div>'+sigRow());}
+function docAvert(div){div.innerHTML=docH('LETTRE D\'AVERTISSEMENT','<p>À : M./Mme _____________________________</p><p style="margin-top:8px">Objet : <strong>Avertissement — [motif]</strong></p><p style="margin-top:12px">Par la présente, nous vous notifions un avertissement suite aux faits suivants :</p><div style="border:1px solid #e5e7eb;min-height:80px;border-radius:6px;padding:8px;margin:12px 0"></div><p>Ces faits constituent un manquement à vos obligations professionnelles. Nous vous rappelons que tout nouveau manquement pourra entraîner une sanction plus grave.</p><div style="margin:12px 0"><strong>Suite donnée :</strong><div style="border:1px solid #e5e7eb;min-height:48px;border-radius:6px;padding:8px;margin-top:6px"></div></div>'+sigRow());}
+function docPlan(div){div.innerHTML=docH('PLAN D\'ACCOMPAGNEMENT',['Diagnostic socio-professionnel','Objectifs professionnels prioritaires','Objectifs personnels prioritaires','Actions côté salarié','Actions côté encadrant','Partenaires mobilisés','Indicateurs de réussite','Points de vigilance'].map(function(s){return '<div style="margin-bottom:12px"><strong style="font-size:12px">'+s+' :</strong><div style="border:1px solid #e5e7eb;min-height:48px;border-radius:6px;margin-top:4px;padding:6px"></div></div>';}).join('')+sigRow());}
+function docSignal(div){div.innerHTML=docH('FICHE DE SIGNALEMENT D\'INCIDENT','<div class="r3">'+fl('Salarié')+fl('Date')+fl('Heure')+'</div><div style="margin-bottom:12px">Type : ☐ Retard &nbsp;☐ Absence injust. &nbsp;☐ Comportement &nbsp;☐ Incident client &nbsp;☐ Incident véhicule &nbsp;☐ Autre</div>'+['Description précise et objective des faits','Témoins éventuels','Contexte / Origine probable','Réponse immédiate apportée','Suite envisagée'].map(function(s){return '<div style="margin-bottom:12px"><strong style="font-size:12px">'+s+' :</strong><div style="border:1px solid #e5e7eb;min-height:48px;border-radius:6px;margin-top:4px;padding:6px"></div></div>';}).join('')+sigRow());}
+
+// ═══ QUIZ SÉCURITÉ ═══
+function buildQuiz(){
+  var qs=[
+    {q:'Taux d\'alcoolémie légal maximum pour conduire ?',r:['0,2 g/L','0,5 g/L','0,8 g/L','1,0 g/L'],ok:1},
+    {q:'Accrochage mineur lors d\'une livraison : que faites-vous ?',r:['Je repars','Je contacte immédiatement l\'encadrant','J\'attends le retour au dépôt','Je demande à un passant'],ok:1},
+    {q:'SMS urgent en conduisant : que faites-vous ?',r:['Je lis au feu rouge','Je m\'arrête dans un endroit sûr','J\'utilise le kit mains-libres pour lire','Je réponds en roulant lentement'],ok:1},
+    {q:'Avant de partir en tournée, vous devez :',r:['Partir vite pour ne pas être en retard','Faire le tour du véhicule + vérifier le chargement','Vérifier juste le carburant','Appeler les clients'],ok:1},
+    {q:'Vous sentez que vous n\'êtes pas en état de conduire ce matin :',r:['Je prends le volant quand même','J\'en parle à l\'encadrant immédiatement','J\'attends que ça passe','Je bois un café et je pars'],ok:1},
+  ];
+  var html='';
+  qs.forEach(function(q,i){
+    html+='<div style="margin-bottom:16px;background:#1a2236;border-radius:10px;padding:14px"><div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#e8edf5">'+(i+1)+'. '+q.q+'</div>';
+    q.r.forEach(function(r,j){html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><input type="radio" name="qz'+i+'" id="qz'+i+'r'+j+'" value="'+j+'"><label for="qz'+i+'r'+j+'" style="font-size:13px;cursor:pointer">'+r+'</label></div>';});
+    html+='<button class="btn bs sm" style="margin-top:8px" onclick="checkQ('+i+','+q.ok+')">Vérifier</button>';
+    html+='<div id="qr-'+i+'" style="display:none;margin-top:6px;font-size:12px;font-weight:700"></div></div>';
+  });
+  var el=document.getElementById('quiz-sec');if(el)el.innerHTML=html;
+}
+function checkQ(i,ok){var sel=document.querySelector('input[name="qz'+i+'"]:checked');var div=document.getElementById('qr-'+i);div.style.display='block';if(!sel){div.textContent='Sélectionnez une réponse.';div.style.color='#f59e0b';return;}if(parseInt(sel.value)===ok){div.textContent='✅ Bonne réponse !';div.style.color='#22c55e';}else{div.textContent='❌ Incorrect. La bonne réponse est marquée par votre encadrant.';div.style.color='#ef4444';}}
+
+// ═══ ASSISTANT IA ═══
+async function sendAI(){
+  var inp=document.getElementById('ai-inp');var msg=inp.value.trim();if(!msg)return;
+  inp.value='';
+  addMsg(msg,'user');
+  AI_H.push({role:'user',content:msg});
+  var btn=document.getElementById('ai-btn');btn.disabled=true;btn.textContent='...';
+  var loadId='ld-'+Date.now();
+  addMsg('⏳ Réflexion en cours...','asst',loadId);
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:AI_H})});
+    var data=await r.json();
+    var txt=data.content&&data.content[0]?data.content[0].text:'Désolé, je n\'ai pas pu répondre.';
+    var ld=document.getElementById(loadId);if(ld)ld.remove();
+    addMsg(txt,'asst');
+    AI_H.push({role:'assistant',content:txt});
+  }catch(e){var ld=document.getElementById(loadId);if(ld)ld.remove();addMsg('Erreur de connexion.','asst');}
+  btn.disabled=false;btn.textContent='Envoyer';
+}
+function addMsg(txt,role,id){var c=document.getElementById('ai-chat');var d=document.createElement('div');d.className='ai-msg '+role;if(id)d.id=id;d.innerHTML=txt.replace(/\n/g,'<br>');c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function qr(txt){document.getElementById('ai-inp').value=txt;sendAI();}
+document.getElementById('ai-inp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAI();}});
+
 // ═══ DÉMARRAGE ═══
-document.getElementById('recr-date').value=new Date().toISOString().slice(0,10);
-if(SESSION)init();
-</script>
-</body>
-</html>
+document.getElementById('rc-date').value=new Date().toISOString().slice(0,10);
+if(SES)init();
+</script></body></html>
