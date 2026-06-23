@@ -25,13 +25,13 @@
 ══════════════════════════════════════════════════ */
 (function(){
   window.SERVICES_CONFIG = {
-    'cana2026':      {nom:'Direction',          prenom:'',      niveau:'admin',      icone:'\uD83D\uDC54'},
-    'direction2026': {nom:'Direction',          prenom:'',      niveau:'admin',      icone:'\uD83D\uDC54'},
-    'com2026':       {nom:'Service Commercial', prenom:'',      niveau:'commercial', icone:'\uD83C\uDFE2'},
-    'restoco2026':   {nom:'Resto-Co',           prenom:'',      niveau:'restoco',    icone:'\uD83C\uDF7D\uFE0F'},
-    'compta2026':    {nom:'Compta',             prenom:'ALI',   niveau:'compta',     icone:'\uD83D\uDCB0'},
-    'rh2026':        {nom:'RH Insertion',       prenom:'',      niveau:'rh',         icone:'\uD83D\uDC65'},
-    'rse2026':       {nom:'RSE-Formation',      prenom:'',      niveau:'rse',        icone:'\uD83C\uDF31'}
+    'cana2026':      {nom:'Direction',          prenom:'DIRECTION',  niveau:'admin',      icone:'\uD83D\uDC54',  accueil:'Bienvenue sur votre espace de pilotage.'},
+    'direction2026': {nom:'Direction',          prenom:'DIRECTION',  niveau:'admin',      icone:'\uD83D\uDC54',  accueil:'Bienvenue sur votre espace de pilotage.'},
+    'com2026':       {nom:'Service Commercial', prenom:'COMMERCIAL', niveau:'commercial', icone:'\uD83C\uDFE2', accueil:'Votre espace planning et suivi client.'},
+    'restoco2026':   {nom:'Resto-Co',           prenom:'RESTO-CO',   niveau:'restoco',    icone:'\uD83C\uDF7D\uFE0F', accueil:'Votre espace logistique traiteur.'},
+    'compta2026':    {nom:'Compta',             prenom:'ALI',        niveau:'compta',     icone:'\uD83D\uDCB0',  accueil:'Votre espace comptabilité et suivi.'},
+    'rh2026':        {nom:'RH Insertion',       prenom:'RH',         niveau:'rh',         icone:'\uD83D\uDC65',  accueil:'Votre espace suivi salariés.'},
+    'rse2026':       {nom:'RSE-Formation',      prenom:'RSE',        niveau:'rse',        icone:'\uD83C\uDF31',  accueil:'Votre espace RSE et formation.'}
   };
 
   var dejaConnecte = sessionStorage.getItem('planning_auth');
@@ -86,21 +86,21 @@
         window._serviceActuel = window.SERVICES_CONFIG[code];
         window._codeActuel = code;
         overlay.remove();
-        /* ── Bandeau Bonjour fixe en bas du planning ── */
-        var srv=window._serviceActuel;
-        var prenom=srv.prenom?srv.prenom:'';
-        if(prenom){
-          var oldBv=document.getElementById('bonjour-strip');if(oldBv)oldBv.remove();
-          var strip=document.createElement('div');
-          strip.id='bonjour-strip';
-          strip.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#0f172a;border-top:2px solid #f97316;padding:8px 20px;z-index:9999;display:flex;align-items:center;gap:12px;font-family:-apple-system,Arial,sans-serif';
-          strip.innerHTML='<span style="font-size:18px">'+(srv.icone||'👋')+'</span>'
-            +'<span style="font-size:15px;font-weight:900;color:#fff">Bonjour '+prenom+' !</span>'
-            +'<span style="font-size:12px;color:#94a3b8">'+srv.nom+' — La Table de Cana</span>'
-            +'<button onclick="document.getElementById(\'bonjour-strip\').remove()" style="margin-left:auto;background:transparent;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:0 4px" title="Fermer">✕</button>';
-          document.body.appendChild(strip);
-        }
-        /* ── Fin bandeau Bonjour ── */
+        /* ── Message Bonjour pour TOUS les services ── */
+        var _s=window._serviceActuel;
+        var _bv=document.createElement('div');
+        _bv.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-60%);background:#0d1829;border:2px solid #f97316;border-radius:20px;padding:28px 40px;z-index:999999;text-align:center;font-family:-apple-system,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5);min-width:280px';
+        _bv.innerHTML='<div style="font-size:36px;margin-bottom:10px">'+(_s.icone||'👋')+'</div>'
+          +'<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:5px">Bonjour <span style="color:#f97316">'+_s.prenom+'</span> !</div>'
+          +'<div style="font-size:12px;color:#94a3b8;margin-bottom:3px">'+_s.nom+' &mdash; La Table de Cana</div>'
+          +'<div style="font-size:11px;color:#64748b">'+(_s.accueil||'Marseille')+'</div>';
+        document.body.appendChild(_bv);
+        setTimeout(function(){
+          _bv.style.transition='opacity .4s,transform .4s';
+          _bv.style.opacity='0';_bv.style.transform='translate(-50%,-55%) scale(.9)';
+          setTimeout(function(){_bv.remove();},400);
+        },2400);
+        /* ── Fin message Bonjour ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')setTimeout(afficherHub,300);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
@@ -148,9 +148,9 @@ input,select,textarea,button{font-family:inherit;font-size:12px}
 .nav-logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;margin-right:8px;white-space:nowrap}
 .nav-logo svg{width:20px;height:20px;color:#3b82f6}
 .nav-sep{width:1px;height:26px;background:#1e293b;margin:0 3px}
-.nd{padding:4px 9px;border:1px solid #1e293b;border-radius:5px;background:#0f172a;color:#cbd5e1;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap}
-.nd:hover{background:#1e293b;color:#fff}
-input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;background:#0f172a;color:#fff;font-size:11px}
+.nd{padding:5px 10px;border:1px solid #1e3a5f;border-radius:6px;background:#0a1829;color:#93c5fd;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;transition:all .15s}
+.nd:hover{background:#1e3a5f;color:#fff;border-color:#3b82f6}
+input[type=date].ndi{padding:5px 10px;border:2px solid #3b82f6;border-radius:7px;background:#0a1829;color:#fff;font-size:13px;font-weight:700;letter-spacing:.3px}
 .nsp{flex:1}
 .nb{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap}
 .nb.gr{background:#15803d;color:#fff}.nb.gr:hover{background:#166534}
@@ -257,27 +257,34 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .grid{display:grid;background:#f8fafc;border-radius:8px;border:2px solid #1e293b;overflow:hidden;position:relative}
 
 /* EN-TÊTES CHAUFFEURS ECRAN */
-.gh{background:linear-gradient(180deg,#0f1e35 0%,#0d1829 100%);color:#f1f5f9;border-bottom:2px solid #1e40af;border-right:1px solid #1e293b;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;position:relative}
+.gh{background:linear-gradient(160deg,#0c1a30 0%,#0a1525 100%);color:#f1f5f9;border-bottom:2px solid #1e3a5f;border-right:1px solid #1e293b;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;position:relative}
 .gh:last-child{border-right:none}
 .gh.th{background:#020617;color:#fff;font-size:10px;font-weight:600;border-right:2px solid #0f172a}
-.gh-name{font-size:14px;font-weight:900;color:#f1f5f9;line-height:1;letter-spacing:.3px;text-transform:uppercase}
-.gh-truck{font-size:11px;font-weight:700;color:#60a5fa;line-height:1;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);border-radius:6px;padding:2px 7px;margin-top:1px}
-.gh-hrs{font-size:10px;font-weight:700;color:#34d399;line-height:1;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:6px;padding:2px 6px}
-.gh-cnt{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;justify-content:center}
+.gh-name{font-size:14px;font-weight:900;color:#f1f5f9;line-height:1;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px}
+.gh-truck{font-size:10px;font-weight:700;color:#60a5fa;line-height:1;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);border-radius:5px;padding:2px 7px;margin-top:1px}
+.gh-hrs{font-size:10px;font-weight:700;color:#34d399;line-height:1;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15);border-radius:5px;padding:2px 6px}
+.gh-cnt{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap;justify-content:center}
 .gh-cnt-pill{font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700}
 
 /* HEURES */
-.gtc{font-size:11px;font-weight:800;color:#7dd3fc;padding:0 6px;text-align:right;background:#050d1a;border-right:2px solid #1e3a5f;border-bottom:1px solid #0f1e35;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;letter-spacing:.3px}
-.gtc.half{font-size:9px;color:#334155;font-weight:400;color:#94a3b8;background:#f8fafc;border-bottom:0.5px solid #f1f5f9}
+.gtc{font-size:11px;font-weight:800;color:#93c5fd;padding:0 7px;text-align:right;background:#060e1c;border-right:2px solid #1e3a5f;border-bottom:1px solid #0c1829;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;letter-spacing:.3px}
+.gtc.half{font-size:9px;font-weight:400;color:#94a3b8;background:#f8fafc;border-bottom:0.5px solid #f1f5f9}
 .gtc.past{opacity:.45}
 
 /* CELLULES */
 .gcw{position:relative;border-right:1px solid rgba(219,112,147,0.2);border-bottom:1px solid rgba(219,112,147,0.08);min-height:36px;background:#fdf0f4;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
 .gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
-.gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
-.gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
-.gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
+.gcw-conge{background:rgba(245,158,11,0.06) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
+.gcw-absent{background:rgba(239,68,68,0.06) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
+.gcw-repos{background:rgba(100,116,139,0.06) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
+/* Filigrane diagonal congé/absent */
+.col-filigrane{position:relative;overflow:hidden}
+.col-filigrane::after{content:attr(data-statut);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:52px;font-weight:900;opacity:.06;pointer-events:none;white-space:nowrap;z-index:1;letter-spacing:2px;text-transform:uppercase}
+.gcw-conge.col-filigrane::after{color:#f59e0b;opacity:.12}
+.gcw-absent.col-filigrane::after{color:#ef4444;opacity:.12}
+.gcw-maladie.col-filigrane::after{color:#ef4444;opacity:.12}
+.gcw-repos.col-filigrane::after{color:#64748b;opacity:.1}
 .gcw:last-child{border-right:none}
 .gcw.past-col{background:#f5e8ec}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
@@ -580,11 +587,17 @@ input[type="time"]{
   [onclick*="toggleMenuPrincipal"], .nb, .nd, .nsp,
   button:not(.print-ok), .sidebar, .gh-cnt-pill { display:none!important }
   .gcell { page-break-inside: avoid }
+  .col-filigrane::after { opacity:.25 !important }
+  .gcw-conge { background:rgba(245,158,11,.12) !important }
+  .gcw-absent,.gcw-maladie { background:rgba(239,68,68,.12) !important }
+  .gcw-repos { background:rgba(100,116,139,.1) !important }
 }
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 
 @keyframes fadeInScale{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes bvIn{from{opacity:0;transform:translate(-50%,-50%) scale(.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes bvOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.85)}}
 </style>
 </head>
 <body>
@@ -615,7 +628,12 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <button onclick="chargerDepuisSupabase()" style="padding:7px 12px;background:#16a34a;border:1px solid #16a34a;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer" title="Charger depuis le cloud">&#9650; Cloud</button>
+    <button onclick="chargerDepuisSupabase()" style="padding:7px 12px;background:#16a34a;border:1px solid #16a34a;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer" title="Charger depuis le cloud">☁️ Cloud</button>
+    <span id="sync-dot" title="Statut synchronisation" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#64748b;padding:0 4px">
+      <span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 5px #22c55e"></span>
+      <span id="sync-txt">Sync OK</span>
+    </span>
+    <span id="nav-day-label" style="font-size:13px;font-weight:900;color:#fff;padding:0 8px;border-left:1px solid #1e293b;margin-left:4px"></span>
   </div>
   <div class="nsp"></div>
 
@@ -1320,6 +1338,16 @@ function rStats(){
 }
 
 function rGrid(){
+  /* Mettre à jour le label du jour en haut */
+  var _dlbl=document.getElementById('nav-day-label');
+  if(_dlbl&&ST.cur){
+    var _dn=new Date(ST.cur+'T12:00:00');
+    var _jours=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    var _mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    _dlbl.textContent=_jours[_dn.getDay()]+' '+_dn.getDate()+' '+_mois[_dn.getMonth()];
+    var _today=new Date().toISOString().slice(0,10);
+    _dlbl.style.color=ST.cur===_today?'#f97316':'#93c5fd';
+  }
   var d=ST.cur;var g=document.getElementById('grid');var gb=ST.gb;
   g.style.gridTemplateColumns='repeat(5,minmax(0,1fr))';
   var html='';
@@ -1340,15 +1368,7 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer;margin-bottom:3px">'+dr.name+'</div>'
-      +'<div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:3px">'
-      +'<button data-di="'+i+'" data-action="statut" style="background:'+(stToday?stBg:'rgba(34,197,94,.12)')+';border:1px solid '+(stToday?stColor:'rgba(34,197,94,.3)')+';border-radius:6px;padding:2px 7px;font-size:9px;color:'+(stToday?stColor:'#22c55e')+';cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ En service')+'</button>'
-      +(dr.tournee?'<div style="font-size:9px;font-weight:900;padding:2px 7px;border-radius:6px;border:1px solid '+(dr.tourneeColor||'#64748b')+';color:'+(dr.tourneeColor||'#64748b')+';background:'+(dr.tourneeColor||'#64748b')+'22;cursor:pointer" data-di="'+i+'" data-action="tournee">'+dr.tournee.toUpperCase()+'</div>':'')
-      +'</div>'
-      +'<div style="display:flex;gap:3px;align-items:center;justify-content:center">'
-      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fb923c;cursor:pointer">'+dr.truck+'</button>'
-      +'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.08);border:1px solid #334155;border-radius:6px;padding:2px 6px;font-size:10px;color:#94a3b8;cursor:pointer">🗺</button>'
-      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'+(dr.tournee?'<div style="font-size:9px;font-weight:900;padding:2px 7px;border-radius:10px;border:1px solid '+(dr.tourneeColor||'#64748b')+';color:'+(dr.tourneeColor||'#64748b')+';background:'+(dr.tourneeColor||'#64748b')+'22;white-space:nowrap;cursor:pointer" data-di="'+i+'" data-action="tournee">'+dr.tournee.toUpperCase()+'</div>':'')      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -1369,7 +1389,9 @@ function rGrid(){
           +'<div class="ptxt">'+content+(meta?'<div class="pmeta">'+meta+'</div>':'')+'</div>'
           +'<button class="xb" title="Copier vers tous" style="background:rgba(34,197,94,.18);color:#22c55e;margin-right:2px" onclick="event.stopPropagation();copierMissionVousTous(\''+k+'\','+ti+')">&#8853;</button><button class="xb" onclick="event.stopPropagation();delT(\''+k+'\','+ti+')">\u2715</button></div>';
       }).join('');
-      html+='<div class="gcw'+(done?' past-col':'')+'"><div class="gcell" tabindex="0" data-key="'+gk(d,i,hour)+'" onclick="openAdd(\''+d+'\','+i+',\''+hour+'\')">';
+      var stCls=stToday?(' gcw-'+stToday.type+' col-filigrane'):'';
+      var stLbl=stToday?({absent:'ABSENT',maladie:'MALADIE',conge:'CONGÉ',repos:'REPOS'}[stToday.type]||''):'';
+      html+='<div class="gcw'+(done?' past-col':'')+stCls+'" data-statut="'+stLbl+'"><div class="gcell" tabindex="0" data-key="'+gk(d,i,hour)+'" onclick="openAdd(\''+d+'\','+i+',\''+hour+'\')">';
       html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'</div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
     });
   });
@@ -11990,20 +12012,21 @@ function supaFetch(path, options){
 
 /* Sauvegarder le planning dans Supabase */
 function sauverDansSupabase(){
-  var data = {
-    date: ST.cur,
-    donnees: {
-      drivers: ST.drivers,
-      tasks: ST.tasks,
-      statuts: ST.statuts||{},
-      notes: ST.notes||{},
-      cur: ST.cur,
-      library: ST.library,
-      tournees: ST.tournees||[]
-    }
-  };
-
-  /* Vérifier si une entrée existe pour cette date */
+  /* Sauvegarde sur TOUTES les dates présentes dans ST.tasks pour éviter les pertes */
+  var dates={};
+  Object.keys(ST.tasks||{}).forEach(function(k){var p=k.split('|');if(p[0]&&/^\d{4}-\d{2}-\d{2}$/.test(p[0]))dates[p[0]]=true;});
+  if(!dates[ST.cur])dates[ST.cur]=true;
+  var donnees={drivers:ST.drivers,tasks:ST.tasks,statuts:ST.statuts||{},notes:ST.notes||{},cur:ST.cur,library:ST.library,tournees:ST.tournees||[]};
+  Object.keys(dates).forEach(function(date){
+    supaFetch('planning?date=eq.'+date+'&select=id')
+      .then(function(rows){
+        if(rows&&rows.length>0){return supaFetch('planning?date=eq.'+date,{method:'PATCH',body:JSON.stringify({donnees:donnees})});}
+        else{return supaFetch('planning',{method:'POST',body:JSON.stringify({date:date,donnees:donnees})});}
+      });
+  });
+}
+function _sauverDansSupabaseLegacy(){
+  var data = {date: ST.cur, donnees: {drivers: ST.drivers,tasks: ST.tasks,statuts: ST.statuts||{},notes: ST.notes||{},cur: ST.cur,library: ST.library,tournees: ST.tournees||[]}};
   supaFetch('planning?date=eq.'+ST.cur+'&select=id')
     .then(function(rows){
       if(rows&&rows.length>0){
@@ -23952,21 +23975,9 @@ function afficherHub(){
       {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
       {id:'messages',icon:'\uD83D\uDCAC',label:'Messages chauffeurs',sub:'Discussion équipe',fn:'ouvrirMessagesChauffeurs'},
       {id:'whatsapp',icon:'\uD83D\uDCDD',label:'Copier WhatsApp',sub:'Export texte',fn:'copierPlanningWhatsApp'},
+      {id:'insertion_link',icon:'\uD83C\uDFD7\uFE0F',label:'Module Insertion',sub:'Ouvrir CANA Insertion',fn:function(){fermerHub();window.open('CANA_INSERTION.html','_blank');}},
       {id:'meteo',icon:'\uD83C\uDF24',label:'Météo du jour',sub:'Conditions',fn:'afficherMeteo',sec:true},
       {id:'recherche',icon:'\uD83D\uDD0D',label:'Recherche globale',sub:'Tout rechercher',fn:'ouvrirRechercheGlobale'},
-    ]},
-    {id:'insertion',nom:'\uD83D\uDC65 INSERTION & SUIVI',color:'#22c55e',bg:'rgba(34,197,94,.1)',border:'#22c55e',items:[
-      {id:'chauffeurs',icon:'\uD83D\uDC65',label:'Gestion chauffeurs',sub:'Noms, codes, camions',fn:'ouvrirGestionChauffeurs'},
-      {id:'fiches',icon:'\uD83D\uDCC4',label:'Fiches chauffeurs',sub:'Dossiers',fn:'ouvrirFiches'},{id:'insertion_module',icon:'\uD83C\uDFD7\uFE0F',label:'Module Insertion',sub:'Suivi complet CIP',fn:function(){fermerHub();window.open('CANA_INSERTION.html','_blank');}},
-      {id:'progression',icon:'\u2B50',label:'Progression & Évaluation',sub:'Suivi insertion',fn:'ouvrirFicheProgression'},
-      {id:'suivi',icon:'\uD83D\uDCCB',label:'Suivi rapide points',sub:'Notes chauffeur',fn:'ouvrirSuiviChauffeur'},
-      {id:'statuts',icon:'\uD83D\uDEAB',label:'Statuts absences',sub:'Congés, maladie',fn:'ouvrirStatutRapide'},
-      {id:'infractions',icon:'\u26A0\uFE0F',label:'Infractions',sub:'Suivi disciplinaire',fn:'ouvrirInfractions'},
-      {id:'archiveschauf',icon:'\uD83D\uDDC4',label:'Archives chauffeurs',sub:'Anciens dossiers',fn:'ouvrirArchives'},
-      {id:'chrono',icon:'\u23F1',label:'Chronogramme insertion',sub:'Suivi parcours',fn:'ouvrirChronogramme'},
-      {id:'climat',icon:'\uD83D\uDCC8',label:'Climat social',sub:'Analyse équipe',fn:'ouvrirAnalyseSociale'},
-      {id:'conducteurs',icon:'\uD83D\uDD11',label:'Conducteurs désignés',sub:'Responsabilité légale',fn:'voirHistoriqueConducteurs'},
-      {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique'},
     ]},
     {id:'admin',nom:'\uD83D\uDCCA DOCUMENTS & PILOTAGE',color:'#a855f7',bg:'rgba(168,85,247,.1)',border:'#a855f7',items:[
       {id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois'},
@@ -24020,11 +24031,11 @@ function afficherHub(){
   search.placeholder='\uD83D\uDD0D Rechercher un outil...';
   hub.appendChild(search);
 
-  /* Bonjour prenom sous recherche */
+  /* Bonjour prénom juste sous la barre de recherche */
   if(srv.prenom){
     var bnjDiv=document.createElement('div');
     bnjDiv.id='hub-bonjour';
-    bnjDiv.style.cssText='font-size:32px;font-weight:900;color:#fff;margin-bottom:20px;text-align:center;letter-spacing:-.5px';
+    bnjDiv.style.cssText='font-size:30px;font-weight:900;color:#fff;margin-bottom:20px;text-align:center;letter-spacing:-.5px';
     bnjDiv.innerHTML='Bonjour <span style="color:#f97316;text-transform:uppercase">'+srv.prenom+'</span> !';
     hub.appendChild(bnjDiv);
   }
@@ -24661,6 +24672,15 @@ function seDeconnecter(){
   if(!confirm('Se déconnecter de '+( window._serviceActuel?window._serviceActuel.nom:'ce service')+' ?'))return;
   sessionStorage.removeItem('planning_auth');
   location.reload();
+}
+
+/* Indicateur de synchronisation */
+function setSyncStatus(ok,msg){
+  var led=document.getElementById('sync-led');
+  var txt=document.getElementById('sync-txt');
+  if(led)led.style.background=ok?'#22c55e':'#ef4444';
+  if(led)led.style.boxShadow='0 0 5px '+(ok?'#22c55e':'#ef4444');
+  if(txt)txt.textContent=msg||(ok?'Sync OK':'Erreur sync');
 }
 </script>
 </body>
