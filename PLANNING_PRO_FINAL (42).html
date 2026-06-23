@@ -25,13 +25,13 @@
 ══════════════════════════════════════════════════ */
 (function(){
   window.SERVICES_CONFIG = {
-    'cana2026': {nom:'Direction', niveau:'admin', icone:'\uD83D\uDC54'},
-    'direction2026': {nom:'Direction', niveau:'admin', icone:'\uD83D\uDC54'},
-    'com2026': {nom:'Service Commercial', niveau:'commercial', icone:'\uD83C\uDFE2'},
-    'restoco2026': {nom:'Resto-Co', niveau:'restoco', icone:'\uD83C\uDF7D\uFE0F'},
-    'compta2026': {nom:'Compta', niveau:'compta', icone:'\uD83D\uDCB0'},
-    'rh2026': {nom:'RH Insertion', niveau:'rh', icone:'\uD83D\uDC65'},
-    'rse2026': {nom:'RSE-Formation', niveau:'rse', icone:'\uD83C\uDF31'}
+    'cana2026':      {nom:'Direction',          prenom:'',      niveau:'admin',      icone:'\uD83D\uDC54'},
+    'direction2026': {nom:'Direction',          prenom:'',      niveau:'admin',      icone:'\uD83D\uDC54'},
+    'com2026':       {nom:'Service Commercial', prenom:'',      niveau:'commercial', icone:'\uD83C\uDFE2'},
+    'restoco2026':   {nom:'Resto-Co',           prenom:'',      niveau:'restoco',    icone:'\uD83C\uDF7D\uFE0F'},
+    'compta2026':    {nom:'Compta',             prenom:'ALI',   niveau:'compta',     icone:'\uD83D\uDCB0'},
+    'rh2026':        {nom:'RH Insertion',       prenom:'',      niveau:'rh',         icone:'\uD83D\uDC65'},
+    'rse2026':       {nom:'RSE-Formation',      prenom:'',      niveau:'rse',        icone:'\uD83C\uDF31'}
   };
 
   var dejaConnecte = sessionStorage.getItem('planning_auth');
@@ -86,6 +86,17 @@
         window._serviceActuel = window.SERVICES_CONFIG[code];
         window._codeActuel = code;
         overlay.remove();
+        /* ── Message de bienvenue personnalisé ── */
+        var srv=window._serviceActuel;
+        var prenom=srv.prenom?srv.prenom:'';
+        var msgBv=document.createElement('div');
+        msgBv.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0f172a;border:2px solid #f97316;border-radius:20px;padding:28px 40px;z-index:999999;text-align:center;font-family:-apple-system,Arial,sans-serif;animation:fadeInScale .4s ease';
+        msgBv.innerHTML='<div style="font-size:36px;margin-bottom:10px">'+(srv.icone||'👋')+'</div>'
+          +'<div style="font-size:'+(prenom?'28px':'20px')+';font-weight:900;color:#fff;margin-bottom:4px">Bonjour'+(prenom?' '+prenom:'')+' !</div>'
+          +'<div style="font-size:13px;color:#94a3b8">'+srv.nom+' — La Table de Cana</div>';
+        document.body.appendChild(msgBv);
+        setTimeout(function(){msgBv.remove();},2000);
+        /* ── Fin message de bienvenue ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')setTimeout(afficherHub,300);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
@@ -568,6 +579,8 @@ input[type="time"]{
 }
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+@keyframes fadeInScale{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 </style>
 </head>
 <body>
@@ -23984,7 +23997,8 @@ function afficherHub(){
   var html='<div class="hub-logo"><svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>';
   html+='<div class="hub-title">La Table de Cana</div>';
   html+='<div class="hub-sub">Centre de pilotage logistique</div>';
-  html+='<div class="hub-service">'+srv.icone+' '+srv.nom+'</div>';
+  html+='<div class="hub-service">'+srv.icone+' '+(srv.prenom?srv.prenom+' &mdash; ':'')+srv.nom+'</div>';
+  html+='<button onclick="seDeconnecter()" style="position:absolute;top:16px;right:16px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;color:#94a3b8;cursor:pointer;z-index:10" title="Se déconnecter">🔒 Déconnexion</button>';
 
   hub.innerHTML=html;
   document.body.appendChild(hub);
@@ -24620,6 +24634,13 @@ function sauverToutesLesDates(){
 }
 
 /* CSS pour l'animation pulse */
+
+/* ── DÉCONNEXION ── */
+function seDeconnecter(){
+  if(!confirm('Se déconnecter de '+( window._serviceActuel?window._serviceActuel.nom:'ce service')+' ?'))return;
+  sessionStorage.removeItem('planning_auth');
+  location.reload();
+}
 </script>
 </body>
 </html>
