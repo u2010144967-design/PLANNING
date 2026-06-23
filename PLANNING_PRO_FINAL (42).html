@@ -86,17 +86,21 @@
         window._serviceActuel = window.SERVICES_CONFIG[code];
         window._codeActuel = code;
         overlay.remove();
-        /* ── Message de bienvenue personnalisé ── */
+        /* ── Bandeau Bonjour fixe en bas du planning ── */
         var srv=window._serviceActuel;
         var prenom=srv.prenom?srv.prenom:'';
-        var msgBv=document.createElement('div');
-        msgBv.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0f172a;border:2px solid #f97316;border-radius:20px;padding:28px 40px;z-index:999999;text-align:center;font-family:-apple-system,Arial,sans-serif;animation:fadeInScale .4s ease';
-        msgBv.innerHTML='<div style="font-size:36px;margin-bottom:10px">'+(srv.icone||'👋')+'</div>'
-          +'<div style="font-size:'+(prenom?'28px':'20px')+';font-weight:900;color:#fff;margin-bottom:4px">Bonjour'+(prenom?' '+prenom:'')+' !</div>'
-          +'<div style="font-size:13px;color:#94a3b8">'+srv.nom+' — La Table de Cana</div>';
-        document.body.appendChild(msgBv);
-        setTimeout(function(){msgBv.remove();},2000);
-        /* ── Fin message de bienvenue ── */
+        if(prenom){
+          var oldBv=document.getElementById('bonjour-strip');if(oldBv)oldBv.remove();
+          var strip=document.createElement('div');
+          strip.id='bonjour-strip';
+          strip.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#0f172a;border-top:2px solid #f97316;padding:8px 20px;z-index:9999;display:flex;align-items:center;gap:12px;font-family:-apple-system,Arial,sans-serif';
+          strip.innerHTML='<span style="font-size:18px">'+(srv.icone||'👋')+'</span>'
+            +'<span style="font-size:15px;font-weight:900;color:#fff">Bonjour '+prenom+' !</span>'
+            +'<span style="font-size:12px;color:#94a3b8">'+srv.nom+' — La Table de Cana</span>'
+            +'<button onclick="document.getElementById(\'bonjour-strip\').remove()" style="margin-left:auto;background:transparent;border:none;color:#64748b;font-size:16px;cursor:pointer;padding:0 4px" title="Fermer">✕</button>';
+          document.body.appendChild(strip);
+        }
+        /* ── Fin bandeau Bonjour ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         if(typeof afficherHub==='function')setTimeout(afficherHub,300);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
