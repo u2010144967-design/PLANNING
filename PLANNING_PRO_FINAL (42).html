@@ -24012,6 +24012,15 @@ function afficherHub(){
   search.placeholder='\uD83D\uDD0D Rechercher un outil...';
   hub.appendChild(search);
 
+  /* Bonjour ALI sous la barre de recherche */
+  if(srv.prenom){
+    var bnjDiv=document.createElement('div');
+    bnjDiv.id='hub-bonjour';
+    bnjDiv.style.cssText='font-size:32px;font-weight:900;color:#fff;margin-bottom:20px;text-align:center';
+    bnjDiv.innerHTML='Bonjour <span style="color:#f97316;text-transform:uppercase">'+srv.prenom+'</span> !' ;
+    hub.appendChild(bnjDiv);
+  }
+
   function trouverItem(id){
     for(var p=0;p<poles.length;p++){
       for(var i=0;i<poles[p].items.length;i++){
