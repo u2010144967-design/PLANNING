@@ -182,12 +182,12 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 
 /* ════ FORMULAIRES SIDEBAR ════ */
 .fld{margin-bottom:8px}
-.fld label{font-size:10px;font-weight:600;color:#475569;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.fld label{font-size:10px;font-weight:700;color:#334155;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
 .fld label span{color:#22c55e;font-size:9px;text-transform:none;letter-spacing:0;font-weight:400}
-.fi{width:100%;background:#0f172a;border:1px solid #1e293b;color:#e2e8f0;padding:6px 9px;border-radius:6px}
-.fi::placeholder{color:#334155}
-.fi:focus{outline:none;border-color:#3b82f6}
-.fi option{background:#0f172a}
+.fi{width:100%;background:#ffffff;border:1.5px solid #bfd4f5;color:#1e293b;padding:7px 10px;border-radius:7px;font-size:12px}
+.fi::placeholder{color:#94a3b8}
+.fi:focus{outline:none;border-color:#2563eb;background:#f0f6ff}
+.fi option{background:#fff;color:#1e293b;padding:4px}.fi option{background:#0f172a}
 .fi textarea{resize:vertical}
 .frow2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .acw{position:relative}
@@ -267,11 +267,12 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .grid{display:grid;background:#f8fafc;border-radius:8px;border:2px solid #1e293b;overflow:hidden;position:relative}
 
 /* EN-TÊTES CHAUFFEURS ECRAN */
-.gh{background:linear-gradient(180deg,#1e3a6e 0%,#1a3260 100%);color:#e8f0ff;border-bottom:2px solid #3b82f6;border-right:1px solid #2d508a;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;position:relative}
+.gh{background:linear-gradient(180deg,#2d4a7a 0%,#253f6b 100%);color:#e8f4ff;border-bottom:2px solid #5b8dd9;border-right:1px solid #3a5a8a;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;position:relative}
 .gh:last-child{border-right:none}
+.gh:nth-child(even){background:linear-gradient(180deg,#263d6e 0%,#1e3260 100%)}
 .gh.th{background:#020617;color:#fff;font-size:10px;font-weight:600;border-right:2px solid #0f172a}
 .gh-name{font-size:13px;font-weight:900;color:#ffffff;line-height:1;letter-spacing:.4px;text-transform:uppercase}
-.gh-truck{font-size:10px;font-weight:700;color:#93c5fd;line-height:1;background:rgba(147,197,253,.15);border:1px solid rgba(147,197,253,.3);border-radius:5px;padding:2px 7px}
+.gh-truck{font-size:10px;font-weight:700;color:#bfdbfe;line-height:1;background:rgba(191,219,254,.12);border:1px solid rgba(191,219,254,.25);border-radius:5px;padding:2px 7px}
 .gh-hrs{font-size:12px;font-weight:700;color:#059669;line-height:1}
 .gh-cnt{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;justify-content:center}
 .gh-cnt-pill{font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700}
@@ -625,7 +626,8 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <button onclick="chargerDepuisSupabase()" style="padding:7px 12px;background:#16a34a;border:1px solid #16a34a;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer" title="Charger depuis le cloud">&#9650; Cloud</button>
+    <button onclick="chargerDepuisSupabase()" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer" title="Synchroniser avec le cloud">☁ Sync</button>
+    <button id="undo-btn" onclick="undo()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;opacity:.4;transition:opacity .2s" title="Annuler">↩</button>
   </div>
   <div class="nsp"></div>
 
@@ -869,8 +871,8 @@ input[type="time"]{
     <!-- ══ 1. ÉQUIPE ══ -->
     <div class="ssec" id="ss1">
       <div class="sb-title" style="color:#fbbf24">&#128101; Mon Equipe</div>
-      <div style="background:#1e293b;border-radius:8px;padding:8px 10px;margin-bottom:10px;border-left:3px solid #f59e0b;font-size:11px;color:#94a3b8;line-height:1.5">
-        &#9888; Changement permanent sur toutes les dates.
+      <div style="background:#fffbeb;border-radius:8px;padding:8px 10px;margin-bottom:10px;border-left:3px solid #f59e0b;font-size:11px;color:#92400e;line-height:1.5">
+        ⚠ Changement permanent sur toutes les dates.
       </div>
       <div id="drv-cards"></div>
       <button class="sbtn ok" onclick="saveCfg()">&#10003; Enregistrer l'equipe</button>
@@ -1034,6 +1036,7 @@ input[type="time"]{
 <div class="mbg" id="m-add">
   <div class="mbox">
     <h3 id="m-ttl">Ajouter une tâche</h3>
+    <div id="m-suggestions" style="display:none;background:#f8faff;border:1px solid #bfd4f5;border-radius:8px;padding:10px;margin-bottom:10px"></div>
     <label style="color:#60a5fa;font-size:12px;font-weight:800">🏛 Client / Collectivité</label>
     <div class="macw"><input type="text" id="m-client" placeholder="Tapez pour chercher ou choisir..." autocomplete="off" oninput="mAc('client')"><div class="macl" id="mac-client"></div></div>
     <label>Catégorie</label>
@@ -1179,6 +1182,8 @@ function load(){
       if(d.transmissions)ST.transmissions=d.transmissions;
       if(d.fiches)ST.fiches=d.fiches;
     } else {
+      /* ── PAS DE DONNÉES LOCALES → forcer chargement Supabase ── */
+      window._demanderSyncSupabase = true;
       ST.drivers=DEFAULT.drivers;
       ST.tasks=DEFAULT.tasks||{};
       ST.notes=DEFAULT.notes||{};
@@ -1203,6 +1208,15 @@ function load(){
     ST.drivers=DEFAULT.drivers;
     ST.library=DEFAULT.library;
     ST.tournees=DEFAULT.tournees||[];
+    window._demanderSyncSupabase = true;
+  }
+  /* Si pas de données locales, programmer un chargement Supabase */
+  if(window._demanderSyncSupabase){
+    setTimeout(function(){
+      if(typeof chargerDepuisSupabase==='function'){
+        chargerDepuisSupabase();
+      }
+    },1500);
   }
 }
 function save(){try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}}
@@ -1373,7 +1387,7 @@ function rGrid(){
           +'<button class="xb" title="Copier vers tous" style="background:rgba(34,197,94,.18);color:#22c55e;margin-right:2px" onclick="event.stopPropagation();copierMissionVousTous(\''+k+'\','+ti+')">&#8853;</button><button class="xb" onclick="event.stopPropagation();delT(\''+k+'\','+ti+')">\u2715</button></div>';
       }).join('');
       html+='<div class="gcw'+(done?' past-col':'')+'"><div class="gcell" tabindex="0" data-key="'+gk(d,i,hour)+'" onclick="openAdd(\''+d+'\','+i+',\''+hour+'\')">';
-      html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'</div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
+      html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="position:relative;text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px 6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'<button onclick="event.stopPropagation();supprimerConducteurDesigne(\''+dr.truck+'\',\''+d+'\')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.3);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:1px 4px;font-weight:900" title="Supprimer">✕</button></div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
     });
   });
   g.innerHTML=html;
@@ -1463,8 +1477,66 @@ function openAdd(date,di,hour){
   document.querySelectorAll('.macl').forEach(function(l){l.classList.remove('on');});
   document.getElementById('m-add').classList.add('on');
   setTimeout(function(){document.getElementById('m-task').focus();},80);
+  /* Charger les suggestions de missions pour cet horaire/chauffeur */
+  chargerSuggestionsMissions(date,di,hour);
+}
+
+function chargerSuggestionsMissions(date,di,hour){
+  var dr = ST.drivers[di];
+  if(!dr) return;
+  /* Chercher les missions similaires dans l'historique ST.tasks */
+  var suggestions = [];
+  var seen = {};
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var parts = k.split('|');
+    if(parts[1]===String(di)){
+      (ST.tasks[k]||[]).forEach(function(t){
+        var key = (t.client||'')+'|'+(t.task||'');
+        if(key !== '|' && !seen[key]){
+          seen[key] = true;
+          suggestions.push(t);
+        }
+      });
+    }
+  });
+  /* Aussi chercher dans la bibliothèque */
+  (ST.library||[]).forEach(function(entry){
+    var key = (entry.client||'')+'|'+(entry.task||'');
+    if(!seen[key]){
+      seen[key] = true;
+      suggestions.push(entry);
+    }
+  });
+  /* Afficher les 8 premières suggestions */
+  var box = document.getElementById('m-suggestions');
+  if(!box) return;
+  suggestions = suggestions.slice(0,8);
+  if(!suggestions.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px;letter-spacing:.3px">💡 Cliquez pour réutiliser une mission :</div>'
+    +suggestions.map(function(t){
+      var tJson=JSON.stringify(t).replace(/'/g,"\\'");
+      return '<button onclick="appliquerSuggestion(JSON.parse(decodeURIComponent(this.dataset.t)))" data-t="'+encodeURIComponent(JSON.stringify(t))+'" style="display:block;width:100%;text-align:left;background:#f0f6ff;border:1px solid #bfd4f5;border-radius:6px;padding:6px 9px;margin-bottom:4px;cursor:pointer;font-size:11px;color:#1e3a6e" >'
+        +(t.client?'<strong>'+t.client+'</strong>':'')+( t.task?' — '+t.task:'')
+        +(t.cat?' <span style="color:#64748b;font-size:10px">['+t.cat+']</span>':'')
+        +'</button>';
+    }).join('');
+}
+
+function appliquerSuggestion(t){if(typeof t==='string'){try{t=JSON.parse(t);}catch(e){return;}}
+  if(t.client) document.getElementById('m-client').value = t.client;
+  if(t.task) document.getElementById('m-task').value = t.task;
+  if(t.cat) document.getElementById('m-cat').value = t.cat;
+  if(t.truck) document.getElementById('m-truck').value = t.truck;
+  if(t.adresse) document.getElementById('m-adresse').value = t.adresse;
+  if(t.contact) document.getElementById('m-contact').value = t.contact;
+  if(t.convives) document.getElementById('m-convives').value = t.convives;
+  if(t.note) document.getElementById('m-note').value = t.note;
+  if(t.end) document.getElementById('m-end').value = t.end;
+  showT('✅ Mission copiée — modifiez si nécessaire puis Enregistrer','#22c55e');
 }
 function saveTask(){
+  pushUndo('Mission ajoutée');
   var task=(document.getElementById('m-task').value||'').trim().toUpperCase();
   var client=(document.getElementById('m-client').value||'').trim().toUpperCase();
   if(!task&&!client){showT('⚠ Tâche ou client requis','#dc2626');return;}
@@ -1478,6 +1550,7 @@ function saveTask(){
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
 }
 function delT(k,ti){
+  pushUndo('Mission supprimée');
   if(!ST.tasks[k])return;
   var t=ST.tasks[k][ti];
   var nomClient=t&&(t.client||t.task)||'?';
@@ -22332,6 +22405,27 @@ document.addEventListener('keydown', function(e){
 });
 
 /* ══ CONDUCTEUR DESIGNE — responsabilité légale en cas d'infraction ══ */
+function supprimerConducteurDesigne(truck,date){
+  if(!ST.conducteurs)return;
+  var key=date+'_'+truck;
+  /* Sauvegarder pour undo */
+  window._lastDeletedCD={key:key,val:ST.conducteurs[key]};
+  delete ST.conducteurs[key];
+  save();render();
+  showT('🔑 Conducteur désigné supprimé — <a onclick="undoDeleteCD()" style="color:#fbbf24;cursor:pointer;text-decoration:underline">Annuler</a>','#d97706');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+}
+
+function undoDeleteCD(){
+  if(!window._lastDeletedCD)return;
+  if(!ST.conducteurs)ST.conducteurs={};
+  ST.conducteurs[window._lastDeletedCD.key]=window._lastDeletedCD.val;
+  window._lastDeletedCD=null;
+  save();render();
+  showT('🔑 Conducteur désigné restauré ✅','#22c55e');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+}
+
 function setConducteurDesigne(di){
   var dr=ST.drivers[di];
   var d=ST.cur;
@@ -24705,6 +24799,56 @@ function seDeconnecter(){
     if(typeof chargerDepuisSupabase==='function') chargerDepuisSupabase();
   }, 30000);
 })();
+
+/* ══ SYSTÈME UNDO — retour en arrière ══ */
+window._undoStack = [];
+window._undoMax = 20;
+
+function pushUndo(description){
+  /* Sauvegarder l'état complet avant modification */
+  window._undoStack.push({
+    desc: description || 'Action',
+    state: JSON.stringify({
+      tasks: ST.tasks,
+      statuts: ST.statuts,
+      conducteurs: ST.conducteurs,
+      notes: ST.notes
+    }),
+    ts: Date.now()
+  });
+  if(window._undoStack.length > window._undoMax){
+    window._undoStack.shift();
+  }
+  updateUndoBtn();
+}
+
+function undo(){
+  if(!window._undoStack.length){
+    showT('Aucune action à annuler','#f59e0b');
+    return;
+  }
+  var last = window._undoStack.pop();
+  var prev = JSON.parse(last.state);
+  ST.tasks = prev.tasks || {};
+  ST.statuts = prev.statuts || {};
+  ST.conducteurs = prev.conducteurs || {};
+  ST.notes = prev.notes || {};
+  save();
+  if(typeof render==='function') render();
+  showT('↩ Annulé : '+last.desc,'#3b82f6');
+  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
+  updateUndoBtn();
+}
+
+function updateUndoBtn(){
+  var btn = document.getElementById('undo-btn');
+  if(btn){
+    btn.style.opacity = window._undoStack.length ? '1' : '.4';
+    btn.title = window._undoStack.length 
+      ? 'Annuler : '+(window._undoStack[window._undoStack.length-1]||{}).desc 
+      : 'Rien à annuler';
+  }
+}
 </script>
 </body>
 </html>
