@@ -147,22 +147,85 @@ select option{background:#0f1e35}
 .dp .dzone{border:1px solid #e5e7eb;border-radius:6px;min-height:55px;padding:8px;margin-bottom:10px;font-size:12px;color:#374151}
 .dp .sig2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
 .dp .sigbox{border:1px solid #d1d5db;border-radius:5px;height:54px;margin-top:5px}
+/* Suggestions dropdown */
+
+/* Zones éditables dans les fiches */
+.dzone-edit{border:1.5px solid #f97316;border-radius:6px;min-height:55px;padding:8px;margin-bottom:10px;font-size:12px;font-family:inherit;width:100%;background:#fffbf7;color:#111;resize:vertical;line-height:1.65}
+.dzone-edit:focus{outline:2px solid #f97316;outline-offset:1px}
+.dval-edit{border:none;border-bottom:1.5px solid #f97316;width:100%;font-size:13px;font-family:inherit;background:transparent;color:#111;padding:2px 0;outline:none}
+.dval-edit:focus{border-bottom-color:#c2540a}
+.fiche-mode-bar{display:flex;gap:8px;margin-bottom:14px;padding:10px 14px;background:#fffbf7;border:1px solid #f97316;border-radius:9px;align-items:center}
+.fiche-mode-bar span{font-size:12px;font-weight:700;color:#c2540a;flex:1}
+@media print{.dzone-edit{background:#fff!important;border:1px solid #ccc!important;color:#000!important}
+.dval-edit{color:#000!important;border-bottom:1px solid #aaa!important}
+.fiche-mode-bar{display:none!important}}
+
+.sugg-wrap{position:relative;display:flex;gap:4px;align-items:center}
+.sugg-inp{flex:1;background:#071526;border:1px solid #1e3a5f;border-radius:6px;color:#e2e8f0;padding:5px 8px;font-size:11px;outline:none;font-family:inherit;min-width:130px}
+.sugg-inp:focus{border-color:#f97316}
+.sugg-btn{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:5px;color:#f97316;cursor:pointer;font-size:13px;padding:3px 7px;flex-shrink:0;line-height:1;transition:all .15s}
+.sugg-btn:hover{background:rgba(249,115,22,.3);transform:scale(1.1)}
+.sugg-drop{position:absolute;top:100%;left:0;right:0;background:#0d1e35;border:1px solid #f97316;border-radius:8px;z-index:500;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;margin-top:2px}
+.sugg-drop.open{display:block}
+.sugg-item{padding:8px 11px;cursor:pointer;font-size:11px;color:#cbd5e1;border-bottom:1px solid #1e293b;line-height:1.4;transition:background .1s}
+.sugg-item:last-child{border-bottom:none}
+.sugg-item:hover{background:rgba(249,115,22,.12);color:#fff}
+
 /* PRINT */
 @media print{
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  @page{size:A4 portrait;margin:10mm}
-  .sb,.hdr,.sbar,.modal,.ls,.btn:not(.pok),.tabs,.ptitle .pbts{display:none!important}
-  .cnt{padding:0!important;overflow:visible!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box!important}
+  @page{size:A4 portrait;margin:12mm}
+  /* Masquer TOUT sauf la zone d'impression */
+  body > *:not(#app){display:none!important}
+  .ls{display:none!important}
+  #app{display:block!important;height:auto!important;overflow:visible!important}
+  .hdr,.sb,.sbar,.modal,.sugg-btn,.sugg-drop,.tabs,.ptitle,.btn:not(.pok),
+  .pbts,#doc-grid,.hdr-badge,.sf,.hbtn,[onclick*="nav("]{display:none!important}
+  /* Layout */
+  .layout{display:block!important;overflow:visible!important}
+  .cnt{padding:4mm 0 0 0!important;overflow:visible!important;background:#fff!important}
+  .sec{display:none!important}
   .sec.on{display:block!important}
-  .dp{background:#fff!important;color:#000!important;border:none!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
-  .dp h2{border-bottom:1.5px solid #000!important;color:#000!important}
-  .et th{background:#f3f4f6!important;color:#000!important}
-  .et .cat-h td{background:#f9fafb!important;color:#c2540a!important}
-  .card{background:#fff!important;border:1px solid #e5e7eb!important;border-radius:4px!important}
-  .ct{border-bottom:1px solid #e5e7eb!important;color:#000!important}
-  .f label{color:#374151!important}
-  .f input,.f select,.f textarea{background:#fff!important;color:#000!important;border:1px solid #d1d5db!important}
+  /* Fond blanc partout */
+  body,html{background:#fff!important;color:#000!important}
+  /* Fiches documents */
+  .dp{background:#fff!important;color:#000!important;border:none!important;border-radius:0!important;padding:0!important;margin:0!important;box-shadow:none!important;font-size:12px!important}
+  .dp h1{font-size:16px!important;color:#000!important}
+  .dp h2{border-bottom:1.5px solid #000!important;color:#000!important;font-size:11px!important}
+  .dp .dfield .dval{border-bottom:1px solid #aaa!important;color:#000!important;min-height:18px!important}
+  .dp .dzone{border:1px solid #bbb!important;color:#000!important;background:#fff!important}
+  .dp .sigbox{border:1px solid #aaa!important}
+  /* Tableau évaluation */
+  .et,.et th,.et td{border-color:#ccc!important;color:#000!important;background:#fff!important}
+  .et th{background:#f3f4f6!important;font-size:9px!important}
+  .et .cat-h td{background:#f0f0f0!important;color:#c2540a!important;font-weight:800!important}
+  .et .stars{display:none!important}
+  .sugg-inp{background:#fff!important;color:#000!important;border:1px solid #ccc!important;font-size:11px!important}
+  /* Cards */
+  .card{background:#fff!important;border:1px solid #ddd!important;border-radius:4px!important;break-inside:avoid;margin-bottom:6mm!important}
+  .ct{color:#000!important;border-bottom:1px solid #ddd!important;font-size:9px!important}
+  /* Champs formulaire */
+  .f label{color:#555!important}
+  .f input,.f select,.f textarea{background:#fff!important;color:#000!important;border:1px solid #ccc!important;font-size:12px!important}
+  /* Timeline entretiens */
+  .tl::before{background:#ccc!important}
+  .tld{border-color:#fff!important}
+  .tlb{background:#f9f9f9!important;border-color:#ddd!important;color:#000!important}
+  /* Indicateurs */
+  .bdg{border:1px solid #888!important;color:#000!important;background:#f0f0f0!important}
+  .pb-wrap{background:#ddd!important}
+  .pb{background:#888!important}
+  /* Checkboxes visibles */
+  .ci input[type=checkbox]{width:12px!important;height:12px!important}
+  .ci label{color:#000!important}
+  /* Masquer le score global JS */
+  #sc-glob{color:#000!important}
+  /* Notes étoiles — montrer la note texte */
+  [id^="nv-"]{font-size:12px!important;color:#000!important}
+  /* Saut de page avant certaines sections */
+  .card + .card{page-break-inside:avoid}
 }
+
 @media(max-width:768px){.sb{display:none}.g2,.g3,.g4{grid-template-columns:1fr}}
 
 </style>
@@ -467,6 +530,7 @@ select option{background:#0f1e35}
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <select id="ent-sel" class="btn bs sm" onchange="selSal(this.value,'ent')" style="font-weight:600"><option value="">— Choisir —</option></select>
       <button class="btn bp sm" onclick="openNewEnt()">+ Nouvel entretien</button>
+      <button class="btn bs sm" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
   <div class="al al-i" id="ent-empty">Sélectionnez un salarié.</div>
@@ -1189,7 +1253,11 @@ async function loadEval(id){
             +'<span class="star" data-id="'+cr.id+'" data-v="5" onclick="setStar(this)">★</span>'
             +'</div></td>'
             +'<td style="text-align:center"><span id="nv-'+cr.id+'" style="font-size:14px;font-weight:900;color:#334155">—</span></td>'
-            +'<td><input class="ninp" id="cm-'+cr.id+'" placeholder="Observation…" oninput="aS()"></td>'
+            +'<td><div class="sugg-wrap">'
+            +'<input class="sugg-inp" id="cm-'+cr.id+'" placeholder="Observation…" oninput="aS()">'
+            +'<button class="sugg-btn" onclick="toggleSugg(\''+cr.id+'\',this)" title="Suggestions">💡</button>'
+            +'<div class="sugg-drop" id="sd-'+cr.id+'"></div>'
+            +'</div></td>'
             +'</tr>';
         }).join('');
     }).join('')
@@ -1511,7 +1579,8 @@ function buildDocGrid(){
 }
 
 function showDoc(type){
-  // Masquer tous les docs
+  // Reset indices
+  _zIdx=0;_fIdx=0;
   document.querySelectorAll('.doc-content').forEach(function(el){el.style.display='none';});
   var p=document.getElementById('doc-prev');p.classList.remove('hidden');
   var sel=document.getElementById('doc-sel');
@@ -1524,8 +1593,22 @@ function showDoc(type){
       +(sstitre?'<div style="font-size:11px;color:#6b7280;margin-top:2px">'+sstitre+'</div>':'')+'</div>'
       +'<div style="text-align:right;font-size:10px;color:#6b7280">La Table de Cana · Marseille<br>'+date+'</div></div>';
   }
-  function fl(l,v){return '<div class="dfield"><label>'+l+'</label><div class="dval">'+(v||'')+'</div></div>';}
-  function zone(l,h){return '<div style="margin-bottom:10px"><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:3px">'+l+'</div><div class="dzone" style="min-height:'+(h||55)+'px"></div></div>';}
+  var _fIdx=0;
+  function fl(l,v){
+    _fIdx++;
+    if(v&&v!==''){
+      return '<div class="dfield"><label>'+l+'</label><div class="dval">'+v+'</div></div>';
+    }
+    return '<div class="dfield"><label>'+l+'</label><input class="dval-edit" id="fe-'+_fIdx+'" placeholder="À compléter…"></div>';
+  }
+  var _zIdx=0;
+  function zone(l,h){
+    _zIdx++;
+    return '<div style="margin-bottom:10px">'
+      +'<div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:3px">'+l+'</div>'
+      +'<textarea class="dzone-edit" id="ze-'+_zIdx+'" placeholder="Cliquez ici pour écrire directement…" style="min-height:'+(h||55)+'px"></textarea>'
+      +'</div>';
+  }
   function sig(){return '<div class="sig2"><div>'+fl('Signature du salarié (Lu et approuvé)')+' <div class="sigbox"></div></div><div>'+fl('Signature de l\'encadrant')+'<div class="sigbox"></div></div></div>';}
   
   var evalRows=CRIT.map(function(cat){
@@ -1639,7 +1722,12 @@ function showDoc(type){
       +zone('SUITE ENVISAGÉE et date de suivi',45)+sig()
   };
 
-  p.innerHTML='<div class="dp">'+( contents[type]||'<div class="al al-d">Document non disponible.</div>')+'</div>';
+  p.innerHTML='<div class="fiche-mode-bar">'
+    +'<span>✏️ Fiche en mode édition — cliquez dans les zones pour écrire directement</span>'
+    +'<button class="btn bp sm pok" onclick="window.print()">🖨️ Imprimer</button>'
+    +'<button class="btn bg2 sm" onclick="sauvegarderFicheDoc()">💾 Stocker dans le dossier</button>'
+    +'</div>'
+    +'<div class="dp" id="fiche-doc-content">'+( contents[type]||'<div class="al al-d">Document non disponible.</div>')+'</div>';
   p.scrollIntoView({behavior:'smooth'});
 }
 
@@ -1671,6 +1759,294 @@ function checkQ(i,ok){
 }
 
 // ASSISTANT IA — Vraie Claude API
+
+var SUGG = {
+  conduite: {
+    1:["Conduite dangereuse, plusieurs infractions observées","Ne respecte pas les distances de sécurité","A failli causer un accident cette période","Conduite à revoir de toute urgence, risque réel"],
+    2:["Conduite perfectible, quelques écarts observés","Freinage brusque régulier à corriger","Tendance à rouler vite en agglomération","Des progrès mais encore des comportements à risque"],
+    3:["Conduite correcte dans l'ensemble","Respect du code de la route satisfaisant","Quelques petites maladresses ponctuelles","Conduite acceptable, peut encore progresser"],
+    4:["Bonne conduite, prudent et respectueux du code","Conduite fluide et sécurisée","Aucun incident de conduite ce trimestre","Très bon comportement au volant"],
+    5:["Conduite exemplaire, aucun incident","Modèle à suivre pour le reste de l'équipe","Parfait respect du code et des consignes","Conduite irréprochable, grande confiance accordée"]
+  },
+  ponctualite: {
+    1:["Retards fréquents et injustifiés, situation inacceptable","Absent ou en retard plus d'une fois par semaine","La ponctualité est le problème principal à traiter en priorité","Recadrage formel nécessaire sur ce point"],
+    2:["Ponctualité irrégulière, des efforts restent à faire","Quelques retards ce mois, à surveiller","Ponctualité insuffisante malgré les rappels","Des efforts ponctuels mais pas encore constants"],
+    3:["Ponctualité globalement correcte","Présent à l'heure la plupart du temps","Un ou deux petits retards sans conséquence","Ponctualité satisfaisante, dans les normes"],
+    4:["Très bonne ponctualité, toujours à l'heure","Jamais de retard ce trimestre, très fiable","Je peux compter sur lui pour les départs à l'heure","Ponctualité exemplaire, aucun souci"],
+    5:["Ponctualité parfaite, souvent le premier arrivé","Modèle de régularité pour l'équipe","Toujours en avance, très grande fiabilité","Parfait sur la ponctualité, aucun retard sur toute la période"]
+  },
+  organisation: {
+    1:["Désorganisé, les tournées mal préparées","Perd du temps à chercher ses livraisons","Chargement mal préparé, erreurs régulières","Organisation à retravailler complètement"],
+    2:["Organisation insuffisante, quelques erreurs évitables","Prépare ses tournées mais oublie des points importants","Des progrès à faire sur la rigueur","Manque de méthode dans la gestion des missions"],
+    3:["Organisation correcte dans l'ensemble","Tournées bien préparées en général","Gestion des livraisons satisfaisante","Rigueur suffisante pour assurer les missions"],
+    4:["Très organisé, missions bien préparées","Aucune erreur de chargement ce trimestre","Gestion rigoureuse et efficace des tournées","Très bonne méthode de travail"],
+    5:["Organisation irréprochable, modèle d'efficacité","Jamais d'erreur, tout est toujours prêt à l'heure","Gestion parfaite des tournées et des livraisons","Méthode exemplaire, rien à redire"]
+  },
+  relation_client: {
+    1:["Problèmes sérieux avec les clients, plusieurs plaintes","Comportement inapproprié signalé par des clients","Relation client à retravailler en urgence","Des incidents clients qui posent problème"],
+    2:["Relation client à améliorer, parfois brusque","Quelques maladresses avec les clients signalées","Pas toujours patient avec les clients difficiles","Des progrès à faire sur l'attitude avec les clients"],
+    3:["Relation client correcte, pas de problème majeur","Contact satisfaisant avec les clients","Poli et professionnel avec les clients en général","Relation client dans les normes attendues"],
+    4:["Très bonne relation client, retours positifs","Les clients apprécient son professionnalisme","Toujours courtois et à l'écoute des clients","Très bon ambassadeur de l'entreprise sur le terrain"],
+    5:["Excellent contact client, plusieurs compliments reçus","Relation client exemplaire, véritable atout pour l'image","Les clients redemandent spécifiquement ce chauffeur","Parfait sur le service client, grande fierté pour l'équipe"]
+  },
+  soin_materiel: {
+    1:["Véhicule rendu en mauvais état, dommages évitables","Ne fait pas le tour du véhicule avant de partir","Matériel abîmé par manque de soin","Comportement négligent avec le matériel de l'entreprise"],
+    2:["Soin du véhicule insuffisant, quelques dégradations","Pas toujours rigoureux sur l'entretien quotidien","Des efforts à faire sur le respect du matériel","Quelques négligences observées sur l'état du véhicule"],
+    3:["Soin du matériel correct et satisfaisant","Véhicule correctement entretenu au quotidien","Respect globalement bon du matériel confié","Aucun problème majeur sur l'état du véhicule"],
+    4:["Très bon soin du matériel, véhicule toujours propre","Signale proactivement les problèmes mécaniques","Très attentif à l'état de son véhicule","Prend grand soin du matériel qui lui est confié"],
+    5:["Soin exemplaire, véhicule impeccable en permanence","Aucun dommage ni dégradation sur toute la période","Modèle de respect du matériel pour toute l'équipe","Parfait sur l'entretien, un soin irréprochable"]
+  },
+  autonomie: {
+    1:["Très dépendant, a besoin d'être guidé en permanence","Incapable de gérer les imprévus seul","Autonomie quasi nulle à ce stade du parcours","Nécessite un accompagnement constant"],
+    2:["Autonomie limitée, demande souvent de l'aide","Gère les missions simples mais bloque sur les imprévus","Des progrès à faire sur la prise d'initiative","Encore trop dépendant pour certaines situations"],
+    3:["Autonomie satisfaisante pour les missions courantes","Gère bien les situations habituelles seul","Demande de l'aide uniquement quand c'est vraiment nécessaire","Autonomie dans les normes attendues à ce stade"],
+    4:["Très bon niveau d'autonomie, gère la plupart des situations","Prend des initiatives pertinentes sur le terrain","Sait s'adapter et trouver des solutions seul","Grande autonomie, très peu de sollicitations"],
+    5:["Autonomie totale, gère toutes les situations seul","Modèle d'autonomie et de débrouillardise","N'a jamais besoin d'aide, trouve toujours des solutions","Parfait sur l'autonomie, peut gérer en totale indépendance"]
+  },
+  qualite_liv: {
+    1:["Colis abîmés, livraisons mal effectuées","Plusieurs erreurs de livraison ce trimestre","Qualité insuffisante, des clients mécontents","Rigueur dans les livraisons à améliorer d'urgence"],
+    2:["Quelques erreurs de livraison à corriger","Qualité inégale selon les journées","Des manquements sur la vérification avant livraison","Progrès à faire sur la fiabilité des livraisons"],
+    3:["Qualité de livraison correcte et régulière","Peu d'erreurs, dans les normes attendues","Livraisons effectuées sérieusement en général","Bonne fiabilité sur les livraisons"],
+    4:["Très bonne qualité, très peu d'erreurs","Livraisons soignées et bien réalisées","Grande fiabilité, les clients sont satisfaits","Excellent sur la qualité de réalisation"],
+    5:["Qualité parfaite, aucune erreur sur la période","Livraisons irréprochables en toutes circonstances","Modèle de rigueur et de fiabilité","Parfait sur la qualité, aucune réclamation"]
+  },
+  rapidite: {
+    1:["Trop lent, les tournées prennent beaucoup plus de temps que prévu","Rythme insuffisant, impacte les autres","Efficacité très insuffisante sur le terrain","Vitesse d'exécution à améliorer sérieusement"],
+    2:["Rythme perfectible, quelques tournées trop longues","Efficacité inégale selon les journées","Des efforts à faire sur l'organisation du temps","Pas encore assez rapide pour les livraisons urgentes"],
+    3:["Rythme satisfaisant, dans les délais habituellement","Efficacité correcte pour les missions courantes","Bonne gestion du temps en général","Rapidité dans les normes attendues"],
+    4:["Très efficace, toujours dans les délais voire en avance","Rythme soutenu et qualité maintenue","Grande efficacité sans négliger la sécurité","Très bon rythme, organisation remarquable"],
+    5:["Exceptionnel sur l'efficacité, dépasse tous les objectifs","Capacité rare à combiner rapidité et qualité","Référence de l'équipe sur le rythme de travail","Performance parfaite, modèle d'efficacité"]
+  },
+  chargement: {
+    1:["Chargements mal préparés, risques de dommages","Erreurs régulières lors de la préparation","Ne vérifie pas systématiquement le chargement","Préparation insuffisante à revoir complètement"],
+    2:["Quelques erreurs de préparation à corriger","Pas toujours rigoureux sur la vérification","Amélioration nécessaire sur la préparation","Des oublis parfois lors du chargement"],
+    3:["Préparation correcte, dans les normes","Vérifications faites en général","Chargement bien effectué la plupart du temps","Préparation satisfaisante et régulière"],
+    4:["Très rigoureux sur la préparation et la vérification","Aucune erreur de chargement ce trimestre","Méthode sérieuse et efficace","Grande rigueur sur la préparation des tournées"],
+    5:["Préparation irréprochable en toutes circonstances","Aucune erreur jamais, méthode parfaite","Modèle de rigueur sur la préparation","Parfait, aucune anomalie à signaler"]
+  },
+  bons_liv: {
+    1:["Bons de livraison souvent mal remplis ou perdus","Documents de transport mal gérés","Erreurs administratives fréquentes","Gestion des documents à revoir d'urgence"],
+    2:["Des progrès à faire sur la gestion des bons","Quelques oublis sur les documents","Pas toujours rigoureux sur la paperasse","Des erreurs évitables sur les documents"],
+    3:["Gestion correcte des documents de transport","Bons de livraison bien remplis en général","Paperasse gérée de façon satisfaisante","Aucun problème majeur sur les documents"],
+    4:["Très bon sur la gestion administrative","Documents toujours bien remplis et rangés","Grande rigueur sur les bons de livraison","Très fiable sur la partie administrative"],
+    5:["Parfait sur la gestion des documents","Aucune erreur administrative sur toute la période","Modèle de rigueur sur la paperasse","Impeccable, documents toujours parfaits"]
+  },
+  consignes: {
+    1:["Ne respecte pas les consignes malgré les rappels","Comportement en dehors des règles établies","Règlement intérieur non respecté","Situation disciplinaire à traiter en priorité"],
+    2:["Respect des consignes insuffisant, des rappels nécessaires","Quelques manquements aux règles observés","Des efforts à faire sur le respect des règles","Pas toujours en accord avec le règlement"],
+    3:["Respect des consignes correct et satisfaisant","Suit les règles établies en général","Comportement dans les normes attendues","Aucun problème majeur de discipline"],
+    4:["Très bon respect des consignes et du règlement","Toujours dans le cadre des règles établies","Comportement exemplaire sur la discipline","Grande rigueur sur le respect des consignes"],
+    5:["Exemplaire sur le respect des règles","Modèle de discipline pour toute l'équipe","Aucun écart jamais, comportement parfait","Irréprochable sur ce point, grande confiance accordée"]
+  },
+  equipe: {
+    1:["Conflits avec les collègues, ambiance dégradée","Comportement individualiste nuisant à l'équipe","Esprit d'équipe quasi inexistant","Des tensions créées qui impactent le collectif"],
+    2:["Esprit d'équipe à développer, un peu isolé","Peu d'entraide avec les collègues","Des progrès à faire sur le travail en collectif","Pas encore intégré pleinement dans l'équipe"],
+    3:["Bonne intégration dans l'équipe","S'entend bien avec les collègues en général","Esprit d'équipe satisfaisant","Bon collègue, pas de problème relationnel"],
+    4:["Très bon esprit d'équipe, aide volontiers les collègues","Contribue positivement à l'ambiance","Solidaire et disponible pour les autres","Très apprécié de ses collègues"],
+    5:["Pilier de l'équipe, entraide exemplaire","Sa présence améliore l'ambiance de tout le groupe","Modèle de solidarité et de travail en équipe","Exceptionnel sur le collectif, une vraie valeur ajoutée"]
+  },
+  comm_enc: {
+    1:["Ne communique pas avec l'encadrant, situations cachées","Pas de transparence sur les problèmes rencontrés","Communication très difficile, blocages fréquents","Relation avec l'encadrant à reconstruire"],
+    2:["Communication insuffisante, faut souvent aller le chercher","Pas toujours transparent sur les difficultés","Des efforts à faire sur la communication","Parfois distant, ne signale pas les problèmes"],
+    3:["Communication correcte avec l'encadrant","Signale les problèmes quand c'est nécessaire","Relation correcte et professionnelle","Communication dans les normes attendues"],
+    4:["Très bonne communication, transparent et proactif","Signale spontanément les problèmes rencontrés","Relation de confiance établie avec l'encadrant","Grande ouverture dans les échanges"],
+    5:["Communication parfaite, relation de confiance totale","Toujours transparent, signale tout spontanément","Modèle de communication pour l'équipe","Relation exemplaire, confiance totale accordée"]
+  },
+  adaptabilite: {
+    1:["Bloque sur les imprévus, ne s'adapte pas","Très rigide face aux changements de planning","Les imprévus créent des situations de blocage","Adaptabilité quasi nulle, problème récurrent"],
+    2:["Adaptation difficile aux changements","Pas toujours souple face aux imprévus","Des progrès à faire sur la flexibilité","Réagit mal aux changements de dernière minute"],
+    3:["S'adapte correctement aux situations courantes","Gère bien les imprévus habituels","Flexibilité satisfaisante dans les situations connues","Adaptabilité dans les normes attendues"],
+    4:["Très bonne adaptabilité, gère bien les imprévus","Souple et efficace face aux changements","Trouve rapidement des solutions alternatives","Grande flexibilité, atout pour les tournées complexes"],
+    5:["Excellente adaptabilité, rien ne le déstabilise","Modèle de flexibilité et de réactivité","Gère parfaitement toutes les situations imprévues","Exceptionnel sur l'adaptabilité, véritable force"]
+  },
+  engagement: {
+    1:["Motivation très faible, travail fait a minima","Désengagement visible qui impacte la qualité","Semble ne plus croire en son parcours","Entretien de motivation urgent à organiser"],
+    2:["Motivation insuffisante, à remotiver","Des hauts et des bas sur l'engagement","Pas toujours impliqué dans ses missions","Engagement irrégulier qui mérite attention"],
+    3:["Engagement satisfaisant et régulier","Motivé et impliqué dans ses missions en général","Bonne attitude générale au travail","Engagement dans les normes attendues"],
+    4:["Très engagé, motivé et impliqué au quotidien","Enthousiasme communicatif dans l'équipe","Toujours volontaire et impliqué dans ses missions","Grand engagement, une vraie force pour l'équipe"],
+    5:["Engagement exceptionnel, modèle pour tous","Toujours à 100%, même dans les moments difficiles","Motivation sans faille sur toute la période","Exceptionnel sur l'engagement, une fierté pour l'équipe"]
+  },
+  respect_hier: {
+    1:["Comportement irrespectueux avec la hiérarchie","Remet en cause les décisions de façon inappropriée","Problèmes disciplinaires récurrents","Situation grave à traiter immédiatement"],
+    2:["Pas toujours respectueux des décisions hiérarchiques","Parfois en désaccord de façon inadaptée","Des rappels nécessaires sur le respect de l'autorité","Attitude à surveiller sur ce point"],
+    3:["Respect de la hiérarchie correct et satisfaisant","Accepte les décisions sans problème majeur","Comportement approprié avec la hiérarchie","Dans les normes attendues sur ce point"],
+    4:["Très bon respect de la hiérarchie","Accepte les décisions et les fait siennes","Attitude professionnelle et respectueuse","Relation saine et professionnelle avec la hiérarchie"],
+    5:["Respect exemplaire, attitude impeccable","Modèle sur le respect de l'autorité","Aucun écart sur toute la période","Parfait sur ce point, confiance totale"]
+  },
+  initiative: {
+    1:["Aucune initiative, attend toujours qu'on lui dise quoi faire","Passif, ne propose jamais de solutions","Initiative inexistante à ce stade","À encourager à prendre plus de responsabilités"],
+    2:["Peu d'initiative, hésite à prendre des décisions","Attend souvent la validation avant d'agir","Quelques initiatives timides mais insuffisantes","À encourager sur la prise d'initiative"],
+    3:["Prend les initiatives nécessaires au quotidien","Des initiatives pertinentes et appropriées","Bon équilibre entre autonomie et consultation","Niveau d'initiative satisfaisant"],
+    4:["Prend régulièrement des initiatives judicieuses","Force de proposition appréciée dans l'équipe","Anticipe les problèmes et propose des solutions","Très bon niveau d'initiative"],
+    5:["Initiatives remarquables qui améliorent le collectif","Moteur de l'équipe sur les idées et solutions","Propose constamment des améliorations pertinentes","Exceptionnel sur ce point, vrai leadership"]
+  },
+  confiance: {
+    1:["Très faible confiance en soi, se dévalorise beaucoup","Doute de ses capacités en permanence","Confiance à reconstruire complètement","Un travail de fond nécessaire sur l'estime de soi"],
+    2:["Confiance encore fragile, à renforcer","Doute parfois inutilement de ses capacités","Des progrès à faire sur l'affirmation de soi","Confiance insuffisante pour les situations nouvelles"],
+    3:["Confiance en soi satisfaisante","Ose dire ce qu'il pense en entretien","Affirme progressivement ses positions","Confiance dans les normes pour ce stade du parcours"],
+    4:["Bonne confiance en soi, s'affirme bien","Parle de son projet avec conviction","Confiance qui progresse de façon notable","Grande amélioration sur la confiance en soi"],
+    5:["Confiance exemplaire, sait ce qu'il vaut","S'affirme avec assurance et professionnalisme","Modèle d'assurance pour les autres salariés","Confiance en soi remarquable, une vraie transformation"]
+  },
+  conscience_prog: {
+    1:["Ne perçoit pas ses propres progrès","Nie ses difficultés, pas de prise de conscience","Travail de miroir nécessaire en entretien","Absence totale de recul sur son évolution"],
+    2:["Conscience de ses progrès encore limitée","Voit ses difficultés mais pas ses avancées","Encourage à reconnaître ses propres efforts","Prise de conscience insuffisante à ce stade"],
+    3:["Commence à prendre conscience de ses progrès","Reconnaît ses avancées quand on lui montre","Bonne évolution sur la connaissance de soi","Prise de conscience satisfaisante"],
+    4:["Bonne conscience de son évolution","Identifie clairement ses progrès et ses points à améliorer","Lucide et honnête sur son parcours","Grande capacité de recul sur sa propre progression"],
+    5:["Excellent recul sur son propre parcours","Analyse ses progrès avec grande lucidité","Sait exactement où il en est et où il va","Conscience exemplaire de son évolution"]
+  },
+  proj_clair: {
+    1:["Aucun projet professionnel défini","Ne sait pas ce qu'il veut faire après le parcours","Travail de définition de projet à entamer","Projet inexistant, accompagnement renforcé nécessaire"],
+    2:["Projet encore flou, des idées sans direction claire","Hésite entre plusieurs pistes sans se décider","Des idées à structurer en objectifs concrets","Projet en construction, nécessite un soutien renforcé"],
+    3:["Projet professionnel en cours de définition","Une direction se dessine, à préciser","Piste sérieuse mais pas encore totalement concrète","Projet satisfaisant à ce stade du parcours"],
+    4:["Projet clair et réaliste bien défini","Sait exactement ce qu'il vise après le CDDI","Démarches actives engagées vers le projet","Projet solide et motivant, bonne dynamique"],
+    5:["Projet professionnel exemplaire, très précis","Démarches actives et efficaces, très motivé","Projet réaliste et ambitieux, sur la bonne voie","Insertion quasi assurée, projet parfaitement construit"]
+  },
+  ouverture: {
+    1:["Résistance forte aux conseils, se braque","Ne prend pas en compte les remarques","Attitude défensive qui bloque la progression","Travail à faire sur l'ouverture et l'écoute"],
+    2:["Parfois sur la défensive face aux conseils","Accepte les retours mais ne les applique pas toujours","Ouverture insuffisante, des blocages observés","À travailler sur la capacité à recevoir les critiques"],
+    3:["Ouverture aux conseils correcte et satisfaisante","Prend en compte les retours et les applique","Bonne réceptivité aux suggestions de l'encadrant","Capacité d'écoute satisfaisante"],
+    4:["Très ouvert aux conseils, les applique activement","Demande du feedback et l'intègre bien","Grande capacité à se remettre en question","Très bonne réceptivité, fait des progrès rapides grâce à ça"],
+    5:["Ouverture exemplaire, modèle d'écoute","Intègre parfaitement tous les conseils donnés","Cherche activement à s'améliorer et l'atteint","Exceptionnel sur ce point, progression fulgurante"]
+  },
+  demarches: {
+    1:["Aucune démarche vers l'emploi engagée","Pas de recherche active malgré les rappels","Démarches inexistantes, blocage à explorer","Recadrage nécessaire sur la dynamique d'insertion"],
+    2:["Démarches insuffisantes, à stimuler","Quelques recherches ponctuelles mais pas régulières","À encourager à intensifier les démarches","Manque de proactivité sur la recherche d'emploi"],
+    3:["Démarches en cours, bonne dynamique globale","Recherches actives et régulières","CV à jour, candidatures envoyées","Démarches satisfaisantes pour ce stade"],
+    4:["Très actif sur les démarches d'emploi","CV et entretiens en cours, grande motivation","Démarches sérieuses et bien ciblées","Excellent sur la recherche d'emploi, sur la bonne voie"],
+    5:["Démarches exemplaires, insertion quasi certaine","Plusieurs entretiens et opportunités sérieuses","Modèle de dynamisme sur la recherche d'emploi","Parfait, insertion imminente grâce à ses efforts"]
+  },
+  code_route: {
+    1:["Infractions au Code de la route observées","Comportements dangereux signalés","Respect du Code à retravailler d'urgence","Risque réel pour la sécurité et l'entreprise"],
+    2:["Quelques infractions mineures observées","Pas toujours rigoureux sur le Code de la route","À surveiller sur le respect des règles de conduite","Des progrès à faire sur la sécurité"],
+    3:["Respect du Code de la route correct","Comportement de conduite dans les normes","Aucun incident de sécurité ce trimestre","Conduite sécurisée en général"],
+    4:["Très bon respect du Code de la route","Conduite exemplaire sur toute la période","Comportement sécuritaire irréprochable","Très rigoureux sur le respect des règles"],
+    5:["Respect parfait du Code de la route","Modèle de conduite sécurisée pour l'équipe","Aucun écart jamais observé","Irréprochable sur la sécurité routière"]
+  },
+  pas_tel: {
+    1:["Utilisation du téléphone au volant observée, inacceptable","Comportement dangereux et illégal signalé","Avertissement formel sur ce point","Situation grave qui met en danger les autres"],
+    2:["Des rappels nécessaires sur l'usage du téléphone","Pas toujours rigoureux sur ce point","À surveiller, tendance à consulter son téléphone","Encore quelques manquements à corriger"],
+    3:["Respect satisfaisant de l'interdiction téléphone","Aucun incident signalé sur ce point","Comportement correct sur l'usage du téléphone","Dans les normes attendues"],
+    4:["Très bon respect, ne touche jamais son téléphone en conduisant","Comportement exemplaire sur ce point","Grande rigueur sur l'interdiction téléphone","Très sérieux sur cet engagement"],
+    5:["Parfait sur ce point, modèle à suivre","Jamais un écart sur l'interdiction téléphone","Cite lui-même l'importance de cette règle","Exemplaire, aucun risque jamais pris"]
+  },
+  zero_alcool: {
+    1:["Engagement zéro alcool non respecté, situation très grave","Suspicion fondée de conduite sous emprise","Procédure disciplinaire engagée sur ce point","Situation inacceptable, risque vital"],
+    2:["Engagement à rappeler régulièrement","Des doutes qui nécessitent une vigilance accrue","À surveiller de près sur ce point","Engagement fragile qui nécessite un soutien"],
+    3:["Engagement zéro alcool respecté","Aucun incident sur ce point ce trimestre","Comportement correct et responsable","Dans les normes attendues sur ce point"],
+    4:["Très bon respect de l'engagement zéro alcool","Grande responsabilité affichée sur ce sujet","Comportement exemplaire, aucune remarque","Très sérieux sur cet engagement important"],
+    5:["Engagement parfaitement respecté, modèle","Cite régulièrement cet engagement comme une fierté","Aucun doute jamais, confiance totale","Exemplaire sur ce point capital"]
+  },
+  verif_veh: {
+    1:["Ne fait jamais le tour du véhicule avant de partir","Négligence grave sur la vérification","Risque de panne ou d'accident par inattention","Habitude à créer d'urgence"],
+    2:["Vérifications insuffisantes et irrégulières","Pas toujours rigoureux avant le départ","À rappeler régulièrement sur ce point","Des oublis qui peuvent avoir des conséquences"],
+    3:["Vérifications faites correctement en général","Tour du véhicule effectué la plupart du temps","Comportement satisfaisant sur ce point","Dans les normes attendues"],
+    4:["Très rigoureux sur les vérifications avant départ","Signale proactivement les anomalies","Grande rigueur sur la procédure de départ","Très professionnel sur la vérification"],
+    5:["Irréprochable sur les vérifications","Tour du véhicule systématique et consciencieux","Modèle de rigueur avant chaque départ","Parfait, aucune anomalie jamais passée inaperçue"]
+  },
+  signal_inc: {
+    1:["Cache les incidents, ne signale rien","Comportement grave qui met en danger tout le monde","Absence totale de transparence sur les incidents","Recadrage urgent et sérieux nécessaire"],
+    2:["Signalement insuffisant, il faut aller le chercher","Pas toujours transparent sur les incidents","À encourager fortement à signaler systématiquement","Des incidents passés sous silence découverts après"],
+    3:["Signale les incidents correctement en général","Transparence satisfaisante sur les problèmes","Comportement correct sur ce point","Dans les normes attendues"],
+    4:["Signale spontanément et immédiatement les incidents","Grande transparence, aucune rétention d'information","Très professionnel sur la communication des incidents","Très fiable sur ce point important"],
+    5:["Exemplaire sur le signalement des incidents","Signale tout, même les petites anomalies","Modèle de transparence pour toute l'équipe","Parfait, confiance totale sur ce point"]
+  }
+};
+
+function toggleSugg(id, btn){
+  var drop = document.getElementById('sd-'+id);
+  if(!drop) return;
+  
+  // Fermer tous les autres dropdowns
+  document.querySelectorAll('.sugg-drop.open').forEach(function(d){
+    if(d !== drop) d.classList.remove('open');
+  });
+  
+  if(drop.classList.contains('open')){
+    drop.classList.remove('open');
+    return;
+  }
+  
+  // Générer les suggestions selon la note actuelle
+  var note = SCORES[id] || 0;
+  var critSugg = SUGG[id];
+  var items = [];
+  
+  if(note > 0 && critSugg && critSugg[note]){
+    items = critSugg[note];
+  } else if(critSugg) {
+    // Si pas encore de note, proposer des suggestions neutres de toutes les notes
+    [3,4,5,2,1].forEach(function(n){
+      if(critSugg[n]) items = items.concat(critSugg[n].slice(0,1));
+    });
+  }
+  
+  if(!items.length){
+    items = ['Observation à compléter selon la situation observée…'];
+  }
+  
+  drop.innerHTML = items.map(function(s){
+    return '<div class="sugg-item" onclick="pickSugg(\''+id+'\',this)">'+s+'</div>';
+  }).join('');
+  
+  drop.classList.add('open');
+  
+  // Fermer au clic ailleurs
+  setTimeout(function(){
+    document.addEventListener('click', function closeDrop(e){
+      if(!drop.contains(e.target) && !btn.contains(e.target)){
+        drop.classList.remove('open');
+        document.removeEventListener('click', closeDrop);
+      }
+    });
+  }, 10);
+}
+
+function pickSugg(id, el){
+  var inp = document.getElementById('cm-'+id);
+  var drop = document.getElementById('sd-'+id);
+  if(inp){
+    inp.value = el.textContent;
+    aS();
+  }
+  if(drop) drop.classList.remove('open');
+}
+
+
+function sauvegarderFicheDoc(){
+  var id = document.getElementById('doc-sel') ? document.getElementById('doc-sel').value : null;
+  if(!id){toast('Sélectionnez un salarié pour stocker ce document','#f59e0b');return;}
+  
+  // Récupérer tout le contenu textuel de la fiche
+  var fiche = document.getElementById('fiche-doc-content');
+  if(!fiche){toast('Aucune fiche à sauvegarder','#f59e0b');return;}
+  
+  // Récupérer les zones remplies
+  var contenu = '';
+  var titre = fiche.querySelector('h1');
+  if(titre) contenu += '=== '+titre.textContent+' ===\n';
+  
+  fiche.querySelectorAll('.dzone-edit,.dval-edit').forEach(function(el){
+    if(el.value && el.value.trim()){
+      var label = el.previousElementSibling || el.closest('.dfield')&&el.closest('.dfield').querySelector('label');
+      if(label) contenu += '\n['+label.textContent+']\n';
+      contenu += el.value.trim()+'\n';
+    }
+  });
+  
+  if(!contenu.trim()){toast('Remplissez la fiche avant de la stocker','#f59e0b');return;}
+  
+  var note = '📋 FICHE STOCKÉE\n'+contenu+'\n---\nSauvegardé le '+new Date().toLocaleDateString('fr-FR');
+  
+  db('insertion_journal',{method:'POST',body:JSON.stringify({
+    dossier_id:id,
+    note:note,
+    created_at:new Date().toISOString()
+  })}).then(function(r){
+    if(r) toast('Fiche stockée dans le journal du salarié ✅');
+    else toast('Erreur de sauvegarde','#dc2626');
+  });
+}
+
 async function sendAI(){
   var inp=document.getElementById('ai-inp');
   var msg=inp.value.trim();if(!msg)return;
