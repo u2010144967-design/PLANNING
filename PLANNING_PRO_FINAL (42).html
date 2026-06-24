@@ -12151,6 +12151,49 @@ function sauverDansSupabase(){
 }
 
 
+function chargerDepuisSupabase(){
+  /* Charger les données les plus récentes depuis Supabase */
+  setSupaLed(null, '...');
+  supaFetch('planning?order=updated_at.desc&limit=5&select=date,donnees,updated_at')
+    .then(function(rows){
+      if(rows===null){
+        showT('❌ Erreur connexion cloud — vérifiez votre connexion internet','#dc2626');
+        setSupaLed(false,'Erreur');
+        return;
+      }
+      if(!rows||!rows.length){
+        showT('☁ Cloud vide — rien à charger','#f59e0b');
+        return;
+      }
+      /* Prendre la ligne la plus récente */
+      var data = rows[0].donnees;
+      if(!data){showT('❌ Données cloud invalides','#dc2626');return;}
+
+      /* Appliquer toutes les données */
+      if(data.drivers&&data.drivers.length) ST.drivers    = data.drivers;
+      if(data.tasks)       ST.tasks       = data.tasks;
+      if(data.statuts)     ST.statuts     = data.statuts;
+      if(data.notes)       ST.notes       = data.notes;
+      if(data.library)     ST.library     = data.library;
+      if(data.tournees)    ST.tournees    = data.tournees;
+      if(data.conducteurs) ST.conducteurs = data.conducteurs;
+      if(data.memos)       ST.memos       = data.memos;
+      if(data.km)          ST.km          = data.km;
+
+      /* Sauvegarder localement et rafraîchir l'affichage */
+      try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
+      if(typeof render==='function')render();
+      if(typeof rStats==='function')rStats();
+      if(typeof rCounters==='function')rCounters();
+
+      var upd=rows[0].updated_at
+        ?new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+        :'?';
+      setSupaLed(true,'Sync '+upd);
+      showT('✅ Planning synchronisé — MAJ : '+upd,'#16a34a');
+    });
+}
+
 function _chargerDepuisSupabaseLegacy(date){
   date = date || ST.cur;
   supaFetch('planning?date=eq.'+date+'&select=donnees&order=updated_at.desc&limit=1')
