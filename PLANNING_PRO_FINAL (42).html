@@ -1548,6 +1548,7 @@ function saveTask(){
   ST.tasks[k].push({task:task,client:client,category:cat,truck:(document.getElementById('m-truck').value||'').trim(),end:document.getElementById('m-end').value,bold:document.getElementById('m-bold').checked,priority:document.getElementById('m-prio').value,adresse:(document.getElementById('m-adresse').value||'').trim(),contact:(document.getElementById('m-contact').value||'').trim(),convives:(document.getElementById('m-convives').value||'').trim(),note_liv:(document.getElementById('m-note').value||'').trim(),allergenes:allergArr,ts:Date.now()});
   if(client&&cat&&cat!=='truck'&&!(ST.library[cat]||[]).includes(client)){if(!ST.library[cat])ST.library[cat]=[];ST.library[cat].push(client);}
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
+  setTimeout(function(){sauverDansSupabase();},200);
 }
 function delT(k,ti){
   pushUndo('Mission supprimée');
@@ -3543,6 +3544,7 @@ function appliquerStatut(type){
   }
 
   save();
+  setTimeout(function(){sauverDansSupabase();},300);
   appliquerStatutsVisuels();
   rStatutHistorique(di);
 }
@@ -3601,9 +3603,10 @@ function supprimerStatut(key){
   var di = ST.statuts[key].di;
   delete ST.statuts[key];
   save();
+  setTimeout(function(){sauverDansSupabase();},300);
   appliquerStatutsVisuels();
   rStatutHistorique(di);
-  showT('Statut supprime','#64748b');
+  showT('Statut supprimé','#64748b');
 }
 
 /* Initialiser ST.statuts au chargement */
@@ -3980,6 +3983,7 @@ function srAppliquer(){
     ST.statuts[key] = {type:_srType, date:_srDate, di:_srDi, ts:Date.now()};
   }
   save();
+  setTimeout(function(){sauverDansSupabase();},300);
 
   /* Appliquer visuellement si c'est le jour affiché */
   if(_srDate === ST.cur) appliquerStatutsVisuels();
@@ -12066,42 +12070,55 @@ function supaFetch(path, options){
 
 /* Sauvegarder le planning dans Supabase */
 function sauverDansSupabase(){
-  var data = {
-    date: ST.cur,
-    donnees: {
-      drivers: ST.drivers,
-      tasks: ST.tasks,
-      statuts: ST.statuts||{},
-      notes: ST.notes||{},
-      cur: ST.cur,
-      library: ST.library,
-      tournees: ST.tournees||[]
-    }
+  /* Construire le paquet complet avec TOUTES les données */
+  var donnees = {
+    drivers: ST.drivers,
+    tasks: ST.tasks,        /* TOUTES les dates, toutes les missions */
+    statuts: ST.statuts||{},
+    notes: ST.notes||{},
+    cur: ST.cur,
+    library: ST.library,
+    tournees: ST.tournees||[],
+    conducteurs: ST.conducteurs||{},
+    memos: ST.memos||[],
+    km: ST.km||{}
   };
 
-  /* Vérifier si une entrée existe pour cette date */
-  supaFetch('planning?date=eq.'+ST.cur+'&select=id')
-    .then(function(rows){
-      if(rows&&rows.length>0){
-        /* Mettre à jour */
-        return supaFetch('planning?date=eq.'+ST.cur, {
-          method:'PATCH',
-          body:JSON.stringify({donnees:data.donnees, updated_at:'now()'})
-        });
-      } else {
-        /* Créer */
-        return supaFetch('planning', {
-          method:'POST',
-          body:JSON.stringify(data)
-        });
-      }
-    })
-    .then(function(){
-      showT('Planning sauvegardé dans le cloud Supabase','#16a34a');
-    })
-    .catch(function(e){
-      console.log('Erreur Supabase:', e);
-    });
+  /* Collecter toutes les dates qui ont des données */
+  var dates = {};
+  dates[ST.cur] = true;
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var d = k.split('|')[0];
+    if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) dates[d] = true;
+  });
+  Object.keys(ST.statuts||{}).forEach(function(k){
+    /* statuts stockés par date dans conducteurs */
+  });
+
+  var dateList = Object.keys(dates);
+  var saved = 0;
+
+  dateList.forEach(function(date){
+    supaFetch('planning?date=eq.'+date+'&select=id')
+      .then(function(rows){
+        if(rows&&rows.length>0){
+          return supaFetch('planning?date=eq.'+date, {
+            method:'PATCH',
+            body:JSON.stringify({donnees:donnees})
+          });
+        } else {
+          return supaFetch('planning', {
+            method:'POST',
+            body:JSON.stringify({date:date, donnees:donnees})
+          });
+        }
+      })
+      .then(function(){
+        saved++;
+        if(saved===1) showT('✅ Synchronisé — visible sur tous les appareils','#16a34a');
+      })
+      .catch(function(e){ console.warn('Supabase err:', e); });
+  });
 }
 
 /* Charger le planning depuis Supabase */
