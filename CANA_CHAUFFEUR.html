@@ -277,7 +277,13 @@ async function loadCustomDriverConfig(){
 async function loadPlanning(){
   /* Fusionne TOUTES les dates disponibles (passees et futures) en un seul planning */
   /* Charger toutes les lignes de dates (YYYY-MM-DD) + augmenter limite */
-  const rows=await db('planning?select=donnees,date&order=date.asc&limit=200');
+  /* Charger les 30 derniers jours + 14 futurs pour performance */
+  const today=new Date();
+  const from=new Date(today);from.setDate(from.getDate()-30);
+  const to=new Date(today);to.setDate(to.getDate()+14);
+  const fromStr=from.toISOString().slice(0,10);
+  const toStr=to.toISOString().slice(0,10);
+  const rows=await db('planning?select=donnees,date&order=date.asc&date=gte.'+fromStr+'&date=lte.'+toStr+'&limit=60');
   if(!rows||!rows.length)return null;
 
   let merged={drivers:null,tasks:{},statuts:{},notes:{},library:null,tournees:[],conducteurs:{}};
@@ -725,11 +731,14 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
     const [p,ev]=await Promise.all([loadPlanning(),loadAllEvents()]);
     if(p)setPlanning(p);
     setEvents(ev);
-    setDiag(`${ev.length} événement(s) chargé(s) — types: ${[...new Set(ev.map(e=>e.type))].join(', ')||'aucun'} — chauffeurs: ${[...new Set(ev.map(e=>e.chauffeur))].join(', ')||'aucun'}`);
+    const now=new Date();
+      const hh=String(now.getHours()).padStart(2,'0');
+      const mm=String(now.getMinutes()).padStart(2,'0');
+      setDiag('Dernière sync : '+hh+'h'+mm+(planning?' — Planning chargé ✅':' — En attente de données'));
     setLoading(false);
   };
 
-  useEffect(()=>{refresh();const iv=setInterval(refresh,30000);return()=>clearInterval(iv);},[]);
+  useEffect(()=>{refresh(true);const iv=setInterval(()=>refresh(false),20000);return()=>clearInterval(iv);},[]);
 
   const liveDrivers=planning&&planning.drivers&&planning.drivers.length
     ?DRIVERS.map((d,i)=>{
@@ -822,8 +831,12 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
         </button>
       </div>
 
-      {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}><div className="spin" style={{width:20,height:20,margin:'0 auto 8px'}}/>Synchronisation...</div>}
-      {!loading&&diag&&<div style={{margin:'0 16px',padding:12,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:10,fontSize:11,color:'#93c5fd',lineHeight:1.6}}>🔍 DIAGNOSTIC : {diag}</div>}
+      {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}>
+          <div className="spin" style={{width:24,height:24,margin:'0 auto 10px'}}/>
+          <div style={{fontWeight:700,fontSize:13}}>Chargement de votre planning...</div>
+          <div style={{fontSize:11,marginTop:4}}>Connexion à La Table de Cana</div>
+        </div>}
+      {diag&&<div style={{margin:'0 16px 8px',padding:'6px 12px',background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.15)',borderRadius:8,fontSize:10,color:'#475569',textAlign:'center'}}>🔄 {diag}</div>}
     </div>
   );
 }
