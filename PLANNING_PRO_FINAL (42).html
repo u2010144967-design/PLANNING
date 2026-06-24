@@ -627,6 +627,10 @@ input[type="time"]{
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
     <button onclick="chargerDepuisSupabase()" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer" title="Synchroniser avec le cloud">☁ Sync</button>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#64748b;padding:0 4px">
+      <span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e;transition:all .3s"></span>
+      <span id="sync-txt">OK</span>
+    </span>
     <button id="undo-btn" onclick="undo()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;opacity:.4;transition:opacity .2s" title="Annuler">↩</button>
   </div>
   <div class="nsp"></div>
@@ -1210,16 +1214,21 @@ function load(){
     ST.tournees=DEFAULT.tournees||[];
     window._demanderSyncSupabase = true;
   }
-  /* Si pas de données locales, programmer un chargement Supabase */
-  if(window._demanderSyncSupabase){
-    setTimeout(function(){
-      if(typeof chargerDepuisSupabase==='function'){
-        chargerDepuisSupabase();
-      }
-    },1500);
-  }
+  /* TOUJOURS charger depuis Supabase au démarrage */
+  setTimeout(function(){
+    if(typeof chargerDepuisSupabase==='function'){
+      chargerDepuisSupabase();
+    }
+  }, 1000);
 }
-function save(){try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}}
+function save(){
+  try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
+  /* Sauvegarder dans Supabase 1s après le dernier save() */
+  clearTimeout(window._saveToSupaTimer);
+  window._saveToSupaTimer = setTimeout(function(){
+    if(typeof sauverDansSupabase==='function') sauverDansSupabase();
+  }, 1000);
+}
 
 /* EXPORT EXCEL */
 function exportExcel(){var d=ST.cur;var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(mkDay(d));ws['!cols']=[{wch:7},{wch:28},{wch:28},{wch:28},{wch:28},{wch:28}];ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];XLSX.utils.book_append_sheet(wb,ws,'Planning '+fds(d));var km=mkKm(d);if(km)XLSX.utils.book_append_sheet(wb,km,'Km');var n=ST.notes[d]||'';if(n)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[fmtLong(d)],[n]]),'Note');XLSX.writeFile(wb,'Planning_'+d+'.xlsx');showT('✓ Excel exporté','#217346');}
@@ -12057,6 +12066,16 @@ window.addEventListener('load',function(){
 var SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
 var SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
 
+var _supaOK = null;
+
+function setSupaLed(ok, msg){
+  _supaOK = ok;
+  var led = document.getElementById('sync-led');
+  var txt = document.getElementById('sync-txt');
+  if(led){ led.style.background = ok ? '#22c55e' : '#ef4444'; led.style.boxShadow = '0 0 6px '+(ok?'#22c55e':'#ef4444'); }
+  if(txt){ txt.textContent = msg || (ok ? 'OK' : 'Erreur'); }
+}
+
 function supaFetch(path, options){
   return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({
     headers:{
@@ -12065,98 +12084,73 @@ function supaFetch(path, options){
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     }
-  }, options||{})).then(function(r){return r.json();});
+  }, options||{}))
+  .then(function(r){
+    if(!r.ok){
+      return r.text().then(function(body){
+        var err = 'Supabase '+r.status;
+        try{ var j=JSON.parse(body); err=j.message||j.hint||err; }catch(e){}
+        setSupaLed(false, 'Erreur '+r.status);
+        console.warn('supaFetch erreur:', r.status, path, body.slice(0,200));
+        return null; /* retourner null au lieu de planter */
+      });
+    }
+    var ct = r.headers.get('content-type')||'';
+    if(!ct.includes('json')) return [];
+    return r.json().then(function(data){
+      setSupaLed(true, 'OK');
+      return data;
+    });
+  })
+  .catch(function(e){
+    setSupaLed(false, 'Hors ligne');
+    console.warn('supaFetch réseau:', path, e.message);
+    return null; /* réseau indisponible — ne pas planter */
+  });
 }
 
 /* Sauvegarder le planning dans Supabase */
 function sauverDansSupabase(){
-  /* Construire le paquet complet avec TOUTES les données */
   var donnees = {
-    drivers: ST.drivers,
-    tasks: ST.tasks,        /* TOUTES les dates, toutes les missions */
-    statuts: ST.statuts||{},
-    notes: ST.notes||{},
-    cur: ST.cur,
-    library: ST.library,
-    tournees: ST.tournees||[],
-    conducteurs: ST.conducteurs||{},
-    memos: ST.memos||[],
-    km: ST.km||{}
+    drivers:     ST.drivers    || [],
+    tasks:       ST.tasks      || {},
+    statuts:     ST.statuts    || {},
+    notes:       ST.notes      || {},
+    cur:         ST.cur,
+    library:     ST.library    || {traiteur:[],collectivite:[],task:[]},
+    tournees:    ST.tournees   || [],
+    conducteurs: ST.conducteurs|| {},
+    memos:       ST.memos      || [],
+    km:          ST.km         || {}
   };
 
-  /* Collecter toutes les dates qui ont des données */
-  var dates = {};
-  dates[ST.cur] = true;
-  Object.keys(ST.tasks||{}).forEach(function(k){
-    var d = k.split('|')[0];
-    if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) dates[d] = true;
-  });
-  Object.keys(ST.statuts||{}).forEach(function(k){
-    /* statuts stockés par date dans conducteurs */
-  });
+  /* Utiliser la date du jour comme clé principale */
+  var today = new Date().toISOString().slice(0,10);
 
-  var dateList = Object.keys(dates);
-  var saved = 0;
-
-  dateList.forEach(function(date){
-    supaFetch('planning?date=eq.'+date+'&select=id')
-      .then(function(rows){
-        if(rows&&rows.length>0){
-          return supaFetch('planning?date=eq.'+date, {
-            method:'PATCH',
-            body:JSON.stringify({donnees:donnees})
-          });
-        } else {
-          return supaFetch('planning', {
-            method:'POST',
-            body:JSON.stringify({date:date, donnees:donnees})
-          });
-        }
-      })
-      .then(function(){
-        saved++;
-        if(saved===1) showT('✅ Synchronisé — visible sur tous les appareils','#16a34a');
-      })
-      .catch(function(e){ console.warn('Supabase err:', e); });
-  });
-}
-
-/* Charger le planning depuis Supabase */
-function chargerDepuisSupabase(date){
-  date = date || ST.cur;
-  /* Charger les données de la date courante ET fusionner toutes les dates disponibles */
-  supaFetch('planning?order=date.desc&limit=60&select=date,donnees')
+  /* Chercher si une ligne existe déjà pour aujourd'hui */
+  supaFetch('planning?date=eq.'+today+'&select=id')
     .then(function(rows){
-      if(!rows||!rows.length){
-        showT('Aucun planning trouvé dans le cloud','#f59e0b');
-        return;
+      if(rows===null) return; /* erreur réseau — supaFetch a loggé */
+      if(rows&&rows.length>0){
+        /* Mettre à jour */
+        return supaFetch('planning?date=eq.'+today, {
+          method:'PATCH',
+          body: JSON.stringify({donnees: donnees, updated_at: new Date().toISOString()})
+        });
+      } else {
+        /* Créer */
+        return supaFetch('planning', {
+          method:'POST',
+          body: JSON.stringify({date: today, donnees: donnees, updated_at: new Date().toISOString()})
+        });
       }
-      /* Fusionner toutes les dates chargées */
-      rows.forEach(function(row){
-        var data = row.donnees;
-        if(!data) return;
-        /* On prend les drivers/config de la date la plus récente */
-        if(row.date===date||rows.indexOf(row)===0){
-          if(data.drivers&&data.drivers.length) ST.drivers=data.drivers;
-          if(data.statuts) Object.assign(ST.statuts=ST.statuts||{}, data.statuts);
-          if(data.notes) Object.assign(ST.notes=ST.notes||{}, data.notes);
-          if(data.library) ST.library=data.library;
-          if(data.tournees) ST.tournees=data.tournees;
-        }
-        /* On fusionne toutes les tâches de toutes les dates */
-        if(data.tasks){
-          ST.tasks = ST.tasks || {};
-          Object.assign(ST.tasks, data.tasks);
-        }
-      });
-      if(typeof save==='function') save();
-      if(typeof render==='function') render();
-      showT('Planning synchronisé ✅ ('+(rows.length)+' dates chargées)','#22c55e');
     })
-    .catch(function(e){
-      showT('Erreur sync cloud: '+e.message,'#ef4444');
+    .then(function(r){
+      if(r) setSupaLed(true, 'Sauvé');
     });
 }
+
+
 function _chargerDepuisSupabaseLegacy(date){
   date = date || ST.cur;
   supaFetch('planning?date=eq.'+date+'&select=donnees&order=updated_at.desc&limit=1')
@@ -20367,15 +20361,14 @@ window._erreursJS = [];
 window.addEventListener('error', function(e){
   var msg = (e.message||'Erreur inconnue')+' ('+(e.filename||'?')+':'+(e.lineno||'?')+')';
   window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
-  if(window._erreursJS.length>30) window._erreursJS.shift();
-  if(typeof showT==='function'){
-    showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
-  }
-});
+
 
 window.addEventListener('unhandledrejection', function(e){
-  var msg = 'Promesse rejetee : '+(e.reason&&e.reason.message?e.reason.message:String(e.reason));
-  window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
+  var msg = 'Promesse: '+(e.reason&&e.reason.message?e.reason.message:String(e.reason));
+  if(window._erreursJS) window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
+  /* Silencieux — supaFetch gère ses propres erreurs */
+  e.preventDefault();
+});
   if(window._erreursJS.length>30) window._erreursJS.shift();
   if(typeof showT==='function'){
     showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
@@ -24803,18 +24796,15 @@ function seDeconnecter(){
   location.reload();
 }
 
-/* ══ SYNC AUTO TOUTES LES 30 SECONDES ══ */
+/* ══ SYNC AUTO TOUTES LES 20 SECONDES ══ */
 (function(){
   setInterval(function(){
-    /* Ne pas recharger si l'utilisateur est en train de saisir */
     var active = document.activeElement;
-    if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
-    /* Ne pas recharger si un modal est ouvert */
+    if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
     if(document.querySelector('.mbg.on')) return;
-    /* Ne pas recharger si une sauvegarde vient d'avoir lieu */
-    if(window._derniereSauvegardeLocale && (Date.now()-window._derniereSauvegardeLocale)<15000) return;
+    if(window._derniereSauvegardeLocale&&(Date.now()-window._derniereSauvegardeLocale)<8000) return;
     if(typeof chargerDepuisSupabase==='function') chargerDepuisSupabase();
-  }, 30000);
+  }, 20000);
 })();
 
 /* ══ SYSTÈME UNDO — retour en arrière ══ */
