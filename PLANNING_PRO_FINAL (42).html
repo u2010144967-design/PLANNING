@@ -2,18 +2,9 @@
 <html lang="fr">
 <head>
 <script>
-/* SUPABASE CONFIG — doit être en premier */
-var SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
-var SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-
-/* STUBS — fonctions déclarées tôt pour éviter ReferenceError */
-function getConducteurDesigne(truck, date){
-  try{
-    if(!window.ST||!ST.conducteurs) return null;
-    var key=(date||'')+'_'+(truck||'');
-    return ST.conducteurs[key]||null;
-  }catch(e){return null;}
-}
+var SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)return null;return ST.conducteurs[(date||'')+'_'+(truck||'')]||null;}catch(e){return null;}}
 </script>
 <script>
 /* ══════════════════════════════════════════════════
@@ -54,10 +45,10 @@ function getConducteurDesigne(truck, date){
     window._serviceActuel = window.SERVICES_CONFIG[dejaConnecte];
     window._codeActuel = dejaConnecte;
     var lancerHubAuDemarrage=function(){
-      /* CHARGER SUPABASE EN PREMIER */
-      if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
+      setTimeout(chargerDepuisSupabase,600);
       setTimeout(function(){
-        chargerEtAfficherSupabase();
+        if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
+        if(typeof afficherHub==='function')afficherHub();
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -116,10 +107,9 @@ function getConducteurDesigne(truck, date){
           document.body.appendChild(strip);
         }
         /* ── Fin bandeau Bonjour ── */
-        /* ── CHARGER SUPABASE EN PREMIER, afficher après ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
-        /* Charger Supabase D'ABORD puis afficher le Hub */
-        chargerEtAfficherSupabase();
+        setTimeout(chargerDepuisSupabase,600);
+        if(typeof afficherHub==='function')setTimeout(afficherHub,900);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -145,7 +135,7 @@ function getConducteurDesigne(truck, date){
 <style>
 /* ════ RESET ════ */
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{font-family:Arial,Helvetica,sans-serif;font-size:13px;background:#f0f4f8;min-height:100vh;color:#1e293b}
+html,body{font-family:Arial,Helvetica,sans-serif;font-size:13px;background:#0f172a;min-height:100vh;color:#e2e8f0}
 input,select,textarea,button{font-family:inherit;font-size:12px}
 
 /* ════ COULEURS CATÉGORIES ════ */
@@ -158,7 +148,7 @@ input,select,textarea,button{font-family:inherit;font-size:12px}
 
 /* ════ LAYOUT ════ */
 .screen{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.nav{background:#ffffff;border-bottom:2px solid #dde8f8;padding:0 14px;display:flex;align-items:center;gap:7px;height:50px;flex-shrink:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#3b82f6 #e2e8f0;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+.nav{background:#020617;border-bottom:1px solid #1e293b;padding:0 14px;display:flex;align-items:center;gap:7px;height:50px;flex-shrink:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#3b82f6 #0f172a}
 .nav::-webkit-scrollbar{height:6px}
 .nav::-webkit-scrollbar-thumb{background:#3b82f6;border-radius:3px}
 .nav::-webkit-scrollbar-track{background:#0f172a}
@@ -179,22 +169,22 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .main{display:flex;flex:1;overflow:hidden}
 
 /* ════ SIDEBAR ════ */
-.sidebar{width:300px;background:#f8faff;border-right:1px solid #dde8f8;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;box-shadow:1px 0 8px rgba(0,0,0,.05)}
-.stabs{display:flex;border-bottom:2px solid #dde8f8;flex-shrink:0;background:#f0f6ff}
-.stab{flex:1;padding:9px 3px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;transition:.15s;text-transform:uppercase;letter-spacing:.3px}
+.sidebar{width:300px;background:#020617;border-right:1px solid #1e293b;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.stabs{display:flex;border-bottom:1px solid #1e293b;flex-shrink:0}
+.stab{flex:1;padding:9px 3px;text-align:center;font-size:10px;font-weight:600;cursor:pointer;color:#475569;border-bottom:2px solid transparent;transition:.15s;text-transform:uppercase;letter-spacing:.4px}
 .stab:hover{color:#94a3b8}
-.stab.on{color:#1d4ed8;border-bottom-color:#1d4ed8;background:#e8f0ff}
-.scnt{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:#bfd4f5 transparent;background:#f8faff}
+.stab.on{color:#3b82f6;border-bottom-color:#3b82f6}
+.scnt{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
 .ssec{display:none}.ssec.on{display:block}
 
 /* ════ FORMULAIRES SIDEBAR ════ */
 .fld{margin-bottom:8px}
-.fld label{font-size:10px;font-weight:700;color:#334155;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.fld label{font-size:10px;font-weight:600;color:#475569;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
 .fld label span{color:#22c55e;font-size:9px;text-transform:none;letter-spacing:0;font-weight:400}
-.fi{width:100%;background:#ffffff;border:1.5px solid #bfd4f5;color:#1e293b;padding:7px 10px;border-radius:7px;font-size:12px}
-.fi::placeholder{color:#94a3b8}
-.fi:focus{outline:none;border-color:#2563eb;background:#f0f6ff}
-.fi option{background:#fff;color:#1e293b;padding:4px}.fi option{background:#0f172a}
+.fi{width:100%;background:#0f172a;border:1px solid #1e293b;color:#e2e8f0;padding:6px 9px;border-radius:6px}
+.fi::placeholder{color:#334155}
+.fi:focus{outline:none;border-color:#3b82f6}
+.fi option{background:#0f172a}
 .fi textarea{resize:vertical}
 .frow2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .acw{position:relative}
@@ -274,32 +264,31 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 .grid{display:grid;background:#f8fafc;border-radius:8px;border:2px solid #1e293b;overflow:hidden;position:relative}
 
 /* EN-TÊTES CHAUFFEURS ECRAN */
-.gh{background:linear-gradient(180deg,#2d4a7a 0%,#253f6b 100%);color:#e8f4ff;border-bottom:2px solid #5b8dd9;border-right:1px solid #3a5a8a;padding:10px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;position:relative}
+.gh{background:#0d1424;color:#f1f5f9;border-bottom:2px solid #3b82f6;border-right:1.5px solid #1e293b;padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .gh:last-child{border-right:none}
-.gh:nth-child(even){background:linear-gradient(180deg,#263d6e 0%,#1e3260 100%)}
 .gh.th{background:#020617;color:#fff;font-size:10px;font-weight:600;border-right:2px solid #0f172a}
-.gh-name{font-size:13px;font-weight:900;color:#ffffff;line-height:1;letter-spacing:.4px;text-transform:uppercase}
-.gh-truck{font-size:10px;font-weight:700;color:#bfdbfe;line-height:1;background:rgba(191,219,254,.12);border:1px solid rgba(191,219,254,.25);border-radius:5px;padding:2px 7px}
+.gh-name{font-size:15px;font-weight:900;color:#111;line-height:1}
+.gh-truck{font-size:13px;font-weight:800;color:#1d4ed8;line-height:1}
 .gh-hrs{font-size:12px;font-weight:700;color:#059669;line-height:1}
 .gh-cnt{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;justify-content:center}
 .gh-cnt-pill{font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700}
 
 /* HEURES */
-.gtc{font-size:11px;font-weight:800;color:#2563eb;padding:0 8px;text-align:right;background:#e8f0fb;border-right:2px solid #bfd4f5;border-bottom:1px solid #dde8f8;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;letter-spacing:.2px}
+.gtc{font-size:11px;font-weight:700;color:#374151;padding:0 5px;text-align:right;background:#f1f5f9;border-right:2px solid #94a3b8;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}
 .gtc.half{font-size:9px;font-weight:400;color:#94a3b8;background:#f8fafc;border-bottom:0.5px solid #f1f5f9}
 .gtc.past{opacity:.45}
 
 /* CELLULES */
-.gcw{position:relative;border-right:1px solid #dce8f5;border-bottom:1px solid #e8f0f8;min-height:36px;background:#ffffff;transition:background .15s}
+.gcw{position:relative;border-right:1px solid rgba(219,112,147,0.2);border-bottom:1px solid rgba(219,112,147,0.08);min-height:36px;background:#fdf0f4;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
 .gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
 .gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
 .gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
 .gcw:last-child{border-right:none}
-.gcw.past-col{background:#f1f5f9;opacity:.75}
-.gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px;color:#1e293b}
-.gcell:hover{background:rgba(59,130,246,0.06)}
+.gcw.past-col{background:#f5e8ec}
+.gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
+.gcell:hover{background:rgba(219,112,147,0.15)}
 
 /* ════ PILLS COLORÉES PAR CATÉGORIE ════ */
 .pill{font-size:14px;font-weight:700;padding:6px 8px;margin-top:15px;border-radius:6px;line-height:1.35;word-break:break-word;position:relative;margin-bottom:2px;border-left:4px solid;transition:opacity .3s}
@@ -406,8 +395,8 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 
 /* ══ SIDEBAR REDESIGN ══ */
 .sidebar{display:flex;flex-direction:row!important;width:260px;min-width:260px}
-.sb-ico{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:9px;cursor:pointer;font-size:18px;color:#64748b;transition:.15s;margin:1px 6px}
-.sb-ico:hover{background:#dde8f8;color:#1d4ed8}
+.sb-ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:17px;color:#475569;transition:.15s;margin:1px 6px}
+.sb-ico:hover{background:#1e293b;color:#e2e8f0}
 .sb-ico.on{background:#1d4ed8;color:#fff;box-shadow:0 2px 8px rgba(29,78,216,.4)}
 .sb-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .ia-sug{padding:5px 8px;border-radius:6px;cursor:pointer;font-size:11px;color:#475569;transition:.1s;border:1px solid transparent}
@@ -633,13 +622,8 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <button onclick="sauverEtSynchroniser()" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer" title="Synchroniser avec le cloud">☁ Sync</button>
-    <button onclick="genererLienPartage()" style="padding:6px 14px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:800;cursor:pointer" title="Générer un lien de partage pour les collègues">📤 Partager</button>
-    <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#64748b;padding:0 4px">
-      <span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e;transition:all .3s"></span>
-      <span id="sync-txt">OK</span>
-    </span>
-    <button id="undo-btn" onclick="undo()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;opacity:.4;transition:opacity .2s" title="Annuler">↩</button>
+    <button onclick="sauverDansSupabase();setTimeout(chargerDepuisSupabase,1500)" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer">☁ Sync</button>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#64748b"><span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span><span id="sync-txt">OK</span></span>
   </div>
   <div class="nsp"></div>
 
@@ -651,7 +635,6 @@ input[type="time"]{
   <button onclick="ouvrirRechercheGlobale()" title="Recherche globale (Ctrl+F)" style="padding:7px 16px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:1px solid #7c3aed;border-radius:8px;color:#fff;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(124,58,237,.4)">🔍 <span>Recherche</span></button>
 
   <!-- Menu principal déroulant -->
-  <button onclick="seDeconnecter()" title="Se déconnecter" style="padding:6px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:7px;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:all .15s" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">🔒 Déco</button>
   <div style="position:fixed;top:8px;right:10px;z-index:9999" id="menu-principal-wrap">
     <button onclick="toggleMenuPrincipal()" style="padding:7px 14px;background:#1d4ed8;border:1px solid #1d4ed8;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;flex-shrink:0" id="btn-menu-principal">
       &#9776; Menu <span style="font-size:10px;opacity:.8">&#9660;</span>
@@ -883,8 +866,8 @@ input[type="time"]{
     <!-- ══ 1. ÉQUIPE ══ -->
     <div class="ssec" id="ss1">
       <div class="sb-title" style="color:#fbbf24">&#128101; Mon Equipe</div>
-      <div style="background:#fffbeb;border-radius:8px;padding:8px 10px;margin-bottom:10px;border-left:3px solid #f59e0b;font-size:11px;color:#92400e;line-height:1.5">
-        ⚠ Changement permanent sur toutes les dates.
+      <div style="background:#1e293b;border-radius:8px;padding:8px 10px;margin-bottom:10px;border-left:3px solid #f59e0b;font-size:11px;color:#94a3b8;line-height:1.5">
+        &#9888; Changement permanent sur toutes les dates.
       </div>
       <div id="drv-cards"></div>
       <button class="sbtn ok" onclick="saveCfg()">&#10003; Enregistrer l'equipe</button>
@@ -1048,7 +1031,6 @@ input[type="time"]{
 <div class="mbg" id="m-add">
   <div class="mbox">
     <h3 id="m-ttl">Ajouter une tâche</h3>
-    <div id="m-suggestions" style="display:none;background:#f8faff;border:1px solid #bfd4f5;border-radius:8px;padding:10px;margin-bottom:10px"></div>
     <label style="color:#60a5fa;font-size:12px;font-weight:800">🏛 Client / Collectivité</label>
     <div class="macw"><input type="text" id="m-client" placeholder="Tapez pour chercher ou choisir..." autocomplete="off" oninput="mAc('client')"><div class="macl" id="mac-client"></div></div>
     <label>Catégorie</label>
@@ -1168,53 +1150,6 @@ var ST={
 var MC={};
 var sTab=0,lTab=0;
 
-
-function chargerEtAfficherSupabase(){
-  /* Étape 1 : charger depuis Supabase */
-  /* Étape 2 : afficher le Hub avec les bonnes données */
-  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=1&select=date,donnees,updated_at', {
-    method: 'GET',
-    mode: 'cors',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
-  })
-  .then(function(r){ return r.ok ? r.json() : []; })
-  .then(function(rows){
-    if(rows && rows.length && rows[0].donnees && (rows[0].donnees.drivers || rows[0].donnees.tasks)){
-      var data = rows[0].donnees;
-      if(data.drivers&&data.drivers.length) ST.drivers    = data.drivers;
-      if(data.tasks)       ST.tasks       = data.tasks;
-      if(data.statuts)     ST.statuts     = data.statuts;
-      if(data.notes)       ST.notes       = data.notes;
-      if(data.library)     ST.library     = data.library;
-      if(data.tournees)    ST.tournees    = data.tournees;
-      if(data.conducteurs) ST.conducteurs = data.conducteurs;
-      if(data.memos)       ST.memos       = data.memos;
-      if(data.km)          ST.km          = data.km;
-      try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
-      var upd = rows[0].updated_at
-        ? new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-        : '';
-      setSupaLed(true, 'Sync '+upd);
-    } else {
-      setSupaLed(true, 'Local');
-    }
-  })
-  .catch(function(e){ 
-    console.warn('chargerEtAfficherSupabase catch:', e.message);
-    setSupaLed(false,'Erreur'); 
-  })
-  .finally(function(){
-    /* Afficher le hub - il appellera render() lui-même au bon moment */
-    if(typeof afficherHub==='function') afficherHub();
-    if(typeof creerBoutonAccueilFlottant==='function') creerBoutonAccueilFlottant();
-  });
-}
-
 function load(){
   var DEFAULT={"drivers":[{"name":"OTMANE","truck":"JUMPY","start":"06:00","end":"14:00"},{"name":"NICOLAS","truck":"VIVARO LOCATION","start":"06:00","end":"14:00"},{"name":"MICKAEL","truck":"VIVARO 1","start":"06:00","end":"15:00"},{"name":"KARIM","truck":"VIVARO 2","start":"06:00","end":"14:00"},{"name":"MAITRE D'HOTEL","truck":"CAMION 5","start":"06:00","end":"14:00"}],"tasks":{"2026-07-12|1|10:00":[{"task":"SALIMA","client":"","category":"traiteur","truck":"VIVARO LOCATION","end":"11:00","bold":true,"priority":"high","ts":1780864626298}],"2026-07-04|0|11:00":[{"task":"","client":"CE LIENT","category":"","truck":"JUMPY","end":"","bold":false,"priority":"normal","confirmed":false,"ts":1781019100075}],"2026-06-11|0|08:00":[{"task":"","client":"LES POMPIERS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109604929}],"2026-06-11|0|08:30":[{"task":"","client":"LES COMPAGNONS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109620017}],"2026-06-11|0|09:00":[{"task":"","client":"ESAT PHOCEEN","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109628259}],"2026-06-11|0|11:00":[{"task":"","client":"SLEEPING","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194004182}],"2026-06-11|0|12:00":[{"task":"","client":"LES POMPIERS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194094783}],"2026-06-11|0|10:30":[{"task":"","client":"ESAT PHOCEEN","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194248463}],"2026-06-11|0|15:30":[{"task":"","client":"VILLAGE CLUB SOLEIL","category":"traiteur","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194326125}],"2026-06-11|0|17:00":[{"task":"PREPARER COMMANDE","client":"","category":"task","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194381218}],"2026-06-11|0|07:00":[{"task":"PARTIR EN ALGERIE","client":"","category":"","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781197917887}]},"notes":{},"km":{},"library":{"traiteur":["VILLAGE CLUB SOLEIL","CG 13"],"collectivite":["LES POMPIERS","LES COMPAGNONS","BAGAGERIE","LA SELONNE","LA MINOTERIE","FONTAINIEU","ESAT PHOCEEN","ESAT ST JEAN","SIMONNE","SLEEPING","LES ARGONAUTES","VILLA NIOZELLE","UNITE ABCD"],"task":["CHERCHER MATERIELS","PREPARER COMMANDE","PETIT DEJ ECOLE","ORGANISER ESPACE","LOGISTIQUE NETTOYAGE","CHARGER CAMION","DECHARGER CAMION","BAGAGERIE","CONTROLE TECHNIQUE","PLEIN CARBURANT","NETTOYAGE VEHICULE","REPARATION GARAGE"],"truck":["VIVARO 1","VIVARO 2","JUMPY","IVECO","IVECO LOCATION","VIVARO LOCATION"]},"cur":"2026-06-11","z":100,"gb":false,"fiches":{},"tournees":[{"name":"Centre Aere ORANGE","couleur":"orange","heure":"08:00","cat":"centre","clients":["LES POMPIERS","LES ARGONAUTES","CAARUD LE SLEEP'IN","CHRS CHEZ SIMONE","CHRS LA MINOTERIE","CHRS LA SELONNE","COMPAGNONS","ESAT ST JEAN","LHSS FONTAINIEU","PHOCEEN UNITE","VILLA NIOZELLES","AGA FLAMANTS 1","AGA FLAMANTS 2"],"heure_fin":"11:30"},{"name":"Centre Aere VERT","couleur":"vert","heure":"08:00","cat":"centre","clients":["AGA FLAMANTS ADO","AGORA","AIR BEL","BERNARD DUBOIS 1","BERNARD DUBOIS 2","BONNEVEINE ADO","BONNEVEINE MAT","BONNEVEINE MPT MAT","BONNEVEINE PRIM 1","BONNEVEINE PRIM 2","BONNEVEINE PRIM 3","CASTELLANE","CASTELLANE ADO"],"heure_fin":"11:30"},{"name":"Centre Aere BLEU","couleur":"bleu","heure":"08:00","cat":"centre","clients":["CCO SIEGE","CHATEAU GOMBERT 1","CHATEAU GOMBERT 2","CHATEAU GOMBERT ADO","CHAVE COPELLO PRIM","COIN JOLI","COURS JULIEN MAT","FRAIS VALLON","LA BRICARDE 1","LA BRICARDE 2","LA LOUBIERE MAT","LA LOUBIERE PRIM","LA SAVINE"],"heure_fin":"11:30"},{"name":"Centre Aere ROSE","couleur":"rose","heure":"08:00","cat":"centre","clients":["LE GRAND CANET","LE ROUET MAT","LE ROUET PRIM","LES 3 LUCS ADO","LES 3 LUCS","LES BOURRELY","LES LIERRES 1","LES LIERRES 2","LES MUSARDISES","MER ET COLLINE","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","SAINTE MARTHE PRIM"],"heure_fin":"11:30"},{"name":"Centre Aere VIOLET","couleur":"violet","heure":"08:00","cat":"centre","clients":["ST GINIEZ ADO","ST GINIEZ MAT","ST GINIEZ PRIM","ST JEROME","ST THYS","STE ELISABETH MAT","STE ELISABETH PRIM","TOROS"],"heure_fin":"11:30"}],"memos":[],"statuts":{},"archives":[],"infractions":[],"progressions":{},"evaluations":{},"objectifs":{},"vehicules":[],"notifications":[],"agenda":[],"transmissions":[]};
   try{
@@ -1241,8 +1176,6 @@ function load(){
       if(d.transmissions)ST.transmissions=d.transmissions;
       if(d.fiches)ST.fiches=d.fiches;
     } else {
-      /* ── PAS DE DONNÉES LOCALES → forcer chargement Supabase ── */
-      window._demanderSyncSupabase = true;
       ST.drivers=DEFAULT.drivers;
       ST.tasks=DEFAULT.tasks||{};
       ST.notes=DEFAULT.notes||{};
@@ -1267,23 +1200,9 @@ function load(){
     ST.drivers=DEFAULT.drivers;
     ST.library=DEFAULT.library;
     ST.tournees=DEFAULT.tournees||[];
-    window._demanderSyncSupabase = true;
   }
-  /* TOUJOURS charger depuis Supabase au démarrage */
-  setTimeout(function(){
-    if(typeof chargerDepuisSupabase==='function'){
-      chargerDepuisSupabase();
-    }
-  }, 1000);
 }
-function save(){
-  try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
-  /* Sauvegarder dans Supabase 1s après le dernier save() */
-  clearTimeout(window._saveToSupaTimer);
-  window._saveToSupaTimer = setTimeout(function(){
-    if(typeof sauverDansSupabase==='function') sauverDansSupabase();
-  }, 1000);
-}
+function save(){try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}clearTimeout(window._sv);window._sv=setTimeout(sauverDansSupabase,1500);}
 
 /* EXPORT EXCEL */
 function exportExcel(){var d=ST.cur;var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(mkDay(d));ws['!cols']=[{wch:7},{wch:28},{wch:28},{wch:28},{wch:28},{wch:28}];ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];XLSX.utils.book_append_sheet(wb,ws,'Planning '+fds(d));var km=mkKm(d);if(km)XLSX.utils.book_append_sheet(wb,km,'Km');var n=ST.notes[d]||'';if(n)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[fmtLong(d)],[n]]),'Note');XLSX.writeFile(wb,'Planning_'+d+'.xlsx');showT('✓ Excel exporté','#217346');}
@@ -1451,7 +1370,7 @@ function rGrid(){
           +'<button class="xb" title="Copier vers tous" style="background:rgba(34,197,94,.18);color:#22c55e;margin-right:2px" onclick="event.stopPropagation();copierMissionVousTous(\''+k+'\','+ti+')">&#8853;</button><button class="xb" onclick="event.stopPropagation();delT(\''+k+'\','+ti+')">\u2715</button></div>';
       }).join('');
       html+='<div class="gcw'+(done?' past-col':'')+'"><div class="gcell" tabindex="0" data-key="'+gk(d,i,hour)+'" onclick="openAdd(\''+d+'\','+i+',\''+hour+'\')">';
-      html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="position:relative;text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px 6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'<button onclick="event.stopPropagation();supprimerConducteurDesigne(\''+dr.truck+'\',\''+d+'\')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.3);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:11px;line-height:1;padding:1px 4px;font-weight:900" title="Supprimer">✕</button></div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
+      html+='<div style="position:absolute;top:2px;left:3px;font-size:11px;font-weight:900;color:#94a3b8;border-radius:3px;padding:1px 4px;line-height:1;pointer-events:none;z-index:2">'+hour+'</div>'+(hour==='06:30'?(function(){var cd=getConducteurDesigne(dr.truck,d);return cd?'<div style="text-align:center;font-size:11px;font-weight:900;color:#fff;background:#d97706;border-radius:6px;padding:6px 4px;margin:2px 0;text-transform:uppercase;line-height:1.3">🔑 CONDUCTEUR<br>DÉSIGNÉ<br>'+cd.driverName+'</div>':'';})():'')+pills+'<div class="padd">+ ajouter</div></div></div>';
     });
   });
   g.innerHTML=html;
@@ -1541,66 +1460,8 @@ function openAdd(date,di,hour){
   document.querySelectorAll('.macl').forEach(function(l){l.classList.remove('on');});
   document.getElementById('m-add').classList.add('on');
   setTimeout(function(){document.getElementById('m-task').focus();},80);
-  /* Charger les suggestions de missions pour cet horaire/chauffeur */
-  chargerSuggestionsMissions(date,di,hour);
-}
-
-function chargerSuggestionsMissions(date,di,hour){
-  var dr = ST.drivers[di];
-  if(!dr) return;
-  /* Chercher les missions similaires dans l'historique ST.tasks */
-  var suggestions = [];
-  var seen = {};
-  Object.keys(ST.tasks||{}).forEach(function(k){
-    var parts = k.split('|');
-    if(parts[1]===String(di)){
-      (ST.tasks[k]||[]).forEach(function(t){
-        var key = (t.client||'')+'|'+(t.task||'');
-        if(key !== '|' && !seen[key]){
-          seen[key] = true;
-          suggestions.push(t);
-        }
-      });
-    }
-  });
-  /* Aussi chercher dans la bibliothèque */
-  (ST.library||[]).forEach(function(entry){
-    var key = (entry.client||'')+'|'+(entry.task||'');
-    if(!seen[key]){
-      seen[key] = true;
-      suggestions.push(entry);
-    }
-  });
-  /* Afficher les 8 premières suggestions */
-  var box = document.getElementById('m-suggestions');
-  if(!box) return;
-  suggestions = suggestions.slice(0,8);
-  if(!suggestions.length){box.style.display='none';return;}
-  box.style.display='block';
-  box.innerHTML='<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px;letter-spacing:.3px">💡 Cliquez pour réutiliser une mission :</div>'
-    +suggestions.map(function(t){
-      var tJson=JSON.stringify(t).replace(/'/g,"\\'");
-      return '<button onclick="appliquerSuggestion(JSON.parse(decodeURIComponent(this.dataset.t)))" data-t="'+encodeURIComponent(JSON.stringify(t))+'" style="display:block;width:100%;text-align:left;background:#f0f6ff;border:1px solid #bfd4f5;border-radius:6px;padding:6px 9px;margin-bottom:4px;cursor:pointer;font-size:11px;color:#1e3a6e" >'
-        +(t.client?'<strong>'+t.client+'</strong>':'')+( t.task?' — '+t.task:'')
-        +(t.cat?' <span style="color:#64748b;font-size:10px">['+t.cat+']</span>':'')
-        +'</button>';
-    }).join('');
-}
-
-function appliquerSuggestion(t){if(typeof t==='string'){try{t=JSON.parse(t);}catch(e){return;}}
-  if(t.client) document.getElementById('m-client').value = t.client;
-  if(t.task) document.getElementById('m-task').value = t.task;
-  if(t.cat) document.getElementById('m-cat').value = t.cat;
-  if(t.truck) document.getElementById('m-truck').value = t.truck;
-  if(t.adresse) document.getElementById('m-adresse').value = t.adresse;
-  if(t.contact) document.getElementById('m-contact').value = t.contact;
-  if(t.convives) document.getElementById('m-convives').value = t.convives;
-  if(t.note) document.getElementById('m-note').value = t.note;
-  if(t.end) document.getElementById('m-end').value = t.end;
-  showT('✅ Mission copiée — modifiez si nécessaire puis Enregistrer','#22c55e');
 }
 function saveTask(){
-  pushUndo('Mission ajoutée');
   var task=(document.getElementById('m-task').value||'').trim().toUpperCase();
   var client=(document.getElementById('m-client').value||'').trim().toUpperCase();
   if(!task&&!client){showT('⚠ Tâche ou client requis','#dc2626');return;}
@@ -1612,10 +1473,8 @@ function saveTask(){
   ST.tasks[k].push({task:task,client:client,category:cat,truck:(document.getElementById('m-truck').value||'').trim(),end:document.getElementById('m-end').value,bold:document.getElementById('m-bold').checked,priority:document.getElementById('m-prio').value,adresse:(document.getElementById('m-adresse').value||'').trim(),contact:(document.getElementById('m-contact').value||'').trim(),convives:(document.getElementById('m-convives').value||'').trim(),note_liv:(document.getElementById('m-note').value||'').trim(),allergenes:allergArr,ts:Date.now()});
   if(client&&cat&&cat!=='truck'&&!(ST.library[cat]||[]).includes(client)){if(!ST.library[cat])ST.library[cat]=[];ST.library[cat].push(client);}
   closeMod('m-add');save();rGrid();rStats();rCounters();showT('✓ Tâche enregistrée');
-  setTimeout(function(){sauverDansSupabase();},200);
 }
 function delT(k,ti){
-  pushUndo('Mission supprimée');
   if(!ST.tasks[k])return;
   var t=ST.tasks[k][ti];
   var nomClient=t&&(t.client||t.task)||'?';
@@ -3608,7 +3467,6 @@ function appliquerStatut(type){
   }
 
   save();
-  setTimeout(function(){sauverDansSupabase();},300);
   appliquerStatutsVisuels();
   rStatutHistorique(di);
 }
@@ -3667,10 +3525,9 @@ function supprimerStatut(key){
   var di = ST.statuts[key].di;
   delete ST.statuts[key];
   save();
-  setTimeout(function(){sauverDansSupabase();},300);
   appliquerStatutsVisuels();
   rStatutHistorique(di);
-  showT('Statut supprimé','#64748b');
+  showT('Statut supprime','#64748b');
 }
 
 /* Initialiser ST.statuts au chargement */
@@ -4047,7 +3904,6 @@ function srAppliquer(){
     ST.statuts[key] = {type:_srType, date:_srDate, di:_srDi, ts:Date.now()};
   }
   save();
-  setTimeout(function(){sauverDansSupabase();},300);
 
   /* Appliquer visuellement si c'est le jour affiché */
   if(_srDate === ST.cur) appliquerStatutsVisuels();
@@ -12121,222 +11977,77 @@ window.addEventListener('load',function(){
 var SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
 var SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
 
-var _supaOK = null;
-
-function setSupaLed(ok, msg){
-  _supaOK = ok;
-  var led = document.getElementById('sync-led');
-  var txt = document.getElementById('sync-txt');
-  if(led){ led.style.background = ok ? '#22c55e' : '#ef4444'; led.style.boxShadow = '0 0 6px '+(ok?'#22c55e':'#ef4444'); }
-  if(txt){ txt.textContent = msg || (ok ? 'OK' : 'Erreur'); }
-}
-
 function supaFetch(path, options){
-  var baseOpts = {
-    mode: 'cors',
+  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({
     headers:{
       'apikey': SUPA_KEY,
       'Authorization': 'Bearer '+SUPA_KEY,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     }
-  };
-  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign(baseOpts, options||{}))
-  .then(function(r){
-    if(!r.ok){
-      return r.text().then(function(body){
-        var err = 'Supabase '+r.status;
-        try{ var j=JSON.parse(body); err=j.message||j.hint||err; }catch(e){}
-        setSupaLed(false, 'Erreur '+r.status);
-        console.warn('supaFetch erreur:', r.status, path, body.slice(0,200));
-        return null; /* retourner null au lieu de planter */
-      });
-    }
-    var ct = r.headers.get('content-type')||'';
-    if(!ct.includes('json')) return [];
-    return r.json().then(function(data){
-      setSupaLed(true, 'OK');
-      return data;
-    });
-  })
-  .catch(function(e){
-    setSupaLed(false, 'Hors ligne');
-    console.warn('supaFetch réseau:', path, e.message);
-    return null; /* réseau indisponible — ne pas planter */
-  });
+  }, options||{})).then(function(r){return r.json();});
 }
 
 /* Sauvegarder le planning dans Supabase */
-
-function sauverEtSynchroniser(){
-  /* D'abord sauvegarder les données locales dans Supabase */
-  sauverDansSupabase();
-  showT('Sauvegarde en cours...','#f59e0b');
-  /* Puis recharger depuis Supabase après 2 secondes */
-  setTimeout(function(){
-    chargerDepuisSupabase();
-  }, 2000);
-}
-
 function sauverDansSupabase(){
-  if(typeof ST==='undefined'||!ST.drivers) return;
-
-  var donnees = {
-    drivers:     ST.drivers    || [],
-    tasks:       ST.tasks      || {},
-    statuts:     ST.statuts    || {},
-    notes:       ST.notes      || {},
-    cur:         ST.cur,
-    library:     ST.library    || {traiteur:[],collectivite:[],task:[]},
-    tournees:    ST.tournees   || [],
-    conducteurs: ST.conducteurs|| {},
-    memos:       ST.memos      || [],
-    km:          ST.km         || {}
-  };
-
-  var today = new Date().toISOString().slice(0,10);
-
-  /* UPSERT direct — une seule requête, pas de GET préalable */
-  /* Prefer: resolution=merge-duplicates = INSERT ou UPDATE si date existe déjà */
-  fetch(SUPA_URL+'/rest/v1/planning', {
-    method: 'POST',
-    mode: 'cors',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=minimal'
-    },
-    body: JSON.stringify({
-      date: today,
-      donnees: donnees,
-      updated_at: new Date().toISOString()
-    })
-  })
-  .then(function(r){
-    if(r.ok){
-      setSupaLed(true, 'Sauvé '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
-    } else {
-      r.text().then(function(t){
-        console.warn('Supabase save error:', r.status, t.slice(0,100));
-        setSupaLed(false, 'Erreur '+r.status);
-      });
-    }
-  })
-  .catch(function(e){
-    console.warn('Supabase save réseau:', e.message);
-    setSupaLed(false, 'Hors ligne');
-  });
+  if(typeof ST==='undefined'||!ST.drivers)return;
+  var d={drivers:ST.drivers||[],tasks:ST.tasks||{},statuts:ST.statuts||{},notes:ST.notes||{},cur:ST.cur,library:ST.library||{},tournees:ST.tournees||[],conducteurs:ST.conducteurs||{},memos:ST.memos||[],km:ST.km||{}};
+  fetch(SUPA_URL+'/rest/v1/planning',{method:'POST',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({date:new Date().toISOString().slice(0,10),donnees:d,updated_at:new Date().toISOString()})})
+  .then(function(r){var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');if(r.ok){if(l)l.style.background='#22c55e';if(t)t.textContent='Sauvé';}else{if(l)l.style.background='#ef4444';if(t)t.textContent='Erreur '+ r.status;}})
+  .catch(function(){var l=document.getElementById('sync-led');if(l)l.style.background='#f59e0b';});
 }
 
 
+/* Charger le planning depuis Supabase */
 function chargerDepuisSupabase(){
-  setSupaLed(null, '...');
-
-  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=1&select=date,donnees,updated_at', {
-    method: 'GET',
-    mode: 'cors',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
-  })
-  .then(function(r){
-    if(!r.ok){
-      r.text().then(function(t){
-        setSupaLed(false,'Erreur '+r.status);
-        showT('❌ Sync erreur '+r.status+' — exécutez FIX_PLANNING_RLS.sql dans Supabase','#dc2626');
-        console.warn('charger error:', r.status, t.slice(0,150));
-      });
-      return;
-    }
-    return r.json();
-  })
+  var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
+  if(t)t.textContent='...';
+  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=1&select=date,donnees,updated_at',{method:'GET',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Accept':'application/json'}})
+  .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
-    if(!rows) return;
-    if(!rows.length){
-      showT('☁ Cloud vide — aucune donnée à charger','#f59e0b');
-      setSupaLed(true,'Vide');
-      return;
-    }
-
-    /* Prendre la ligne la plus récente avec des données */
-    var best = null;
-    for(var i=0;i<rows.length;i++){
-      if(rows[i].donnees && (rows[i].donnees.drivers || rows[i].donnees.tasks)){
-        best=rows[i];break;
-      }
-    }
-    /* Si aucune avec drivers, prendre la première quand même */
-    if(!best && rows.length) best = rows[0];
-    if(!best || !best.donnees){
-      showT('☁ Cloud vide — aucune donnée à charger','#f59e0b');
-      return;
-    }
-
-    var data = best.donnees;
-
-    /* Appliquer toutes les données */
-    if(data.drivers&&data.drivers.length) ST.drivers    = data.drivers;
-    if(data.tasks)       ST.tasks       = data.tasks;
-    if(data.statuts)     ST.statuts     = data.statuts;
-    if(data.notes)       ST.notes       = data.notes;
-    if(data.library)     ST.library     = data.library;
-    if(data.tournees)    ST.tournees    = data.tournees;
-    if(data.conducteurs) ST.conducteurs = data.conducteurs;
-    if(data.memos)       ST.memos       = data.memos;
-    if(data.km)          ST.km          = data.km;
-
-    /* Sauvegarder localement */
+    if(!rows||!rows.length){showT('Cloud vide','#f59e0b');if(t)t.textContent='Vide';return;}
+    var data=rows[0].donnees;
+    if(!data){showT('Données invalides','#f59e0b');return;}
+    if(data.drivers&&data.drivers.length)ST.drivers=data.drivers;
+    if(data.tasks)ST.tasks=data.tasks;
+    if(data.statuts)ST.statuts=data.statuts;
+    if(data.notes)ST.notes=data.notes;
+    if(data.library)ST.library=data.library;
+    if(data.tournees)ST.tournees=data.tournees;
+    if(data.conducteurs)ST.conducteurs=data.conducteurs;
+    if(data.memos)ST.memos=data.memos;
+    if(data.km)ST.km=data.km;
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
-
-    /* Rafraîchir l'affichage */
     if(typeof render==='function')render();
     if(typeof rStats==='function')rStats();
-    if(typeof rCounters==='function')rCounters();
-
-    var upd = best.updated_at
-      ? new Date(best.updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-      : '?';
-    setSupaLed(true,'Sync '+upd);
-    showT('✅ Planning à jour — dernière MAJ : '+upd,'#16a34a');
+    var upd=rows[0].updated_at?new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'?';
+    if(l)l.style.background='#22c55e';if(t)t.textContent='Sync '+upd;
+    showT('✅ Planning à jour — '+upd,'#16a34a');
   })
-  .catch(function(e){
-    setSupaLed(false,'Erreur');
-    showT('❌ Erreur sync — réessayez dans quelques secondes','#f59e0b');
-  });
-}
-
-function _chargerDepuisSupabaseLegacy(date){
-  date = date || ST.cur;
-  supaFetch('planning?date=eq.'+date+'&select=donnees&order=updated_at.desc&limit=1')
-    .then(function(rows){
-      if(!rows||!rows.length){
-        showT('Aucun planning trouvé dans le cloud pour cette date','#f59e0b');
-        return;
-      }
-      var data = rows[0].donnees;
-      if(data.drivers&&data.drivers.length) ST.drivers=data.drivers;
-      if(data.tasks) ST.tasks=data.tasks;
-      if(data.statuts) ST.statuts=data.statuts;
-      if(data.notes) ST.notes=data.notes;
-      if(data.library) ST.library=data.library;
-      if(data.tournees) ST.tournees=data.tournees;
-      if(data.cur) ST.cur=data.cur;
-      if(typeof save==='function') save();
-      if(typeof render==='function') render();
-      showT('Planning chargé depuis le cloud Supabase','#16a34a');
-    })
-    .catch(function(e){console.log('Erreur chargement:', e);});
+  .catch(function(){if(l)l.style.background='#ef4444';if(t)t.textContent='Erreur';showT('❌ Erreur sync','#dc2626');});
 }
 
 
+/* Auto-sync toutes les 60 secondes */
+setInterval(function(){
+  if(typeof ST!=='undefined'&&ST.cur){
+    sauverDansSupabase();
+  }
+},60000);
 
 /* Indicateur auto-sync dans la barre */
 window.addEventListener('load',function(){
-  /* interval cloud supprimé */
+  setTimeout(function(){
+    var btn=document.getElementById('btn-cloud');
+    if(btn){
+      setInterval(function(){
+        btn.style.background='#15803d';
+        btn.textContent='Cloud...';
+        sauverDansSupabase();
+        setTimeout(function(){btn.style.background='#16a34a';btn.textContent='Cloud';},2000);
+      },60000);
+    }
+  },3000);
 });
 
 /* Ajouter dans le menu */
@@ -12459,17 +12170,34 @@ window.addEventListener('load',function(){
 
 <script>
 
-/* ══ RECHARGEMENT AUTOMATIQUE DEPUIS LE CLOUD TOUTES LES 30S ══ */
+/* ══ RECHARGEMENT AUTOMATIQUE DEPUIS LE CLOUD TOUTES LES 20S ══ */
+var _derniereMajCloud = '';
 window.addEventListener('load',function(){
   setTimeout(function(){
     setInterval(function(){
+      /* Ne pas recharger si l'utilisateur est en train de saisir */
       var active = document.activeElement;
-      if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+      if(active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT')) return;
+      /* Ne pas recharger si un modal est ouvert */
       if(document.querySelector('.mbg.on')) return;
-      /* Utiliser chargerDepuisSupabase qui est la version propre */
-      chargerDepuisSupabase();
-    }, 30000);
-  }, 10000);
+      /* Ne pas recharger si une modification locale vient d'avoir lieu (laisser le temps a la synchro de partir) */
+      if(window._derniereSauvegardeLocale && (Date.now()-window._derniereSauvegardeLocale)<12000) return;
+      if(document.getElementById('m-presentation')||document.getElementById('m-cockpit-dir')||document.getElementById('m-cockpit-ins')||document.getElementById('m-centre-op')||document.getElementById('m-tv')) return;
+
+      /* Vérifier si une mise à jour existe dans Supabase */
+      supaFetch('planning?date=eq.'+ST.cur+'&select=updated_at&order=updated_at.desc&limit=1')
+        .then(function(rows){
+          if(rows&&rows.length){
+            var maj = rows[0].updated_at;
+            if(_derniereMajCloud && maj!==_derniereMajCloud){
+              chargerDepuisSupabase(ST.cur);
+            }
+            _derniereMajCloud = maj;
+          }
+        })
+        .catch(function(){});
+    }, 20000);
+  }, 5000);
 });
 
 </script>
@@ -20489,12 +20217,7 @@ window.addEventListener('error', function(e){
   window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
 
 
-window.addEventListener('unhandledrejection', function(e){
-  var msg = 'Promesse: '+(e.reason&&e.reason.message?e.reason.message:String(e.reason));
-  if(window._erreursJS) window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
-  /* Silencieux — supaFetch gère ses propres erreurs */
-  e.preventDefault();
-});
+window.addEventListener('unhandledrejection',function(e){e.preventDefault();});
   if(window._erreursJS.length>30) window._erreursJS.shift();
   if(typeof showT==='function'){
     showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
@@ -20593,7 +20316,7 @@ function chargerStatutsMissions(){
       window._preuvesLivraison=data.preuves||{};
       if(typeof rGrid==='function') rGrid();
     })
-    .catch(function(e){/* statuts Google Script indisponible - non critique */});
+    .catch(function(e){console.log('Erreur chargement statuts:',e);});
 }
 
 /* Rafraîchir toutes les 60 secondes */
@@ -22541,27 +22264,6 @@ document.addEventListener('keydown', function(e){
 });
 
 /* ══ CONDUCTEUR DESIGNE — responsabilité légale en cas d'infraction ══ */
-function supprimerConducteurDesigne(truck,date){
-  if(!ST.conducteurs)return;
-  var key=date+'_'+truck;
-  /* Sauvegarder pour undo */
-  window._lastDeletedCD={key:key,val:ST.conducteurs[key]};
-  delete ST.conducteurs[key];
-  save();render();
-  showT('🔑 Conducteur désigné supprimé — <a onclick="undoDeleteCD()" style="color:#fbbf24;cursor:pointer;text-decoration:underline">Annuler</a>','#d97706');
-  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
-}
-
-function undoDeleteCD(){
-  if(!window._lastDeletedCD)return;
-  if(!ST.conducteurs)ST.conducteurs={};
-  ST.conducteurs[window._lastDeletedCD.key]=window._lastDeletedCD.val;
-  window._lastDeletedCD=null;
-  save();render();
-  showT('🔑 Conducteur désigné restauré ✅','#22c55e');
-  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
-}
-
 function setConducteurDesigne(di){
   var dr=ST.drivers[di];
   var d=ST.cur;
@@ -24278,7 +23980,7 @@ function afficherHub(){
   html+='<div class="hub-title">La Table de Cana</div>';
   html+='<div class="hub-sub">Centre de pilotage logistique</div>';
   html+='<div class="hub-service">'+srv.icone+' '+(srv.prenom?srv.prenom+' &mdash; ':'')+srv.nom+'</div>';
-  html+='<button onclick="seDeconnecter()" style="position:absolute;top:16px;right:16px;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:7px 14px;color:#dc2626;font-size:12px;font-weight:700;color:#94a3b8;cursor:pointer;z-index:10" title="Se déconnecter">🔒 Déconnexion</button>';
+  html+='<button onclick="seDeconnecter()" style="position:absolute;top:16px;right:16px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;color:#94a3b8;cursor:pointer;z-index:10" title="Se déconnecter">🔒 Déconnexion</button>';
 
   hub.innerHTML=html;
   document.body.appendChild(hub);
@@ -24877,10 +24579,7 @@ function majBadgeValidation(){
 }
 
 /* 4. SAUVEGARDER SUR TOUTES LES DATES FUTURES — correction bug planning vierge */
-function sauverToutesLesDates(){
-  /* Remplacé par sauverDansSupabase (UPSERT simple et fiable) */
-  if(typeof sauverDansSupabase==='function') sauverDansSupabase();
-}
+function sauverToutesLesDates(){sauverDansSupabase();}
 
 /* CSS pour l'animation pulse */
 
@@ -24890,161 +24589,6 @@ function seDeconnecter(){
   sessionStorage.removeItem('planning_auth');
   location.reload();
 }
-
-/* ══ SYNC AUTO TOUTES LES 20 SECONDES ══ */
-(function(){
-  setInterval(function(){
-    var active = document.activeElement;
-    if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
-    if(document.querySelector('.mbg.on')) return;
-    if(window._derniereSauvegardeLocale&&(Date.now()-window._derniereSauvegardeLocale)<8000) return;
-    if(typeof chargerDepuisSupabase==='function') chargerDepuisSupabase();
-  }, 20000);
-})();
-
-/* ══ SYSTÈME UNDO — retour en arrière ══ */
-window._undoStack = [];
-window._undoMax = 20;
-
-function pushUndo(description){
-  /* Sauvegarder l'état complet avant modification */
-  window._undoStack.push({
-    desc: description || 'Action',
-    state: JSON.stringify({
-      tasks: ST.tasks,
-      statuts: ST.statuts,
-      conducteurs: ST.conducteurs,
-      notes: ST.notes
-    }),
-    ts: Date.now()
-  });
-  if(window._undoStack.length > window._undoMax){
-    window._undoStack.shift();
-  }
-  updateUndoBtn();
-}
-
-function undo(){
-  if(!window._undoStack.length){
-    showT('Aucune action à annuler','#f59e0b');
-    return;
-  }
-  var last = window._undoStack.pop();
-  var prev = JSON.parse(last.state);
-  ST.tasks = prev.tasks || {};
-  ST.statuts = prev.statuts || {};
-  ST.conducteurs = prev.conducteurs || {};
-  ST.notes = prev.notes || {};
-  save();
-  if(typeof render==='function') render();
-  showT('↩ Annulé : '+last.desc,'#3b82f6');
-  setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},1000);
-  updateUndoBtn();
-}
-
-function updateUndoBtn(){
-  var btn = document.getElementById('undo-btn');
-  if(btn){
-    btn.style.opacity = window._undoStack.length ? '1' : '.4';
-    btn.title = window._undoStack.length 
-      ? 'Annuler : '+(window._undoStack[window._undoStack.length-1]||{}).desc 
-      : 'Rien à annuler';
-  }
-}
-</script>
-<script>
-/* ══════════════════════════════════════════════════
-   PARTAGE PAR URL — FONCTIONNE PARTOUT SANS SERVEUR
-══════════════════════════════════════════════════ */
-
-/* Au démarrage : si l'URL contient des données, les charger */
-(function(){
-  try{
-    var hash = window.location.hash;
-    if(hash && hash.startsWith('#PLANNING=')){
-      var encoded = hash.slice('#PLANNING='.length);
-      /* Décoder les données */
-      var compressed = atob(encoded);
-      var bytes = new Uint8Array(compressed.split('').map(function(c){return c.charCodeAt(0);}));
-      /* Décompresser avec pako si disponible, sinon JSON direct */
-      var jsonStr = '';
-      try{
-        if(window.pako) jsonStr = window.pako.inflate(bytes, {to:'string'});
-      }catch(e){}
-      if(!jsonStr){
-        /* Essayer JSON direct (sans compression) */
-        jsonStr = atob(encoded);
-      }
-      var data = JSON.parse(jsonStr);
-      /* Appliquer les données */
-      if(data && data.drivers){
-        window._dataFromURL = data;
-        /* Nettoyer l'URL sans recharger */
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    }
-  }catch(e){ /* URL normale, pas de données */ }
-})();
-
-/* Fonction pour générer le lien de partage */
-function genererLienPartage(){
-  try{
-    var data = {
-      drivers:     ST.drivers    || [],
-      tasks:       ST.tasks      || {},
-      statuts:     ST.statuts    || {},
-      notes:       ST.notes      || {},
-      cur:         ST.cur,
-      library:     ST.library    || {},
-      tournees:    ST.tournees   || [],
-      conducteurs: ST.conducteurs|| {},
-      memos:       ST.memos      || [],
-      km:          ST.km         || {},
-      _partage:    new Date().toLocaleString('fr-FR')
-    };
-    
-    var json = JSON.stringify(data);
-    var encoded = btoa(json);
-    var url = window.location.href.split('#')[0] + '#PLANNING=' + encoded;
-    
-    /* Copier dans le presse-papier */
-    if(navigator.clipboard){
-      navigator.clipboard.writeText(url).then(function(){
-        showT('✅ Lien copié ! Colle-le dans un mail ou un chat pour partager','#16a34a');
-      });
-    } else {
-      /* Fallback : prompt */
-      prompt('Copie ce lien et envoie-le à tes collègues :', url);
-    }
-    
-    /* Aussi sauvegarder dans Supabase si disponible */
-    if(typeof sauverDansSupabase==='function'){
-      try{ sauverDansSupabase(); }catch(e){}
-    }
-    
-  }catch(e){
-    showT('Erreur génération lien','#dc2626');
-  }
-}
-
-/* Appliquer les données URL si présentes, après le chargement */
-window.addEventListener('load', function(){
-  if(window._dataFromURL){
-    var data = window._dataFromURL;
-    if(data.drivers&&data.drivers.length) ST.drivers    = data.drivers;
-    if(data.tasks)       ST.tasks       = data.tasks;
-    if(data.statuts)     ST.statuts     = data.statuts;
-    if(data.notes)       ST.notes       = data.notes;
-    if(data.library)     ST.library     = data.library;
-    if(data.tournees)    ST.tournees    = data.tournees;
-    if(data.conducteurs) ST.conducteurs = data.conducteurs;
-    if(data.memos)       ST.memos       = data.memos;
-    if(data.km)          ST.km          = data.km;
-    try{localStorage.setItem('plprov2', JSON.stringify(ST));}catch(e){}
-    if(typeof render==='function') setTimeout(render, 500);
-    showT('✅ Planning reçu et chargé — '+data._partage,'#16a34a');
-  }
-});
 </script>
 </body>
 </html>
