@@ -12132,14 +12132,16 @@ function setSupaLed(ok, msg){
 }
 
 function supaFetch(path, options){
-  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({
+  var baseOpts = {
+    mode: 'cors',
     headers:{
       'apikey': SUPA_KEY,
       'Authorization': 'Bearer '+SUPA_KEY,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     }
-  }, options||{}))
+  };
+  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign(baseOpts, options||{}))
   .then(function(r){
     if(!r.ok){
       return r.text().then(function(body){
@@ -12330,26 +12332,11 @@ function _chargerDepuisSupabaseLegacy(date){
     .catch(function(e){console.log('Erreur chargement:', e);});
 }
 
-/* Auto-sync toutes les 60 secondes */
-setInterval(function(){
-  if(typeof ST!=='undefined'&&ST.cur){
-    sauverDansSupabase();
-  }
-},60000);
+
 
 /* Indicateur auto-sync dans la barre */
 window.addEventListener('load',function(){
-  setTimeout(function(){
-    var btn=document.getElementById('btn-cloud');
-    if(btn){
-      setInterval(function(){
-        btn.style.background='#15803d';
-        btn.textContent='Cloud...';
-        sauverDansSupabase();
-        setTimeout(function(){btn.style.background='#16a34a';btn.textContent='Cloud';},2000);
-      },60000);
-    }
-  },3000);
+  /* interval cloud supprimé */
 });
 
 /* Ajouter dans le menu */
@@ -12472,34 +12459,17 @@ window.addEventListener('load',function(){
 
 <script>
 
-/* ══ RECHARGEMENT AUTOMATIQUE DEPUIS LE CLOUD TOUTES LES 20S ══ */
-var _derniereMajCloud = '';
+/* ══ RECHARGEMENT AUTOMATIQUE DEPUIS LE CLOUD TOUTES LES 30S ══ */
 window.addEventListener('load',function(){
   setTimeout(function(){
     setInterval(function(){
-      /* Ne pas recharger si l'utilisateur est en train de saisir */
       var active = document.activeElement;
-      if(active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT')) return;
-      /* Ne pas recharger si un modal est ouvert */
+      if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
       if(document.querySelector('.mbg.on')) return;
-      /* Ne pas recharger si une modification locale vient d'avoir lieu (laisser le temps a la synchro de partir) */
-      if(window._derniereSauvegardeLocale && (Date.now()-window._derniereSauvegardeLocale)<12000) return;
-      if(document.getElementById('m-presentation')||document.getElementById('m-cockpit-dir')||document.getElementById('m-cockpit-ins')||document.getElementById('m-centre-op')||document.getElementById('m-tv')) return;
-
-      /* Vérifier si une mise à jour existe dans Supabase */
-      supaFetch('planning?date=eq.'+ST.cur+'&select=updated_at&order=updated_at.desc&limit=1')
-        .then(function(rows){
-          if(rows&&rows.length){
-            var maj = rows[0].updated_at;
-            if(_derniereMajCloud && maj!==_derniereMajCloud){
-              chargerDepuisSupabase(ST.cur);
-            }
-            _derniereMajCloud = maj;
-          }
-        })
-        .catch(function(){});
-    }, 20000);
-  }, 5000);
+      /* Utiliser chargerDepuisSupabase qui est la version propre */
+      chargerDepuisSupabase();
+    }, 30000);
+  }, 10000);
 });
 
 </script>
@@ -24908,39 +24878,8 @@ function majBadgeValidation(){
 
 /* 4. SAUVEGARDER SUR TOUTES LES DATES FUTURES — correction bug planning vierge */
 function sauverToutesLesDates(){
-  /* Récupérer toutes les dates présentes dans ST.tasks */
-  var dates={};
-  Object.keys(ST.tasks||{}).forEach(function(k){
-    var parts=k.split('|');
-    if(parts[0])dates[parts[0]]=true;
-  });
-  var datesList=Object.keys(dates);
-  if(!datesList.length)return;
-
-  /* Sauvegarder chaque date individuellement dans Supabase */
-  datesList.forEach(function(date){
-    var tasksForDate={};
-    Object.keys(ST.tasks).forEach(function(k){
-      if(k.startsWith(date+'|'))tasksForDate[k]=ST.tasks[k];
-    });
-    var data={
-      drivers:ST.drivers,
-      tasks:ST.tasks,
-      statuts:ST.statuts||{},
-      notes:ST.notes||{},
-      cur:ST.cur,
-      library:ST.library,
-      tournees:ST.tournees||[]
-    };
-    supaFetch('planning?date=eq.'+date+'&select=id').then(function(rows){
-      if(rows&&rows.length>0){
-        supaFetch('planning?date=eq.'+date,{method:'PATCH',body:JSON.stringify({donnees:data})});
-      } else {
-        supaFetch('planning',{method:'POST',body:JSON.stringify({date:date,donnees:data})});
-      }
-    });
-  });
-  showT('\uD83D\uDCBE Sauvegardé sur '+datesList.length+' date(s)','#22c55e');
+  /* Remplacé par sauverDansSupabase (UPSERT simple et fiable) */
+  if(typeof sauverDansSupabase==='function') sauverDansSupabase();
 }
 
 /* CSS pour l'animation pulse */
