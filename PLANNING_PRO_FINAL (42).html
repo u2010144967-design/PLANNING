@@ -40,13 +40,10 @@
     window._serviceActuel = window.SERVICES_CONFIG[dejaConnecte];
     window._codeActuel = dejaConnecte;
     var lancerHubAuDemarrage=function(){
-      /* SYNC AUTO — charger depuis Supabase au démarrage */
+      /* CHARGER SUPABASE EN PREMIER */
+      if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
       setTimeout(function(){
-        if(typeof chargerDepuisSupabase==='function')chargerDepuisSupabase();
-      },800);
-      setTimeout(function(){
-        if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
-        if(typeof afficherHub==='function')afficherHub();
+        chargerEtAfficher();
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -105,14 +102,10 @@
           document.body.appendChild(strip);
         }
         /* ── Fin bandeau Bonjour ── */
-        /* ── SYNC AUTO au login — forcer chargement Supabase ── */
-        if(typeof chargerDepuisSupabase==='function'){
-          setTimeout(function(){
-            chargerDepuisSupabase();
-          },500);
-        }
+        /* ── CHARGER SUPABASE EN PREMIER, afficher après ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
-        if(typeof afficherHub==='function')setTimeout(afficherHub,300);
+        /* Charger Supabase D'ABORD puis afficher le Hub */
+        chargerEtAfficher();
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -1159,6 +1152,48 @@ var ST={
 };
 var MC={};
 var sTab=0,lTab=0;
+
+
+function chargerEtAfficher(){
+  /* Étape 1 : charger depuis Supabase */
+  /* Étape 2 : afficher le Hub avec les bonnes données */
+  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=1&select=date,donnees,updated_at', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer '+SUPA_KEY,
+      'Accept': 'application/json'
+    }
+  })
+  .then(function(r){ return r.ok ? r.json() : []; })
+  .then(function(rows){
+    if(rows && rows.length && rows[0].donnees && rows[0].donnees.drivers){
+      var data = rows[0].donnees;
+      if(data.drivers&&data.drivers.length) ST.drivers    = data.drivers;
+      if(data.tasks)       ST.tasks       = data.tasks;
+      if(data.statuts)     ST.statuts     = data.statuts;
+      if(data.notes)       ST.notes       = data.notes;
+      if(data.library)     ST.library     = data.library;
+      if(data.tournees)    ST.tournees    = data.tournees;
+      if(data.conducteurs) ST.conducteurs = data.conducteurs;
+      if(data.memos)       ST.memos       = data.memos;
+      if(data.km)          ST.km          = data.km;
+      try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
+      var upd = rows[0].updated_at
+        ? new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+        : '';
+      setSupaLed(true, 'Sync '+upd);
+    } else {
+      setSupaLed(true, 'Local');
+    }
+  })
+  .catch(function(){ setSupaLed(false,'Erreur'); })
+  .finally(function(){
+    /* Toujours afficher même si Supabase échoue */
+    if(typeof afficherHub==='function') afficherHub();
+    if(typeof creerBoutonAccueilFlottant==='function') creerBoutonAccueilFlottant();
+    if(typeof render==='function') render();
+  });
+}
 
 function load(){
   var DEFAULT={"drivers":[{"name":"OTMANE","truck":"JUMPY","start":"06:00","end":"14:00"},{"name":"NICOLAS","truck":"VIVARO LOCATION","start":"06:00","end":"14:00"},{"name":"MICKAEL","truck":"VIVARO 1","start":"06:00","end":"15:00"},{"name":"KARIM","truck":"VIVARO 2","start":"06:00","end":"14:00"},{"name":"MAITRE D'HOTEL","truck":"CAMION 5","start":"06:00","end":"14:00"}],"tasks":{"2026-07-12|1|10:00":[{"task":"SALIMA","client":"","category":"traiteur","truck":"VIVARO LOCATION","end":"11:00","bold":true,"priority":"high","ts":1780864626298}],"2026-07-04|0|11:00":[{"task":"","client":"CE LIENT","category":"","truck":"JUMPY","end":"","bold":false,"priority":"normal","confirmed":false,"ts":1781019100075}],"2026-06-11|0|08:00":[{"task":"","client":"LES POMPIERS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109604929}],"2026-06-11|0|08:30":[{"task":"","client":"LES COMPAGNONS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109620017}],"2026-06-11|0|09:00":[{"task":"","client":"ESAT PHOCEEN","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781109628259}],"2026-06-11|0|11:00":[{"task":"","client":"SLEEPING","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194004182}],"2026-06-11|0|12:00":[{"task":"","client":"LES POMPIERS","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194094783}],"2026-06-11|0|10:30":[{"task":"","client":"ESAT PHOCEEN","category":"collectivite","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194248463}],"2026-06-11|0|15:30":[{"task":"","client":"VILLAGE CLUB SOLEIL","category":"traiteur","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194326125}],"2026-06-11|0|17:00":[{"task":"PREPARER COMMANDE","client":"","category":"task","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781194381218}],"2026-06-11|0|07:00":[{"task":"PARTIR EN ALGERIE","client":"","category":"","truck":"JUMPY","end":"14:00","bold":false,"priority":"normal","ts":1781197917887}]},"notes":{},"km":{},"library":{"traiteur":["VILLAGE CLUB SOLEIL","CG 13"],"collectivite":["LES POMPIERS","LES COMPAGNONS","BAGAGERIE","LA SELONNE","LA MINOTERIE","FONTAINIEU","ESAT PHOCEEN","ESAT ST JEAN","SIMONNE","SLEEPING","LES ARGONAUTES","VILLA NIOZELLE","UNITE ABCD"],"task":["CHERCHER MATERIELS","PREPARER COMMANDE","PETIT DEJ ECOLE","ORGANISER ESPACE","LOGISTIQUE NETTOYAGE","CHARGER CAMION","DECHARGER CAMION","BAGAGERIE","CONTROLE TECHNIQUE","PLEIN CARBURANT","NETTOYAGE VEHICULE","REPARATION GARAGE"],"truck":["VIVARO 1","VIVARO 2","JUMPY","IVECO","IVECO LOCATION","VIVARO LOCATION"]},"cur":"2026-06-11","z":100,"gb":false,"fiches":{},"tournees":[{"name":"Centre Aere ORANGE","couleur":"orange","heure":"08:00","cat":"centre","clients":["LES POMPIERS","LES ARGONAUTES","CAARUD LE SLEEP'IN","CHRS CHEZ SIMONE","CHRS LA MINOTERIE","CHRS LA SELONNE","COMPAGNONS","ESAT ST JEAN","LHSS FONTAINIEU","PHOCEEN UNITE","VILLA NIOZELLES","AGA FLAMANTS 1","AGA FLAMANTS 2"],"heure_fin":"11:30"},{"name":"Centre Aere VERT","couleur":"vert","heure":"08:00","cat":"centre","clients":["AGA FLAMANTS ADO","AGORA","AIR BEL","BERNARD DUBOIS 1","BERNARD DUBOIS 2","BONNEVEINE ADO","BONNEVEINE MAT","BONNEVEINE MPT MAT","BONNEVEINE PRIM 1","BONNEVEINE PRIM 2","BONNEVEINE PRIM 3","CASTELLANE","CASTELLANE ADO"],"heure_fin":"11:30"},{"name":"Centre Aere BLEU","couleur":"bleu","heure":"08:00","cat":"centre","clients":["CCO SIEGE","CHATEAU GOMBERT 1","CHATEAU GOMBERT 2","CHATEAU GOMBERT ADO","CHAVE COPELLO PRIM","COIN JOLI","COURS JULIEN MAT","FRAIS VALLON","LA BRICARDE 1","LA BRICARDE 2","LA LOUBIERE MAT","LA LOUBIERE PRIM","LA SAVINE"],"heure_fin":"11:30"},{"name":"Centre Aere ROSE","couleur":"rose","heure":"08:00","cat":"centre","clients":["LE GRAND CANET","LE ROUET MAT","LE ROUET PRIM","LES 3 LUCS ADO","LES 3 LUCS","LES BOURRELY","LES LIERRES 1","LES LIERRES 2","LES MUSARDISES","MER ET COLLINE","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","SAINTE MARTHE PRIM"],"heure_fin":"11:30"},{"name":"Centre Aere VIOLET","couleur":"violet","heure":"08:00","cat":"centre","clients":["ST GINIEZ ADO","ST GINIEZ MAT","ST GINIEZ PRIM","ST JEROME","ST THYS","STE ELISABETH MAT","STE ELISABETH PRIM","TOROS"],"heure_fin":"11:30"}],"memos":[],"statuts":{},"archives":[],"infractions":[],"progressions":{},"evaluations":{},"objectifs":{},"vehicules":[],"notifications":[],"agenda":[],"transmissions":[]};
