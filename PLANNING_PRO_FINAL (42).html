@@ -12002,7 +12002,7 @@ function sauverDansSupabase(){
 function chargerDepuisSupabase(){
   var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
   if(t)t.textContent='...';
-  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=1&select=date,donnees,updated_at',{method:'GET',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Accept':'application/json'}})
+  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=5&select=date,donnees,updated_at&date=not.like.AUDIT_*&date=not.like.test*&date=not.like.GEO_*',{method:'GET',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Accept':'application/json'}})
   .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
     if(!rows||!rows.length){showT('Cloud vide','#f59e0b');if(t)t.textContent='Vide';return;}
@@ -23676,16 +23676,8 @@ function appliquerRestrictionsService(){
 
 /* Journal d'audit - enregistre chaque action importante */
 function logAudit(action,detail){
-  if(!window._serviceActuel)return;
-  var entry={
-    date:new Date().toISOString().slice(0,10),
-    heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
-    service:window._serviceActuel.nom,
-    action:action,
-    detail:detail||''
-  };
-  var key='AUDIT_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  supaFetch('planning',{method:'POST',body:JSON.stringify({date:key,donnees:entry})});
+  /* Désactivé — ne plus écrire dans Supabase pour ne pas polluer */
+  if(window._auditLog) window._auditLog.push({action:action,detail:detail,ts:new Date().toISOString()});
 }
 
 function ouvrirJournalAudit(){
