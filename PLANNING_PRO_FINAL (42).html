@@ -11991,11 +11991,42 @@ function supaFetch(path, options){
 /* Sauvegarder le planning dans Supabase */
 function sauverDansSupabase(){
   if(typeof ST==='undefined'||!ST.drivers)return;
-  var d={drivers:ST.drivers||[],tasks:ST.tasks||{},statuts:ST.statuts||{},notes:ST.notes||{},cur:ST.cur,library:ST.library||{},tournees:ST.tournees||[],conducteurs:ST.conducteurs||{},memos:ST.memos||[],km:ST.km||{}};
-  fetch(SUPA_URL+'/rest/v1/planning',{method:'POST',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({date:new Date().toISOString().slice(0,10),donnees:d,updated_at:new Date().toISOString()})})
-  .then(function(r){var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');if(r.ok){if(l)l.style.background='#22c55e';if(t)t.textContent='Sauvé';}else{if(l)l.style.background='#ef4444';if(t)t.textContent='Erreur '+ r.status;}})
-  .catch(function(){var l=document.getElementById('sync-led');if(l)l.style.background='#f59e0b';});
+  var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
+  var d={drivers:ST.drivers||[],tasks:ST.tasks||{},statuts:ST.statuts||{},
+    notes:ST.notes||{},cur:ST.cur,library:ST.library||{},
+    tournees:ST.tournees||[],conducteurs:ST.conducteurs||{},
+    memos:ST.memos||[],km:ST.km||{}};
+  var today=new Date().toISOString().slice(0,10);
+  var hdrs={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
+  /* 1. Vérifier si la ligne du jour existe */
+  fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+today+'&select=id',{mode:'cors',headers:hdrs})
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    var exists=rows&&rows.length>0;
+    var url=exists?SUPA_URL+'/rest/v1/planning?date=eq.'+today:SUPA_URL+'/rest/v1/planning';
+    var method=exists?'PATCH':'POST';
+    /* 2. Créer ou mettre à jour */
+    return fetch(url,{
+      method:method,mode:'cors',
+      headers:Object.assign({'Prefer':'return=minimal'},hdrs),
+      body:JSON.stringify({date:today,donnees:d,updated_at:new Date().toISOString()})
+    });
+  })
+  .then(function(r){
+    if(r&&r.ok){
+      if(l)l.style.background='#22c55e';
+      if(t)t.textContent='Sauvé ✅';
+    } else if(r){
+      if(l)l.style.background='#ef4444';
+      if(t)t.textContent='Erreur '+r.status;
+    }
+  })
+  .catch(function(e){
+    if(l)l.style.background='#f59e0b';
+    console.warn('Save réseau:',e.message);
+  });
 }
+
 
 
 /* Charger le planning depuis Supabase */
