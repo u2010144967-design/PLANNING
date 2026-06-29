@@ -275,28 +275,25 @@ async function loadCustomDriverConfig(){
 }
 
 async function loadPlanning(){
-  /* Fusionne TOUTES les dates disponibles (passees et futures) en un seul planning */
-  /* Charger toutes les lignes de dates (YYYY-MM-DD) + augmenter limite */
-  /* Charger les 30 derniers jours + 14 futurs pour performance */
-  const today=new Date();
-  const from=new Date(today);from.setDate(from.getDate()-30);
-  const to=new Date(today);to.setDate(to.getDate()+14);
-  const fromStr=from.toISOString().slice(0,10);
-  const toStr=to.toISOString().slice(0,10);
-  const rows=await db('planning?select=donnees,date&order=date.asc&date=gte.'+fromStr+'&date=lte.'+toStr+'&limit=60');
+  /* Charger la dernière ligne sauvegardée (contient TOUT le planning) */
+  const rows=await db('planning?select=donnees,date,updated_at&order=updated_at.desc&limit=10');
   if(!rows||!rows.length)return null;
 
   let merged={drivers:null,tasks:{},statuts:{},notes:{},library:null,tournees:[],conducteurs:{}};
   let foundAny=false;
 
-  rows.forEach(r=>{
-    if(!r.date||!r.date.match(/^\d{4}-\d{2}-\d{2}$/))return; /* ignore EVENTS, MESSAGES, GEO_x, EV_, DEMANDE_, AUDIT_ */
+  /* Filtrer les lignes parasites et prendre les vraies données */
+  const validRows=rows.filter(r=>r.date&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&!r.date.startsWith('AUDIT_'));
+
+  validRows.forEach(r=>{
     const d=r.donnees;
-    if(!d||!d.tasks)return;
+    if(!d)return;
     foundAny=true;
-    if(!merged.drivers&&d.drivers)merged.drivers=d.drivers;
+    /* Prendre drivers et library de la ligne la plus récente */
+    if(!merged.drivers&&d.drivers&&d.drivers.length)merged.drivers=d.drivers;
     if(!merged.library&&d.library)merged.library=d.library;
-    Object.assign(merged.tasks,d.tasks);
+    /* Fusionner toutes les tâches */
+    if(d.tasks)Object.assign(merged.tasks,d.tasks);
     if(d.statuts)Object.assign(merged.statuts,d.statuts);
     if(d.notes)Object.assign(merged.notes,d.notes);
     if(d.conducteurs)Object.assign(merged.conducteurs,d.conducteurs);
