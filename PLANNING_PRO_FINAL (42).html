@@ -23930,7 +23930,7 @@ function afficherHub(){
   var poles=[
     {id:'logistique',nom:'\uD83D\uDE9A LOGISTIQUE',color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'#3b82f6',items:[
       {id:'planning',icon:'\uD83D\uDCC5',label:'Planning du jour',sub:'Livraisons rapides',fn:'ouvrirPlanningSimplifie'},
-      {id:'planningfull',icon:'\uD83D\uDDD3',label:'Planning complet',sub:'Grille horaire',fn:function(){fermerHub();}},
+      {id:'planningfull',icon:'\uD83D\uDDD3',label:'Planning complet',sub:'Grille horaire',fn:function(){chargerDepuisSupabase();setTimeout(fermerHub,1500);}},
       {id:'sync',icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle'},
       {id:'a4',icon:'\uD83D\uDDA8',label:'Imprimer A4',sub:'Feuilles de route',fn:'ouvrirFeuillesRoute'},
       {id:'photos',icon:'\uD83D\uDCF8',label:'Photos & Signatures',sub:'Preuves chauffeurs',fn:'ouvrirPhotosSignatures'},
@@ -24613,5 +24613,60 @@ function seDeconnecter(){
   location.reload();
 }
 </script>
+
+<script>
+/* AUTO-REFRESH toutes les 30 secondes — silencieux */
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    setInterval(function(){
+      /* Ne pas rafraîchir si modal ouvert ou en train de saisir */
+      var active = document.activeElement;
+      if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+      if(document.querySelector('.mbg.on')) return;
+      /* Charger silencieusement sans message toast */
+      var SUPA_URL2 = typeof SUPA_URL!=='undefined' ? SUPA_URL : 'https://lllzlidwtcjwsxbgkygn.supabase.co';
+      var SUPA_KEY2 = typeof SUPA_KEY!=='undefined' ? SUPA_KEY : 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+      fetch(SUPA_URL2+'/rest/v1/planning?order=updated_at.desc&limit=5&select=date,donnees,updated_at',{
+        method:'GET', mode:'cors',
+        headers:{'apikey':SUPA_KEY2,'Authorization':'Bearer '+SUPA_KEY2,'Accept':'application/json'}
+      })
+      .then(function(r){return r.ok?r.json():[];})
+      .then(function(rows){
+        if(!rows||!rows.length) return;
+        rows = rows.filter(function(r){
+          return r.date && !r.date.startsWith('AUDIT_') && !r.date.startsWith('test') && !r.date.startsWith('GEO_');
+        });
+        if(!rows.length) return;
+        var data = rows[0].donnees;
+        if(!data||!data.drivers) return;
+        /* Appliquer les données */
+        if(data.drivers.length) ST.drivers = data.drivers;
+        if(data.tasks) ST.tasks = data.tasks;
+        if(data.statuts) ST.statuts = data.statuts;
+        if(data.notes) ST.notes = data.notes;
+        if(data.library) ST.library = data.library;
+        if(data.tournees) ST.tournees = data.tournees;
+        if(data.conducteurs) ST.conducteurs = data.conducteurs;
+        if(data.memos) ST.memos = data.memos;
+        if(data.km) ST.km = data.km;
+        try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
+        /* Rafraîchir la grille silencieusement */
+        if(typeof render==='function') render();
+        if(typeof rStats==='function') rStats();
+        /* Mettre à jour l'heure de sync */
+        var upd = rows[0].updated_at
+          ? new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+          : '';
+        var t = document.getElementById('sync-txt');
+        var l = document.getElementById('sync-led');
+        if(t) t.textContent = 'Sync '+upd;
+        if(l) l.style.background = '#22c55e';
+      })
+      .catch(function(){});
+    }, 30000); /* toutes les 30 secondes */
+  }, 5000); /* démarrer 5s après le chargement */
+});
+</script>
+
 </body>
 </html>
