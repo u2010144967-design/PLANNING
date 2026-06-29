@@ -12056,10 +12056,8 @@ function chargerDepuisSupabase(){
     if(data.memos)ST.memos=data.memos;
     if(data.km)ST.km=data.km;
     ST.cur=new Date().toISOString().slice(0,10);
-    var dp=document.getElementById('cur-date');if(dp)dp.value=ST.cur;
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
-    if(typeof rGrid==='function')rGrid();
-    else if(typeof render==='function')render();
+    if(typeof render==='function')render();
     if(typeof rStats==='function')rStats();
     if(typeof rCounters==='function')rCounters();
     var upd=rows[0].updated_at?new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'?';
@@ -24659,10 +24657,8 @@ function silentSync(){
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
     /* Toujours afficher le jour actuel */
     ST.cur=new Date().toISOString().slice(0,10);
-    var dp=document.getElementById('cur-date');if(dp)dp.value=ST.cur;
     /* Forcer le rendu complet */
-    if(typeof rGrid==='function') rGrid();
-    else if(typeof render==='function') render();
+    if(typeof render==='function') render();
     if(typeof rStats==='function') rStats();
     if(typeof rCounters==='function') rCounters();
     /* Mettre à jour indicateur sync */
