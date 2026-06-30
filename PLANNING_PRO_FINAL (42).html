@@ -411,7 +411,13 @@ function ajouterClientTournee(tid,color,editIdx){
   box.appendChild(btnRow);
 
   modal.appendChild(box);
-  document.body.appendChild(modal);
+  /* Ajouter le modal dans la page tournées si elle est ouverte */
+  var pageTournees = document.getElementById("page-tournees");
+  if(pageTournees){
+    pageTournees.appendChild(modal);
+  } else {
+    document.body.appendChild(modal);
+  }
   setTimeout(function(){var f=document.getElementById("fct-client");if(f)f.focus();},50);
 }
 
