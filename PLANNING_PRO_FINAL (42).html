@@ -332,8 +332,8 @@ function ajouterClientTournee(tid,color,editIdx){
   var isEdit=editIdx!==undefined;
   var item=isEdit?ST.bibliotheques[tid][editIdx]:{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
 
-  var modal=document.createElement("div");modal.id="m-add-client-tournee";modal.className="mbg on";
-  modal.style.zIndex="999999";
+  var modal=document.createElement("div");modal.id="m-add-client-tournee";
+  modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px";
   var box=document.createElement("div");
   box.style.cssText="background:#0f1e35;border-radius:14px;padding:22px;max-width:420px;width:92%;color:#e2e8f0";
 
@@ -354,7 +354,6 @@ function ajouterClientTournee(tid,color,editIdx){
     box.appendChild(wrap);
   }
   field("Heure","fct-heure",item.heure,"08:00");
-  document.getElementById; /* noop to keep structure */
   field("Client","fct-client",item.client,"Nom du client");
   field("Mission / Details","fct-task",item.task,"Livraison repas...");
   field("Adresse (optionnel)","fct-adresse",item.adresse,"Adresse");
@@ -25110,5 +25109,67 @@ function silentSync(){
 }
 window.addEventListener('load',function(){setTimeout(function(){silentSync();setInterval(silentSync,10000);},5000);});
 </script>
+
+/* PRÉ-REMPLISSAGE AUTOMATIQUE DES BIBLIOTHÈQUES */
+function preRemplirBibliotheques(){
+  if(!ST.bibliotheques) ST.bibliotheques={};
+  var TIDS=['bleu','rose','vert','violet','jaune','orange'];
+  TIDS.forEach(function(t){if(!ST.bibliotheques[t])ST.bibliotheques[t]=[];});
+  
+  /* Extraire tous les clients de ST.tasks et les mettre en bleu par défaut */
+  var clientsVus={};
+  Object.keys(ST.tasks||{}).forEach(function(key){
+    var parts=key.split('|');
+    if(parts.length<3)return;
+    var heure=parts[2];
+    var taskList=ST.tasks[key];
+    (taskList||[]).forEach(function(t){
+      var client=(t.client||t.task||'').trim().toUpperCase();
+      if(!client||client.length<2)return;
+      if(!clientsVus[client]){
+        clientsVus[client]={
+          heure:heure,
+          client:client,
+          task:t.task||'',
+          adresse:t.adresse||'',
+          category:t.cat||t.category||'collectivite'
+        };
+      }
+    });
+  });
+  
+  /* Ajouter dans bleu tous les clients pas encore dans une tournée */
+  var tousClients=[];
+  Object.values(ST.bibliotheques).forEach(function(arr){
+    arr.forEach(function(item){tousClients.push((item.client||'').toUpperCase());});
+  });
+  
+  Object.values(clientsVus).forEach(function(item){
+    var dejaDans=tousClients.indexOf(item.client)>=0;
+    if(!dejaDans){
+      ST.bibliotheques.bleu.push(item);
+    }
+  });
+  
+  /* Trier par heure */
+  Object.keys(ST.bibliotheques).forEach(function(t){
+    ST.bibliotheques[t].sort(function(a,b){return (a.heure||'').localeCompare(b.heure||'');});
+  });
+  
+  save();
+}
+
+/* Appeler après chargement Supabase si bibliothèques vides */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof ST==='undefined')return;
+    var total=0;
+    Object.values(ST.bibliotheques||{}).forEach(function(arr){total+=arr.length;});
+    if(total===0 && Object.keys(ST.tasks||{}).length>0){
+      preRemplirBibliotheques();
+    }
+  },3000);
+});
+
 </body>
 </html>
