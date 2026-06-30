@@ -241,13 +241,15 @@ function ouvrirTourneesRapide(){
       var btn=document.createElement("button");
       btn.textContent=t.label+" ("+(ST.bibliotheques[t.id]||[]).length+")";
       btn.style.cssText="padding:6px 12px;border-radius:7px;border:2px solid "+(isActive?t.color:"transparent")+";background:"+t.bg+";color:"+t.color+";font-size:11px;font-weight:800;cursor:pointer";
-      btn.addEventListener("click",function(){assignerTourneeChauffeur(i,t.id,t.color);});
+      (function(di,tid,tcolor){
+        btn.addEventListener("click",function(){assignerTourneeChauffeur(di,tid,tcolor);});
+      })(i,t.id,t.color);
       row.appendChild(btn);
     });
     var noneBtn=document.createElement("button");
     noneBtn.textContent="Retirer";
     noneBtn.style.cssText="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer";
-    noneBtn.addEventListener("click",function(){assignerTourneeChauffeur(i,"","");});
+    (function(di){noneBtn.addEventListener("click",function(){assignerTourneeChauffeur(di,"","");});})(i);
     row.appendChild(noneBtn);
     assignSection.appendChild(row);
   });
@@ -278,7 +280,9 @@ function ouvrirTourneesRapide(){
     var addBtn=document.createElement("button");
     addBtn.textContent="+ Ajouter un client";
     addBtn.style.cssText="padding:9px;background:"+t.bg+";border:1px dashed "+t.color+"66;border-radius:8px;color:"+t.color+";font-size:12px;font-weight:700;cursor:pointer";
-    addBtn.addEventListener("click",function(){ajouterClientTournee(t.id,t.color);});
+    (function(tid,tcolor){
+      addBtn.addEventListener("click",function(){ajouterClientTournee(tid,tcolor);});
+    })(t.id,t.color);
     card.appendChild(addBtn);
 
     body.appendChild(card);
