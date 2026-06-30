@@ -9,7 +9,7 @@ function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)ret
 <script>
 
 /* PLAQUES IMMATRICULATION */
-function ouvrirPlaquesImmat(){
+window.ouvrirPlaquesImmat=function(){
   var existing=document.getElementById("m-plaques");if(existing)existing.remove();
   if(!ST.plaques) ST.plaques = {};
   if(!ST.camionsLoc) ST.camionsLoc = [];
@@ -120,7 +120,7 @@ function supprimerCamionLoc(idx){
   ouvrirPlaquesImmat();
 }
 
-function sauverPlaques(){
+window.sauverPlaques=function(){
   if(!ST.plaques)ST.plaques={};
   document.querySelectorAll(".plaque-input").forEach(function(inp){
     var truck=inp.getAttribute("data-truck");
@@ -139,7 +139,7 @@ function sauverPlaques(){
   setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},500);
 }
 
-function rPlaquesBar(){
+window.rPlaquesBar=function(){
   var existing=document.getElementById("plaques-bar");
   if(existing)existing.remove();
   if(!ST.plaques)return;
@@ -175,7 +175,7 @@ var TOURNEES_DEFS=[
   {id:"orange",label:"Orange",color:"#f97316",bg:"rgba(249,115,22,.12)"}
 ];
 
-function ouvrirTourneesRapide(){
+window.ouvrirTourneesRapide=function(){
   if(!ST.bibliotheques)ST.bibliotheques={};
   TOURNEES_DEFS.forEach(function(t){if(!ST.bibliotheques[t.id])ST.bibliotheques[t.id]=[];});
   var old=document.getElementById("page-tournees");if(old)old.remove();
@@ -210,13 +210,13 @@ function ouvrirTourneesRapide(){
   document.body.appendChild(page);
 }
 
-function tourSupprimer(tid,idx){
+window.tourSupprimer=function(tid,idx){
   if(!confirm("Supprimer ?"))return;
   ST.bibliotheques[tid].splice(idx,1);
   save();ouvrirTourneesRapide();
 }
 
-function tourFormulaire(tid,color,editIdx){
+window.tourFormulaire=function(tid,color,editIdx){
   var old=document.getElementById("m-tour-form");if(old)old.remove();
   var isEdit=editIdx!==undefined;
   var item=isEdit?(ST.bibliotheques[tid][editIdx]||{}):{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
@@ -236,7 +236,7 @@ function tourFormulaire(tid,color,editIdx){
   setTimeout(function(){var f=document.getElementById("tfl-c");if(f)f.focus();},50);
 }
 
-function tourSauver(tid,color,editIdx){
+window.tourSauver=function(tid,color,editIdx){
   var h=(document.getElementById("tfl-h")||{}).value||"08:00";
   var cl=((document.getElementById("tfl-c")||{}).value||"").trim().toUpperCase();
   var tk=((document.getElementById("tfl-t")||{}).value||"").trim();
@@ -255,7 +255,7 @@ function tourSauver(tid,color,editIdx){
   ouvrirTourneesRapide();
 }
 
-function tourAssigner(di,tid,tcolor){
+window.tourAssigner=function(di,tid,tcolor){
   var dr=ST.drivers[di];if(!dr)return;
   if(dr.tourneeAppliedKeys){
     dr.tourneeAppliedKeys.forEach(function(k){
