@@ -275,32 +275,25 @@ async function loadCustomDriverConfig(){
 }
 
 async function loadPlanning(){
-  /* Charger la dernière ligne sauvegardée (contient TOUT le planning) */
-  const rows=await db('planning?select=donnees,date,updated_at&order=updated_at.desc&limit=10');
+  /* Charger UNIQUEMENT la ligne la PLUS RECENTE (contient déjà tout le planning fusionné) */
+  const rows=await db('planning?select=donnees,date,updated_at&order=updated_at.desc&limit=1');
   if(!rows||!rows.length)return null;
 
-  let merged={drivers:null,tasks:{},statuts:{},notes:{},library:null,tournees:[],conducteurs:{}};
-  let foundAny=false;
-
-  /* Filtrer les lignes parasites et prendre les vraies données */
   const validRows=rows.filter(r=>r.date&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&!r.date.startsWith('AUDIT_'));
+  if(!validRows.length)return null;
 
-  validRows.forEach(r=>{
-    const d=r.donnees;
-    if(!d)return;
-    foundAny=true;
-    /* Prendre drivers et library de la ligne la plus récente */
-    if(!merged.drivers&&d.drivers&&d.drivers.length)merged.drivers=d.drivers;
-    if(!merged.library&&d.library)merged.library=d.library;
-    /* Fusionner toutes les tâches */
-    if(d.tasks)Object.assign(merged.tasks,d.tasks);
-    if(d.statuts)Object.assign(merged.statuts,d.statuts);
-    if(d.notes)Object.assign(merged.notes,d.notes);
-    if(d.conducteurs)Object.assign(merged.conducteurs,d.conducteurs);
-    if(d.tournees&&d.tournees.length)merged.tournees=merged.tournees.concat(d.tournees);
-  });
+  const d=validRows[0].donnees;
+  if(!d||!d.tasks)return null;
 
-  return foundAny?merged:null;
+  return {
+    drivers: d.drivers||[],
+    tasks: d.tasks||{},
+    statuts: d.statuts||{},
+    notes: d.notes||{},
+    library: d.library||null,
+    tournees: d.tournees||[],
+    conducteurs: d.conducteurs||{}
+  };
 }
 
 async function saveEvent(ev){
