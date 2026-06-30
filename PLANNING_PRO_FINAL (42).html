@@ -12074,7 +12074,10 @@ function sauverDansSupabase(){
       tournees: ST.tournees||[],
       conducteurs: mergedConducteurs,
       memos: ST.memos||[],
-      km: ST.km||{}
+      km: ST.km||{},
+      bibliotheques: ST.bibliotheques||{},
+      plaques: ST.plaques||{},
+      camionsLoc: ST.camionsLoc||[]
     };
 
     /* Mettre à jour ST localement avec les données fusionnées */
@@ -12136,6 +12139,7 @@ function chargerDepuisSupabase(forceToday){
     if(data.km)ST.km=data.km;
     if(data.plaques)ST.plaques=data.plaques;
     if(data.camionsLoc)ST.camionsLoc=data.camionsLoc;
+    if(data.bibliotheques)ST.bibliotheques=data.bibliotheques;
     /* Forcer le jour actuel uniquement au tout premier chargement de la session */
     if(forceToday) ST.cur=new Date().toISOString().slice(0,10);
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
@@ -24741,6 +24745,7 @@ function silentSync(){
     if(data.km) ST.km=data.km;
     if(data.plaques) ST.plaques=data.plaques;
     if(data.camionsLoc) ST.camionsLoc=data.camionsLoc;
+    if(data.bibliotheques) ST.bibliotheques=data.bibliotheques;
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
     /* NE PAS changer ST.cur ici — respecter la date que l'utilisateur consulte */
     if(typeof rGrid==='function') rGrid();
