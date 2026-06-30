@@ -204,11 +204,7 @@ function ouvrirTourneesRapide(){
   var closeBtn=document.createElement("button");
   closeBtn.textContent="Fermer";
   closeBtn.style.cssText="padding:10px 20px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#cbd5e1;font-size:13px;font-weight:700;cursor:pointer";
-  closeBtn.addEventListener("click",function(){
-    document.getElementById("page-tournees").remove();
-    save();
-    setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},300);
-  });
+  closeBtn.setAttribute("onclick","document.getElementById('page-tournees').remove();save();setTimeout(function(){if(typeof sauverDansSupabase==='function')sauverDansSupabase();},300)");
   header.appendChild(title);header.appendChild(closeBtn);
   page.appendChild(header);
 
@@ -241,15 +237,13 @@ function ouvrirTourneesRapide(){
       var btn=document.createElement("button");
       btn.textContent=t.label+" ("+(ST.bibliotheques[t.id]||[]).length+")";
       btn.style.cssText="padding:6px 12px;border-radius:7px;border:2px solid "+(isActive?t.color:"transparent")+";background:"+t.bg+";color:"+t.color+";font-size:11px;font-weight:800;cursor:pointer";
-      (function(di,tid,tcolor){
-        btn.addEventListener("click",function(){assignerTourneeChauffeur(di,tid,tcolor);});
-      })(i,t.id,t.color);
+      btn.setAttribute("onclick","assignerTourneeChauffeur("+i+",'"+t.id+"','"+t.color+"')");
       row.appendChild(btn);
     });
     var noneBtn=document.createElement("button");
     noneBtn.textContent="Retirer";
     noneBtn.style.cssText="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer";
-    (function(di){noneBtn.addEventListener("click",function(){assignerTourneeChauffeur(di,"","");});})(i);
+    noneBtn.setAttribute("onclick","assignerTourneeChauffeur("+i+",'','')");
     row.appendChild(noneBtn);
     assignSection.appendChild(row);
   });
@@ -280,9 +274,7 @@ function ouvrirTourneesRapide(){
     var addBtn=document.createElement("button");
     addBtn.textContent="+ Ajouter un client";
     addBtn.style.cssText="padding:9px;background:"+t.bg+";border:1px dashed "+t.color+"66;border-radius:8px;color:"+t.color+";font-size:12px;font-weight:700;cursor:pointer";
-    (function(tid,tcolor){
-      addBtn.addEventListener("click",function(){ajouterClientTournee(tid,tcolor);});
-    })(t.id,t.color);
+    addBtn.setAttribute("onclick","ajouterClientTournee('"+t.id+"','"+t.color+"')");
     card.appendChild(addBtn);
 
     body.appendChild(card);
@@ -316,16 +308,11 @@ function renderTourneeList(listDiv,tid,color){
     var editBtn=document.createElement("button");
     editBtn.textContent="Edit";
     editBtn.style.cssText="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:5px;color:#60a5fa;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
-    editBtn.addEventListener("click",function(){ajouterClientTournee(tid,color,idx);});
+    (function(i){editBtn.setAttribute("onclick","ajouterClientTournee('"+tid+"','"+color+"',"+i+")");})(idx);
     var delBtn=document.createElement("button");
     delBtn.textContent="X";
     delBtn.style.cssText="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
-    delBtn.addEventListener("click",function(){
-      ST.bibliotheques[tid].splice(idx,1);
-      save();
-      var ld=document.getElementById("tournee-list-"+tid);
-      if(ld)renderTourneeList(ld,tid,color);
-    });
+    (function(i){delBtn.setAttribute("onclick","ST.bibliotheques['"+tid+"'].splice("+i+",1);save();var ld=document.getElementById('tournee-list-"+tid+"');if(ld)renderTourneeList(ld,'"+tid+"','"+color+"')");})(idx);
     row.appendChild(info);row.appendChild(editBtn);row.appendChild(delBtn);
     listDiv.appendChild(row);
   });
@@ -337,7 +324,7 @@ function ajouterClientTournee(tid,color,editIdx){
   var item=isEdit?ST.bibliotheques[tid][editIdx]:{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
 
   var modal=document.createElement("div");modal.id="m-add-client-tournee";
-  modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px";
+  modal.setAttribute("style","position:fixed !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;width:100vw !important;height:100vh !important;background:rgba(0,0,0,.85) !important;z-index:2147483647 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:20px !important");
   var box=document.createElement("div");
   box.style.cssText="background:#0f1e35;border-radius:14px;padding:22px;max-width:420px;width:92%;color:#e2e8f0";
 
@@ -381,7 +368,7 @@ function ajouterClientTournee(tid,color,editIdx){
   var saveBtn=document.createElement("button");
   saveBtn.textContent="Enregistrer";
   saveBtn.style.cssText="flex:1;padding:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer";
-  saveBtn.addEventListener("click",function(){
+  saveBtn.onclick=function(){
     var newItem={
       heure:document.getElementById("fct-heure").value||"08:00",
       client:document.getElementById("fct-client").value.trim(),
@@ -402,22 +389,18 @@ function ajouterClientTournee(tid,color,editIdx){
     /* Rafraichir le compteur */
     var page=document.getElementById("page-tournees");
     if(page){page.remove();ouvrirTourneesRapide();}
-  });
+  };
   var cancelBtn=document.createElement("button");
   cancelBtn.textContent="Annuler";
   cancelBtn.style.cssText="padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer";
-  cancelBtn.addEventListener("click",function(){document.getElementById("m-add-client-tournee").remove();});
+  cancelBtn.setAttribute("onclick","document.getElementById('m-add-client-tournee').remove()");
   btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
   box.appendChild(btnRow);
 
   modal.appendChild(box);
   /* Ajouter le modal dans la page tournées si elle est ouverte */
-  var pageTournees = document.getElementById("page-tournees");
-  if(pageTournees){
-    pageTournees.appendChild(modal);
-  } else {
-    document.body.appendChild(modal);
-  }
+  /* Toujours ajouter au body en dernier élément */
+  document.body.appendChild(modal);
   setTimeout(function(){var f=document.getElementById("fct-client");if(f)f.focus();},50);
 }
 
