@@ -45,6 +45,7 @@ function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)ret
     window._serviceActuel = window.SERVICES_CONFIG[dejaConnecte];
     window._codeActuel = dejaConnecte;
     var lancerHubAuDemarrage=function(){
+      if(typeof chargerPermissionsSupabase==='function')chargerPermissionsSupabase();
       setTimeout(chargerDepuisSupabase,600);
       setTimeout(function(){
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
@@ -108,8 +109,9 @@ function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)ret
         }
         /* ── Fin bandeau Bonjour ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
+        if(typeof chargerPermissionsSupabase==='function')chargerPermissionsSupabase();
         setTimeout(chargerDepuisSupabase,600);
-        if(typeof afficherHub==='function')setTimeout(afficherHub,900);
+        if(typeof afficherHub==='function')setTimeout(afficherHub,1100);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -281,10 +283,14 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 /* CELLULES */
 .gcw{position:relative;border-right:1px solid rgba(219,112,147,0.2);border-bottom:1px solid rgba(219,112,147,0.08);min-height:36px;background:#fdf0f4;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
-.gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
-.gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
-.gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
-.gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
+.gcw-maladie{background:rgba(239,68,68,0.08) !important;border-bottom:1px solid rgba(239,68,68,0.12) !important;position:relative}
+.gcw-conge{background:rgba(245,158,11,0.08) !important;border-bottom:1px solid rgba(245,158,11,0.12) !important;position:relative}
+.gcw-absent{background:rgba(239,68,68,0.08) !important;border-bottom:1px solid rgba(239,68,68,0.12) !important;position:relative}
+.gcw-repos{background:rgba(100,116,139,0.08) !important;border-bottom:1px solid rgba(100,116,139,0.12) !important;position:relative}
+.gcw-maladie::after{content:'MALADIE';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(239,68,68,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
+.gcw-conge::after{content:'CONGÉ';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(245,158,11,.4);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
+.gcw-absent::after{content:'ABSENT';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(239,68,68,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
+.gcw-repos::after{content:'REPOS';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(100,116,139,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
 .gcw:last-child{border-right:none}
 .gcw.past-col{background:#f5e8ec}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
@@ -11991,6 +11997,40 @@ function supaFetch(path, options){
 }
 
 /* Sauvegarder le planning dans Supabase */
+
+function sauverPermissionsSupabase(perms){
+  fetch(SUPA_URL+'/rest/v1/planning?date=eq.PERMISSIONS&select=id',{
+    mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  })
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    var exists=rows&&rows.length>0;
+    var url=exists?SUPA_URL+'/rest/v1/planning?date=eq.PERMISSIONS':SUPA_URL+'/rest/v1/planning';
+    var method=exists?'PATCH':'POST';
+    return fetch(url,{
+      method:method,mode:'cors',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({date:'PERMISSIONS',donnees:{perms:perms},updated_at:new Date().toISOString()})
+    });
+  })
+  .catch(function(e){console.warn('Erreur sauvegarde permissions:',e.message);});
+}
+
+function chargerPermissionsSupabase(){
+  return fetch(SUPA_URL+'/rest/v1/planning?date=eq.PERMISSIONS&select=donnees',{
+    mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  })
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.perms){
+      localStorage.setItem('hub_tool_permissions',JSON.stringify(rows[0].donnees.perms));
+      return rows[0].donnees.perms;
+    }
+    return null;
+  })
+  .catch(function(){return null;});
+}
+
 function sauverDansSupabase(){
   if(typeof ST==='undefined'||!ST.drivers)return;
   var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
@@ -23913,6 +23953,8 @@ function ouvrirGestionAcces(){
         checkbox.addEventListener('change',function(){
           toolPerms[niveau][tool.id]=checkbox.checked;
           localStorage.setItem(toolPermsKey,JSON.stringify(toolPerms));
+          /* Sauvegarder aussi dans Supabase pour que tous les ordis voient le changement */
+          sauverPermissionsSupabase(toolPerms);
           label.style.borderColor=checkbox.checked?'#f97316':'#334155';
           if(typeof logAudit==='function')logAudit('Modification acces outil',srv.nom+' — '+tool.label+' : '+(checkbox.checked?'autorise':'retire'));
         });
