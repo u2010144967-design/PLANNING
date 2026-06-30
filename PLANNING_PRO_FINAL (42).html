@@ -11994,20 +11994,55 @@ function supaFetch(path, options){
 function sauverDansSupabase(){
   if(typeof ST==='undefined'||!ST.drivers)return;
   var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
-  var d={drivers:ST.drivers||[],tasks:ST.tasks||{},statuts:ST.statuts||{},
-    notes:ST.notes||{},cur:ST.cur,library:ST.library||{},
-    tournees:ST.tournees||[],conducteurs:ST.conducteurs||{},
-    memos:ST.memos||[],km:ST.km||{}};
   var today=new Date().toISOString().slice(0,10);
   var hdrs={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
-  /* 1. Vérifier si la ligne du jour existe */
-  fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+today+'&select=id',{mode:'cors',headers:hdrs})
+
+  /* 1. D'ABORD récupérer les dernières données du cloud pour fusionner */
+  fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+today+'&select=id,donnees',{mode:'cors',headers:hdrs})
   .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
-    var exists=rows&&rows.length>0;
-    var url=exists?SUPA_URL+'/rest/v1/planning?date=eq.'+today:SUPA_URL+'/rest/v1/planning';
-    var method=exists?'PATCH':'POST';
-    /* 2. Créer ou mettre à jour */
+    var exists = rows&&rows.length>0;
+    var cloudData = exists ? rows[0].donnees : null;
+
+    /* 2. FUSIONNER : garder toutes les tâches du cloud + ajouter/écraser avec les tâches locales modifiées */
+    var mergedTasks = {};
+    if(cloudData&&cloudData.tasks) Object.assign(mergedTasks, cloudData.tasks);
+    Object.assign(mergedTasks, ST.tasks||{}); /* Les tâches locales ont priorité (changements récents) */
+
+    var mergedStatuts = {};
+    if(cloudData&&cloudData.statuts) Object.assign(mergedStatuts, cloudData.statuts);
+    Object.assign(mergedStatuts, ST.statuts||{});
+
+    var mergedConducteurs = {};
+    if(cloudData&&cloudData.conducteurs) Object.assign(mergedConducteurs, cloudData.conducteurs);
+    Object.assign(mergedConducteurs, ST.conducteurs||{});
+
+    var mergedNotes = {};
+    if(cloudData&&cloudData.notes) Object.assign(mergedNotes, cloudData.notes);
+    Object.assign(mergedNotes, ST.notes||{});
+
+    var d = {
+      drivers: ST.drivers||[],
+      tasks: mergedTasks,
+      statuts: mergedStatuts,
+      notes: mergedNotes,
+      cur: ST.cur,
+      library: ST.library||{},
+      tournees: ST.tournees||[],
+      conducteurs: mergedConducteurs,
+      memos: ST.memos||[],
+      km: ST.km||{}
+    };
+
+    /* Mettre à jour ST localement avec les données fusionnées */
+    ST.tasks = mergedTasks;
+    ST.statuts = mergedStatuts;
+    ST.conducteurs = mergedConducteurs;
+    ST.notes = mergedNotes;
+
+    var url = exists ? SUPA_URL+'/rest/v1/planning?date=eq.'+today : SUPA_URL+'/rest/v1/planning';
+    var method = exists ? 'PATCH' : 'POST';
+
     return fetch(url,{
       method:method,mode:'cors',
       headers:Object.assign({'Prefer':'return=minimal'},hdrs),
@@ -12028,6 +12063,7 @@ function sauverDansSupabase(){
     console.warn('Save réseau:',e.message);
   });
 }
+
 
 
 
