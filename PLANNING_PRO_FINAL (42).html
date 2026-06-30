@@ -826,7 +826,7 @@ input[type="time"]{
     <div class="sb-ico" onclick="swSB(3)" id="sbi-3" title="Assistant IA">&#129302;</div>
     <div class="sb-ico" onclick="swSB(4)" id="sbi-4" title="Km et Notes">&#128205;</div>
     <div class="sb-ico" onclick="swSB(5)" id="sbi-5" title="Fiches salaries">&#128196;</div>
-    <div class="sb-ico" onclick="swSB(6)" id="sbi-6" title="Tournees">&#128506;</div>
+    <div class="sb-ico" onclick="ouvrirTourneesRapide()" id="sbi-6" title="Tournees (plein ecran)">&#128506;</div>
   </div>
 
   <!-- CONTENU DES PANNEAUX -->
@@ -1729,7 +1729,7 @@ function basculerClient(srcTi,ci){
 }
 
 
-function ajouterClientTournee(ti){
+function ajouterClientTourneeSidebar(ti){
   var inp = document.getElementById('new-cl-'+ti);
   if(!inp||!inp.value.trim()) return;
   var nom = inp.value.trim().toUpperCase();
@@ -1784,7 +1784,7 @@ function sauvegarderEditTournee(){
 
 function delTr(ti){if(!confirm('Supprimer cette tournee ?'))return;ST.tournees.splice(ti,1);save();rTrList();showT('Tournee supprimee','#ef4444');}
 
-function rTrList(){var el=document.getElementById('tr-list');if(!el)return;if(!ST.tournees||!ST.tournees.length){el.innerHTML='<p style="font-size:11px;color:#475569;padding:8px 0">Aucune tournee.</p>';return;}var selHtml='<div style="margin-bottom:12px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px">Cliquer sur un client pour le deplacer vers :</div><div style="display:flex;flex-wrap:wrap;gap:6px" id="tr-cibles">';ST.tournees.forEach(function(tr,ti){var col=TR_COL[tr.couleur||'orange']||TR_COL.orange;selHtml+='<button data-cible="'+ti+'" onclick="setCible('+ti+')" style="padding:6px 14px;border-radius:20px;border:2px solid '+col.bd+';background:#fff;color:'+col.tx+';cursor:pointer;font-size:12px;font-weight:700" id="btn-cible-'+ti+'">'+col.ic+' '+tr.name.replace('Centre Aere ','')+'</button>';});selHtml+='</div></div>';var listHtml='';ST.tournees.forEach(function(tr,ti){var col=TR_COL[tr.couleur||'orange']||TR_COL.orange;var clientsHtml='';tr.clients.forEach(function(cl,ci){clientsHtml+='<span onclick="basculerClient('+ti+','+ci+')" style="display:inline-flex;align-items:center;background:#fff;border:1px solid '+col.bd+';color:'+col.tx+';border-radius:20px;padding:4px 10px;margin:3px;cursor:pointer;font-size:11px;font-weight:600">'+cl+'</span>';});listHtml+='<div style="background:'+col.bg+';border:2px solid '+col.bd+';border-radius:10px;padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font-size:15px">'+col.ic+'</span><span style="font-size:13px;font-weight:700;color:'+col.tx+';flex:1">'+tr.name+'</span><span style="font-size:10px;color:'+col.tx+';background:rgba(0,0,0,.08);padding:2px 8px;border-radius:10px">'+tr.clients.length+' clients</span><button onclick="editTournee('+ti+')" style="padding:4px 8px;border-radius:6px;border:1px solid '+col.bd+';background:#fff;color:'+col.tx+';cursor:pointer;font-size:11px">&#9998;</button><button onclick="delTr('+ti+')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef4444;background:#fff;color:#ef4444;cursor:pointer;font-size:11px">&#128465;</button></div><div>'+clientsHtml+'</div><div style="display:flex;gap:5px;margin-top:8px"><input type="text" id="new-cl-'+ti+'" class="fi" placeholder="+ Nouveau client..." style="flex:1;font-size:11px" onkeydown="if(event.key===\'Enter\')ajouterClientTournee('+ti+')"><button onclick="ajouterClientTournee('+ti+')" style="padding:6px 12px;border-radius:7px;border:none;background:'+col.bd+';color:#fff;cursor:pointer;font-size:12px;font-weight:700">+</button></div></div>';});el.innerHTML=selHtml+listHtml;if(ST.tournees.length>0)setTimeout(function(){setCible(_cibleTi<ST.tournees.length?_cibleTi:0);},30);}
+function rTrList(){var el=document.getElementById('tr-list');if(!el)return;if(!ST.tournees||!ST.tournees.length){el.innerHTML='<p style="font-size:11px;color:#475569;padding:8px 0">Aucune tournee.</p>';return;}var selHtml='<div style="margin-bottom:12px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px">Cliquer sur un client pour le deplacer vers :</div><div style="display:flex;flex-wrap:wrap;gap:6px" id="tr-cibles">';ST.tournees.forEach(function(tr,ti){var col=TR_COL[tr.couleur||'orange']||TR_COL.orange;selHtml+='<button data-cible="'+ti+'" onclick="setCible('+ti+')" style="padding:6px 14px;border-radius:20px;border:2px solid '+col.bd+';background:#fff;color:'+col.tx+';cursor:pointer;font-size:12px;font-weight:700" id="btn-cible-'+ti+'">'+col.ic+' '+tr.name.replace('Centre Aere ','')+'</button>';});selHtml+='</div></div>';var listHtml='';ST.tournees.forEach(function(tr,ti){var col=TR_COL[tr.couleur||'orange']||TR_COL.orange;var clientsHtml='';tr.clients.forEach(function(cl,ci){clientsHtml+='<span onclick="basculerClient('+ti+','+ci+')" style="display:inline-flex;align-items:center;background:#fff;border:1px solid '+col.bd+';color:'+col.tx+';border-radius:20px;padding:4px 10px;margin:3px;cursor:pointer;font-size:11px;font-weight:600">'+cl+'</span>';});listHtml+='<div style="background:'+col.bg+';border:2px solid '+col.bd+';border-radius:10px;padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font-size:15px">'+col.ic+'</span><span style="font-size:13px;font-weight:700;color:'+col.tx+';flex:1">'+tr.name+'</span><span style="font-size:10px;color:'+col.tx+';background:rgba(0,0,0,.08);padding:2px 8px;border-radius:10px">'+tr.clients.length+' clients</span><button onclick="editTournee('+ti+')" style="padding:4px 8px;border-radius:6px;border:1px solid '+col.bd+';background:#fff;color:'+col.tx+';cursor:pointer;font-size:11px">&#9998;</button><button onclick="delTr('+ti+')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef4444;background:#fff;color:#ef4444;cursor:pointer;font-size:11px">&#128465;</button></div><div>'+clientsHtml+'</div><div style="display:flex;gap:5px;margin-top:8px"><input type="text" id="new-cl-'+ti+'" class="fi" placeholder="+ Nouveau client..." style="flex:1;font-size:11px" onkeydown="if(event.key===\'Enter\')ajouterClientTourneeSidebar('+ti+')"><button onclick="ajouterClientTourneeSidebar('+ti+')" style="padding:6px 12px;border-radius:7px;border:none;background:'+col.bd+';color:#fff;cursor:pointer;font-size:12px;font-weight:700">+</button></div></div>';});el.innerHTML=selHtml+listHtml;if(ST.tournees.length>0)setTimeout(function(){setCible(_cibleTi<ST.tournees.length?_cibleTi:0);},30);}
 
 /* ══ TOURNÉES RAPIDES ══ */
 /* ══ SYSTÈME PRÉSENCES + DATES MULTIPLES ══ */
@@ -24992,13 +24992,13 @@ function ouvrirTourneesRapide(){
       var btn=document.createElement("button");
       btn.textContent=t.label+" ("+(ST.bibliotheques[t.id]||[]).length+")";
       btn.style.cssText="padding:6px 12px;border-radius:7px;border:2px solid "+(isActive?t.color:"transparent")+";background:"+t.bg+";color:"+t.color+";font-size:11px;font-weight:800;cursor:pointer";
-      btn.addEventListener("click",function(){assignerTourneeChauffeur(i,t.id,t.color);});
+      btn.addEventListener("click",function(){tourFullAssigner(i,t.id,t.color);});
       row.appendChild(btn);
     });
     var noneBtn=document.createElement("button");
     noneBtn.textContent="Retirer";
     noneBtn.style.cssText="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer";
-    noneBtn.addEventListener("click",function(){assignerTourneeChauffeur(i,"","");});
+    noneBtn.addEventListener("click",function(){tourFullAssigner(i,"","");});
     row.appendChild(noneBtn);
     assignSection.appendChild(row);
   });
@@ -25023,13 +25023,13 @@ function ouvrirTourneesRapide(){
     var listDiv=document.createElement("div");
     listDiv.style.cssText="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:280px;overflow-y:auto";
     listDiv.id="tournee-list-"+t.id;
-    renderTourneeList(listDiv,t.id,t.color);
+    tourFullRenderList(listDiv,t.id,t.color);
     card.appendChild(listDiv);
 
     var addBtn=document.createElement("button");
     addBtn.textContent="+ Ajouter un client";
     addBtn.style.cssText="padding:9px;background:"+t.bg+";border:1px dashed "+t.color+"66;border-radius:8px;color:"+t.color+";font-size:12px;font-weight:700;cursor:pointer";
-    addBtn.addEventListener("click",function(){ajouterClientTournee(t.id,t.color);});
+    addBtn.addEventListener("click",function(){tourFullAjouterClient(t.id,t.color);});
     card.appendChild(addBtn);
 
     body.appendChild(card);
@@ -25038,7 +25038,7 @@ function ouvrirTourneesRapide(){
   document.body.appendChild(page);
 }
 
-function renderTourneeList(listDiv,tid,color){
+function tourFullRenderList(listDiv,tid,color){
   listDiv.innerHTML="";
   var items=ST.bibliotheques[tid]||[];
   if(!items.length){
@@ -25063,7 +25063,7 @@ function renderTourneeList(listDiv,tid,color){
     var editBtn=document.createElement("button");
     editBtn.textContent="Edit";
     editBtn.style.cssText="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:5px;color:#60a5fa;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
-    editBtn.addEventListener("click",function(){ajouterClientTournee(tid,color,idx);});
+    editBtn.addEventListener("click",function(){tourFullAjouterClient(tid,color,idx);});
     var delBtn=document.createElement("button");
     delBtn.textContent="X";
     delBtn.style.cssText="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
@@ -25071,14 +25071,14 @@ function renderTourneeList(listDiv,tid,color){
       ST.bibliotheques[tid].splice(idx,1);
       save();
       var ld=document.getElementById("tournee-list-"+tid);
-      if(ld)renderTourneeList(ld,tid,color);
+      if(ld)tourFullRenderList(ld,tid,color);
     });
     row.appendChild(info);row.appendChild(editBtn);row.appendChild(delBtn);
     listDiv.appendChild(row);
   });
 }
 
-function ajouterClientTournee(tid,color,editIdx){
+function tourFullAjouterClient(tid,color,editIdx){
   var existing=document.getElementById("m-add-client-tournee");if(existing)existing.remove();
   var isEdit=editIdx!==undefined;
   var item=isEdit?ST.bibliotheques[tid][editIdx]:{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
@@ -25146,7 +25146,7 @@ function ajouterClientTournee(tid,color,editIdx){
     save();
     document.getElementById("m-add-client-tournee").remove();
     var ld=document.getElementById("tournee-list-"+tid);
-    if(ld)renderTourneeList(ld,tid,color);
+    if(ld)tourFullRenderList(ld,tid,color);
     /* Rafraichir le compteur */
     var page=document.getElementById("page-tournees");
     if(page){page.remove();ouvrirTourneesRapide();}
@@ -25164,7 +25164,7 @@ function ajouterClientTournee(tid,color,editIdx){
 }
 
 /* Assigner une tournee a un chauffeur -> ecrit tous les clients sur sa colonne pour ST.cur */
-function assignerTourneeChauffeur(di,tid,tcolor){
+function tourFullAssigner(di,tid,tcolor){
   var dr=ST.drivers[di];
   if(!dr)return;
 
