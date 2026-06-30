@@ -9,7 +9,7 @@ function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)ret
 <script>
 
 /* PLAQUES IMMATRICULATION */
-window.ouvrirPlaquesImmat=function(){
+function ouvrirPlaquesImmat(){
   var existing=document.getElementById("m-plaques");if(existing)existing.remove();
   if(!ST.plaques) ST.plaques = {};
   if(!ST.camionsLoc) ST.camionsLoc = [];
@@ -120,7 +120,7 @@ function supprimerCamionLoc(idx){
   ouvrirPlaquesImmat();
 }
 
-window.sauverPlaques=function(){
+function sauverPlaques(){
   if(!ST.plaques)ST.plaques={};
   document.querySelectorAll(".plaque-input").forEach(function(inp){
     var truck=inp.getAttribute("data-truck");
@@ -139,7 +139,7 @@ window.sauverPlaques=function(){
   setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},500);
 }
 
-window.rPlaquesBar=function(){
+function rPlaquesBar(){
   var existing=document.getElementById("plaques-bar");
   if(existing)existing.remove();
   if(!ST.plaques)return;
@@ -165,7 +165,6 @@ window.rPlaquesBar=function(){
 window.addEventListener("load",function(){setTimeout(rPlaquesBar,1500);});
 
 
-/* ═══════ GESTION TOURNÉES ═══════ */
 var TOURNEES_DEFS=[
   {id:"bleu",label:"Bleue",color:"#3b82f6",bg:"rgba(59,130,246,.12)"},
   {id:"rose",label:"Rose",color:"#ec4899",bg:"rgba(236,72,153,.12)"},
@@ -175,66 +174,54 @@ var TOURNEES_DEFS=[
   {id:"orange",label:"Orange",color:"#f97316",bg:"rgba(249,115,22,.12)"}
 ];
 
-window.ouvrirTourneesRapide=function(){
+window.fermerTournees=function(){
+  var p=document.getElementById("page-tournees");if(p)p.remove();
+  save();setTimeout(sauverDansSupabase,300);
+};
+
+window.preRemplirDepuisTasks=function(){
+  if(!ST||!ST.tasks)return;
   if(!ST.bibliotheques)ST.bibliotheques={};
   TOURNEES_DEFS.forEach(function(t){if(!ST.bibliotheques[t.id])ST.bibliotheques[t.id]=[];});
-  var old=document.getElementById("page-tournees");if(old)old.remove();
-  var page=document.createElement("div");
-  page.id="page-tournees";
-  page.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:#07111f;z-index:99999;overflow-y:auto";
-  var html='<div style="background:#0d1829;border-bottom:2px solid #1e3a5f;padding:16px 24px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:18px;font-weight:900;color:#fff">Gestion des tournees</div><button onclick="document.getElementById(\'page-tournees\').remove();save();setTimeout(sauverDansSupabase,300)" style="padding:10px 20px;background:#dc2626;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Fermer</button></div>';
-  html+='<div style="padding:16px 24px;background:#0a1628;border-bottom:1px solid #1e293b"><div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:12px">Assigner une tournee (date: '+ST.cur+')</div>';
-  ST.drivers.forEach(function(dr,i){
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><div style="font-size:12px;font-weight:800;color:#e2e8f0;width:180px;flex-shrink:0">'+dr.name+' ('+dr.truck+')</div>';
-    TOURNEES_DEFS.forEach(function(t){
-      var active=dr.tournee===t.id;
-      html+='<button onclick="tourAssigner('+i+',\''+t.id+'\',\''+t.color+'\')" style="padding:6px 12px;border-radius:7px;border:2px solid '+(active?t.color:'transparent')+';background:'+t.bg+';color:'+t.color+';font-size:11px;font-weight:800;cursor:pointer">'+t.label+' ('+(ST.bibliotheques[t.id]||[]).length+')</button>';
+  var dejaDans={};
+  TOURNEES_DEFS.forEach(function(t){(ST.bibliotheques[t.id]||[]).forEach(function(i){if(i.client)dejaDans[i.client.toUpperCase()]=true;});});
+  var nouveaux=[],vus={};
+  Object.keys(ST.tasks||{}).forEach(function(key){
+    var parts=key.split("|");if(parts.length<3)return;
+    var heure=parts[2];
+    (ST.tasks[key]||[]).forEach(function(t){
+      var cl=(t.client||"").trim().toUpperCase();
+      if(!cl||cl.length<2||vus[cl]||dejaDans[cl])return;
+      vus[cl]=true;
+      nouveaux.push({heure:heure,client:cl,task:t.task||"",adresse:t.adresse||"",category:t.cat||t.category||"collectivite"});
     });
-    html+='<button onclick="tourAssigner('+i+',\'\',\'\')" style="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer">Retirer</button></div>';
   });
-  html+='</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:20px 24px">';
-  TOURNEES_DEFS.forEach(function(t){
-    var items=ST.bibliotheques[t.id]||[];
-    html+='<div style="background:#0f1e35;border:1px solid '+t.color+'55;border-radius:12px;padding:14px">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:900;color:'+t.color+'">Tournee '+t.label+'</div><span style="background:'+t.bg+';color:'+t.color+';border-radius:10px;padding:2px 9px;font-size:11px;font-weight:800">'+items.length+'</span></div>';
-    items.forEach(function(item,idx){
-      html+='<div style="background:#071526;border-left:3px solid '+t.color+';border-radius:6px;padding:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:12px;font-weight:800;color:#fff">'+item.heure+' — '+(item.client||'')+'</div><div style="font-size:10px;color:#64748b">'+(item.task||'')+'</div></div>';
-      html+='<button onclick="tourFormulaire(\''+t.id+'\',\''+t.color+'\','+idx+')" style="background:rgba(59,130,246,.15);border:1px solid #3b82f6;border-radius:5px;color:#60a5fa;cursor:pointer;padding:4px 7px;font-size:10px">✏</button>';
-      html+='<button onclick="tourSupprimer(\''+t.id+'\','+idx+')" style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:5px;color:#ef4444;cursor:pointer;padding:4px 7px;font-size:10px">✕</button></div>';
-    });
-    html+='<button onclick="tourFormulaire(\''+t.id+'\',\''+t.color+'\')" style="width:100%;margin-top:8px;padding:9px;background:'+t.bg+';border:1px dashed '+t.color+'66;border-radius:8px;color:'+t.color+';font-size:12px;font-weight:700;cursor:pointer">+ Ajouter un client</button>';
-    html+='</div>';
-  });
-  html+='</div>';
-  page.innerHTML=html;
-  document.body.appendChild(page);
-}
+  nouveaux.forEach(function(item){ST.bibliotheques.bleu.push(item);});
+  if(nouveaux.length>0){
+    ST.bibliotheques.bleu.sort(function(a,b){return (a.heure||"").localeCompare(b.heure||"");});
+    save();showT(nouveaux.length+" client(s) importes dans Tournee Bleue","#22c55e");
+    setTimeout(sauverDansSupabase,500);
+  } else {
+    showT("Tous les clients sont deja dans les tournees","#64748b");
+  }
+  setTimeout(ouvrirTourneesRapide,800);
+};
+
+window.deplacerClientTournee=function(fromTid,idx,toTid){
+  if(!ST.bibliotheques||!ST.bibliotheques[fromTid])return;
+  var item=ST.bibliotheques[fromTid][idx];if(!item)return;
+  ST.bibliotheques[fromTid].splice(idx,1);
+  if(!ST.bibliotheques[toTid])ST.bibliotheques[toTid]=[];
+  ST.bibliotheques[toTid].push(item);
+  ST.bibliotheques[toTid].sort(function(a,b){return (a.heure||"").localeCompare(b.heure||"");});
+  save();setTimeout(sauverDansSupabase,500);
+  ouvrirTourneesRapide();
+};
 
 window.tourSupprimer=function(tid,idx){
-  if(!confirm("Supprimer ?"))return;
-  ST.bibliotheques[tid].splice(idx,1);
-  save();ouvrirTourneesRapide();
-}
-
-window.tourFormulaire=function(tid,color,editIdx){
-  var old=document.getElementById("m-tour-form");if(old)old.remove();
-  var isEdit=editIdx!==undefined;
-  var item=isEdit?(ST.bibliotheques[tid][editIdx]||{}):{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
-  var d=document.createElement("div");d.id="m-tour-form";
-  d.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px";
-  var html='<div style="background:#0f1e35;border-radius:14px;padding:24px;max-width:400px;width:100%;color:#e2e8f0">';
-  html+='<div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:16px">'+(isEdit?"Modifier":"Ajouter")+" un client</div>";
-  html+='<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Heure</label><input id="tfl-h" value="'+(item.heure||"08:00")+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">';
-  html+='<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Client *</label><input id="tfl-c" value="'+(item.client||"")+'" placeholder="Nom du client" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">';
-  html+='<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Mission</label><input id="tfl-t" value="'+(item.task||"")+'" placeholder="Livraison..." style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">';
-  html+='<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Adresse</label><input id="tfl-a" value="'+(item.adresse||"")+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:16px">';
-  html+='<div style="display:flex;gap:8px">';
-  html+='<button onclick="tourSauver(\''+tid+'\',\''+color+'\','+(isEdit?editIdx:'undefined')+')" style="flex:1;padding:11px;background:#2563eb;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">Enregistrer</button>';
-  html+='<button onclick="document.getElementById(\'m-tour-form\').remove()" style="padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Annuler</button>';
-  html+='</div></div>';
-  d.innerHTML=html;document.body.appendChild(d);
-  setTimeout(function(){var f=document.getElementById("tfl-c");if(f)f.focus();},50);
-}
+  if(!confirm("Supprimer ce client ?"))return;
+  ST.bibliotheques[tid].splice(idx,1);save();ouvrirTourneesRapide();
+};
 
 window.tourSauver=function(tid,color,editIdx){
   var h=(document.getElementById("tfl-h")||{}).value||"08:00";
@@ -245,15 +232,45 @@ window.tourSauver=function(tid,color,editIdx){
   if(!ST.bibliotheques)ST.bibliotheques={};
   if(!ST.bibliotheques[tid])ST.bibliotheques[tid]=[];
   var item={heure:h,client:cl,task:tk,adresse:ad,category:"collectivite"};
-  if(editIdx!==undefined){ST.bibliotheques[tid][editIdx]=item;}
+  if(editIdx!==undefined&&editIdx!=="undefined"){ST.bibliotheques[tid][parseInt(editIdx)]=item;}
   else{ST.bibliotheques[tid].push(item);}
   ST.bibliotheques[tid].sort(function(a,b){return (a.heure||"").localeCompare(b.heure||"");});
   save();
   var f=document.getElementById("m-tour-form");if(f)f.remove();
-  showT("Client enregistre","#22c55e");
-  setTimeout(sauverDansSupabase,500);
+  showT("Client enregistre","#22c55e");setTimeout(sauverDansSupabase,500);
   ouvrirTourneesRapide();
-}
+};
+
+window.tourFormulaire=function(tid,color,editIdx){
+  var old=document.getElementById("m-tour-form");if(old)old.remove();
+  var isEdit=editIdx!==undefined&&editIdx!=="undefined";
+  var item=isEdit&&ST.bibliotheques&&ST.bibliotheques[tid]?(ST.bibliotheques[tid][parseInt(editIdx)]||{}):{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
+  var d=document.createElement("div");d.id="m-tour-form";
+  d.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px";
+  var TDEFS_str=JSON.stringify(TOURNEES_DEFS);
+  d.innerHTML='<div style="background:#0f1e35;border-radius:14px;padding:24px;max-width:400px;width:100%;color:#e2e8f0">'
+    +'<div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:16px">'+(isEdit?"Modifier":"Ajouter")+" un client</div>"
+    +'<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Heure</label>'
+    +'<input id="tfl-h" value="'+(item.heure||"08:00")+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">'
+    +'<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Client *</label>'
+    +'<input id="tfl-c" value="'+(item.client||"")+'" placeholder="Nom du client" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">'
+    +'<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Mission</label>'
+    +'<input id="tfl-t" value="'+(item.task||"")+'" placeholder="Livraison..." style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:10px">'
+    +'<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;text-transform:uppercase">Adresse</label>'
+    +'<input id="tfl-a" value="'+(item.adresse||"")+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box;margin-bottom:16px">'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="btn-tour-sauver" data-tid="'+tid+'" data-color="'+color+'" data-edit="'+(isEdit?editIdx:"undefined")+'" style="flex:1;padding:11px;background:#2563eb;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">Enregistrer</button>'
+    +'<button id="btn-tour-annuler" style="padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Annuler</button>'
+    +'</div></div>';
+  document.body.appendChild(d);
+  document.getElementById("btn-tour-sauver").addEventListener("click",function(){
+    tourSauver(this.getAttribute("data-tid"),this.getAttribute("data-color"),this.getAttribute("data-edit"));
+  });
+  document.getElementById("btn-tour-annuler").addEventListener("click",function(){
+    document.getElementById("m-tour-form").remove();
+  });
+  setTimeout(function(){var f=document.getElementById("tfl-c");if(f)f.focus();},50);
+};
 
 window.tourAssigner=function(di,tid,tcolor){
   var dr=ST.drivers[di];if(!dr)return;
@@ -273,9 +290,78 @@ window.tourAssigner=function(di,tid,tcolor){
   }
   save();if(typeof rGrid==="function")rGrid();
   showT("Tournee appliquee a "+dr.name,"#22c55e");
-  setTimeout(sauverDansSupabase,500);
-  ouvrirTourneesRapide();
-}
+  setTimeout(sauverDansSupabase,500);ouvrirTourneesRapide();
+};
+
+window.ouvrirTourneesRapide=function(){
+  if(!ST.bibliotheques)ST.bibliotheques={};
+  TOURNEES_DEFS.forEach(function(t){if(!ST.bibliotheques[t.id])ST.bibliotheques[t.id]=[];});
+  var old=document.getElementById("page-tournees");if(old)old.remove();
+  var page=document.createElement("div");
+  page.id="page-tournees";
+  page.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:#07111f;z-index:99999;overflow-y:auto";
+  var html='<div style="background:#0d1829;border-bottom:2px solid #1e3a5f;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+    +'<div style="font-size:18px;font-weight:900;color:#fff">Gestion des tournees</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="btn-import-cl" style="padding:10px 16px;background:#16a34a;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">&#128229; Importer mes clients</button>'
+    +'<button id="btn-fermer-t" style="padding:10px 20px;background:#dc2626;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>'
+    +'</div></div>';
+  html+='<div style="padding:16px 24px;background:#0a1628;border-bottom:1px solid #1e293b">'
+    +'<div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:12px">Assigner une tournee - date : '+ST.cur+'</div>';
+  ST.drivers.forEach(function(dr,i){
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">'
+      +'<div style="font-size:12px;font-weight:800;color:#e2e8f0;width:180px;flex-shrink:0">'+dr.name+' ('+dr.truck+')</div>';
+    TOURNEES_DEFS.forEach(function(t){
+      var active=dr.tournee===t.id;
+      html+='<button data-act="assigner" data-di="'+i+'" data-tid="'+t.id+'" data-tc="'+t.color+'" style="padding:6px 12px;border-radius:7px;border:2px solid '+(active?t.color:'transparent')+';background:'+t.bg+';color:'+t.color+';font-size:11px;font-weight:800;cursor:pointer">'+t.label+' ('+(ST.bibliotheques[t.id]||[]).length+')</button>';
+    });
+    html+='<button data-act="retirer" data-di="'+i+'" style="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer">Retirer</button>';
+    html+='</div>';
+  });
+  html+='</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:20px 24px">';
+  TOURNEES_DEFS.forEach(function(t){
+    var items=ST.bibliotheques[t.id]||[];
+    html+='<div style="background:#0f1e35;border:1px solid '+t.color+'55;border-radius:12px;padding:14px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:13px;font-weight:900;color:'+t.color+'">Tournee '+t.label+'</div>'
+      +'<span style="background:'+t.bg+';color:'+t.color+';border-radius:10px;padding:2px 9px;font-size:11px;font-weight:800">'+items.length+'</span>'
+      +'</div>';
+    items.forEach(function(item,idx){
+      html+='<div style="background:#071526;border-left:3px solid '+t.color+';border-radius:6px;padding:8px;margin-bottom:6px">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
+        +'<div style="flex:1"><div style="font-size:12px;font-weight:800;color:#fff">'+item.heure+' \u2014 '+(item.client||'')+'</div>'
+        +'<div style="font-size:10px;color:#64748b">'+(item.task||'')+'</div></div>'
+        +'<button data-act="editer" data-tid="'+t.id+'" data-tc="'+t.color+'" data-idx="'+idx+'" style="background:rgba(59,130,246,.15);border:1px solid #3b82f6;border-radius:5px;color:#60a5fa;cursor:pointer;padding:4px 7px;font-size:10px">\u270f</button>'
+        +'<button data-act="suppr" data-tid="'+t.id+'" data-idx="'+idx+'" style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:5px;color:#ef4444;cursor:pointer;padding:4px 7px;font-size:10px">\u00d7</button>'
+        +'</div>'
+        +'<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'
+        +'<span style="font-size:9px;color:#475569">D\u00e9placer :</span>';
+      TOURNEES_DEFS.forEach(function(dest){
+        if(dest.id===t.id)return;
+        html+='<button data-act="deplacer" data-from="'+t.id+'" data-idx="'+idx+'" data-to="'+dest.id+'" style="padding:2px 8px;border-radius:5px;border:1px solid '+dest.color+'55;background:'+dest.bg+';color:'+dest.color+';font-size:9px;font-weight:700;cursor:pointer">'+dest.label+'</button>';
+      });
+      html+='</div></div>';
+    });
+    html+='<button data-act="ajouter" data-tid="'+t.id+'" data-tc="'+t.color+'" style="width:100%;margin-top:8px;padding:9px;background:'+t.bg+';border:1px dashed '+t.color+'66;border-radius:8px;color:'+t.color+';font-size:12px;font-weight:700;cursor:pointer">+ Ajouter un client</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  page.innerHTML=html;
+  document.body.appendChild(page);
+  /* Délégation — un seul listener pour tout */
+  page.addEventListener("click",function(e){
+    var b=e.target.closest("[data-act]");if(!b)return;
+    var a=b.getAttribute("data-act");
+    if(a==="ajouter")tourFormulaire(b.getAttribute("data-tid"),b.getAttribute("data-tc"));
+    else if(a==="editer")tourFormulaire(b.getAttribute("data-tid"),b.getAttribute("data-tc"),parseInt(b.getAttribute("data-idx")));
+    else if(a==="suppr")tourSupprimer(b.getAttribute("data-tid"),parseInt(b.getAttribute("data-idx")));
+    else if(a==="deplacer")deplacerClientTournee(b.getAttribute("data-from"),parseInt(b.getAttribute("data-idx")),b.getAttribute("data-to"));
+    else if(a==="assigner")tourAssigner(parseInt(b.getAttribute("data-di")),b.getAttribute("data-tid"),b.getAttribute("data-tc"));
+    else if(a==="retirer")tourAssigner(parseInt(b.getAttribute("data-di")),"","");
+  });
+  document.getElementById("btn-import-cl").addEventListener("click",preRemplirDepuisTasks);
+  document.getElementById("btn-fermer-t").addEventListener("click",fermerTournees);
+};
 
 </script>
 <script>
@@ -894,11 +980,11 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <button onclick="sauverDansSupabase();setTimeout(chargerDepuisSupabase,1500)" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer">☁ Sync</button>
+    <button onclick="sauverDansSupabase();setTimeout(chargerDepuisSupabase,1500)" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer">&#9729; Sync</button>
     <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:0 4px"><span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span><span id="sync-txt">OK</span></span>
-    <button onclick="ouvrirPlaquesImmat()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer">🚐 Plaques</button>
-    <button onclick="window.print()" style="padding:6px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:7px;color:#92400e;font-size:12px;font-weight:700;cursor:pointer">🖨️ Imprimer</button>
-    <button onclick="ouvrirTourneesRapide()" style="padding:6px 12px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:7px;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer">🎨 Tournées</button>
+    <button onclick="ouvrirPlaquesImmat()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer">&#128662; Plaques</button>
+    <button onclick="window.print()" style="padding:6px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:7px;color:#92400e;font-size:12px;font-weight:700;cursor:pointer">&#128424; Imprimer</button>
+    <button onclick="ouvrirTourneesRapide()" style="padding:6px 12px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:7px;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer">&#127912; Tournees</button>
   </div>
   <div class="nsp"></div>
 
@@ -12291,28 +12377,20 @@ function chargerDepuisSupabase(forceToday){
     if(!rows||!rows.length){if(t)t.textContent='Vide';return;}
     rows=rows.filter(function(r){return r.date&&!r.date.startsWith('AUDIT_')&&!r.date.startsWith('test');});
     if(!rows.length)return;
-    var data=rows[0].donnees;
-    if(!data||!data.drivers)return;
-    if(data.drivers.length)ST.drivers=data.drivers;
-    if(data.tasks)ST.tasks=data.tasks;
-    if(data.statuts)ST.statuts=data.statuts;
-    if(data.notes)ST.notes=data.notes;
-    if(data.library)ST.library=data.library;
-    if(data.tournees)ST.tournees=data.tournees;
-    if(data.conducteurs)ST.conducteurs=data.conducteurs;
-    if(data.memos)ST.memos=data.memos;
-    if(data.km)ST.km=data.km;
-    if(data.plaques)ST.plaques=data.plaques;
-    if(data.camionsLoc)ST.camionsLoc=data.camionsLoc;
-    if(data.bibliotheques)ST.bibliotheques=data.bibliotheques;
+    var data=rows[0].donnees;if(!data||!data.drivers)return;
+    if(data.drivers.length)ST.drivers=data.drivers;if(data.tasks)ST.tasks=data.tasks;
+    if(data.statuts)ST.statuts=data.statuts;if(data.notes)ST.notes=data.notes;
+    if(data.library)ST.library=data.library;if(data.tournees)ST.tournees=data.tournees;
+    if(data.conducteurs)ST.conducteurs=data.conducteurs;if(data.memos)ST.memos=data.memos;
+    if(data.km)ST.km=data.km;if(data.plaques)ST.plaques=data.plaques;
+    if(data.camionsLoc)ST.camionsLoc=data.camionsLoc;if(data.bibliotheques)ST.bibliotheques=data.bibliotheques;
     if(forceToday)ST.cur=new Date().toISOString().slice(0,10);
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
-    if(typeof render==='function')render();
-    if(typeof rStats==='function')rStats();
+    if(typeof render==='function')render();if(typeof rStats==='function')rStats();
     if(typeof rPlaquesBar==='function')rPlaquesBar();
     var upd=rows[0].updated_at?new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'?';
     if(l)l.style.background='#22c55e';if(t)t.textContent='Sync '+upd;
-    showT('Planning a jour — '+upd,'#16a34a');
+    showT('Planning a jour '+upd,'#16a34a');
   })
   .catch(function(){if(l)l.style.background='#ef4444';if(t)t.textContent='Erreur';});
 }
@@ -24874,22 +24952,20 @@ function silentSync(){
   if(typeof ST==='undefined')return;
   var active=document.activeElement;
   if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'))return;
-  if(document.querySelector('.mbg.on'))return;
+  if(document.querySelector('.mbg.on')||document.getElementById('page-tournees'))return;
   fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=3&select=date,donnees,updated_at',{method:'GET',mode:'cors',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}})
   .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
     if(!rows||!rows.length)return;
     rows=rows.filter(function(r){return r.date&&!r.date.startsWith('AUDIT_');});
-    if(!rows.length)return;
-    var u=rows[0].updated_at||'';if(u===_lastUpd)return;_lastUpd=u;
+    if(!rows.length)return;var u=rows[0].updated_at||'';if(u===_lastUpd)return;_lastUpd=u;
     var d=rows[0].donnees;if(!d||!d.drivers)return;
-    if(d.drivers.length)ST.drivers=d.drivers;
-    if(d.tasks)ST.tasks=d.tasks;if(d.statuts)ST.statuts=d.statuts;
-    if(d.notes)ST.notes=d.notes;if(d.library)ST.library=d.library;
-    if(d.tournees)ST.tournees=d.tournees;if(d.conducteurs)ST.conducteurs=d.conducteurs;
-    if(d.memos)ST.memos=d.memos;if(d.km)ST.km=d.km;
-    if(d.plaques)ST.plaques=d.plaques;if(d.camionsLoc)ST.camionsLoc=d.camionsLoc;
-    if(d.bibliotheques)ST.bibliotheques=d.bibliotheques;
+    if(d.drivers.length)ST.drivers=d.drivers;if(d.tasks)ST.tasks=d.tasks;
+    if(d.statuts)ST.statuts=d.statuts;if(d.notes)ST.notes=d.notes;
+    if(d.library)ST.library=d.library;if(d.tournees)ST.tournees=d.tournees;
+    if(d.conducteurs)ST.conducteurs=d.conducteurs;if(d.memos)ST.memos=d.memos;
+    if(d.km)ST.km=d.km;if(d.plaques)ST.plaques=d.plaques;
+    if(d.camionsLoc)ST.camionsLoc=d.camionsLoc;if(d.bibliotheques)ST.bibliotheques=d.bibliotheques;
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
     if(typeof rGrid==='function')rGrid();else if(typeof render==='function')render();
     var t=document.getElementById('sync-txt'),l=document.getElementById('sync-led');
