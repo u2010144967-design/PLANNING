@@ -2,21 +2,468 @@
 <html lang="fr">
 <head>
 <script>
+/* CONFIG SUPABASE */
 var SUPA_URL="https://lllzlidwtcjwsxbgkygn.supabase.co";
 var SUPA_KEY="sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV";
-function getConducteurDesigne(truck,date){try{if(!window.ST||!ST.conducteurs)return null;return ST.conducteurs[(date||"")+"_"+(truck||"")]||null;}catch(e){return null;}}
 
-
-/* STUBS — appellent les vraies fonctions définies plus loin */
-window._ouvrirTourneesRapide=function ouvrirTourneesRapideImpl(){
-  if(window._ouvrirTourneesRapide) window._ouvrirTourneesRapide();
-  else setTimeout(ouvrirTourneesRapide, 300);
-}
-window._ouvrirPlaquesImmat=function ouvrirPlaquesImmatImpl(){
-  if(window._ouvrirPlaquesImmat) window._ouvrirPlaquesImmat();
-  else setTimeout(ouvrirPlaquesImmat, 300);
+/* STUB getConducteurDesigne */
+function getConducteurDesigne(truck,date){
+  try{
+    if(!window.ST||!ST.conducteurs)return null;
+    return ST.conducteurs[(date||"")+"_"+(truck||"")]||null;
+  }catch(e){return null;}
 }
 </script>
+
+<script>
+/* FONCTIONS PLAQUES ET TOURNÉES — chargées en premier */
+
+/* PLAQUES IMMATRICULATION */
+function ouvrirPlaquesImmat(){
+  var existing=document.getElementById("m-plaques");if(existing)existing.remove();
+  if(!ST.plaques) ST.plaques = {};
+  if(!ST.camionsLoc) ST.camionsLoc = [];
+
+  var modal=document.createElement("div");modal.id="m-plaques";modal.className="mbg on";
+  var box=document.createElement("div");
+  box.style.cssText="background:#0f1e35;border-radius:16px;padding:24px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0;box-shadow:0 20px 60px rgba(0,0,0,.5)";
+
+  var title=document.createElement("div");
+  title.style.cssText="font-size:17px;font-weight:900;color:#fff;margin-bottom:4px";
+  title.textContent="Plaques d'immatriculation";
+  box.appendChild(title);
+
+  var sub=document.createElement("div");
+  sub.style.cssText="font-size:11px;color:#94a3b8;margin-bottom:18px";
+  sub.textContent="Renseignez la plaque de chaque vehicule. Visible en permanence dans la barre du haut.";
+  box.appendChild(sub);
+
+  var h1=document.createElement("div");
+  h1.style.cssText="font-size:10px;font-weight:800;color:#60a5fa;text-transform:uppercase;margin-bottom:8px";
+  h1.textContent="Vehicules assignes";
+  box.appendChild(h1);
+
+  var trucksSeen={};
+  ST.drivers.forEach(function(dr){
+    if(!dr.truck||trucksSeen[dr.truck])return;
+    trucksSeen[dr.truck]=true;
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:#071526;border-radius:8px;padding:8px 12px";
+    var lbl=document.createElement("div");
+    lbl.style.cssText="flex:1;font-size:13px;font-weight:700";
+    lbl.textContent=dr.truck;
+    var inp=document.createElement("input");
+    inp.type="text";inp.className="plaque-input";
+    inp.setAttribute("data-truck",dr.truck);
+    inp.value=ST.plaques[dr.truck]||"";
+    inp.placeholder="AA-123-BB";
+    inp.style.cssText="background:#0a1828;border:1px solid #1e3a5f;border-radius:6px;color:#fff;padding:6px 10px;font-size:13px;font-weight:800;letter-spacing:1px;width:140px;text-align:center;text-transform:uppercase";
+    row.appendChild(lbl);row.appendChild(inp);
+    box.appendChild(row);
+  });
+
+  var h2=document.createElement("div");
+  h2.style.cssText="font-size:10px;font-weight:800;color:#a855f7;text-transform:uppercase;margin:16px 0 8px";
+  h2.textContent="Vehicules en location";
+  box.appendChild(h2);
+
+  var locList=document.createElement("div");locList.id="loc-list";
+  ST.camionsLoc.forEach(function(nom,idx){
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:#071526;border-radius:8px;padding:8px 12px";
+    var nameInp=document.createElement("input");
+    nameInp.type="text";nameInp.className="loc-name-input";
+    nameInp.setAttribute("data-idx",idx);
+    nameInp.value=nom;
+    nameInp.placeholder="Nom du vehicule";
+    nameInp.style.cssText="flex:1;background:#0a1828;border:1px solid #1e3a5f;border-radius:6px;color:#fff;padding:6px 10px;font-size:12px";
+    var plaqueInp=document.createElement("input");
+    plaqueInp.type="text";plaqueInp.className="plaque-input";
+    plaqueInp.setAttribute("data-truck",nom);
+    plaqueInp.value=ST.plaques[nom]||"";
+    plaqueInp.placeholder="AA-123-BB";
+    plaqueInp.style.cssText="background:#0a1828;border:1px solid #1e3a5f;border-radius:6px;color:#fff;padding:6px 10px;font-size:13px;font-weight:800;letter-spacing:1px;width:130px;text-align:center;text-transform:uppercase";
+    var delBtn=document.createElement("button");
+    delBtn.textContent="X";
+    delBtn.style.cssText="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;cursor:pointer;padding:5px 9px;font-size:12px";
+    delBtn.addEventListener("click",function(){supprimerCamionLoc(idx);});
+    row.appendChild(nameInp);row.appendChild(plaqueInp);row.appendChild(delBtn);
+    locList.appendChild(row);
+  });
+  box.appendChild(locList);
+
+  var addBtn=document.createElement("button");
+  addBtn.textContent="+ Ajouter un vehicule en location";
+  addBtn.style.cssText="width:100%;padding:10px;background:rgba(168,85,247,.1);border:1px dashed rgba(168,85,247,.4);border-radius:8px;color:#a855f7;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:18px";
+  addBtn.addEventListener("click",ajouterCamionLoc);
+  box.appendChild(addBtn);
+
+  var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:8px";
+  var saveBtn=document.createElement("button");
+  saveBtn.textContent="Enregistrer";
+  saveBtn.style.cssText="flex:1;padding:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer";
+  saveBtn.addEventListener("click",sauverPlaques);
+  var closeBtn=document.createElement("button");
+  closeBtn.textContent="Fermer";
+  closeBtn.style.cssText="padding:11px 18px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer";
+  closeBtn.addEventListener("click",function(){closeMod("m-plaques");});
+  btnRow.appendChild(saveBtn);btnRow.appendChild(closeBtn);
+  box.appendChild(btnRow);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+function ajouterCamionLoc(){
+  var nom=prompt("Nom du vehicule en location :","VIVARO LOCATION 2");
+  if(!nom||!nom.trim())return;
+  if(!ST.camionsLoc)ST.camionsLoc=[];
+  ST.camionsLoc.push(nom.trim().toUpperCase());
+  save();
+  ouvrirPlaquesImmat();
+}
+
+function supprimerCamionLoc(idx){
+  if(!confirm("Supprimer ce vehicule en location ?"))return;
+  ST.camionsLoc.splice(idx,1);
+  save();
+  ouvrirPlaquesImmat();
+}
+
+function sauverPlaques(){
+  if(!ST.plaques)ST.plaques={};
+  document.querySelectorAll(".plaque-input").forEach(function(inp){
+    var truck=inp.getAttribute("data-truck");
+    if(truck)ST.plaques[truck]=inp.value.trim().toUpperCase();
+  });
+  document.querySelectorAll(".loc-name-input").forEach(function(inp){
+    var idx=parseInt(inp.getAttribute("data-idx"));
+    if(!isNaN(idx)&&ST.camionsLoc[idx]!==undefined){
+      ST.camionsLoc[idx]=inp.value.trim().toUpperCase();
+    }
+  });
+  save();
+  closeMod("m-plaques");
+  showT("Plaques enregistrees","#22c55e");
+  rPlaquesBar();
+  setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},500);
+}
+
+function rPlaquesBar(){
+  var existing=document.getElementById("plaques-bar");
+  if(existing)existing.remove();
+  if(!ST.plaques)return;
+  var hasAny=Object.keys(ST.plaques).some(function(k){return ST.plaques[k];});
+  if(!hasAny)return;
+  var bar=document.createElement("div");
+  bar.id="plaques-bar";
+  bar.style.cssText="display:flex;gap:10px;align-items:center;padding:5px 14px;background:#f8faff;border-bottom:1px solid #dde8f8;font-size:10px;flex-wrap:wrap;overflow-x:auto";
+  var lbl=document.createElement("span");
+  lbl.style.cssText="font-weight:800;color:#1d4ed8;flex-shrink:0";
+  lbl.textContent="PLAQUES :";
+  bar.appendChild(lbl);
+  Object.keys(ST.plaques).forEach(function(truck){
+    if(!ST.plaques[truck])return;
+    var tag=document.createElement("span");
+    tag.style.cssText="background:#eff6ff;border:1px solid #bfd4f5;border-radius:6px;padding:2px 8px;font-weight:700;color:#1e3a6e;white-space:nowrap";
+    tag.textContent=truck+" : "+ST.plaques[truck];
+    bar.appendChild(tag);
+  });
+  var nav=document.querySelector(".nav");
+  if(nav&&nav.parentNode)nav.parentNode.insertBefore(bar,nav.nextSibling);
+}
+window.addEventListener("load",function(){setTimeout(rPlaquesBar,1500);});
+
+
+/* ═══════ GESTION COMPLÈTE DES TOURNÉES — PAGE PLEIN ÉCRAN ═══════ */
+var TOURNEES_DEFS=[
+  {id:"bleu",label:"Bleue",color:"#3b82f6",bg:"rgba(59,130,246,.12)"},
+  {id:"rose",label:"Rose",color:"#ec4899",bg:"rgba(236,72,153,.12)"},
+  {id:"vert",label:"Verte",color:"#22c55e",bg:"rgba(34,197,94,.12)"},
+  {id:"violet",label:"Violette",color:"#a855f7",bg:"rgba(168,85,247,.12)"},
+  {id:"jaune",label:"Jaune",color:"#eab308",bg:"rgba(234,179,8,.12)"},
+  {id:"orange",label:"Orange",color:"#f97316",bg:"rgba(249,115,22,.12)"}
+];
+
+function ouvrirTourneesRapide(){
+  if(!ST.bibliotheques) ST.bibliotheques={bleu:[],rose:[],vert:[],violet:[],jaune:[],orange:[]};
+  TOURNEES_DEFS.forEach(function(t){if(!ST.bibliotheques[t.id])ST.bibliotheques[t.id]=[];});
+
+  var existing=document.getElementById("page-tournees");if(existing)existing.remove();
+
+  var page=document.createElement("div");
+  page.id="page-tournees";
+  page.style.cssText="position:fixed;inset:0;background:#07111f;z-index:99999;overflow-y:auto;display:flex;flex-direction:column";
+
+  /* Header */
+  var header=document.createElement("div");
+  header.style.cssText="background:#0d1829;border-bottom:2px solid #1e3a5f;padding:16px 24px;display:flex;align-items:center;gap:14px;flex-shrink:0";
+  var title=document.createElement("div");
+  title.style.cssText="font-size:18px;font-weight:900;color:#fff;flex:1";
+  title.textContent="Gestion des tournees colorees";
+  var closeBtn=document.createElement("button");
+  closeBtn.textContent="Fermer";
+  closeBtn.style.cssText="padding:10px 20px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#cbd5e1;font-size:13px;font-weight:700;cursor:pointer";
+  closeBtn.addEventListener("click",function(){
+    document.getElementById("page-tournees").remove();
+    save();
+    setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},300);
+  });
+  header.appendChild(title);header.appendChild(closeBtn);
+  page.appendChild(header);
+
+  var sub=document.createElement("div");
+  sub.style.cssText="padding:10px 24px;font-size:12px;color:#94a3b8;background:#0a1628;border-bottom:1px solid #1e293b";
+  sub.textContent="Preparez vos clients dans chaque tournee colore (avec heure). Assignez ensuite une couleur a un chauffeur : tous les clients de cette tournee s'ecrivent automatiquement sur sa colonne pour la date affichee.";
+  page.appendChild(sub);
+
+  var body=document.createElement("div");
+  body.style.cssText="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:20px 24px;align-content:start";
+  page.appendChild(body);
+
+  /* === Section assignation chauffeurs === */
+  var assignSection=document.createElement("div");
+  assignSection.style.cssText="grid-column:1/-1;background:#0f1e35;border:1px solid #1e3a5f;border-radius:12px;padding:16px;margin-bottom:6px";
+  var assignTitle=document.createElement("div");
+  assignTitle.style.cssText="font-size:13px;font-weight:900;color:#fff;margin-bottom:12px";
+  assignTitle.textContent="Assigner une tournee aux chauffeurs (pour le "+ST.cur+")";
+  assignSection.appendChild(assignTitle);
+
+  ST.drivers.forEach(function(dr,i){
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap";
+    var name=document.createElement("div");
+    name.style.cssText="font-size:12px;font-weight:800;color:#e2e8f0;width:170px;flex-shrink:0";
+    name.textContent=dr.name+" ("+dr.truck+")";
+    row.appendChild(name);
+    TOURNEES_DEFS.forEach(function(t){
+      var isActive=dr.tournee===t.id;
+      var btn=document.createElement("button");
+      btn.textContent=t.label+" ("+(ST.bibliotheques[t.id]||[]).length+")";
+      btn.style.cssText="padding:6px 12px;border-radius:7px;border:2px solid "+(isActive?t.color:"transparent")+";background:"+t.bg+";color:"+t.color+";font-size:11px;font-weight:800;cursor:pointer";
+      btn.addEventListener("click",function(){assignerTourneeChauffeur(i,t.id,t.color);});
+      row.appendChild(btn);
+    });
+    var noneBtn=document.createElement("button");
+    noneBtn.textContent="Retirer";
+    noneBtn.style.cssText="padding:6px 12px;border-radius:7px;border:1px solid #334155;background:#1e293b;color:#64748b;font-size:11px;font-weight:700;cursor:pointer";
+    noneBtn.addEventListener("click",function(){assignerTourneeChauffeur(i,"","");});
+    row.appendChild(noneBtn);
+    assignSection.appendChild(row);
+  });
+  body.appendChild(assignSection);
+
+  /* === Sections bibliotheque par couleur === */
+  TOURNEES_DEFS.forEach(function(t){
+    var card=document.createElement("div");
+    card.style.cssText="background:#0f1e35;border:1px solid "+t.color+"55;border-radius:12px;padding:14px;display:flex;flex-direction:column";
+
+    var cardHead=document.createElement("div");
+    cardHead.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px";
+    var cardTitle=document.createElement("div");
+    cardTitle.style.cssText="font-size:13px;font-weight:900;color:"+t.color;
+    cardTitle.textContent="Tournee "+t.label;
+    var countBadge=document.createElement("span");
+    countBadge.style.cssText="background:"+t.bg+";color:"+t.color+";border-radius:10px;padding:2px 9px;font-size:11px;font-weight:800";
+    countBadge.textContent=(ST.bibliotheques[t.id]||[]).length+" client(s)";
+    cardHead.appendChild(cardTitle);cardHead.appendChild(countBadge);
+    card.appendChild(cardHead);
+
+    var listDiv=document.createElement("div");
+    listDiv.style.cssText="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:280px;overflow-y:auto";
+    listDiv.id="tournee-list-"+t.id;
+    renderTourneeList(listDiv,t.id,t.color);
+    card.appendChild(listDiv);
+
+    var addBtn=document.createElement("button");
+    addBtn.textContent="+ Ajouter un client";
+    addBtn.style.cssText="padding:9px;background:"+t.bg+";border:1px dashed "+t.color+"66;border-radius:8px;color:"+t.color+";font-size:12px;font-weight:700;cursor:pointer";
+    addBtn.addEventListener("click",function(){ajouterClientTournee(t.id,t.color);});
+    card.appendChild(addBtn);
+
+    body.appendChild(card);
+  });
+
+  document.body.appendChild(page);
+}
+
+function renderTourneeList(listDiv,tid,color){
+  listDiv.innerHTML="";
+  var items=ST.bibliotheques[tid]||[];
+  if(!items.length){
+    var empty=document.createElement("div");
+    empty.style.cssText="font-size:11px;color:#475569;text-align:center;padding:10px";
+    empty.textContent="Aucun client. Cliquez sur + Ajouter.";
+    listDiv.appendChild(empty);
+    return;
+  }
+  items.forEach(function(item,idx){
+    var row=document.createElement("div");
+    row.style.cssText="background:#071526;border-left:3px solid "+color+";border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px";
+    var info=document.createElement("div");
+    info.style.cssText="flex:1;min-width:0";
+    var ligne1=document.createElement("div");
+    ligne1.style.cssText="font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+    ligne1.textContent=item.heure+" — "+(item.client||"Client");
+    var ligne2=document.createElement("div");
+    ligne2.style.cssText="font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+    ligne2.textContent=(item.task||"")+(item.adresse?" · "+item.adresse:"");
+    info.appendChild(ligne1);info.appendChild(ligne2);
+    var editBtn=document.createElement("button");
+    editBtn.textContent="Edit";
+    editBtn.style.cssText="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:5px;color:#60a5fa;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
+    editBtn.addEventListener("click",function(){ajouterClientTournee(tid,color,idx);});
+    var delBtn=document.createElement("button");
+    delBtn.textContent="X";
+    delBtn.style.cssText="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:#ef4444;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:700;flex-shrink:0";
+    delBtn.addEventListener("click",function(){
+      ST.bibliotheques[tid].splice(idx,1);
+      save();
+      var ld=document.getElementById("tournee-list-"+tid);
+      if(ld)renderTourneeList(ld,tid,color);
+    });
+    row.appendChild(info);row.appendChild(editBtn);row.appendChild(delBtn);
+    listDiv.appendChild(row);
+  });
+}
+
+function ajouterClientTournee(tid,color,editIdx){
+  var existing=document.getElementById("m-add-client-tournee");if(existing)existing.remove();
+  var isEdit=editIdx!==undefined;
+  var item=isEdit?ST.bibliotheques[tid][editIdx]:{heure:"08:00",client:"",task:"",adresse:"",category:"collectivite"};
+
+  var modal=document.createElement("div");modal.id="m-add-client-tournee";modal.className="mbg on";
+  modal.style.zIndex="999999";
+  var box=document.createElement("div");
+  box.style.cssText="background:#0f1e35;border-radius:14px;padding:22px;max-width:420px;width:92%;color:#e2e8f0";
+
+  var title=document.createElement("div");
+  title.style.cssText="font-size:15px;font-weight:900;color:#fff;margin-bottom:14px";
+  title.textContent=(isEdit?"Modifier":"Ajouter")+" un client";
+  box.appendChild(title);
+
+  function field(label,id,value,placeholder){
+    var wrap=document.createElement("div");wrap.style.cssText="margin-bottom:10px";
+    var lbl=document.createElement("label");
+    lbl.style.cssText="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px";
+    lbl.textContent=label;
+    var inp=document.createElement("input");
+    inp.id=id;inp.value=value||"";inp.placeholder=placeholder||"";
+    inp.style.cssText="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;box-sizing:border-box";
+    wrap.appendChild(lbl);wrap.appendChild(inp);
+    box.appendChild(wrap);
+  }
+  field("Heure","fct-heure",item.heure,"08:00");
+  document.getElementById; /* noop to keep structure */
+  field("Client","fct-client",item.client,"Nom du client");
+  field("Mission / Details","fct-task",item.task,"Livraison repas...");
+  field("Adresse (optionnel)","fct-adresse",item.adresse,"Adresse");
+
+  var catWrap=document.createElement("div");catWrap.style.cssText="margin-bottom:14px";
+  var catLbl=document.createElement("label");
+  catLbl.style.cssText="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px";
+  catLbl.textContent="Categorie";
+  var catSel=document.createElement("select");
+  catSel.id="fct-cat";
+  catSel.style.cssText="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:8px 10px;font-size:13px";
+  ["traiteur","collectivite","tassiette","centre","autre"].forEach(function(c){
+    var opt=document.createElement("option");opt.value=c;opt.textContent=c;
+    if(item.category===c)opt.selected=true;
+    catSel.appendChild(opt);
+  });
+  catWrap.appendChild(catLbl);catWrap.appendChild(catSel);
+  box.appendChild(catWrap);
+
+  var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:8px";
+  var saveBtn=document.createElement("button");
+  saveBtn.textContent="Enregistrer";
+  saveBtn.style.cssText="flex:1;padding:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer";
+  saveBtn.addEventListener("click",function(){
+    var newItem={
+      heure:document.getElementById("fct-heure").value||"08:00",
+      client:document.getElementById("fct-client").value.trim(),
+      task:document.getElementById("fct-task").value.trim(),
+      adresse:document.getElementById("fct-adresse").value.trim(),
+      category:document.getElementById("fct-cat").value
+    };
+    if(!newItem.client){alert("Le nom du client est requis");return;}
+    if(!ST.bibliotheques[tid])ST.bibliotheques[tid]=[];
+    if(isEdit){ST.bibliotheques[tid][editIdx]=newItem;}
+    else{ST.bibliotheques[tid].push(newItem);}
+    /* Trier par heure */
+    ST.bibliotheques[tid].sort(function(a,b){return (a.heure||"").localeCompare(b.heure||"");});
+    save();
+    document.getElementById("m-add-client-tournee").remove();
+    var ld=document.getElementById("tournee-list-"+tid);
+    if(ld)renderTourneeList(ld,tid,color);
+    /* Rafraichir le compteur */
+    var page=document.getElementById("page-tournees");
+    if(page){page.remove();ouvrirTourneesRapide();}
+  });
+  var cancelBtn=document.createElement("button");
+  cancelBtn.textContent="Annuler";
+  cancelBtn.style.cssText="padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer";
+  cancelBtn.addEventListener("click",function(){document.getElementById("m-add-client-tournee").remove();});
+  btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
+  box.appendChild(btnRow);
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  setTimeout(function(){var f=document.getElementById("fct-client");if(f)f.focus();},50);
+}
+
+/* Assigner une tournee a un chauffeur -> ecrit tous les clients sur sa colonne pour ST.cur */
+function assignerTourneeChauffeur(di,tid,tcolor){
+  var dr=ST.drivers[di];
+  if(!dr)return;
+
+  /* Retirer l'ancienne tournee si elle existe : supprimer les anciennes taches generees par tournee */
+  if(dr.tourneeAppliedKeys&&dr.tourneeAppliedKeys.length){
+    dr.tourneeAppliedKeys.forEach(function(k){
+      if(ST.tasks[k]){
+        ST.tasks[k]=ST.tasks[k].filter(function(t){return !t._fromTournee;});
+        if(!ST.tasks[k].length)delete ST.tasks[k];
+      }
+    });
+  }
+  dr.tourneeAppliedKeys=[];
+  dr.tournee=tid;
+  dr.tourneeColor=tcolor;
+
+  /* Si une tournee est choisie, ecrire tous ses clients sur la colonne du chauffeur a la date ST.cur */
+  if(tid&&ST.bibliotheques&&ST.bibliotheques[tid]){
+    ST.bibliotheques[tid].forEach(function(item){
+      var key=ST.cur+"|"+di+"|"+item.heure;
+      if(!ST.tasks[key])ST.tasks[key]=[];
+      ST.tasks[key].push({
+        task:item.task||"",
+        client:item.client||"",
+        category:item.category||"collectivite",
+        truck:dr.truck,
+        end:"",
+        bold:false,
+        priority:"normal",
+        adresse:item.adresse||"",
+        _fromTournee:true,
+        ts:Date.now()
+      });
+      dr.tourneeAppliedKeys.push(key);
+    });
+  }
+
+  save();
+  if(typeof rGrid==="function")rGrid();
+  if(typeof rStats==="function")rStats();
+  showT("Tournee appliquee a "+dr.name,"#22c55e");
+  setTimeout(function(){if(typeof sauverDansSupabase==="function")sauverDansSupabase();},500);
+
+  /* Rafraichir la page si ouverte */
+  var page=document.getElementById("page-tournees");
+  if(page){page.remove();ouvrirTourneesRapide();}
+}
+
+</script>
+
 <script>
 /* ══════════════════════════════════════════════════
    MIGRATION AUTOMATIQUE — ancien systeme sessionStorage
@@ -292,14 +739,10 @@ input[type=date].ndi{padding:4px 8px;border:1px solid #1e293b;border-radius:5px;
 /* CELLULES */
 .gcw{position:relative;border-right:1px solid rgba(219,112,147,0.2);border-bottom:1px solid rgba(219,112,147,0.08);min-height:36px;background:#fdf0f4;transition:background .15s}
 /* Statuts chauffeurs — couleurs pastels fixes */
-.gcw-maladie{background:rgba(239,68,68,0.08) !important;border-bottom:1px solid rgba(239,68,68,0.12) !important;position:relative}
-.gcw-conge{background:rgba(245,158,11,0.08) !important;border-bottom:1px solid rgba(245,158,11,0.12) !important;position:relative}
-.gcw-absent{background:rgba(239,68,68,0.08) !important;border-bottom:1px solid rgba(239,68,68,0.12) !important;position:relative}
-.gcw-repos{background:rgba(100,116,139,0.08) !important;border-bottom:1px solid rgba(100,116,139,0.12) !important;position:relative}
-.gcw-maladie::after{content:'MALADIE';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(239,68,68,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
-.gcw-conge::after{content:'CONGÉ';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(245,158,11,.4);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
-.gcw-absent::after{content:'ABSENT';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(239,68,68,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
-.gcw-repos::after{content:'REPOS';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:13px;font-weight:900;color:rgba(100,116,139,.35);pointer-events:none;white-space:nowrap;letter-spacing:1.5px;z-index:1}
+.gcw-maladie{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
+.gcw-conge{background:rgba(245,158,11,0.07) !important;border-bottom:1px solid rgba(245,158,11,0.08) !important}
+.gcw-absent{background:rgba(239,68,68,0.07) !important;border-bottom:1px solid rgba(239,68,68,0.08) !important}
+.gcw-repos{background:rgba(100,116,139,0.07) !important;border-bottom:1px solid rgba(100,116,139,0.08) !important}
 .gcw:last-child{border-right:none}
 .gcw.past-col{background:#f5e8ec}
 .gcell{padding:2px;cursor:pointer;min-height:32px;display:flex;flex-direction:column;gap:2px}
@@ -835,7 +1278,7 @@ input[type="time"]{
     <div class="sb-ico" onclick="swSB(3)" id="sbi-3" title="Assistant IA">&#129302;</div>
     <div class="sb-ico" onclick="swSB(4)" id="sbi-4" title="Km et Notes">&#128205;</div>
     <div class="sb-ico" onclick="swSB(5)" id="sbi-5" title="Fiches salaries">&#128196;</div>
-    <div class="sb-ico" onclick="ouvrirTourneesRapide()" id="sbi-6" title="Tournees plein ecran">&#128506;</div>
+    <div class="sb-ico" onclick="ouvrirTourneesRapide()" id="sbi-6" title="Tournees">&#128506;</div>
   </div>
 
   <!-- CONTENU DES PANNEAUX -->
@@ -12016,23 +12459,12 @@ function sauverDansSupabase(){
   .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
     var exists=rows&&rows.length>0;
-    var cloudTasks={},cloudStatuts={},cloudCond={};
-    if(exists&&rows[0].donnees){
-      var cd=rows[0].donnees;
-      if(cd.tasks)Object.assign(cloudTasks,cd.tasks);
-      if(cd.statuts)Object.assign(cloudStatuts,cd.statuts);
-      if(cd.conducteurs)Object.assign(cloudCond,cd.conducteurs);
-    }
-    Object.assign(cloudTasks,ST.tasks||{});
-    Object.assign(cloudStatuts,ST.statuts||{});
-    Object.assign(cloudCond,ST.conducteurs||{});
-    var d={drivers:ST.drivers||[],tasks:cloudTasks,statuts:cloudStatuts,notes:ST.notes||{},
-      cur:ST.cur,library:ST.library||{},tournees:ST.tournees||[],conducteurs:cloudCond,
-      memos:ST.memos||[],km:ST.km||{},bibliotheques:ST.bibliotheques||{},
-      plaques:ST.plaques||{},camionsLoc:ST.camionsLoc||[]};
+    var d={drivers:ST.drivers||[],tasks:ST.tasks||{},statuts:ST.statuts||{},
+      notes:ST.notes||{},cur:ST.cur,library:ST.library||{},tournees:ST.tournees||[],
+      conducteurs:ST.conducteurs||{},memos:ST.memos||[],km:ST.km||{},
+      bibliotheques:ST.bibliotheques||{},plaques:ST.plaques||{},camionsLoc:ST.camionsLoc||[]};
     var url=exists?SUPA_URL+'/rest/v1/planning?date=eq.'+today:SUPA_URL+'/rest/v1/planning';
-    var method=exists?'PATCH':'POST';
-    return fetch(url,{method:method,mode:'cors',
+    return fetch(url,{method:exists?'PATCH':'POST',mode:'cors',
       headers:Object.assign({'Prefer':'return=minimal'},hdrs),
       body:JSON.stringify({date:today,donnees:d,updated_at:new Date().toISOString()})});
   })
@@ -12043,22 +12475,21 @@ function sauverDansSupabase(){
   .catch(function(){if(l)l.style.background='#f59e0b';});
 }
 
-
 /* Charger le planning depuis Supabase */
 function chargerDepuisSupabase(forceToday){
   var l=document.getElementById('sync-led'),t=document.getElementById('sync-txt');
   if(t)t.textContent='...';
   fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=5&select=date,donnees,updated_at',{
     method:'GET',mode:'cors',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Accept':'application/json'}
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
   })
   .then(function(r){return r.ok?r.json():[];})
   .then(function(rows){
-    if(!rows||!rows.length){showT('Cloud vide','#f59e0b');if(t)t.textContent='Vide';return;}
-    rows=rows.filter(function(r){return r.date&&!r.date.startsWith('AUDIT_')&&!r.date.startsWith('test')&&!r.date.startsWith('GEO_');});
-    if(!rows.length){showT('Cloud vide','#f59e0b');return;}
+    if(!rows||!rows.length){if(t)t.textContent='Vide';return;}
+    rows=rows.filter(function(r){return r.date&&!r.date.startsWith('AUDIT_')&&!r.date.startsWith('test');});
+    if(!rows.length)return;
     var data=rows[0].donnees;
-    if(!data||!data.drivers){showT('Données invalides','#f59e0b');return;}
+    if(!data||!data.drivers)return;
     if(data.drivers.length)ST.drivers=data.drivers;
     if(data.tasks)ST.tasks=data.tasks;
     if(data.statuts)ST.statuts=data.statuts;
@@ -12082,7 +12513,6 @@ function chargerDepuisSupabase(forceToday){
   })
   .catch(function(){if(l)l.style.background='#ef4444';if(t)t.textContent='Erreur';});
 }
-
 
 /* Auto-sync toutes les 60 secondes */
 setInterval(function(){
@@ -23731,7 +24161,7 @@ function appliquerRestrictionsService(){
 
 
 /* Journal d'audit - enregistre chaque action importante */
-function logAudit(action,detail){}
+function logAudit(){}
 
 function ouvrirJournalAudit(){
   var existing=document.getElementById('m-audit');if(existing)existing.remove();
@@ -24636,6 +25066,49 @@ function seDeconnecter(){
 }
 </script>
 
-
+<script>
+var _lastUpdatedAt='';
+function silentSync(){
+  if(typeof ST==='undefined')return;
+  var active=document.activeElement;
+  if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'))return;
+  if(document.querySelector('.mbg.on'))return;
+  fetch(SUPA_URL+'/rest/v1/planning?order=updated_at.desc&limit=3&select=date,donnees,updated_at',{
+    method:'GET',mode:'cors',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
+  })
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    if(!rows||!rows.length)return;
+    rows=rows.filter(function(r){return r.date&&!r.date.startsWith('AUDIT_')&&!r.date.startsWith('test');});
+    if(!rows.length)return;
+    var newUpd=rows[0].updated_at||'';
+    if(newUpd===_lastUpdatedAt)return;
+    _lastUpdatedAt=newUpd;
+    var data=rows[0].donnees;
+    if(!data||!data.drivers)return;
+    if(data.drivers.length)ST.drivers=data.drivers;
+    if(data.tasks)ST.tasks=data.tasks;
+    if(data.statuts)ST.statuts=data.statuts;
+    if(data.notes)ST.notes=data.notes;
+    if(data.library)ST.library=data.library;
+    if(data.tournees)ST.tournees=data.tournees;
+    if(data.conducteurs)ST.conducteurs=data.conducteurs;
+    if(data.memos)ST.memos=data.memos;
+    if(data.km)ST.km=data.km;
+    if(data.plaques)ST.plaques=data.plaques;
+    if(data.camionsLoc)ST.camionsLoc=data.camionsLoc;
+    if(data.bibliotheques)ST.bibliotheques=data.bibliotheques;
+    try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
+    if(typeof rGrid==='function')rGrid();
+    else if(typeof render==='function')render();
+    if(typeof rStats==='function')rStats();
+    var upd=new Date(newUpd).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    var t=document.getElementById('sync-txt'),l=document.getElementById('sync-led');
+    if(t)t.textContent='Sync '+upd;if(l)l.style.background='#22c55e';
+  }).catch(function(){});
+}
+window.addEventListener('load',function(){setTimeout(function(){silentSync();setInterval(silentSync,10000);},5000);});
+</script>
 </body>
 </html>
