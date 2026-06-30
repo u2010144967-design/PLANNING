@@ -954,6 +954,9 @@ input[type="time"]{
     <button onclick="ouvrirPlaquesImmat()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer">&#128662; Plaques</button>
     <button onclick="window.print()" style="padding:6px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:7px;color:#92400e;font-size:12px;font-weight:700;cursor:pointer">&#128424; Imprimer</button>
     <button onclick="ouvrirTourneesRapide()" style="padding:6px 12px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:7px;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer">&#127912; Tournees</button>
+    <button onclick="ouvrirDashboardExploitation()" style="padding:6px 12px;background:#0f172a;border:1px solid #334155;border-radius:7px;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer">&#128202; Dashboard</button>
+    <button onclick="ouvrirDetectionConflits()" style="padding:6px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:7px;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer">&#128269; Conflits</button>
+    <button onclick="ouvrirScorePlanning()" style="padding:6px 12px;background:#fefce8;border:1px solid #fef08a;border-radius:7px;color:#854d0e;font-size:12px;font-weight:700;cursor:pointer">&#11088; Score</button>
   </div>
   <div class="nsp"></div>
 
@@ -24954,6 +24957,299 @@ function silentSync(){
   }).catch(function(){});
 }
 window.addEventListener('load',function(){setTimeout(function(){silentSync();setInterval(silentSync,10000);},5000);});
+</script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   AMÉLIORATIONS — Dashboard, Alertes, Score, Conflits, Charge
+   Ajout propre sans modifier le code existant
+═══════════════════════════════════════════════════════════ */
+
+/* ══ 1. SCORE QUALITÉ DU PLANNING ══ */
+function calculerScorePlanning(){
+  if(!ST||!ST.drivers||!ST.tasks)return null;
+  var today=ST.cur;
+  var score=100;
+  var suggestions=[];
+  var drivers=ST.drivers;
+  var tasksAujourdHui={};
+  
+  // Compter les tâches du jour
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var parts=k.split('|');
+    if(parts[0]===today&&ST.tasks[k]&&ST.tasks[k].length){
+      if(!tasksAujourdHui[parts[1]])tasksAujourdHui[parts[1]]=0;
+      tasksAujourdHui[parts[1]]+=ST.tasks[k].length;
+    }
+  });
+  
+  var totalTasks=Object.values(tasksAujourdHui).reduce(function(s,n){return s+n;},0);
+  if(!totalTasks)return{score:0,suggestions:['Aucune mission planifiée pour ce jour'],niveau:'vide'};
+  
+  // Équilibre des charges
+  var counts=Object.values(tasksAujourdHui);
+  if(counts.length>1){
+    var max=Math.max.apply(null,counts);
+    var min=Math.min.apply(null,counts);
+    if(max-min>5){score-=10;suggestions.push('Déséquilibre des charges entre chauffeurs ('+(max-min)+' missions d\'écart)');}
+  }
+  
+  // Chauffeurs sans missions
+  drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if(!st&&!tasksAujourdHui[i]){score-=5;suggestions.push(dr.name+' n\'a aucune mission assignée');}
+  });
+  
+  // Chauffeurs absents avec missions
+  drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if((st==='absent'||st==='conge'||st==='maladie')&&tasksAujourdHui[i]){
+      score-=20;suggestions.push('⚠️ '+dr.name+' est '+st+' mais a des missions assignées !');
+    }
+  });
+  
+  // Détection doublons d'heure
+  var heuresVues={};
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var parts=k.split('|');
+    if(parts[0]!==today)return;
+    var hKey=parts[1]+'|'+parts[2];
+    if(heuresVues[hKey]&&ST.tasks[k]&&ST.tasks[k].length>1){
+      score-=5;suggestions.push('Double mission à '+parts[2]+' pour le chauffeur '+( ST.drivers[parts[1]]?ST.drivers[parts[1]].name:parts[1]));
+    }
+    heuresVues[hKey]=true;
+  });
+  
+  score=Math.max(0,Math.min(100,score));
+  var niveau=score>=85?'excellent':score>=70?'bon':score>=50?'moyen':'faible';
+  if(!suggestions.length)suggestions.push('Planning optimisé — aucune anomalie détectée ✅');
+  return{score:score,suggestions:suggestions,niveau:niveau,totalTasks:totalTasks};
+}
+
+window.ouvrirScorePlanning=function(){
+  var res=calculerScorePlanning();
+  if(!res){showT('Aucune donnée pour calculer le score','#f59e0b');return;}
+  
+  var modal=document.createElement('div');
+  modal.className='mbg on';
+  var colors={'excellent':'#22c55e','bon':'#3b82f6','moyen':'#f59e0b','faible':'#ef4444','vide':'#64748b'};
+  var col=colors[res.niveau]||'#64748b';
+  
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:500px;width:92%;max-height:80vh;overflow-y:auto;color:#e2e8f0">';
+  html+='<div style="text-align:center;margin-bottom:20px">';
+  html+='<div style="font-size:13px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Score qualité du planning</div>';
+  html+='<div style="font-size:64px;font-weight:900;color:'+col+'">'+res.score+'</div>';
+  html+='<div style="font-size:16px;font-weight:700;color:'+col+'">/ 100 — '+res.niveau.toUpperCase()+'</div>';
+  html+='<div style="background:#1e293b;border-radius:12px;height:12px;margin:12px auto;max-width:300px;overflow:hidden">';
+  html+='<div style="height:12px;border-radius:12px;background:'+col+';width:'+res.score+'%;transition:width 1s"></div></div>';
+  if(res.totalTasks)html+='<div style="font-size:12px;color:#64748b">'+res.totalTasks+' missions planifiées</div>';
+  html+='</div>';
+  html+='<div style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Suggestions</div>';
+  res.suggestions.forEach(function(s){
+    var isWarn=s.indexOf('⚠')>=0||s.indexOf('Déséquilibre')>=0||s.indexOf('Double')>=0;
+    html+='<div style="background:'+(isWarn?'rgba(239,68,68,.1)':'rgba(34,197,94,.08)')+';border-left:3px solid '+(isWarn?'#ef4444':'#22c55e')+';border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px">'+s+'</div>';
+  });
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\')" style="width:100%;margin-top:16px;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>';
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+};
+
+/* ══ 2. DÉTECTION DE CONFLITS ══ */
+window.ouvrirDetectionConflits=function(){
+  if(!ST||!ST.drivers)return;
+  var today=ST.cur;
+  var conflits=[];
+  
+  // Chauffeur absent avec missions
+  ST.drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    var hasMissions=Object.keys(ST.tasks||{}).some(function(k){
+      var p=k.split('|');return p[0]===today&&p[1]==i&&ST.tasks[k]&&ST.tasks[k].length;
+    });
+    if((st==='absent'||st==='conge'||st==='maladie')&&hasMissions){
+      conflits.push({niveau:'erreur',msg:dr.name+' est '+st+' mais a des missions assignées'});
+    }
+  });
+  
+  // Même véhicule pour 2 chauffeurs
+  var trucks={};
+  ST.drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if(st==='absent'||st==='conge'||st==='maladie')return;
+    if(!dr.truck)return;
+    if(trucks[dr.truck]!==undefined){
+      conflits.push({niveau:'erreur',msg:'Véhicule "'+dr.truck+'" assigné à '+ST.drivers[trucks[dr.truck]].name+' ET '+dr.name});
+    } else {trucks[dr.truck]=i;}
+  });
+  
+  // Missions à la même heure pour le même chauffeur
+  var heures={};
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var p=k.split('|');
+    if(p[0]!==today)return;
+    var list=ST.tasks[k];
+    if(!list||!list.length)return;
+    var hKey=p[1]+'|'+p[2];
+    if(heures[hKey]){
+      conflits.push({niveau:'avertissement',msg:'Missions multiples à '+p[2]+' pour '+(ST.drivers[p[1]]?ST.drivers[p[1]].name:'chauffeur '+p[1])});
+    }
+    heures[hKey]=true;
+  });
+  
+  // Aucun chauffeur disponible
+  var disponibes=ST.drivers.filter(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    return !st||st==='present';
+  });
+  if(disponibes.length===0){
+    conflits.push({niveau:'erreur',msg:'Aucun chauffeur disponible ce jour !'});
+  }
+  
+  if(!conflits.length){
+    conflits.push({niveau:'ok',msg:'Aucun conflit détecté — planning cohérent ✅'});
+  }
+  
+  var modal=document.createElement('div');modal.className='mbg on';
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:500px;width:92%;max-height:80vh;overflow-y:auto;color:#e2e8f0">';
+  html+='<div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:16px">🔍 Détection de conflits — '+today+'</div>';
+  var erreurs=conflits.filter(function(c){return c.niveau==='erreur';}).length;
+  var avertissements=conflits.filter(function(c){return c.niveau==='avertissement';}).length;
+  html+='<div style="display:flex;gap:10px;margin-bottom:16px">';
+  html+='<div style="flex:1;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px;text-align:center"><div style="font-size:24px;font-weight:900;color:#ef4444">'+erreurs+'</div><div style="font-size:10px;color:#ef4444;font-weight:700">ERREURS</div></div>';
+  html+='<div style="flex:1;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:9px;padding:10px;text-align:center"><div style="font-size:24px;font-weight:900;color:#f59e0b">'+avertissements+'</div><div style="font-size:10px;color:#f59e0b;font-weight:700">AVERTISSEMENTS</div></div>';
+  html+='</div>';
+  conflits.forEach(function(c){
+    var bg={'erreur':'rgba(239,68,68,.1)','avertissement':'rgba(245,158,11,.1)','ok':'rgba(34,197,94,.08)'};
+    var border={'erreur':'#ef4444','avertissement':'#f59e0b','ok':'#22c55e'};
+    var icon={'erreur':'🔴','avertissement':'🟡','ok':'🟢'};
+    html+='<div style="background:'+bg[c.niveau]+';border-left:3px solid '+border[c.niveau]+';border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12px">'+icon[c.niveau]+' '+c.msg+'</div>';
+  });
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\')" style="width:100%;margin-top:12px;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>';
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+};
+
+/* ══ 3. DASHBOARD EXPLOITATION EN TEMPS RÉEL ══ */
+window.ouvrirDashboardExploitation=function(){
+  if(!ST||!ST.drivers)return;
+  var today=ST.cur;
+  var stats={total:0,chauffPresents:0,chauffAbsents:0,vehiculesOk:0,missions:{},score:0};
+  
+  // Missions du jour
+  var missionsDuJour=0,chauffAvecMissions=new Set();
+  Object.keys(ST.tasks||{}).forEach(function(k){
+    var p=k.split('|');
+    if(p[0]!==today)return;
+    var n=(ST.tasks[k]||[]).length;
+    missionsDuJour+=n;
+    if(n>0)chauffAvecMissions.add(parseInt(p[1]));
+  });
+  
+  // Chauffeurs
+  var presents=0,absents=0;
+  ST.drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if(st==='absent'||st==='conge'||st==='maladie')absents++;
+    else presents++;
+  });
+  
+  // Score
+  var sr=calculerScorePlanning();
+  
+  var modal=document.createElement('div');modal.className='mbg on';
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:620px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+  html+='<div><div style="font-size:18px;font-weight:900;color:#fff">Dashboard Exploitation</div>';
+  html+='<div style="font-size:12px;color:#64748b">'+today+'</div></div>';
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\')" style="padding:8px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">Fermer</button>';
+  html+='</div>';
+  
+  // Cartes principales
+  var cartes=[
+    {label:'Missions du jour',val:missionsDuJour,color:'#3b82f6',bg:'rgba(59,130,246,.12)',icon:'📋'},
+    {label:'Chauffeurs présents',val:presents,color:'#22c55e',bg:'rgba(34,197,94,.12)',icon:'👷'},
+    {label:'Chauffeurs absents',val:absents,color:'#ef4444',bg:'rgba(239,68,68,.12)',icon:'🚫'},
+    {label:'Score planning',val:(sr?sr.score:'-')+'/100',color:sr&&sr.score>=85?'#22c55e':sr&&sr.score>=70?'#f59e0b':'#ef4444',bg:'rgba(168,85,247,.12)',icon:'⭐'},
+  ];
+  html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">';
+  cartes.forEach(function(c){
+    html+='<div style="background:'+c.bg+';border:1px solid '+c.color+'44;border-radius:12px;padding:14px;text-align:center">';
+    html+='<div style="font-size:24px;margin-bottom:4px">'+c.icon+'</div>';
+    html+='<div style="font-size:24px;font-weight:900;color:'+c.color+'">'+c.val+'</div>';
+    html+='<div style="font-size:10px;font-weight:700;color:'+c.color+';text-transform:uppercase">'+c.label+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  
+  // Charge par chauffeur
+  html+='<div style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:10px">Charge par chauffeur</div>';
+  var maxMissions=0;
+  var mParChauffeur={};
+  ST.drivers.forEach(function(dr,i){
+    var n=0;
+    Object.keys(ST.tasks||{}).forEach(function(k){var p=k.split('|');if(p[0]===today&&p[1]==i)n+=(ST.tasks[k]||[]).length;});
+    mParChauffeur[i]=n;
+    if(n>maxMissions)maxMissions=n;
+  });
+  ST.drivers.forEach(function(dr,i){
+    var n=mParChauffeur[i]||0;
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    var pct=maxMissions?Math.round(n/maxMissions*100):0;
+    var col=n===0?'#64748b':n<3?'#22c55e':n<6?'#f59e0b':'#ef4444';
+    var statut=st?(' — <span style="color:'+( st==='absent'?'#ef4444':'#f59e0b')+'">'+st+'</span>'):'';
+    html+='<div style="margin-bottom:8px">';
+    html+='<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:3px">';
+    html+='<span>'+dr.name+statut+'</span><span style="color:'+col+'">'+n+' mission'+(n>1?'s':'')+'</span></div>';
+    html+='<div style="background:#1e293b;border-radius:6px;height:8px"><div style="height:8px;border-radius:6px;background:'+col+';width:'+pct+'%;transition:width .5s"></div></div>';
+    html+='</div>';
+  });
+  
+  // Alertes rapides
+  if(absents>0){
+    html+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px;margin-top:12px;font-size:12px">';
+    html+='🚨 <strong>'+absents+' chauffeur'+(absents>1?'s':'')+'</strong> absent'+(absents>1?'s':'')+' aujourd\'hui — vérifiez les remplacements';
+    html+='</div>';
+  }
+  if(sr&&sr.score<70){
+    html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;margin-top:8px;font-size:12px">';
+    html+='⚠️ Score planning faible ('+sr.score+'/100) — <button onclick="ouvrirScorePlanning()" style="background:none;border:none;color:#f59e0b;cursor:pointer;font-weight:800;font-size:12px;text-decoration:underline">Voir les suggestions</button>';
+    html+='</div>';
+  }
+  
+  html+='<div style="display:flex;gap:8px;margin-top:14px">';
+  html+='<button onclick="ouvrirDetectionConflits()" style="flex:1;padding:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer">🔍 Conflits</button>';
+  html+='<button onclick="ouvrirScorePlanning()" style="flex:1;padding:10px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);border-radius:8px;color:#a855f7;font-size:12px;font-weight:700;cursor:pointer">⭐ Score</button>';
+  html+='</div>';
+  
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+};
+
+/* ══ 4. INDICATEUR SCORE DANS LA NAV ══ */
+function majScoreNav(){
+  var led=document.getElementById('score-nav-led');
+  if(!led)return;
+  var sr=calculerScorePlanning();
+  if(!sr){led.style.background='#64748b';return;}
+  var col=sr.score>=85?'#22c55e':sr.score>=70?'#f59e0b':'#ef4444';
+  led.style.background=col;
+  led.title='Score planning: '+sr.score+'/100';
+}
+
+/* ══ 5. ALERTE AUTOMATIQUE AU CHARGEMENT ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof ST==='undefined'||!ST.drivers)return;
+    var sr=calculerScorePlanning();
+    if(sr&&sr.score<60&&sr.totalTasks>0){
+      showT('⚠️ Score planning: '+sr.score+'/100 — Cliquez Dashboard pour voir les alertes','#ef4444');
+    }
+    majScoreNav();
+  },4000);
+});
+
 </script>
 </body>
 </html>
