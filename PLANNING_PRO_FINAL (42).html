@@ -1684,7 +1684,13 @@ function rGrid(){
       else if(stToday.type==='repos'){stLabel='😴 Repos';stColor='#64748b';stBg='rgba(100,116,139,.12)';}
     }
     html+='<div class="gh">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'+(dr.tournee?'<div style="font-size:9px;font-weight:900;padding:2px 7px;border-radius:10px;border:1px solid '+(dr.tourneeColor||'#64748b')+';color:'+(dr.tourneeColor||'#64748b')+';background:'+(dr.tourneeColor||'#64748b')+'22;white-space:nowrap;cursor:pointer" data-di="'+i+'" data-action="tournee">'+dr.tournee.toUpperCase()+'</div>':'')      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px">'      +'<button data-di="'+i+'" data-action="statut" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#818cf8;cursor:pointer;font-weight:700;white-space:nowrap">'+(stLabel||'✅ Service')+'</button>'+(dr.tournee?'<div style="font-size:9px;font-weight:900;padding:2px 7px;border-radius:10px;border:1px solid '+(dr.tourneeColor||'#64748b')+';color:'+(dr.tourneeColor||'#64748b')+';background:'+(dr.tourneeColor||'#64748b')+'22;white-space:nowrap;cursor:pointer" data-di="'+i+'" data-action="tournee">'+dr.tournee.toUpperCase()+'</div>':'')      +'<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px">'
+      +'<button data-di="'+i+'" data-action="sel-tournee" title="Centres Aerés" style="background:#eff6ff;border:1px solid #2563eb;border-radius:5px;padding:2px 6px;font-size:9px;color:#1e40af;cursor:pointer;font-weight:800">🏕 CA</button>'
+      +'<button data-di="'+i+'" data-action="sel-restoco" title="Resto-Co" style="background:#f0f9ff;border:1px solid #0ea5e9;border-radius:5px;padding:2px 6px;font-size:9px;color:#0369a1;cursor:pointer;font-weight:800">🏛 RC</button>'
+      +'<button data-di="'+i+'" data-action="sel-traiteur" title="Traiteur" style="background:#fff7ed;border:1px solid #f97316;border-radius:5px;padding:2px 6px;font-size:9px;color:#9a3412;cursor:pointer;font-weight:800">🍽 TR</button>'
+      +'<button data-di="'+i+'" data-action="sel-tache" title="Tâches" style="background:#faf5ff;border:1px solid #a855f7;border-radius:5px;padding:2px 6px;font-size:9px;color:#6b21a8;cursor:pointer;font-weight:800">📋 TK</button>'
+      +'</div>'
+      +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
   SL.forEach(function(hour){
     var ih=hour.endsWith(':30');var past=isPast(d,hour);
@@ -22631,6 +22637,10 @@ window.addEventListener('load', function(){
     if(action === 'camion') changerCamionDrv(di);
     if(action === 'tournee') changerTourneeDrv(di);
     if(action === 'fiche') ouvrirFicheChauffeur(di);
+    if(action === 'sel-tournee') ouvrirSelecteurParType(di,'tournee');
+    if(action === 'sel-restoco') ouvrirSelecteurParType(di,'restoco');
+    if(action === 'sel-traiteur') ouvrirSelecteurParType(di,'traiteur');
+    if(action === 'sel-tache') ouvrirSelecteurParType(di,'tache');
   });
 });
 
@@ -25394,6 +25404,260 @@ window.addEventListener('load',function(){
     if(changed){save();setTimeout(sauverDansSupabase,1000);}
   },3000);
 });
+</script>
+<script>
+
+/* ══ SÉLECTEUR PAR TYPE (CA / Resto-Co / Traiteur / Tâche) ══ */
+window.ouvrirSelecteurParType = function(di, type){
+  var dr = ST.drivers[di]; if(!dr) return;
+  var old = document.getElementById('m-sel-type'); if(old) old.remove();
+
+  /* Config par type */
+  var configs = {
+    tournee:  {label:'Centres Aérés', color:'#2563eb', bg:'rgba(37,99,235,.12)', cat:'centre',    icon:'🏕', keys: Object.keys(ST.bibliotheques||{}).filter(function(k){return k!=='restoco';}) },
+    restoco:  {label:'Resto-Co',      color:'#0ea5e9', bg:'rgba(14,165,233,.12)',cat:'collectivite',icon:'🏛', keys:['restoco'] },
+    traiteur: {label:'Traiteur',      color:'#f97316', bg:'rgba(249,115,22,.12)', cat:'traiteur', icon:'🍽', keys:['_traiteur_'] },
+    tache:    {label:'Tâches',        color:'#a855f7', bg:'rgba(168,85,247,.12)', cat:'task',     icon:'📋', keys:['_tache_'] }
+  };
+  var cfg = configs[type] || configs.tournee;
+
+  /* Récupérer les clients selon le type */
+  var items = [];
+  if(type === 'tournee'){
+    /* Tous les centres aérés de toutes les tournées colorées */
+    var TIDS = ['bleu','rose','vert','violet','jaune','orange'];
+    TIDS.forEach(function(tid){
+      (ST.bibliotheques&&ST.bibliotheques[tid]||[]).forEach(function(item){
+        items.push({client:item.client, task:item.task||'', cat:'centre', source:tid});
+      });
+    });
+  } else if(type === 'restoco'){
+    /* Clients Resto-Co de la bibliothèque */
+    (ST.bibliotheques&&ST.bibliotheques.restoco||[]).forEach(function(item){
+      items.push({client:item.client, task:item.task||'', cat:'collectivite', source:'restoco'});
+    });
+    /* Aussi depuis ST.library.collectivite */
+    if(!items.length && ST.library && ST.library.collectivite){
+      ST.library.collectivite.forEach(function(cl){
+        items.push({client:cl, task:'', cat:'collectivite', source:'library'});
+      });
+    }
+  } else if(type === 'traiteur'){
+    (ST.library&&ST.library.traiteur||[]).forEach(function(cl){
+      items.push({client:cl, task:'', cat:'traiteur', source:'library'});
+    });
+  } else if(type === 'tache'){
+    (ST.library&&ST.library.task||[]).forEach(function(tk){
+      items.push({client:'', task:tk, cat:'task', source:'library'});
+    });
+  }
+
+  /* Dédoublonner */
+  var seen = {};
+  items = items.filter(function(item){
+    var k = (item.client||item.task).toUpperCase();
+    if(seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+
+  /* Heure de départ : utiliser l'heure du chauffeur ou 06:30 */
+  var heureDepart = dr.start || '06:30';
+  /* S'assurer que c'est un slot valide */
+  var slots = [];
+  for(var h=6;h<18;h++){
+    var hh=String(h).padStart(2,'0');
+    if(h===6){slots.push('06:30');}
+    else{slots.push(hh+':00');if(h<17)slots.push(hh+':30');}
+  }
+  slots.push('17:30');
+  if(slots.indexOf(heureDepart)<0) heureDepart='06:30';
+
+  /* Compteur d'ordre de cochage */
+  var ordreSelection = [];
+
+  var modal = document.createElement('div');
+  modal.id = 'm-sel-type';
+  modal.className = 'mbg on';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#0f1e35;border-radius:16px;padding:20px;max-width:500px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0';
+
+  /* Titre */
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:16px;font-weight:900;color:#fff;margin-bottom:2px';
+  title.textContent = cfg.icon+' '+cfg.label+' → '+dr.name;
+  var sub = document.createElement('div');
+  sub.style.cssText = 'font-size:11px;color:#64748b;margin-bottom:12px';
+  sub.textContent = 'Cochez dans l\'ordre souhaité — les heures s\'attribuent automatiquement à partir de '+heureDepart;
+  box.appendChild(title); box.appendChild(sub);
+
+  /* Heure de départ modifiable */
+  var heureRow = document.createElement('div');
+  heureRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;background:#071526;border-radius:8px;padding:8px 12px';
+  var hLabel = document.createElement('span');
+  hLabel.style.cssText = 'font-size:11px;font-weight:700;color:#64748b';
+  hLabel.textContent = 'Heure de départ :';
+  var hSel = document.createElement('select');
+  hSel.style.cssText = 'background:#0a1828;border:1px solid #1e3a5f;border-radius:6px;color:#fff;padding:4px 8px;font-size:12px;font-weight:700';
+  slots.forEach(function(s){
+    var opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    if(s === heureDepart) opt.selected = true;
+    hSel.appendChild(opt);
+  });
+  heureRow.appendChild(hLabel); heureRow.appendChild(hSel);
+  box.appendChild(heureRow);
+
+  /* Boutons tout / rien */
+  var allRow = document.createElement('div');
+  allRow.style.cssText = 'display:flex;gap:6px;margin-bottom:10px';
+  var btnAll = document.createElement('button');
+  btnAll.textContent = 'Tout cocher';
+  btnAll.style.cssText = 'padding:5px 12px;background:'+cfg.bg+';border:1px solid '+cfg.color+'55;border-radius:6px;color:'+cfg.color+';font-size:11px;font-weight:700;cursor:pointer';
+  var btnNone = document.createElement('button');
+  btnNone.textContent = 'Tout décocher';
+  btnNone.style.cssText = 'padding:5px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#64748b;font-size:11px;font-weight:700;cursor:pointer';
+  btnAll.addEventListener('click',function(){
+    ordreSelection = [];
+    var cbs = document.querySelectorAll('.sel-type-cb');
+    cbs.forEach(function(cb,idx){cb.checked=true;ordreSelection.push(idx);cb.parentNode.querySelector('.ordre-badge').textContent=idx+1;});
+  });
+  btnNone.addEventListener('click',function(){
+    ordreSelection = [];
+    document.querySelectorAll('.sel-type-cb').forEach(function(cb){
+      cb.checked=false;
+      var badge = cb.parentNode.querySelector('.ordre-badge');
+      if(badge) badge.textContent='';
+    });
+  });
+  allRow.appendChild(btnAll); allRow.appendChild(btnNone);
+  box.appendChild(allRow);
+
+  /* Liste des clients */
+  var listDiv = document.createElement('div');
+  if(!items.length){
+    listDiv.innerHTML = '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Aucun client dans cette catégorie.<br>Ajoutez-en dans 🎨 Tournées ou dans la Bibliothèque.</div>';
+  } else {
+    items.forEach(function(item, itemIdx){
+      var row = document.createElement('label');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;background:#071526;border-left:3px solid '+cfg.color+';border-radius:6px;padding:8px 10px;margin-bottom:5px;cursor:pointer;position:relative';
+      
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'sel-type-cb';
+      cb.setAttribute('data-idx', itemIdx);
+      cb.style.cssText = 'width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:'+cfg.color;
+
+      /* Badge ordre */
+      var badge = document.createElement('span');
+      badge.className = 'ordre-badge';
+      badge.style.cssText = 'min-width:20px;height:20px;background:'+cfg.color+';color:#fff;border-radius:50%;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0';
+      var l1 = document.createElement('div');
+      l1.style.cssText = 'font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      l1.textContent = item.client || item.task;
+      if(item.task && item.client){
+        var l2 = document.createElement('div');
+        l2.style.cssText = 'font-size:10px;color:#64748b';
+        l2.textContent = item.task;
+        info.appendChild(l1); info.appendChild(l2);
+      } else { info.appendChild(l1); }
+
+      /* Gestion ordre de cochage */
+      cb.addEventListener('change',function(){
+        var i = parseInt(this.getAttribute('data-idx'));
+        if(this.checked){
+          ordreSelection.push(i);
+          badge.textContent = ordreSelection.length;
+        } else {
+          var pos = ordreSelection.indexOf(i);
+          if(pos>=0) ordreSelection.splice(pos,1);
+          badge.textContent = '';
+          /* Renuméroter */
+          var cbs = document.querySelectorAll('.sel-type-cb:checked');
+          var allBadges = document.querySelectorAll('.sel-type-cb');
+          allBadges.forEach(function(c2){c2.parentNode.querySelector('.ordre-badge').textContent='';});
+          ordreSelection.forEach(function(oi,num){
+            var cb2=document.querySelector('.sel-type-cb[data-idx="'+oi+'"]');
+            if(cb2)cb2.parentNode.querySelector('.ordre-badge').textContent=num+1;
+          });
+        }
+      });
+
+      row.appendChild(cb); row.appendChild(badge); row.appendChild(info);
+      listDiv.appendChild(row);
+    });
+  }
+  box.appendChild(listDiv);
+
+  /* Boutons action */
+  var actRow = document.createElement('div');
+  actRow.style.cssText = 'display:flex;gap:8px;margin-top:14px';
+  var btnOk = document.createElement('button');
+  btnOk.textContent = '✅ Appliquer sur la colonne';
+  btnOk.style.cssText = 'flex:1;padding:11px;background:'+cfg.color+';border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer';
+  btnOk.addEventListener('click',function(){
+    var heureBase = hSel.value || '06:30';
+    /* Calculer les indices depuis ordreSelection */
+    var toAdd = ordreSelection.length > 0 ? ordreSelection : [];
+    /* Si rien dans ordre mais des cochés, prendre l'ordre naturel */
+    if(!toAdd.length){
+      document.querySelectorAll('.sel-type-cb:checked').forEach(function(cb){
+        toAdd.push(parseInt(cb.getAttribute('data-idx')));
+      });
+    }
+    if(!toAdd.length){showT('Aucun client sélectionné','#f59e0b');return;}
+
+    /* Trouver l'index du slot de départ */
+    var slotIdx = slots.indexOf(heureBase);
+    if(slotIdx<0) slotIdx=0;
+
+    var count = 0;
+    toAdd.forEach(function(itemIdx, position){
+      var item = items[itemIdx]; if(!item) return;
+      /* Heure = slot de départ + position * 30min */
+      var sIdx = slotIdx + position;
+      var heure = slots[Math.min(sIdx, slots.length-1)];
+      var key = ST.cur+'|'+di+'|'+heure;
+      if(!ST.tasks[key]) ST.tasks[key]=[];
+      /* Éviter doublon */
+      var label = (item.client||item.task||'').toUpperCase();
+      var dejaDans = ST.tasks[key].some(function(t){
+        return ((t.client||t.task||'').toUpperCase()===label);
+      });
+      if(!dejaDans){
+        ST.tasks[key].push({
+          task: item.task||'',
+          client: item.client||'',
+          cat: item.cat||cfg.cat,
+          category: item.cat||cfg.cat,
+          truck: dr.truck,
+          end: '',
+          _fromType: type,
+          ts: Date.now()
+        });
+        count++;
+      }
+    });
+
+    save();
+    if(typeof rGrid==='function') rGrid();
+    modal.classList.remove('on'); modal.remove();
+    showT(count+' client(s) ajoutés sur la colonne de '+dr.name,'#22c55e');
+    setTimeout(sauverDansSupabase,500);
+  });
+
+  var btnAnnuler = document.createElement('button');
+  btnAnnuler.textContent = 'Annuler';
+  btnAnnuler.style.cssText = 'padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer';
+  btnAnnuler.addEventListener('click',function(){modal.classList.remove('on');modal.remove();});
+  actRow.appendChild(btnOk); actRow.appendChild(btnAnnuler);
+  box.appendChild(actRow);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+};
+
 </script>
 </body>
 </html>
