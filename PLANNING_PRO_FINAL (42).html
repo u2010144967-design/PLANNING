@@ -22343,38 +22343,162 @@ var TOURNEES=[
 ];
 
 function changerTourneeDrv(di){
-  var dr=ST.drivers[di];
-  var existing=document.getElementById('m-tournee-drv');if(existing)existing.remove();
-  var modal=document.createElement('div');modal.id='m-tournee-drv';modal.className='mbg on';
-  var box=document.createElement('div');box.className='mbox';box.style.maxWidth='360px';
-  var h=document.createElement('h3');h.textContent='Tournée — '+dr.name;
-  box.appendChild(h);
-  var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:14px';
-  sub.textContent='Tournée actuelle : '+(dr.tournee||'Aucune');
-  box.appendChild(sub);
-  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
-  TOURNEES.forEach(function(t){
-    var sel=(dr.tournee||'')===(t.id);
-    var b=document.createElement('button');
-    b.textContent=t.label||'Aucune';
-    b.style.cssText='background:'+(sel?t.bg:'rgba(30,41,59,.5)')+';border:1px solid '+(sel?t.color:'#334155')+';color:'+(sel?t.color:'#94a3b8')+';border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer';
-    (function(tid,tcolor){b.addEventListener('click',function(){
-      ST.drivers[di].tournee=tid;
-      ST.drivers[di].tourneeColor=tcolor;
-      save();rGrid();
-      closeMod('m-tournee-drv');
-      if(typeof sauverDansSupabase==='function')setTimeout(sauverDansSupabase,500);
-    });})(t.id,t.color);
-    grid.appendChild(b);
-  });
-  box.appendChild(grid);
-  var cancel=document.createElement('button');
-  cancel.textContent='Annuler';
-  cancel.style.cssText='width:100%;margin-top:8px;background:#1e293b;border:1px solid #334155;color:#64748b;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer';
-  cancel.addEventListener('click',function(){closeMod('m-tournee-drv');});
-  box.appendChild(cancel);
-  modal.appendChild(box);document.body.appendChild(modal);
+  /* Ouvre le sélecteur de tournée avec choix des clients */
+  ouvrirSelecteurTournee(di);
 }
+
+function ouvrirSelecteurTournee(di){
+  if(!ST.bibliotheques)ST.bibliotheques={};
+  var TDEFS=typeof TOURNEES_DEFS!=='undefined'?TOURNEES_DEFS:[
+    {id:"bleu",label:"Bleue",color:"#3b82f6",bg:"rgba(59,130,246,.12)"},
+    {id:"rose",label:"Rose",color:"#ec4899",bg:"rgba(236,72,153,.12)"},
+    {id:"vert",label:"Verte",color:"#22c55e",bg:"rgba(34,197,94,.12)"},
+    {id:"violet",label:"Violette",color:"#a855f7",bg:"rgba(168,85,247,.12)"},
+    {id:"jaune",label:"Jaune",color:"#eab308",bg:"rgba(234,179,8,.12)"},
+    {id:"orange",label:"Orange",color:"#f97316",bg:"rgba(249,115,22,.12)"}
+  ];
+  var dr=ST.drivers[di];
+  if(!dr)return;
+  var old=document.getElementById('m-sel-tournee');if(old)old.remove();
+  var modal=document.createElement('div');
+  modal.id='m-sel-tournee';
+  modal.className='mbg on';
+  var box=document.createElement('div');
+  box.style.cssText='background:#0f1e35;border-radius:16px;padding:20px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0';
+  
+  /* Titre */
+  var title=document.createElement('div');
+  title.style.cssText='font-size:16px;font-weight:900;color:#fff;margin-bottom:4px';
+  title.textContent='Tournée pour '+dr.name;
+  var sub=document.createElement('div');
+  sub.style.cssText='font-size:11px;color:#64748b;margin-bottom:16px';
+  sub.textContent='Choisissez une couleur puis cochez les clients à assigner (date: '+ST.cur+')';
+  box.appendChild(title);box.appendChild(sub);
+  
+  /* Onglets couleurs */
+  var tabsRow=document.createElement('div');
+  tabsRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px';
+  var clientsDiv=document.createElement('div');
+  clientsDiv.id='sel-clients-list';
+  
+  var selectedTid=dr.tournee||TDEFS[0].id;
+  var selectedColor=dr.tourneeColor||TDEFS[0].color;
+  
+  function renderClients(tid,color){
+    clientsDiv.innerHTML='';
+    var items=(ST.bibliotheques&&ST.bibliotheques[tid])||[];
+    if(!items.length){
+      clientsDiv.innerHTML='<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Aucun client dans cette tournée.<br>Allez dans &#127912; Tournées pour en ajouter.</div>';
+      return;
+    }
+    /* Boutons tout cocher / tout décocher */
+    var allRow=document.createElement('div');
+    allRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
+    var btnAll=document.createElement('button');
+    btnAll.textContent='Tout cocher';
+    btnAll.style.cssText='padding:5px 12px;background:'+color+'22;border:1px solid '+color+'55;border-radius:6px;color:'+color+';font-size:11px;font-weight:700;cursor:pointer';
+    var btnNone=document.createElement('button');
+    btnNone.textContent='Tout décocher';
+    btnNone.style.cssText='padding:5px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#64748b;font-size:11px;font-weight:700;cursor:pointer';
+    btnAll.addEventListener('click',function(){document.querySelectorAll('.sel-client-cb').forEach(function(cb){cb.checked=true;});});
+    btnNone.addEventListener('click',function(){document.querySelectorAll('.sel-client-cb').forEach(function(cb){cb.checked=false;});});
+    allRow.appendChild(btnAll);allRow.appendChild(btnNone);
+    clientsDiv.appendChild(allRow);
+    
+    items.forEach(function(item,idx){
+      var row=document.createElement('label');
+      row.style.cssText='display:flex;align-items:center;gap:10px;background:#071526;border-left:3px solid '+color+';border-radius:6px;padding:8px 10px;margin-bottom:6px;cursor:pointer';
+      var cb=document.createElement('input');
+      cb.type='checkbox';cb.className='sel-client-cb';
+      cb.setAttribute('data-idx',idx);
+      cb.style.cssText='width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:'+color;
+      /* Coché si déjà dans les tâches du chauffeur */
+      var key=ST.cur+'|'+di+'|'+item.heure;
+      var deja=(ST.tasks[key]||[]).some(function(t){return (t.client||'').toUpperCase()===(item.client||'').toUpperCase();});
+      cb.checked=deja;
+      var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+      var l1=document.createElement('div');l1.style.cssText='font-size:12px;font-weight:800;color:#fff';
+      l1.textContent=item.heure+' — '+item.client;
+      var l2=document.createElement('div');l2.style.cssText='font-size:10px;color:#64748b';
+      l2.textContent=item.task||'';
+      info.appendChild(l1);info.appendChild(l2);
+      row.appendChild(cb);row.appendChild(info);
+      clientsDiv.appendChild(row);
+    });
+  }
+  
+  TDEFS.forEach(function(t){
+    var btn=document.createElement('button');
+    btn.style.cssText='padding:6px 12px;border-radius:8px;border:2px solid '+(selectedTid===t.id?t.color:'transparent')+';background:'+t.bg+';color:'+t.color+';font-size:11px;font-weight:800;cursor:pointer';
+    btn.textContent=t.label+' ('+(( ST.bibliotheques&&ST.bibliotheques[t.id])||[]).length+')';
+    btn.addEventListener('click',function(){
+      selectedTid=t.id;selectedColor=t.color;
+      tabsRow.querySelectorAll('button').forEach(function(b){b.style.borderColor='transparent';});
+      btn.style.borderColor=t.color;
+      renderClients(t.id,t.color);
+    });
+    tabsRow.appendChild(btn);
+  });
+  
+  box.appendChild(tabsRow);
+  renderClients(selectedTid,selectedColor);
+  box.appendChild(clientsDiv);
+  
+  /* Boutons action */
+  var actRow=document.createElement('div');actRow.style.cssText='display:flex;gap:8px;margin-top:14px';
+  var btnOk=document.createElement('button');
+  btnOk.textContent='✅ Appliquer sur la colonne';
+  btnOk.style.cssText='flex:1;padding:11px;background:#2563eb;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer';
+  btnOk.addEventListener('click',function(){
+    /* Supprimer les anciennes tâches fromTournee de ce chauffeur */
+    if(dr.tourneeAppliedKeys){
+      dr.tourneeAppliedKeys.forEach(function(k){
+        if(ST.tasks[k]){
+          ST.tasks[k]=ST.tasks[k].filter(function(t){return !t._fromTournee;});
+          if(!ST.tasks[k].length)delete ST.tasks[k];
+        }
+      });
+    }
+    dr.tourneeAppliedKeys=[];
+    dr.tournee=selectedTid;
+    dr.tourneeColor=selectedColor;
+    
+    /* Ajouter les clients cochés */
+    var items=(ST.bibliotheques&&ST.bibliotheques[selectedTid])||[];
+    var cbs=document.querySelectorAll('.sel-client-cb');
+    var count=0;
+    cbs.forEach(function(cb){
+      if(!cb.checked)return;
+      var idx=parseInt(cb.getAttribute('data-idx'));
+      var item=items[idx];if(!item)return;
+      var key=ST.cur+'|'+di+'|'+item.heure;
+      if(!ST.tasks[key])ST.tasks[key]=[];
+      /* Éviter doublon */
+      var dejaDans=(ST.tasks[key]||[]).some(function(t){return (t.client||'').toUpperCase()===(item.client||'').toUpperCase();});
+      if(!dejaDans){
+        ST.tasks[key].push({task:item.task||'',client:item.client||'',cat:'centre',truck:dr.truck,end:'',_fromTournee:true,ts:Date.now()});
+        dr.tourneeAppliedKeys.push(key);
+        count++;
+      }
+    });
+    
+    save();
+    if(typeof rGrid==='function')rGrid();
+    modal.classList.remove('on');modal.remove();
+    showT(count+' client(s) appliqués sur la colonne de '+dr.name,'#22c55e');
+    setTimeout(sauverDansSupabase,500);
+  });
+  
+  var btnAnnuler=document.createElement('button');
+  btnAnnuler.textContent='Annuler';
+  btnAnnuler.style.cssText='padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer';
+  btnAnnuler.addEventListener('click',function(){modal.classList.remove('on');modal.remove();});
+  actRow.appendChild(btnOk);actRow.appendChild(btnAnnuler);
+  box.appendChild(actRow);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
 
 function changerCamionDrv(di){
   var dr=ST.drivers[di];
