@@ -24394,6 +24394,11 @@ function afficherHub(){
       {id:'materiel',icon:'\uD83D\uDCE6',label:'Tableau matériel',sub:'Reprises & alertes',fn:'ouvrirDashboardMateriel'},
       {id:'vehicules',icon:'\uD83D\uDE97',label:'Gestion véhicules',sub:'Flotte',fn:'ouvrirGestionVehicules'},
       {id:'tournees',icon:'\uD83D\uDDFA',label:'Tournées',sub:'Appliquer trajets',fn:'ouvrirTournees'},
+      {id:'repartition',icon:'\u2696',label:'Répartition du jour',sub:'Distribuer les clients',fn:'ouvrirRepartitionJour'},
+      {id:'briefingmatin',icon:'\u2600',label:'Briefing du matin',sub:'Vue synthèse journée',fn:'ouvrirBriefingMatin'},
+      {id:'copiejournee',icon:'\uD83D\uDCC4',label:'Copier la journée',sub:'Dupliquer vers autre date',fn:'ouvrirCopieeJournee'},
+      {id:'feuillerouteprint',icon:'\uD83D\uDE9A',label:'Feuilles de route',sub:'Imprimer par chauffeur',fn:'ouvrirFeuillesRoute'},
+      {id:'clientsoublies',icon:'\u26A0',label:'Clients non assignés',sub:'Détection oublis',fn:'ouvrirClientsNonAssignes'},
       {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart'},
       {id:'calendrier',icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier'},
       {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
@@ -24416,6 +24421,7 @@ function afficherHub(){
       {id:'rechinfr',icon:'\uD83D\uDD0D',label:'Recherche infractions',sub:'Historique conducteur',fn:'ouvrirRechercheHistorique'},
     ]},
     {id:'admin',nom:'\uD83D\uDCCA DOCUMENTS & PILOTAGE',color:'#a855f7',bg:'rgba(168,85,247,.1)',border:'#a855f7',items:[
+      {id:'histo',icon:'\uD83D\uDCC6',label:'Historique semaine passée',sub:'Comparer les journées',fn:'ouvrirHistoriqueCompar'},
       {id:'stats',icon:'\uD83D\uDCCA',label:'Statistiques du mois',sub:'Performance',fn:'afficherStatsMois'},
       {id:'rapport',icon:'\uD83D\uDCC8',label:'Rapport activité',sub:'Synthèse',fn:'ouvrirRapport'},
       {id:'dashboard',icon:'\u2B50',label:'Tableau de bord',sub:'Vue d\'ensemble',fn:'toggleDashboard'},
@@ -25707,6 +25713,330 @@ window.ouvrirSelecteurParType = function(di, type){
   modal.appendChild(box);
   document.body.appendChild(modal);
 };
+
+</script>
+<script>
+/* ═══════════════════════════════════════════════════
+   NOUVELLES FONCTIONNALITÉS — ACCÈS DIRECT HUB
+═══════════════════════════════════════════════════ */
+
+/* ══ 1. BRIEFING DU MATIN ══ */
+window.ouvrirBriefingMatin = function(){
+  if(!ST||!ST.drivers)return;
+  var today = ST.cur;
+  var modal = document.createElement('div');
+  modal.className = 'mbg on';
+
+  // Compter missions du jour
+  var missionsParChauffeur = {};
+  ST.drivers.forEach(function(_,i){missionsParChauffeur[i]=0;});
+  Object.keys(ST.tasks||{}).forEach(function(key){
+    var p=key.split('|');
+    if(p[0]!==today)return;
+    missionsParChauffeur[p[1]]=(missionsParChauffeur[p[1]]||0)+(ST.tasks[key]||[]).length;
+  });
+  var totalMissions=Object.values(missionsParChauffeur).reduce(function(s,n){return s+n;},0);
+
+  // Absents
+  var absents=[], presents=[];
+  ST.drivers.forEach(function(dr,i){
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if(st==='absent'||st==='conge'||st==='maladie') absents.push(dr.name+' ('+st+')');
+    else presents.push(dr.name);
+  });
+
+  // Score
+  var sr = typeof calculerScorePlanning==='function'?calculerScorePlanning():null;
+
+  var now = new Date();
+  var heure = now.getHours()+':'+(now.getMinutes()<10?'0':'')+now.getMinutes();
+
+  var html = '<div style="background:#0f1e35;border-radius:16px;padding:28px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0">';
+  html += '<div style="text-align:center;margin-bottom:20px">';
+  html += '<div style="font-size:32px;margin-bottom:8px">☀️</div>';
+  html += '<div style="font-size:20px;font-weight:900;color:#fff">Briefing du '+today+'</div>';
+  html += '<div style="font-size:12px;color:#64748b">Généré à '+heure+'</div>';
+  html += '</div>';
+
+  // Cartes résumé
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  html += '<div style="background:rgba(59,130,246,.12);border:1px solid #3b82f655;border-radius:10px;padding:12px;text-align:center"><div style="font-size:28px;font-weight:900;color:#3b82f6">'+totalMissions+'</div><div style="font-size:10px;color:#3b82f6;font-weight:700">MISSIONS</div></div>';
+  html += '<div style="background:rgba(34,197,94,.12);border:1px solid #22c55e55;border-radius:10px;padding:12px;text-align:center"><div style="font-size:28px;font-weight:900;color:#22c55e">'+presents.length+'</div><div style="font-size:10px;color:#22c55e;font-weight:700">PRÉSENTS</div></div>';
+  html += '<div style="background:rgba(239,68,68,.12);border:1px solid #ef444455;border-radius:10px;padding:12px;text-align:center"><div style="font-size:28px;font-weight:900;color:#ef4444">'+absents.length+'</div><div style="font-size:10px;color:#ef4444;font-weight:700">ABSENTS</div></div>';
+  html += '</div>';
+
+  // Charge par chauffeur
+  html += '<div style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">Charge par chauffeur</div>';
+  var maxM = Math.max.apply(null, Object.values(missionsParChauffeur).map(Number))||1;
+  ST.drivers.forEach(function(dr,i){
+    var n=missionsParChauffeur[i]||0;
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    var pct=Math.round(n/maxM*100);
+    var col=st?'#ef4444':n===0?'#475569':n<4?'#22c55e':n<7?'#f59e0b':'#ef4444';
+    html+='<div style="margin-bottom:6px">';
+    html+='<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:2px">';
+    html+='<span style="color:#e2e8f0">'+dr.name+(st?' — <span style="color:'+col+'">'+st+'</span>':'')+'</span>';
+    html+='<span style="color:'+col+'">'+n+' mission'+(n>1?'s':'')+'</span></div>';
+    html+='<div style="background:#1e293b;border-radius:4px;height:6px"><div style="height:6px;border-radius:4px;background:'+col+';width:'+pct+'%"></div></div>';
+    html+='</div>';
+  });
+  html += '</div>';
+
+  // Alertes
+  if(absents.length){
+    html+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px">';
+    html+='🚨 <strong>Absent(s) :</strong> '+absents.join(', ');
+    html+='</div>';
+  }
+  if(sr&&sr.score<70&&totalMissions>0){
+    html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px">';
+    html+='⚠️ Score planning : <strong>'+sr.score+'/100</strong> — '+( sr.suggestions&&sr.suggestions[0]?sr.suggestions[0]:'Vérifiez la répartition');
+    html+='</div>';
+  }
+  if(totalMissions===0){
+    html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px">';
+    html+='📋 Aucune mission planifiée pour aujourd\'hui.';
+    html+='</div>';
+  }
+
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\');this.closest(\'.mbg\').remove()" style="width:100%;padding:12px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">Fermer et commencer la journée →</button>';
+  html+='</div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+};
+
+/* ══ 2. CLIENTS NON ASSIGNÉS ══ */
+window.ouvrirClientsNonAssignes = function(){
+  if(!ST||!ST.bibliotheques)return;
+  var today = ST.cur;
+  var assignes = {};
+
+  Object.keys(ST.tasks||{}).forEach(function(key){
+    var p=key.split('|');
+    if(p[0]!==today)return;
+    (ST.tasks[key]||[]).forEach(function(t){
+      var label=(t.client||'').toUpperCase().trim();
+      if(label)assignes[label]=true;
+    });
+  });
+
+  var nonAssignes=[];
+  // Centres aérés
+  ['bleu','rose','vert','violet','jaune','orange'].forEach(function(tid){
+    (ST.bibliotheques[tid]||[]).forEach(function(item){
+      var k=(item.client||'').toUpperCase().trim();
+      if(k&&!assignes[k])nonAssignes.push({client:k,type:'Centre Aéré',color:'#2563eb'});
+    });
+  });
+  // Resto-Co
+  (ST.bibliotheques.restoco||[]).forEach(function(item){
+    var k=(item.client||'').toUpperCase().trim();
+    if(k&&!assignes[k])nonAssignes.push({client:k,type:'Resto-Co',color:'#0ea5e9'});
+  });
+
+  var modal=document.createElement('div');modal.className='mbg on';
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:480px;width:92%;max-height:80vh;overflow-y:auto;color:#e2e8f0">';
+  html+='<div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:4px">⚠️ Clients non assignés</div>';
+  html+='<div style="font-size:11px;color:#64748b;margin-bottom:16px">Date : '+today+' — Ces clients sont dans vos bibliothèques mais pas encore sur une colonne chauffeur.</div>';
+
+  if(!nonAssignes.length){
+    html+='<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:16px;text-align:center;font-size:13px;color:#22c55e;font-weight:700">✅ Tous les clients sont assignés !</div>';
+  } else {
+    html+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:800;color:#ef4444">'+nonAssignes.length+' client(s) pas encore assigné(s)</div>';
+    nonAssignes.forEach(function(item){
+      html+='<div style="display:flex;align-items:center;gap:10px;background:#071526;border-left:3px solid '+item.color+';border-radius:6px;padding:8px 12px;margin-bottom:6px">';
+      html+='<div style="flex:1"><div style="font-size:12px;font-weight:800;color:#fff">'+item.client+'</div>';
+      html+='<div style="font-size:10px;color:#64748b">'+item.type+'</div></div>';
+      html+='<div style="font-size:9px;background:rgba(239,68,68,.2);color:#ef4444;border-radius:4px;padding:2px 6px;font-weight:700">Non assigné</div>';
+      html+='</div>';
+    });
+  }
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\');this.closest(\'.mbg\').remove()" style="width:100%;margin-top:14px;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>';
+  html+='</div>';
+  modal.innerHTML=html;document.body.appendChild(modal);
+};
+
+/* ══ 3. RÉCAPITULATIF RÉPARTITION DU JOUR ══ */
+window.ouvrirRepartitionJour = function(){
+  if(!ST||!ST.drivers)return;
+  var today=ST.cur;
+  var modal=document.createElement('div');modal.className='mbg on';
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0">';
+  html+='<div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:4px">⚖️ Répartition du jour</div>';
+  html+='<div style="font-size:11px;color:#64748b;margin-bottom:16px">'+today+'</div>';
+
+  var total=0;
+  ST.drivers.forEach(function(dr,i){
+    var missions=[];
+    Object.keys(ST.tasks||{}).forEach(function(key){
+      var p=key.split('|');
+      if(p[0]!==today||p[1]!=i)return;
+      (ST.tasks[key]||[]).forEach(function(t){missions.push({heure:p[2],client:t.client||t.task||'?',cat:t.cat||t.category||''});});
+    });
+    missions.sort(function(a,b){return a.heure.localeCompare(b.heure);});
+    total+=missions.length;
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    var stColor=st==='absent'?'#ef4444':st==='conge'?'#f59e0b':'#22c55e';
+    html+='<div style="background:#071526;border-radius:10px;padding:12px;margin-bottom:10px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-size:13px;font-weight:900;color:#fff">'+dr.name+' <span style="font-size:10px;color:#64748b">'+dr.truck+'</span></div>';
+    html+='<div style="display:flex;gap:6px;align-items:center">';
+    if(st)html+='<span style="font-size:9px;background:rgba(239,68,68,.2);color:'+stColor+';border-radius:4px;padding:2px 6px;font-weight:700">'+st.toUpperCase()+'</span>';
+    html+='<span style="background:#1e293b;color:#e2e8f0;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:800">'+missions.length+' mission'+(missions.length>1?'s':'')+'</span>';
+    html+='</div></div>';
+    if(missions.length){
+      missions.forEach(function(m){
+        var catCol={centre:'#2563eb',collectivite:'#22c55e',traiteur:'#f97316',task:'#a855f7'}[m.cat]||'#64748b';
+        html+='<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid #0d1829">';
+        html+='<span style="font-size:11px;font-weight:800;color:#64748b;width:40px;flex-shrink:0">'+m.heure+'</span>';
+        html+='<span style="width:6px;height:6px;border-radius:50%;background:'+catCol+';flex-shrink:0"></span>';
+        html+='<span style="font-size:11px;color:#e2e8f0">'+m.client+'</span>';
+        html+='</div>';
+      });
+    } else {
+      html+='<div style="font-size:11px;color:#475569;font-style:italic">Aucune mission</div>';
+    }
+    html+='</div>';
+  });
+
+  html+='<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:800;color:#3b82f6">Total : '+total+' missions</div>';
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\');this.closest(\'.mbg\').remove()" style="width:100%;margin-top:12px;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Fermer</button>';
+  html+='</div>';
+  modal.innerHTML=html;document.body.appendChild(modal);
+};
+
+/* ══ 4. COPIER LA JOURNÉE ══ */
+window.ouvrirCopieeJournee = function(){
+  var modal=document.createElement('div');modal.className='mbg on';
+  var html='<div style="background:#0f1e35;border-radius:16px;padding:24px;max-width:420px;width:92%;color:#e2e8f0">';
+  html+='<div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:4px">📄 Copier la journée</div>';
+  html+='<div style="font-size:11px;color:#64748b;margin-bottom:16px">Copier toutes les missions du '+ST.cur+' vers une autre date</div>';
+  html+='<label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase">Date de destination</label>';
+  html+='<input type="date" id="copie-dest" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:7px;color:#fff;padding:10px;font-size:14px;box-sizing:border-box;margin-bottom:16px">';
+  html+='<div style="font-size:11px;color:#64748b;margin-bottom:12px">⚠️ Les missions existantes à la date de destination seront conservées — les nouvelles s\'ajoutent.</div>';
+  html+='<div style="display:flex;gap:8px">';
+  html+='<button id="btn-copie-ok" style="flex:1;padding:11px;background:#2563eb;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">📄 Copier</button>';
+  html+='<button onclick="this.closest(\'.mbg\').classList.remove(\'on\');this.closest(\'.mbg\').remove()" style="padding:11px 16px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer">Annuler</button>';
+  html+='</div></div>';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+  document.getElementById('btn-copie-ok').addEventListener('click',function(){
+    var dest=document.getElementById('copie-dest').value;
+    if(!dest){alert('Choisissez une date');return;}
+    if(dest===ST.cur){alert('La date de destination est identique à la date source');return;}
+    var src=ST.cur;var count=0;
+    Object.keys(ST.tasks||{}).forEach(function(key){
+      var p=key.split('|');
+      if(p[0]!==src)return;
+      var newKey=dest+'|'+p[1]+'|'+p[2];
+      if(!ST.tasks[newKey])ST.tasks[newKey]=[];
+      (ST.tasks[key]||[]).forEach(function(t){
+        ST.tasks[newKey].push(JSON.parse(JSON.stringify(t)));
+        count++;
+      });
+    });
+    save();setTimeout(sauverDansSupabase,500);
+    modal.classList.remove('on');modal.remove();
+    showT(count+' missions copiées vers le '+dest,'#22c55e');
+  });
+};
+
+/* ══ 5. FEUILLES DE ROUTE IMPRIMABLES ══ */
+window.ouvrirFeuillesRoute = function(){
+  var today=ST.cur;
+  var win=window.open('','_blank','width=900,height=700');
+  if(!win)return;
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">';
+  html+='<style>body{font-family:Arial,sans-serif;padding:0;margin:0}';
+  html+='.page{page-break-after:always;padding:24px;max-width:210mm;margin:0 auto}';
+  html+='.page:last-child{page-break-after:avoid}';
+  html+='.header{border-bottom:3px solid #1a2435;padding-bottom:12px;margin-bottom:16px}';
+  html+='.logo{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em}';
+  html+='.name{font-size:22px;font-weight:900;margin:4px 0}';
+  html+='.meta{display:flex;gap:20px;background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:16px;font-size:11px}';
+  html+='.meta-item{text-align:center}.meta-item b{display:block;font-size:14px}';
+  html+='.mission{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eef1f6}';
+  html+='.time{font-size:16px;font-weight:900;width:50px;flex-shrink:0}';
+  html+='.client{font-size:13px;font-weight:800}.task{font-size:11px;color:#64748b}';
+  html+='.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}';
+  html+='.footer{margin-top:20px;padding-top:10px;border-top:1px dashed #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}';
+  html+='@media print{button{display:none}}</style>';
+  html+='<body>';
+  html+='<div style="text-align:center;padding:10px;background:#1a2435;color:#fff;font-size:12px;font-weight:700;print:none"><button onclick="window.print()" style="background:#22c55e;border:none;border-radius:8px;color:#fff;padding:8px 20px;font-size:13px;font-weight:800;cursor:pointer;margin-right:10px">🖨️ Imprimer tout</button> Feuilles de route — '+today+'</div>';
+
+  ST.drivers.forEach(function(dr,i){
+    var missions=[];
+    Object.keys(ST.tasks||{}).forEach(function(key){
+      var p=key.split('|');
+      if(p[0]!==today||p[1]!=i)return;
+      (ST.tasks[key]||[]).forEach(function(t){
+        missions.push({heure:p[2],client:t.client||t.task||'?',task:t.task||'',cat:t.cat||t.category||'nc'});
+      });
+    });
+    missions.sort(function(a,b){return a.heure.localeCompare(b.heure);});
+    var st=ST.statuts&&ST.statuts[today+'|'+i];
+    if(st==='absent'||st==='conge'||st==='maladie')return;
+
+    var dotColors={centre:'#2563eb',collectivite:'#22c55e',traiteur:'#f97316',task:'#a855f7',nc:'#64748b'};
+    html+='<div class="page">';
+    html+='<div class="header"><div class="logo">La Table de Cana · Marseille</div>';
+    html+='<div class="name">'+dr.name+'</div>';
+    html+='<div style="font-size:12px;color:#64748b">'+today+' · '+dr.truck+(ST.plaques&&ST.plaques[dr.truck]?' · '+ST.plaques[dr.truck]:'')+'</div></div>';
+    html+='<div class="meta">';
+    html+='<div class="meta-item"><b>'+dr.start+'</b>Début</div>';
+    html+='<div class="meta-item"><b>'+dr.end+'</b>Fin</div>';
+    html+='<div class="meta-item"><b>'+missions.length+'</b>Missions</div>';
+    html+='<div class="meta-item"><b>'+(ST.plaques&&ST.plaques[dr.truck]||'—')+'</b>Plaque</div>';
+    html+='</div>';
+    if(!missions.length){
+      html+='<div style="text-align:center;color:#94a3b8;padding:30px;font-size:13px">Aucune mission planifiée</div>';
+    } else {
+      missions.forEach(function(m,idx){
+        html+='<div class="mission">';
+        html+='<div class="time">'+m.heure+'</div>';
+        html+='<div class="dot" style="background:'+(dotColors[m.cat]||'#64748b')+'"></div>';
+        html+='<div><div class="client">'+m.client+'</div>';
+        if(m.task&&m.task!==m.client)html+='<div class="task">'+m.task+'</div>';
+        html+='<div style="margin-top:8px;background:#f8fafc;border-radius:4px;height:24px;font-size:9px;color:#94a3b8;display:flex;align-items:center;padding-left:6px">Signature client : _____________________</div>';
+        html+='</div></div>';
+      });
+    }
+    html+='<div class="footer">La Table de Cana · Feuille de route générée automatiquement</div>';
+    html+='</div>';
+  });
+
+  html+='</body></html>';
+  win.document.write(html);
+  win.document.close();
+};
+
+/* ══ 6. ALERTE AUTO AU DÉMARRAGE ══ */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof ST==='undefined'||!ST.bibliotheques)return;
+    var today=ST.cur;
+    var assignes={};
+    Object.keys(ST.tasks||{}).forEach(function(key){
+      var p=key.split('|');
+      if(p[0]!==today)return;
+      (ST.tasks[key]||[]).forEach(function(t){
+        var l=(t.client||'').toUpperCase().trim();
+        if(l)assignes[l]=true;
+      });
+    });
+    var nonAssignes=0;
+    ['bleu','rose','vert','violet','jaune','orange','restoco'].forEach(function(tid){
+      (ST.bibliotheques[tid]||[]).forEach(function(item){
+        var k=(item.client||'').toUpperCase().trim();
+        if(k&&!assignes[k])nonAssignes++;
+      });
+    });
+    if(nonAssignes>0 && Object.keys(ST.tasks||{}).some(function(k){return k.startsWith(today);})){
+      showT('⚠️ '+nonAssignes+' client(s) pas encore assignés aujourd\'hui — vérifiez la répartition','#f59e0b');
+    }
+  },6000);
+});
 
 </script>
 </body>
