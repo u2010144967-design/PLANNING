@@ -5,1630 +5,1160 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM Insertion — La Table de Cana</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#07111f;--panel:#0d1829;--panel2:#0a1628;--border:#1e293b;--border2:#1e3a5f;
-  --text:#e2e8f0;--sub:#64748b;--accent:#f97316;--accent2:#fb923c;
-  --blue:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;
+  --text:#e2e8f0;--sub:#64748b;--orange:#f97316;--blue:#3b82f6;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;height:100vh;overflow:hidden}
-.app{display:flex;flex-direction:column;height:100vh}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
+
 /* LOGIN */
 .login-wrap{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:var(--panel);border:1px solid var(--border2);border-radius:20px;padding:40px;width:380px;text-align:center}
-.login-logo{font-size:48px;margin-bottom:12px}
-.login-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
-.login-sub{font-size:12px;color:var(--sub);margin-bottom:28px}
-.login-inp{width:100%;background:#071526;border:1px solid var(--border2);border-radius:10px;color:#fff;padding:12px 16px;font-size:16px;text-align:center;letter-spacing:3px;margin-bottom:12px;outline:none}
-.login-inp:focus{border-color:var(--accent)}
-.login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}
-.login-roles{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-.login-role{font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 9px;color:var(--accent)}
-/* HEADER */
-.hdr{background:var(--panel);border-bottom:2px solid var(--accent);height:54px;display:flex;align-items:center;gap:12px;padding:0 18px;flex-shrink:0;z-index:100}
-.hdr-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#c2540a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.login-box{background:var(--panel);border:1px solid var(--border2);border-radius:20px;padding:40px;width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.login-inp{width:100%;background:#071526;border:1px solid var(--border2);border-radius:10px;color:#fff;padding:14px;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:14px;outline:none}
+.login-inp:focus{border-color:var(--orange)}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+
+/* APP */
+.app{display:none;flex-direction:column;min-height:100vh}
+.hdr{background:var(--panel);border-bottom:2px solid var(--orange);padding:0 20px;height:56px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.hdr-logo{width:36px;height:36px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .hdr-title{font-size:15px;font-weight:900;color:#fff}
 .hdr-sub{font-size:10px;color:var(--sub)}
-.hdr-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:3px 12px;font-size:11px;font-weight:700;color:var(--accent)}
-.hdr-btn{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--sub);cursor:pointer;transition:.15s}
-.hdr-btn:hover{border-color:var(--accent);color:#fff}
-.hdr-btn.danger{border-color:rgba(239,68,68,.3);color:var(--red)}
-.hdr-btn.danger:hover{background:rgba(239,68,68,.1)}
-.hdr-spacer{flex:1}
-/* LAYOUT */
-.layout{display:flex;flex:1;overflow:hidden}
+.hdr-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:3px 12px;font-size:11px;font-weight:700;color:var(--orange)}
+.hdr-btn{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--sub);cursor:pointer}
+.hdr-btn:hover{border-color:var(--orange);color:#fff}
+.hdr-btn.red{color:var(--red);border-color:rgba(239,68,68,.3)}
+.layout{display:flex;min-height:calc(100vh - 56px)}
+
 /* SIDEBAR */
-.sb{width:210px;background:#060d1a;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
-.sb-section{font-size:9px;font-weight:800;color:#1e3a5f;text-transform:uppercase;letter-spacing:.08em;padding:14px 14px 4px}
-.sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;border-left:3px solid transparent;transition:.12s}
+.sb{width:220px;background:#060d1a;border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sb-sec{font-size:9px;font-weight:800;color:#1e3a5f;text-transform:uppercase;letter-spacing:.1em;padding:14px 16px 5px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;border-left:3px solid transparent;transition:.12s}
 .sb-item:hover{background:rgba(249,115,22,.06);color:#cbd5e1}
-.sb-item.on{background:rgba(249,115,22,.1);color:#fff;border-left-color:var(--accent);font-weight:800}
-.sb-item .sb-ico{font-size:15px;flex-shrink:0;width:20px;text-align:center}
-.sb-badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:auto}
+.sb-item.on{background:rgba(249,115,22,.1);color:#fff;border-left-color:var(--orange);font-weight:800}
+.sb-ico{font-size:16px;width:22px;text-align:center}
+.sb-badge{background:var(--red);color:#fff;border-radius:8px;padding:1px 6px;font-size:9px;font-weight:800;margin-left:auto}
+
 /* CONTENU */
-.content{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
-/* CARDS */
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
-.card-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-/* STAT CARDS */
-.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-.stat-val{font-size:32px;font-weight:900;margin-bottom:4px}
-.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;opacity:.7}
-/* FORMS */
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-.field{display:flex;flex-direction:column;gap:4px}
-.field label{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
-.field input,.field select,.field textarea{background:#071526;border:1px solid var(--border2);border-radius:8px;color:#fff;padding:8px 11px;font-size:12px;font-family:inherit;outline:none;transition:.15s}
-.field input:focus,.field select,.field textarea:focus{border-color:var(--accent)}
-.field textarea{resize:vertical;min-height:70px}
-select option{background:#0a1628}
-/* BUTTONS */
-.btn{padding:9px 18px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2)}
+.content{flex:1;padding:24px;overflow-y:auto}
+.page-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
+.page-sub{font-size:12px;color:var(--sub);margin-bottom:24px}
+
+/* CARDS GRILLE */
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center}
+.stat-val{font-size:36px;font-weight:900;margin-bottom:4px}
+.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--sub)}
+
+/* SALARIÉ CARD */
+.sal-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:.2s}
+.sal-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 8px 24px rgba(249,115,22,.1)}
+.sal-header{background:linear-gradient(135deg,#0d1829,#071526);padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.sal-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0}
+.sal-name{font-size:16px;font-weight:900;color:#fff}
+.sal-poste{font-size:11px;color:var(--sub)}
+.sal-body{padding:16px}
+.sal-stat{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #0d1829;font-size:12px}
+.sal-stat:last-child{border:none}
+.sal-stat-lbl{color:var(--sub)}
+.sal-stat-val{font-weight:700;color:var(--text)}
+.sal-actions{display:flex;gap:6px;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--border);background:#060d1a}
+
+/* BOUTONS */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:#ea6c00}
 .btn-secondary{background:var(--panel2);border:1px solid var(--border);color:var(--sub)}
-.btn-secondary:hover{border-color:var(--accent);color:#fff}
-.btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red)}
-.btn-success{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green)}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-/* TABLES */
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.tbl td{padding:10px 12px;border-bottom:1px solid #0d1829;font-size:12px;vertical-align:middle}
-.tbl tr:hover td{background:rgba(255,255,255,.02)}
-/* BADGES */
-.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700}
-.badge-green{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
-.badge-orange{background:rgba(249,115,22,.15);color:var(--accent);border:1px solid rgba(249,115,22,.3)}
-.badge-red{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
-.badge-blue{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
-.badge-purple{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
-.badge-gray{background:rgba(100,116,139,.15);color:var(--sub);border:1px solid rgba(100,116,139,.3)}
-/* SCORES */
-.score-bar{background:#1e293b;border-radius:6px;height:8px;overflow:hidden}
+.btn-secondary:hover{border-color:var(--orange);color:#fff}
+.btn-blue{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blue)}
+.btn-green{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.btn-purple{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:var(--purple)}
+.btn-red{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.btn-yellow{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--yellow)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+/* FORMULAIRES */
+.form-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
+.form-section-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea{background:#071526;border:1px solid var(--border2);border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;font-family:inherit;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange)}
+.field textarea{resize:vertical;min-height:80px;line-height:1.6}
+.field-full{grid-column:1/-1}
+select option{background:#0a1628}
+
+/* ONGLETS */
+.tabs{display:flex;gap:4px;background:#060d1a;border-radius:12px;padding:4px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;transition:.15s}
+.tab.on{background:var(--panel);color:#fff;border:1px solid var(--border2)}
+.tab-content{display:none}
+.tab-content.on{display:block}
+
+/* TIMELINE */
+.timeline{padding-left:28px;position:relative}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--orange);border:2px solid var(--bg)}
+.tl-date{font-size:10px;color:var(--sub);margin-bottom:4px;font-weight:700}
+.tl-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.tl-type{font-size:10px;font-weight:800;text-transform:uppercase;margin-bottom:6px}
+
+/* GRILLE ÉVAL */
+.eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.eval-groupe{background:var(--panel2);border-radius:10px;padding:14px}
+.eval-groupe-title{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--sub);margin-bottom:12px}
+.eval-crit{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.eval-crit-lbl{font-size:11px;flex:1;color:var(--text)}
+.eval-stars{display:flex;gap:4px}
+.eval-star{width:20px;height:20px;border-radius:4px;background:var(--border2);cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;font-size:10px}
+.eval-star.on{background:var(--orange)}
+
+/* SCORE BAR */
+.score-wrap{display:flex;align-items:center;gap:10px}
+.score-bar{flex:1;background:var(--border);border-radius:6px;height:8px;overflow:hidden}
 .score-fill{height:8px;border-radius:6px;transition:width .5s}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:800}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-orange{background:rgba(249,115,22,.15);color:var(--orange)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-purple{background:rgba(168,85,247,.15);color:var(--purple)}
+
 /* MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;display:none}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-bg.on{display:flex}
-.modal{background:var(--panel);border:1px solid var(--border2);border-radius:16px;padding:28px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto}
-.modal-title{font-size:17px;font-weight:900;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
-/* TABS */
-.tabs{display:flex;gap:4px;background:#060d1a;border-radius:10px;padding:4px;margin-bottom:18px;flex-wrap:wrap}
-.tab{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;transition:.15s}
-.tab.on{background:var(--panel2);color:#fff;border:1px solid var(--border2)}
-/* ALERT */
+.modal-box{background:var(--panel);border:1px solid var(--border2);border-radius:18px;padding:28px;max-width:720px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-title{font-size:17px;font-weight:900;color:#fff;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+
+/* ALERTES */
 .alert{border-radius:10px;padding:12px 16px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px}
 .alert-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
-.alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.alert-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red)}
 .alert-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green)}
-/* PROGRESS */
-.prog-item{margin-bottom:14px}
-.prog-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;font-weight:700}
-/* TIMELINE */
-.timeline{position:relative;padding-left:24px}
-.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
-.tl-item{position:relative;margin-bottom:18px}
-.tl-dot{position:absolute;left:-21px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
-.tl-date{font-size:10px;color:var(--sub);margin-bottom:3px}
-.tl-content{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px}
-/* EVAL STARS */
-.star-row{display:flex;gap:6px;align-items:center}
-.star{font-size:18px;cursor:pointer;transition:.15s;opacity:.3}
-.star.on{opacity:1}
-/* PRINT */
-@media print{.sb,.hdr,.btn,.modal-bg{display:none!important}.content{overflow:visible;padding:0}}
-/* SCROLL */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:5px}
 
+/* RESSOURCE CARD */
+.res-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
+.res-cat{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.res-title{font-size:14px;font-weight:900;color:#fff;margin-bottom:8px}
+.res-desc{font-size:12px;color:var(--sub);line-height:1.7;margin-bottom:10px}
+.res-outil{background:var(--panel2);border-left:3px solid var(--orange);border-radius:6px;padding:12px;font-size:12px;line-height:1.7}
+
+/* PRINT */
+@media print{.sb,.hdr,.btn,.modal-bg,.sal-actions{display:none!important}.content{padding:0}}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999">
-  <div class="login-box">
-    <div class="login-logo">🏗️</div>
-    <div class="login-title">CRM Insertion</div>
-    <div class="login-sub">La Table de Cana · Marseille<br>Espace CIP & Encadrement</div>
-    <input class="login-inp" type="password" id="login-code" placeholder="Entrez votre code d'accès" maxlength="20" onkeydown="if(event.key==='Enter')tryLogin()">
-    <button class="login-btn" onclick="tryLogin()">Accéder →</button>
-    <div id="login-error" style="color:var(--red);font-size:12px;margin-top:10px;display:none">❌ Code incorrect</div>
-    <div class="login-roles">
-      <span class="login-role">admin2026 · Administrateur</span>
-      <span class="login-role">cip2026 · CIP</span>
-      <span class="login-role">rh2026 · RH</span>
-    </div>
+<div class="login-wrap" id="login-wrap">
+<div class="login-box">
+  <div style="font-size:52px;margin-bottom:14px">🏗️</div>
+  <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">CRM Insertion</div>
+  <div style="font-size:12px;color:var(--sub);margin-bottom:6px">La Table de Cana · Marseille</div>
+  <div style="font-size:11px;color:var(--sub);margin-bottom:28px">Accompagnement & Suivi des parcours d'insertion</div>
+  <input class="login-inp" type="password" id="login-code" placeholder="• • • • • •" onkeydown="if(event.key==='Enter')login()">
+  <button class="login-btn" onclick="login()">Accéder →</button>
+  <div id="login-err" style="color:var(--red);font-size:12px;margin-top:10px;display:none">❌ Code incorrect</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:18px">
+    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 9px;color:var(--orange)">admin2026 · Administrateur</span>
+    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 9px;color:var(--orange)">cip2026 · CIP</span>
+    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 9px;color:var(--orange)">rh2026 · RH</span>
   </div>
+</div>
 </div>
 
 <!-- APP -->
-<div class="app" id="crm-app" style="display:none">
-
-  <!-- HEADER -->
-  <div class="hdr">
-    <div class="hdr-logo">🏗️</div>
-    <div>
-      <div class="hdr-title">CRM Insertion — La Table de Cana</div>
-      <div class="hdr-sub">Accompagnement & Suivi des salariés en parcours</div>
-    </div>
-    <div class="hdr-badge" id="hdr-role">—</div>
-    <span style="font-size:11px;color:var(--sub)" id="hdr-nom"></span>
-    <span id="save-indicator" style="font-size:11px;color:var(--green);opacity:0;transition:opacity .3s">✓ Sauvegardé</span>
-    <div class="hdr-spacer"></div>
-    <button class="hdr-btn" onclick="naviguer('ia')">🤖 Assistant IA</button>
-    <button class="hdr-btn danger" onclick="seDeconnecter()">⏻ Déconnexion</button>
-  </div>
-
-  <!-- LAYOUT -->
-  <div class="layout">
-
-    <!-- SIDEBAR -->
-    <div class="sb">
-      <div class="sb-section">Vue générale</div>
-      <div class="sb-item" data-page="dashboard" onclick="naviguer('dashboard')"><span class="sb-ico">📊</span>Tableau de bord</div>
-      <div class="sb-item" data-page="alertes" onclick="naviguer('alertes')"><span class="sb-ico">⚠️</span>Alertes<span class="sb-badge" id="alertes-badge" style="display:none">0</span></div>
-      
-      <div class="sb-section">Salariés</div>
-      <div class="sb-item" data-page="salaries" onclick="naviguer('salaries')"><span class="sb-ico">👷</span>Tous les salariés</div>
-      <div class="sb-item" data-page="nouveau" onclick="naviguer('nouveau')"><span class="sb-ico">➕</span>Nouveau salarié</div>
-      <div class="sb-item" data-page="entretiens" onclick="naviguer('entretiens')"><span class="sb-ico">💬</span>Entretiens</div>
-      <div class="sb-item" data-page="evaluations" onclick="naviguer('evaluations')"><span class="sb-ico">⭐</span>Évaluations</div>
-      
-      <div class="sb-section">Outils</div>
-      <div class="sb-item" data-page="fiches_types" onclick="naviguer('fiches_types')"><span class="sb-ico">📋</span>Fiches prêtes</div>
-      <div class="sb-item" data-page="docs" onclick="naviguer('docs')"><span class="sb-ico">📁</span>Documents</div>
-      <div class="sb-item" data-page="ia" onclick="naviguer('ia')"><span class="sb-ico">🤖</span>Assistant IA</div>
-      
-      <div class="sb-section">Formation encadrant</div>
-      <div class="sb-item" data-page="management" onclick="naviguer('management')"><span class="sb-ico">🎓</span>Management & Psycho</div>
-      
-      <div class="sb-section">Analyse</div>
-      <div class="sb-item" data-page="stats" onclick="naviguer('stats')"><span class="sb-ico">📈</span>Statistiques</div>
-    </div>
-
-    <!-- CONTENU -->
-    <div class="content" id="crm-content">
-      <!-- Rendu dynamiquement -->
-    </div>
-
-  </div>
+<div class="app" id="app">
+<div class="hdr">
+  <div class="hdr-logo">🏗️</div>
+  <div><div class="hdr-title">CRM Insertion — La Table de Cana</div><div class="hdr-sub">Marseille · Accompagnement professionnel</div></div>
+  <div class="hdr-badge" id="hdr-badge">—</div>
+  <span id="hdr-nom" style="font-size:11px;color:var(--sub)"></span>
+  <span id="save-ind" style="font-size:11px;color:var(--green);opacity:0;transition:opacity .3s;margin-left:4px">✓ Sauvegardé</span>
+  <div style="flex:1"></div>
+  <button class="hdr-btn" onclick="nav('ia')">🤖 IA</button>
+  <button class="hdr-btn" onclick="nav('alertes')">⚠️ Alertes <span id="hdr-alerte-count" style="background:var(--red);color:#fff;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;display:none">0</span></button>
+  <button class="hdr-btn red" onclick="deconnecter()">⏻ Déconnexion</button>
+</div>
+<div class="layout">
+<div class="sb">
+  <div class="sb-sec">Vue générale</div>
+  <div class="sb-item" data-p="dashboard" onclick="nav('dashboard')"><span class="sb-ico">📊</span>Tableau de bord</div>
+  <div class="sb-item" data-p="alertes" onclick="nav('alertes')"><span class="sb-ico">⚠️</span>Alertes<span class="sb-badge" id="sb-badge" style="display:none">0</span></div>
+  <div class="sb-sec">Salariés</div>
+  <div class="sb-item" data-p="salaries" onclick="nav('salaries')"><span class="sb-ico">👷</span>Tous les salariés</div>
+  <div class="sb-item" data-p="nouveau" onclick="ouvrirNouveauSalarie()"><span class="sb-ico">➕</span>Nouveau salarié</div>
+  <div class="sb-item" data-p="entretiens" onclick="nav('entretiens')"><span class="sb-ico">💬</span>Tous les entretiens</div>
+  <div class="sb-item" data-p="evaluations" onclick="nav('evaluations')"><span class="sb-ico">⭐</span>Toutes les évaluations</div>
+  <div class="sb-sec">Outils</div>
+  <div class="sb-item" data-p="fiches" onclick="nav('fiches')"><span class="sb-ico">📋</span>Fiches prêtes</div>
+  <div class="sb-item" data-p="management" onclick="nav('management')"><span class="sb-ico">🎓</span>Management & Psycho</div>
+  <div class="sb-item" data-p="ia" onclick="nav('ia')"><span class="sb-ico">🤖</span>Assistant IA</div>
+  <div class="sb-sec">Analyse</div>
+  <div class="sb-item" data-p="stats" onclick="nav('stats')"><span class="sb-ico">📈</span>Statistiques</div>
+</div>
+<div class="content" id="content"></div>
+</div>
 </div>
 
-<!-- MODAL -->
-<div id="modal-bg" class="modal-bg" onclick="if(event.target===this)fermerModal()"></div>
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)fermerModal()">
+<div class="modal-box" id="modal-box"></div>
+</div>
 
 <script>
-/* ═══════════════════════════════════════════
-   DONNÉES ET CONFIGURATION DU CRM
-═══════════════════════════════════════════ */
-var SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
-var SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-
-var CODES={
-  'admin2026':   {role:'admin',   label:'Administrateur', nom:'Responsable'},
-  'cana2026':    {role:'admin',   label:'Administrateur', nom:'Responsable'},
-  'direction2026':{role:'admin',  label:'Administrateur', nom:'Direction'},
-  'cip2026':     {role:'cip',     label:'CIP',            nom:'Conseiller CIP'},
-  'rh2026':      {role:'rh',      label:'RH Insertion',   nom:'Responsable RH'},
-  'rse2026':     {role:'rse',     label:'RSE-Formation',  nom:'Chargé RSE'}
-};
-
-var SESSION=null; // {role, label, nom}
-var DB={salaries:[],entretiens:[],evaluations:[],documents:[],alertes:[],notes:[]};
+/* ═══ CONFIG ═══ */
+var CODES={'admin2026':{role:'admin',label:'Administrateur',nom:'Responsable'},'cana2026':{role:'admin',label:'Administrateur',nom:'Responsable'},'direction2026':{role:'admin',label:'Administrateur',nom:'Direction'},'cip2026':{role:'cip',label:'CIP',nom:'Conseiller CIP'},'rh2026':{role:'rh',label:'RH',nom:'Responsable RH'}};
+var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var SESSION=null;
 var PAGE='dashboard';
-var SALARIÉ_ACTIF=null;
+var SAL_ACTIF=null;
+var AI_H=[{role:'system',content:'Tu es un expert CIP spécialisé en insertion professionnelle dans la logistique et le transport (chauffeurs livreurs CDDI, ACI). Tu connais tous les dispositifs IAE. Réponds en français de façon concrète et pratique, comme un collègue expert. Structure tes réponses clairement.'}];
 
-/* STRUCTURE D'UN SALARIÉ */
-function nouveauSalarie(){
-  return {
-    id: Date.now(),
-    /* Identité */
-    nom:'',prenom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',
-    adresse:'',codePostal:'',ville:'',telephone:'',email:'',
-    situationFamiliale:'',nbEnfants:0,
-    /* Contrat */
-    typeContrat:'CDDI',dateEntree:'',dateFin:'',dureeInitiale:6,
-    renouvellements:[],poste:'Chauffeur livreur',
-    heuresSemaine:26,salaire:'',vehiculeAssigne:'',permis:[],
-    /* Situation à l'entrée */
-    prescripteur:'',structurePrescripteur:'',
-    situationAvant:'',dureeChomage:'',
-    minima:false,typMinima:'',rsa:false,aah:false,th:false,
-    niveauFormation:'',diplomes:[],
-    /* Projet pro */
-    projetPro:'',secteurVise:'',niveauVisee:'',
-    formationsEnvisagees:'',permisEnvisages:[],
-    /* Parcours insertion */
-    objectifsMois:'',progressionGenerale:0,
-    statut:'actif', /* actif, sorti, suspendu */
-    typeSortie:'',dateSortie:'',
-    /* Santé / contraintes */
-    contraintesSante:'',rqth:false,medicineTravail:'',
-    contraintes:'',mobilite:'vehicule',
-    /* Notes libres */
-    notesCIP:'',notesRH:'',
-    /* Méta */
-    createdAt:new Date().toISOString(),
-    updatedAt:new Date().toISOString(),
-    photo:''
-  };
-}
+/* ═══ DONNÉES INITIALES — 5 SALARIÉS ═══ */
+var DB_DEFAULT={salaries:[
+  {id:1,prenom:'Otmane',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'JUMPY',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',objectifsMois:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🏋',couleur:'#3b82f6',createdAt:new Date().toISOString()},
+  {id:2,prenom:'Anthony',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',objectifsMois:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🚀',couleur:'#22c55e',createdAt:new Date().toISOString()},
+  {id:3,prenom:'Mickaël',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'VIVARO 1',horaires:'06:00-15:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',objectifsMois:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'⚡',couleur:'#a855f7',createdAt:new Date().toISOString()},
+  {id:4,prenom:'Karim',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'VIVARO 2',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',objectifsMois:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🎯',couleur:'#f97316',createdAt:new Date().toISOString()},
+  {id:5,prenom:'Nicolas',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'VIVARO LOCATION',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',objectifsMois:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🌟',couleur:'#0ea5e9',createdAt:new Date().toISOString()}
+],entretiens:[],evaluations:[],alertes:[]};
 
-/* STRUCTURE D'UN ENTRETIEN */
-function nouvelEntretien(salId){
-  return {
-    id:Date.now(),salId:salId,
-    date:new Date().toISOString().slice(0,10),
-    type:'suivi', /* suivi, bilan, recadrage, urgence, bilan_mi, bilan_fin */
-    duree:30,lieu:'Bureau CIP',
-    participant:'',encadrant:'',
-    /* Contenu */
-    pointsAbordes:'',
-    // Axes
-    axe_professionnel:'',axe_social:'',axe_formation:'',axe_sante:'',
-    // Engagements
-    engagementsSalarie:'',engagementsEncadrant:'',
-    dateProchainRDV:'',
-    // Bilan
-    pointsPositifs:'',pointsAmeliorer:'',
-    reorientationNecessaire:false,alerteSignalee:false,
-    // Signature
-    signeSalarie:false,signeEncadrant:false,
-    createdAt:new Date().toISOString()
-  };
-}
+var DB=JSON.parse(JSON.stringify(DB_DEFAULT));
 
-/* STRUCTURE D'UNE ÉVALUATION */
-function nouvelleEvaluation(salId){
-  return {
-    id:Date.now(),salId:salId,
-    date:new Date().toISOString().slice(0,10),
-    mois:new Date().toISOString().slice(0,7),
-    evaluateur:'',
-    // Savoir-être (1-4)
-    ponctualite:0,assiduite:0,tenueTravail:0,communication:0,
-    relationEquipe:0,relationClient:0,respectConsignes:0,initiative:0,
-    // Savoir-faire technique
-    conduite:0,chargement:0,livraison:0,gestionMateriel:0,
-    securite:0,documentAdministratif:0,gestionTemps:0,
-    // Projet professionnel
-    motivationProjet:0,rechercheEmploi:0,formationSuivie:0,
-    // Global
-    noteGlobale:0,appreciation:'',axesProgression:'',
-    pointsForts:'',
-    createdAt:new Date().toISOString()
-  };
-}
-
-/* FICHES PRÊTES */
-var FICHES_TYPES={
-  bilan_mi_parcours:{
-    titre:'Bilan mi-parcours',
-    sections:['Objectifs initiaux','Compétences acquises','Difficultés rencontrées','Actions mises en place','Objectifs second semestre','Perspectives de sortie']
-  },
-  bilan_fin_parcours:{
-    titre:'Bilan de fin de parcours',
-    sections:['Récapitulatif du parcours','Compétences développées','Résultats obtenus','Type de sortie','Recommandations','Bilan partenaire']
-  },
-  fiche_poste:{
-    titre:'Fiche de poste chauffeur livreur',
-    sections:['Mission principale','Activités quotidiennes','Compétences requises','Conditions de travail','Évolution possible']
-  },
-  plan_action:{
-    titre:"Plan d'action individuel",
-    sections:['Situation actuelle','Objectif à 3 mois','Actions à mener','Ressources mobilisables','Points de vigilance','Critères de réussite']
-  },
-  compte_rendu:{
-    titre:"Compte-rendu d'entretien",
-    sections:['Contexte','Points abordés','Engagements salarié','Engagements encadrant','Prochaine étape']
-  }
-};
-
-/* RESSOURCES MANAGEMENT & PSYCHOLOGIE */
-var RESSOURCES_MANAGEMENT=[
-  {cat:'Communication',titre:"L'écoute active",desc:"Technique fondamentale : reformuler, questionner, valider. Crée un espace de confiance où le salarié ose parler de ses vraies difficultés.",outil:"Reformulez systématiquement : 'Si je comprends bien, vous dites que...' — Posez des questions ouvertes : 'Qu'est-ce qui vous a le plus difficile cette semaine ?'"},
-  {cat:'Communication',titre:"Le feedback constructif",desc:"Méthode DESC : Décrire les faits, Exprimer le ressenti, Spécifier ce qu'on attend, Conséquences positives.",outil:"Évitez 'Tu es souvent en retard' → Dites 'Lundi et mercredi tu es arrivé à 6h45 alors que la prise de poste est à 6h. Qu'est-ce qui s'est passé ?'"},
-  {cat:'Motivation',titre:"La pyramide de Maslow adaptée à l'insertion",desc:"Vérifiez d'abord que les besoins primaires sont couverts : logement stable, alimentation, santé. Sans cela, la motivation professionnelle reste fragile.",outil:"En entretien : abordez toujours la situation personnelle avant les objectifs professionnels."},
-  {cat:'Motivation',titre:"La théorie de l'autodétermination",desc:"Les personnes sont plus motivées quand elles se sentent compétentes, autonomes et reliées aux autres. Créez ces conditions.",outil:"Donnez des responsabilités progressives. Valorisez chaque réussite. Créez de la solidarité dans l'équipe."},
-  {cat:'Recadrage',titre:"Le recadrage bienveillant",desc:"Un recadrage efficace maintient la relation tout en étant clair sur ce qui n'est pas acceptable. La sanction sans explication crée du ressentiment.",outil:"Structure : 1) Reconnaître le contexte 2) Nommer le comportement problème 3) Expliquer l'impact 4) Chercher ensemble une solution 5) Fixer un objectif précis"},
-  {cat:'Recadrage',titre:"Gérer les résistances",desc:"La résistance au changement est normale. Elle cache souvent une peur. Identifier la peur est plus efficace que d'insister sur l'obligation.",outil:"Quand quelqu'un refuse : 'Je vois que c'est compliqué pour vous. Qu'est-ce qui vous inquiète dans ce changement ?' Puis écoutez vraiment."},
-  {cat:'Gestion émotionnelle',titre:"Reconnaître les signaux de détresse",desc:"Absences répétées, isolement, baisse de performance soudaine, irritabilité peuvent signaler une crise personnelle. Agir tôt est crucial.",outil:"Créez un entretien informel rapide : 'J'ai remarqué que tu n'as pas l'air dans ton assiette. Est-ce que tout va bien ?' — Ne forcez pas mais ouvrez la porte."},
-  {cat:'Gestion émotionnelle',titre:"Analyse transactionnelle — Les états du Moi",desc:"En situation de conflit, nous oscillons entre Parent (normes), Adulte (rationnel) et Enfant (émotionnel). Rester dans l'état Adulte est la clé.",outil:"Si le salarié est 'Enfant' (réaction émotionnelle) : ne répondez pas en 'Parent' (autoritaire). Restez 'Adulte' : calme, factuel, bienveillant."},
-  {cat:'Analyse transactionnelle',titre:"Les transactions et les jeux psychologiques",desc:"Certains schémas relationnels se répètent (Triangle de Karpman : Victime-Sauveur-Persécuteur). Les identifier permet de sortir des situations bloquées.",outil:"Si vous vous sentez tiraillé entre sauver quelqu'un et être dur avec lui, vous êtes peut-être dans ce triangle. Restez dans le rôle d'accompagnateur, pas de sauveur."},
-  {cat:'Posture professionnelle',titre:"L'accompagnement sans substitution",desc:"L'erreur la plus fréquente : faire à la place de la personne. Cela crée de la dépendance et nuit à l'autonomie.",outil:"Posture : 'Je vous aide à trouver la solution, je ne la trouve pas pour vous.' — 'Qu'est-ce que VOUS pensez qu'on pourrait faire ?'"},
-  {cat:'Posture professionnelle',titre:"Fixer des objectifs SMART",desc:"Spécifique, Mesurable, Atteignable, Réaliste, Temporel. Un objectif vague n'est pas engageant.",outil:"Mauvais : 'Il faut être plus ponctuel.' / Bon : 'À partir de lundi, vous pointez avant 6h05, pendant 4 semaines. On fait le bilan ensemble le 1er du mois.'"},
-  {cat:'Insertion',titre:"Les freins à l'insertion",desc:"Mobilité, garde d'enfants, santé mentale, endettement, logement instable, manque de confiance : ces freins sont souvent invisibles mais bloquants.",outil:"Cartographiez systématiquement les freins en début de parcours. Orientez vers les partenaires adaptés avant de se concentrer sur le projet pro."},
-  {cat:'Insertion',titre:"Travailler l'estime de soi",desc:"Beaucoup de salariés en insertion ont une image dégradée d'eux-mêmes après des années de chômage. Reconstruire cette estime est un travail de fond.",outil:"Technique : valoriser les compétences informelles ('Vous gérez 3 enfants seul(e), c'est une organisation réelle'), mettre en lumière les progrès même minimes."},
-];
-
-/* Supabase */
-async function dbGet(table){
-  try{
-    const r=await fetch(SUPA_URL+'/rest/v1/'+table+'?select=*&order=created_at.desc&limit=500',{
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
-    });
-    if(!r.ok)return null;
-    return await r.json();
-  }catch(e){return null;}
-}
-async function dbUpsert(table,data){
-  try{
-    const r=await fetch(SUPA_URL+'/rest/v1/'+table,{
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify(data)
-    });
-    return r.ok;
-  }catch(e){return false;}
-}
-
-/* Sauvegarde locale + Supabase */
+/* ═══ SAUVEGARDE ═══ */
 function sauver(){
-  try{localStorage.setItem('crm_cana_v2',JSON.stringify(DB));}catch(e){}
+  try{localStorage.setItem('crm_cana3',JSON.stringify(DB));}catch(e){}
+  var ind=document.getElementById('save-ind');
+  if(ind){ind.style.opacity='1';setTimeout(function(){ind.style.opacity='0';},2000);}
   clearTimeout(window._saveT);
   window._saveT=setTimeout(sauverCloud,2000);
-  document.getElementById('save-indicator').style.opacity='1';
-  setTimeout(function(){document.getElementById('save-indicator').style.opacity='0';},2000);
 }
 async function sauverCloud(){
-  await dbUpsert('planning',{date:'CRM_DATA_V2',donnees:DB,updated_at:new Date().toISOString()});
+  try{
+    await fetch(SUPA+'/rest/v1/planning',{method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({date:'CRM_V3',donnees:DB,updated_at:new Date().toISOString()})
+    });
+  }catch(e){}
 }
 async function chargerCloud(){
   try{
-    const r=await fetch(SUPA_URL+'/rest/v1/planning?date=eq.CRM_DATA_V2&select=donnees',{
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    var r=await fetch(SUPA+'/rest/v1/planning?date=eq.CRM_V3&select=donnees',{
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
     });
-    if(!r.ok)return false;
-    const rows=await r.json();
+    if(!r.ok)return;
+    var rows=await r.json();
     if(rows&&rows.length&&rows[0].donnees){
-      DB=rows[0].donnees;
-      if(!DB.salaries)DB.salaries=[];
-      if(!DB.entretiens)DB.entretiens=[];
-      if(!DB.evaluations)DB.evaluations=[];
-      if(!DB.documents)DB.documents=[];
-      if(!DB.alertes)DB.alertes=[];
-      if(!DB.notes)DB.notes=[];
-      return true;
+      var d=rows[0].donnees;
+      if(d.salaries&&d.salaries.length)DB.salaries=d.salaries;
+      if(d.entretiens)DB.entretiens=d.entretiens;
+      if(d.evaluations)DB.evaluations=d.evaluations;
     }
   }catch(e){}
-  return false;
 }
 
-/* Utils */
-function fmt(date){if(!date)return '—';try{return new Date(date).toLocaleDateString('fr-FR');}catch(e){return date;}}
-function fmtAge(date){if(!date)return '';var d=new Date(date),n=new Date();return Math.floor((n-d)/365.25/86400000)+' ans';}
-function fmtMois(date){if(!date)return '';try{return new Date(date).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});}catch(e){return date;}}
+/* ═══ UTILS ═══ */
+function fmt(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('fr-FR');}catch(e){return d;}}
+function fmtM(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});}catch(e){return d;}}
 function today(){return new Date().toISOString().slice(0,10);}
-function genId(){return Date.now()+'_'+Math.random().toString(36).slice(2,6);}
-function showToast(msg,type){
+function jours(dateFin){if(!dateFin)return null;return Math.ceil((new Date(dateFin)-new Date())/86400000);}
+function scoreColor(n){return n>=3.5?'#22c55e':n>=2.5?'#3b82f6':n>=1.5?'#f59e0b':'#ef4444';}
+function scoreLbl(n){return n>=3.5?'Excellent':n>=2.5?'Bien':n>=1.5?'En progrès':n>0?'À accompagner':'';}
+function toast(msg,type){
   var t=document.createElement('div');
-  var bg=type==='error'?'#ef4444':type==='ok'?'#22c55e':'#f97316';
-  t.style.cssText='position:fixed;bottom:24px;right:24px;background:'+bg+';color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:350px';
-  t.textContent=msg;
-  document.body.appendChild(t);
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:'+(type==='ok'?'#22c55e':type==='err'?'#ef4444':'#f97316')+';color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  t.textContent=msg;document.body.appendChild(t);
   setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(function(){t.remove();},400);},3000);
 }
-function scoreColor(n){return n>=3.5?'#22c55e':n>=2.5?'#3b82f6':n>=1.5?'#f59e0b':'#ef4444';}
-function scoreLabel(n){return n>=3.5?'Excellent':n>=2.5?'Bien':n>=1.5?'En progrès':n>0?'À accompagner':'';}
-function nbJoursRestants(dateFin){
-  if(!dateFin)return null;
-  var d=Math.ceil((new Date(dateFin)-new Date())/86400000);
-  return d;
-}
-function calculerScoreMoyen(salId){
+function scoreGlobal(salId){
   var evals=DB.evaluations.filter(function(e){return e.salId==salId;});
   if(!evals.length)return 0;
   var last=evals[evals.length-1];
   var criteres=['ponctualite','assiduite','tenueTravail','communication','relationEquipe','relationClient','respectConsignes','initiative','conduite','chargement','livraison','gestionMateriel','securite','gestionTemps'];
-  var total=0,count=0;
-  criteres.forEach(function(k){if(last[k]>0){total+=last[k];count++;}});
-  return count>0?(total/count):0;
+  var t=0,n=0;
+  criteres.forEach(function(k){if(last[k]>0){t+=last[k];n++;}});
+  return n>0?(t/n):0;
 }
-
-/* Login */
-function tryLogin(){
-  var code=document.getElementById('login-code').value.trim();
-  var user=CODES[code];
-  if(!user){document.getElementById('login-error').style.display='block';return;}
-  SESSION=user;
-  document.getElementById('login-error').style.display='none';
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('crm-app').style.display='flex';
-  document.getElementById('hdr-role').textContent=user.label;
-  document.getElementById('hdr-nom').textContent=user.nom;
-  initialiser();
-}
-function seDeconnecter(){
-  if(!confirm('Se déconnecter ?'))return;
-  SESSION=null;
-  document.getElementById('crm-app').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('login-code').value='';
-}
-
-async function initialiser(){
-  // Charger les données
-  const local=localStorage.getItem('crm_cana_v2');
-  if(local){try{DB=JSON.parse(local);}catch(e){}}
-  await chargerCloud();
-  // Initialiser les tableaux manquants
-  if(!DB.salaries)DB.salaries=[];
-  if(!DB.entretiens)DB.entretiens=[];
-  if(!DB.evaluations)DB.evaluations=[];
-  if(!DB.documents)DB.documents=[];
-  if(!DB.alertes)DB.alertes=[];
-  if(!DB.notes)DB.notes=[];
-  // Appliquer permissions
-  appliquerPermissions();
-  // Aller sur le dashboard
-  naviguer('dashboard');
-  // Vérifier alertes
-  verifierAlertes();
-}
-
-function appliquerPermissions(){
-  var role=SESSION.role;
-  // Le CIP ne voit pas les données salariales (salaire, etc.)
-  document.querySelectorAll('[data-admin]').forEach(function(el){
-    if(role!=='admin')el.style.display='none';
-  });
-}
-
-function naviguer(page){
-  PAGE=page;
-  document.querySelectorAll('.sb-item').forEach(function(el){
-    el.classList.toggle('on',el.getAttribute('data-page')===page);
-  });
-  renderPage(page);
-}
-
 function verifierAlertes(){
-  var alertes=[];
-  var now=new Date();
+  var a=[];
   DB.salaries.forEach(function(s){
     if(s.statut!=='actif')return;
-    // Fin de contrat proche
-    if(s.dateFin){
-      var j=nbJoursRestants(s.dateFin);
-      if(j!==null&&j>=0&&j<=30){
-        alertes.push({type:'fin_contrat',label:'⏰ Fin de contrat dans '+j+' jour(s)',salId:s.id,nom:s.prenom+' '+s.nom,niveau:j<=7?'error':'warn'});
-      }
-      if(j!==null&&j<0){
-        alertes.push({type:'contrat_expiré',label:'🚨 Contrat expiré depuis '+Math.abs(j)+' jour(s)',salId:s.id,nom:s.prenom+' '+s.nom,niveau:'error'});
-      }
-    }
-    // Pas d'entretien depuis 21 jours
-    var entssal=DB.entretiens.filter(function(e){return e.salId==s.id;});
-    if(entssal.length){
-      var last=entssal.reduce(function(a,b){return a.date>b.date?a:b;});
-      var j2=Math.floor((now-new Date(last.date))/86400000);
-      if(j2>21){alertes.push({type:'entretien_manquant',label:'💬 Pas d\'entretien depuis '+j2+' jours',salId:s.id,nom:s.prenom+' '+s.nom,niveau:'warn'});}
-    } else {
-      alertes.push({type:'entretien_manquant',label:'💬 Aucun entretien enregistré',salId:s.id,nom:s.prenom+' '+s.nom,niveau:'warn'});
+    var j=jours(s.dateFin);
+    if(j!==null&&j>=0&&j<=30)a.push({type:'fin',msg:'⏰ Fin de contrat dans '+j+' j',salId:s.id,nom:s.prenom+' '+s.nom,niv:j<=7?'err':'warn'});
+    if(j!==null&&j<0)a.push({type:'exp',msg:'🚨 Contrat expiré depuis '+Math.abs(j)+' j',salId:s.id,nom:s.prenom+' '+s.nom,niv:'err'});
+    var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
+    if(!ents.length){a.push({type:'ent',msg:'💬 Aucun entretien enregistré',salId:s.id,nom:s.prenom+' '+s.nom,niv:'warn'});}
+    else{
+      var last=ents.reduce(function(a,b){return a.date>b.date?a:b;});
+      var j2=Math.floor((new Date()-new Date(last.date))/86400000);
+      if(j2>21)a.push({type:'ent',msg:'💬 Pas d\'entretien depuis '+j2+' j',salId:s.id,nom:s.prenom+' '+s.nom,niv:'warn'});
     }
   });
-  DB.alertes=alertes;
-  var badge=document.getElementById('alertes-badge');
-  if(badge){badge.textContent=alertes.length;badge.style.display=alertes.length?'':'none';}
+  DB.alertes=a;
+  var cnt=a.length;
+  ['sb-badge','hdr-alerte-count'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.textContent=cnt;el.style.display=cnt?'':'none';}
+  });
 }
 
-</script>
-<script>
-/* ═══════════════════════════════════════════
-   PAGES DU CRM
-═══════════════════════════════════════════ */
-
-function renderPage(page){
-  var content=document.getElementById('crm-content');
-  if(!content)return;
-  content.innerHTML='';
-  switch(page){
-    case 'dashboard': renderDashboard(content);break;
-    case 'salaries': renderListeSalaries(content);break;
-    case 'nouveau': renderFicheSalarie(content,null);break;
-    case 'fiche': renderFicheSalarie(content,SALARIÉ_ACTIF);break;
-    case 'entretiens': renderEntretiens(content);break;
-    case 'evaluations': renderEvaluations(content);break;
-    case 'fiches_types': renderFichesTypes(content);break;
-    case 'management': renderManagement(content);break;
-    case 'alertes': renderAlertes(content);break;
-    case 'stats': renderStatistiques(content);break;
-    case 'ia': renderIA(content);break;
-    case 'docs': renderDocuments(content);break;
-    default: renderDashboard(content);
+/* ═══ LOGIN ═══ */
+function login(){
+  var code=document.getElementById('login-code').value.trim();
+  var user=CODES[code];
+  if(!user){document.getElementById('login-err').style.display='block';return;}
+  SESSION=user;
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('hdr-badge').textContent=user.label;
+  document.getElementById('hdr-nom').textContent=user.nom;
+  init();
+}
+function deconnecter(){
+  if(!confirm('Se déconnecter ?'))return;
+  SESSION=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('login-code').value='';
+}
+async function init(){
+  var local=localStorage.getItem('crm_cana3');
+  if(local){
+    try{
+      var d=JSON.parse(local);
+      if(d.salaries&&d.salaries.length)DB.salaries=d.salaries;
+      if(d.entretiens)DB.entretiens=d.entretiens;
+      if(d.evaluations)DB.evaluations=d.evaluations;
+    }catch(e){}
   }
+  await chargerCloud();
+  verifierAlertes();
+  nav('dashboard');
 }
 
-/* ══ DASHBOARD ══ */
-function renderDashboard(el){
+/* ═══ NAVIGATION ═══ */
+function nav(page){
+  PAGE=page;
+  document.querySelectorAll('.sb-item').forEach(function(el){el.classList.toggle('on',el.getAttribute('data-p')===page);});
+  render(page);
+}
+function render(page){
+  var c=document.getElementById('content');
+  if(!c)return;
+  if(page==='dashboard')return renderDash(c);
+  if(page==='salaries')return renderSalaries(c);
+  if(page==='entretiens')return renderEntretiens(c);
+  if(page==='evaluations')return renderEvaluations(c);
+  if(page==='alertes')return renderAlertes(c);
+  if(page==='fiches')return renderFiches(c);
+  if(page==='management')return renderManagement(c);
+  if(page==='ia')return renderIA(c);
+  if(page==='stats')return renderStats(c);
+}
+
+/* ═══ DASHBOARD ═══ */
+function renderDash(c){
   var actifs=DB.salaries.filter(function(s){return s.statut==='actif';}).length;
   var sortis=DB.salaries.filter(function(s){return s.statut==='sorti';}).length;
-  var alertes=DB.alertes.length;
-  var entretiensMois=DB.entretiens.filter(function(e){return e.date&&e.date.startsWith(today().slice(0,7));}).length;
-
-  var html='<div style="margin-bottom:20px">';
-  html+='<h2 style="font-size:20px;font-weight:900;color:#fff;margin-bottom:4px">Tableau de bord</h2>';
-  html+='<div style="font-size:12px;color:var(--sub)">'+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
-  html+='</div>';
-
-  // Stats
-  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">';
-  var stats=[
-    {val:actifs,lbl:'Salariés actifs',color:'var(--green)',icon:'👷'},
-    {val:sortis,lbl:'Sorties réalisées',color:'var(--blue)',icon:'🎓'},
-    {val:entretiensMois,lbl:'Entretiens ce mois',color:'var(--accent)',icon:'💬'},
-    {val:alertes,lbl:'Alertes actives',color:alertes>0?'var(--red)':'var(--sub)',icon:'⚠️'},
-  ];
-  stats.forEach(function(s){
-    html+='<div class="stat" style="border-color:'+s.color+'33"><div style="font-size:24px;margin-bottom:6px">'+s.icon+'</div>';
-    html+='<div class="stat-val" style="color:'+s.color+'">'+s.val+'</div>';
-    html+='<div class="stat-lbl" style="color:'+s.color+'">'+s.lbl+'</div></div>';
+  var entsMois=DB.entretiens.filter(function(e){return e.date&&e.date.startsWith(today().slice(0,7));}).length;
+  var al=DB.alertes.length;
+  var h='<div class="page-title">Tableau de bord</div>';
+  h+='<div class="page-sub">'+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
+  h+='<div class="grid-3">';
+  [{v:actifs,l:'Salariés actifs',c:'var(--blue)',i:'👷'},{v:sortis,l:'Sorties réalisées',c:'var(--green)',i:'🎓'},{v:entsMois,l:'Entretiens ce mois',c:'var(--orange)',i:'💬'},{v:al,l:'Alertes actives',c:al?'var(--red)':'var(--sub)',i:'⚠️'}].forEach(function(s){
+    h+='<div class="stat-card" style="border-color:'+s.c+'33"><div style="font-size:26px;margin-bottom:8px">'+s.i+'</div><div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div></div>';
   });
-  html+='</div>';
-
-  // Alertes
-  if(DB.alertes.length){
-    html+='<div class="card" style="border-color:rgba(239,68,68,.3)">';
-    html+='<div class="card-title">⚠️ Alertes actives</div>';
-    DB.alertes.slice(0,5).forEach(function(a){
-      html+='<div class="alert alert-'+(a.niveau==='error'?'error':'warn')+'">';
-      html+='<div style="flex:1"><strong>'+a.nom+'</strong> — '+a.label+'</div>';
-      html+='<button class="btn btn-secondary" style="font-size:10px;padding:4px 10px" onclick="voirSalarie('+a.salId+')">Voir</button>';
-      html+='</div>';
+  h+='</div>';
+  if(al){
+    h+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:16px;margin-bottom:20px">';
+    h+='<div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:10px">⚠️ '+al+' alerte(s) active(s)</div>';
+    DB.alertes.slice(0,3).forEach(function(a){
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.15)">';
+      h+='<div style="flex:1;font-size:12px"><strong>'+a.nom+'</strong> — '+a.msg+'</div>';
+      h+='<button class="btn btn-sm btn-red" onclick="ouvrirDossier('+a.salId+')">Voir</button>';
+      h+='</div>';
     });
-    html+='</div>';
+    h+='</div>';
   }
-
-  // Salariés actifs avec score
-  html+='<div class="card">';
-  html+='<div class="card-title">👷 Salariés actifs — Vue d\'ensemble</div>';
-  if(!actifs){
-    html+='<div style="color:var(--sub);font-size:12px;text-align:center;padding:20px">Aucun salarié actif. <button class="btn btn-primary" onclick="naviguer(\'nouveau\')" style="margin-left:10px">+ Ajouter</button></div>';
-  } else {
-    html+='<table class="tbl"><thead><tr>';
-    html+='<th>Salarié</th><th>Contrat</th><th>Fin de contrat</th><th>Score</th><th>Dernier entretien</th><th>Actions</th>';
-    html+='</tr></thead><tbody>';
-    DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
-      var score=calculerScoreMoyen(s.id);
-      var j=nbJoursRestants(s.dateFin);
-      var jColor=j!==null?( j<=7?'var(--red)':j<=30?'var(--yellow)':'var(--green)'):'var(--sub)';
-      var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
-      var lastEnt=ents.length?ents.reduce(function(a,b){return a.date>b.date?a:b;}):null;
-      html+='<tr>';
-      html+='<td><strong>'+s.prenom+' '+s.nom+'</strong><br><span style="color:var(--sub);font-size:10px">'+s.poste+'</span></td>';
-      html+='<td><span class="badge badge-orange">'+s.typeContrat+'</span></td>';
-      html+='<td style="color:'+jColor+'">'+fmt(s.dateFin)+(j!==null?' ('+j+' j)':'')+'</td>';
-      html+='<td>';
-      if(score>0){
-        html+='<div style="display:flex;align-items:center;gap:6px">';
-        html+='<div class="score-bar" style="width:60px"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scoreColor(score)+'"></div></div>';
-        html+='<span style="color:'+scoreColor(score)+';font-size:11px;font-weight:800">'+score.toFixed(1)+'</span></div>';
-      } else { html+='<span style="color:var(--sub)">—</span>'; }
-      html+='</td>';
-      html+='<td style="color:var(--sub);font-size:11px">'+(lastEnt?fmt(lastEnt.date):'Jamais')+'</td>';
-      html+='<td><button class="btn btn-secondary" onclick="voirSalarie('+s.id+')" style="font-size:10px;padding:4px 10px">Ouvrir</button></td>';
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-  }
-  html+='</div>';
-
-  // Entretiens récents
-  var recents=DB.entretiens.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,5);
-  if(recents.length){
-    html+='<div class="card">';
-    html+='<div class="card-title">💬 Derniers entretiens</div>';
-    recents.forEach(function(e){
-      var s=DB.salaries.find(function(x){return x.id==e.salId;});
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
-      html+='<div style="font-size:20px">'+( e.type==='urgence'?'🚨':e.type==='recadrage'?'⚡':'💬')+'</div>';
-      html+='<div style="flex:1"><strong>'+(s?s.prenom+' '+s.nom:'?')+'</strong> — '+e.type.replace('_',' ');
-      if(e.pointsPositifs)html+='<br><span style="font-size:10px;color:var(--sub)">'+e.pointsPositifs.slice(0,60)+'...</span>';
-      html+='</div><div style="font-size:11px;color:var(--sub)">'+fmt(e.date)+'</div>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-
-  el.innerHTML=html;
+  h+='<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:14px">Salariés actifs — accès rapide</div>';
+  h+='<div class="grid-2">';
+  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    var score=scoreGlobal(s.id);
+    var j=jours(s.dateFin);
+    var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
+    var lastEnt=ents.length?ents.reduce(function(a,b){return a.date>b.date?a:b;}):null;
+    h+='<div class="sal-card" onclick="ouvrirDossier('+s.id+')">';
+    h+='<div class="sal-header"><div class="sal-avatar" style="background:'+s.couleur+'22;border:2px solid '+s.couleur+'44;color:'+s.couleur+'">'+s.avatar+'</div>';
+    h+='<div><div class="sal-name">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div class="sal-poste">'+s.poste+' · '+s.vehicule+'</div>';
+    if(score>0)h+='<div style="margin-top:6px"><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scoreColor(score)+'"></div></div><span style="font-size:11px;font-weight:800;color:'+scoreColor(score)+'">'+score.toFixed(1)+'</span></div></div>';
+    h+='</div></div>';
+    h+='<div class="sal-body">';
+    h+='<div class="sal-stat"><span class="sal-stat-lbl">Contrat</span><span class="sal-stat-val"><span class="badge badge-orange">'+s.typeContrat+'</span></span></div>';
+    h+='<div class="sal-stat"><span class="sal-stat-lbl">Fin contrat</span><span class="sal-stat-val" style="color:'+(j!==null&&j<=30?'var(--red)':'')+'">'+fmt(s.dateFin)+(j!==null?' ('+j+'j)':'')+'</span></div>';
+    h+='<div class="sal-stat"><span class="sal-stat-lbl">Dernier entretien</span><span class="sal-stat-val">'+(lastEnt?fmt(lastEnt.date):'Aucun')+'</span></div>';
+    h+='<div class="sal-stat"><span class="sal-stat-lbl">Projet pro</span><span class="sal-stat-val" style="font-size:11px;color:var(--sub)">'+(s.projetPro||'À définir')+'</span></div>';
+    h+='</div>';
+    h+='<div class="sal-actions">';
+    h+='<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();ouvrirDossier('+s.id+')">📂 Dossier complet</button>';
+    h+='<button class="btn btn-blue btn-sm" onclick="event.stopPropagation();modalEntretien('+s.id+',0)">💬 Entretien</button>';
+    h+='<button class="btn btn-green btn-sm" onclick="event.stopPropagation();modalEvaluation('+s.id+',0)">⭐ Évaluation</button>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  c.innerHTML=h;
 }
 
-/* ══ LISTE SALARIÉS ══ */
-function renderListeSalaries(el){
-  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
-  html+='<h2 style="font-size:18px;font-weight:900;color:#fff">Salariés ('+DB.salaries.length+')</h2>';
-  html+='<div style="display:flex;gap:8px"><input id="search-sal" placeholder="🔍 Rechercher..." style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:8px 12px;font-size:12px;width:200px;outline:none" oninput="filtrerSalaries()" />';
-  html+='<button class="btn btn-primary" onclick="naviguer(\'nouveau\')">+ Nouveau salarié</button></div>';
-  html+='</div>';
-
-  // Filtres statut
-  html+='<div style="display:flex;gap:6px;margin-bottom:16px">';
+/* ═══ LISTE SALARIÉS ═══ */
+function renderSalaries(c){
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+  h+='<div><div class="page-title">Salariés ('+DB.salaries.length+')</div></div>';
+  h+='<button class="btn btn-primary" onclick="ouvrirNouveauSalarie()">➕ Nouveau salarié</button></div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
   ['tous','actif','sorti','suspendu'].forEach(function(s){
-    html+='<button class="btn btn-secondary" id="filter-'+s+'" onclick="filtrerParStatut(\''+s+'\')" style="font-size:11px">'+s.charAt(0).toUpperCase()+s.slice(1)+'</button>';
+    h+='<button class="btn btn-secondary btn-sm" onclick="filtrerSal(\''+s+'\')">'+(s==='tous'?'Tous':s.charAt(0).toUpperCase()+s.slice(1))+'</button>';
   });
-  html+='</div>';
-
-  html+='<div id="liste-salaries-content">';
-  html+=renderTableauSalaries(DB.salaries);
-  html+='</div>';
-  el.innerHTML=html;
+  h+='</div><div id="sal-list">';
+  h+=tableSalaries(DB.salaries);
+  h+='</div>';
+  c.innerHTML=h;
 }
-
-window.filtrerSalaries=function(){
-  var q=(document.getElementById('search-sal').value||'').toLowerCase();
-  var filtered=DB.salaries.filter(function(s){
-    return (s.nom+s.prenom+s.poste+s.typeContrat).toLowerCase().indexOf(q)>=0;
+window.filtrerSal=function(s){
+  var list=s==='tous'?DB.salaries:DB.salaries.filter(function(x){return x.statut===s;});
+  document.getElementById('sal-list').innerHTML=tableSalaries(list);
+};
+function tableSalaries(list){
+  if(!list.length)return '<div style="text-align:center;color:var(--sub);padding:40px">Aucun salarié</div>';
+  var h='<table style="width:100%;border-collapse:collapse"><thead><tr>';
+  ['Salarié','Contrat','Entrée','Fin','Score','Statut','Actions'].forEach(function(t){
+    h+='<th style="font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">'+t+'</th>';
   });
-  document.getElementById('liste-salaries-content').innerHTML=renderTableauSalaries(filtered);
-};
-window.filtrerParStatut=function(statut){
-  var filtered=statut==='tous'?DB.salaries:DB.salaries.filter(function(s){return s.statut===statut;});
-  document.getElementById('liste-salaries-content').innerHTML=renderTableauSalaries(filtered);
-};
-
-function renderTableauSalaries(list){
-  if(!list.length)return '<div style="text-align:center;color:var(--sub);padding:40px">Aucun salarié trouvé</div>';
-  var html='<table class="tbl"><thead><tr><th>Salarié</th><th>Contrat</th><th>Entrée</th><th>Fin</th><th>Score</th><th>Statut</th><th>Actions</th></tr></thead><tbody>';
+  h+='</tr></thead><tbody>';
   list.forEach(function(s){
-    var score=calculerScoreMoyen(s.id);
-    var badgeClass={actif:'badge-green',sorti:'badge-blue',suspendu:'badge-red'}[s.statut]||'badge-gray';
-    html+='<tr>';
-    html+='<td><strong>'+s.prenom+' '+s.nom+'</strong><div style="font-size:10px;color:var(--sub)">'+s.telephone+'</div></td>';
-    html+='<td><span class="badge badge-orange">'+s.typeContrat+'</span><br><span style="font-size:10px;color:var(--sub)">'+s.heuresSemaine+'h/sem</span></td>';
-    html+='<td style="color:var(--sub);font-size:11px">'+fmt(s.dateEntree)+'</td>';
-    html+='<td style="font-size:11px">'+(s.dateFin?fmt(s.dateFin):'—')+'</td>';
-    html+='<td>'+(score>0?'<span style="color:'+scoreColor(score)+';font-weight:800">'+score.toFixed(1)+'/4</span>':'<span style="color:var(--sub)">—</span>')+'</td>';
-    html+='<td><span class="badge '+badgeClass+'">'+s.statut+'</span></td>';
-    html+='<td style="display:flex;gap:4px">';
-    html+='<button class="btn btn-secondary" onclick="voirSalarie('+s.id+')" style="font-size:10px;padding:4px 10px">Fiche</button>';
-    html+='<button class="btn btn-danger" onclick="supprimerSalarie('+s.id+')" style="font-size:10px;padding:4px 10px">✕</button>';
-    html+='</td></tr>';
+    var score=scoreGlobal(s.id);
+    var cls={actif:'badge-green',sorti:'badge-blue',suspendu:'badge-red'}[s.statut]||'badge-blue';
+    h+='<tr style="cursor:pointer" onclick="ouvrirDossier('+s.id+')">';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:'+s.couleur+'22;color:'+s.couleur+';display:flex;align-items:center;justify-content:center;font-size:16px">'+s.avatar+'</div><div><div style="font-weight:800;color:#fff">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div style="font-size:10px;color:var(--sub)">'+s.poste+'</div></div></div></td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829"><span class="badge badge-orange">'+s.typeContrat+'</span></td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829;font-size:11px;color:var(--sub)">'+fmt(s.dateEntree)+'</td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829;font-size:11px">'+fmt(s.dateFin)+'</td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829">'+(score>0?'<span style="color:'+scoreColor(score)+';font-weight:800">'+score.toFixed(1)+'/4</span>':'<span style="color:var(--sub)">—</span>')+'</td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829"><span class="badge '+cls+'">'+s.statut+'</span></td>';
+    h+='<td style="padding:10px 12px;border-bottom:1px solid #0d1829"><div style="display:flex;gap:4px"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();ouvrirDossier('+s.id+')">Dossier</button><button class="btn btn-sm btn-red" onclick="event.stopPropagation();supprimerSal('+s.id+')">✕</button></div></td>';
+    h+='</tr>';
   });
-  html+='</tbody></table>';
-  return html;
+  h+='</tbody></table>';
+  return h;
 }
 
-/* ══ FICHE SALARIÉ ══ */
-function renderFicheSalarie(el,salarie){
-  var s=salarie||(SALARIÉ_ACTIF?DB.salaries.find(function(x){return x.id===SALARIÉ_ACTIF;}):null)||nouveauSalarie();
-  var isNew=!s.nom;
-  var ents=DB.entretiens.filter(function(e){return e.salId==s.id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
-  var evals=DB.evaluations.filter(function(e){return e.salId==s.id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
-  var score=calculerScoreMoyen(s.id);
+/* ═══ DOSSIER SALARIÉ COMPLET ═══ */
+window.ouvrirDossier=function(id){
+  SAL_ACTIF=id;
+  var s=DB.salaries.find(function(x){return x.id==id;});
+  if(!s)return;
+  var c=document.getElementById('content');
+  var score=scoreGlobal(s.id);
+  var ents=DB.entretiens.filter(function(e){return e.salId==id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var evals=DB.evaluations.filter(function(e){return e.salId==id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var j=jours(s.dateFin);
 
-  var html='<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
-  html+='<button class="btn btn-secondary" onclick="naviguer(\'salaries\')">← Retour</button>';
-  html+='<h2 style="font-size:18px;font-weight:900;color:#fff;flex:1">'+(isNew?'Nouveau salarié':s.prenom+' '+s.nom)+'</h2>';
-  if(!isNew){
-    html+='<button class="btn btn-success" onclick="ajouterEntretien('+s.id+')">+ Entretien</button>';
-    html+='<button class="btn btn-primary" onclick="ajouterEvaluation('+s.id+')">+ Évaluation</button>';
-    html+='<button class="btn btn-secondary" onclick="imprimerFiche('+s.id+')">🖨️ Imprimer</button>';
-  }
-  html+='</div>';
+  var h='<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
+  h+='<button class="btn btn-secondary" onclick="nav(\'salaries\')">← Retour</button>';
+  h+='<div style="flex:1"><div class="page-title">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div class="page-sub">'+s.poste+' · '+s.vehicule+' · '+s.typeContrat+'</div></div>';
+  h+='<button class="btn btn-blue" onclick="modalEntretien('+s.id+',0)">💬 Ajouter entretien</button>';
+  h+='<button class="btn btn-green" onclick="modalEvaluation('+s.id+',0)">⭐ Évaluer</button>';
+  h+='<button class="btn btn-purple" onclick="imprimerDossier('+s.id+')">🖨️ Imprimer dossier</button>';
+  h+='</div>';
 
-  // Score global
-  if(!isNew&&score>0){
-    html+='<div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba('+( score>=3?'34,197,94':score>=2?'59,130,246':'239,68,68')+',.1),transparent)">';
-    html+='<div style="display:flex;align-items:center;gap:16px">';
-    html+='<div style="font-size:48px;font-weight:900;color:'+scoreColor(score)+'">'+score.toFixed(1)+'</div>';
-    html+='<div><div style="font-size:16px;font-weight:800;color:'+scoreColor(score)+'">'+scoreLabel(score)+'</div>';
-    html+='<div class="score-bar" style="width:200px;margin-top:6px"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scoreColor(score)+'"></div></div>';
-    html+='<div style="font-size:11px;color:var(--sub);margin-top:4px">'+evals.length+' évaluation(s) · '+ents.length+' entretien(s)</div>';
-    html+='</div></div></div>';
+  // Bannière score
+  if(score>0){
+    h+='<div style="background:linear-gradient(135deg,'+s.couleur+'22,transparent);border:1px solid '+s.couleur+'44;border-radius:16px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:20px">';
+    h+='<div style="width:64px;height:64px;border-radius:16px;background:'+s.couleur+'22;border:2px solid '+s.couleur+'44;color:'+s.couleur+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">'+s.avatar+'</div>';
+    h+='<div><div style="font-size:28px;font-weight:900;color:'+scoreColor(score)+'">'+score.toFixed(1)+' <span style="font-size:16px">/ 4</span></div>';
+    h+='<div style="font-size:14px;font-weight:700;color:'+scoreColor(score)+'">'+scoreLbl(score)+'</div>';
+    h+='<div class="score-wrap" style="margin-top:6px;max-width:200px"><div class="score-bar"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scoreColor(score)+'"></div></div></div></div>';
+    h+='<div style="margin-left:auto;text-align:right"><div style="font-size:12px;color:var(--sub)">'+ents.length+' entretien(s)</div><div style="font-size:12px;color:var(--sub)">'+evals.length+' évaluation(s)</div>';
+    if(j!==null)h+='<div style="font-size:12px;color:'+(j<=30?'var(--red)':'var(--sub)')+'">'+Math.abs(j)+(j>=0?' jours restants':' jours dépassés')+'</div>';
+    h+='</div></div>';
   }
 
   // Onglets
-  html+='<div class="tabs">';
-  ['Identité','Contrat','Projet pro','Entretiens','Évaluations','Documents','Notes CIP'].forEach(function(t,i){
-    html+='<div class="tab'+(i===0?' on':'')+'" onclick="switchTab(this,\'fiche-tab-'+i+'\')" >'+t+'</div>';
+  h+='<div class="tabs">';
+  ['📋 Infos personnelles','📑 Contrat & Parcours','🎯 Projet pro','💬 Entretiens ('+ents.length+')','⭐ Évaluations ('+evals.length+')','📁 Documents','📝 Notes CIP'].forEach(function(t,i){
+    h+='<div class="tab'+(i===0?' on':'')+'" onclick="switchTab(this,\'dt'+i+'\')">'+t+'</div>';
   });
-  html+='</div>';
+  h+='</div>';
 
-  // Tab 0 — Identité
-  html+='<div id="fiche-tab-0">';
-  html+='<div class="card"><div class="card-title">👤 Informations personnelles</div>';
-  html+='<div class="form-grid">';
-  html+=field('Nom','sal-nom',s.nom||'','text');
-  html+=field('Prénom','sal-prenom',s.prenom||'','text');
-  html+=field('Date de naissance','sal-dob',s.dateNaissance||'','date');
-  html+=field('Lieu de naissance','sal-lob',s.lieuNaissance||'','text');
-  html+=field('Nationalité','sal-nat',s.nationalite||'','text');
-  html+=field('Téléphone','sal-tel',s.telephone||'','tel');
-  html+=field('Email','sal-email',s.email||'','email');
-  html+=field('Situation familiale','sal-sitfam',s.situationFamiliale||'','select',['Célibataire','Marié(e)','Pacsé(e)','Divorcé(e)','Séparé(e)','Veuf/Veuve']);
-  html+=field('Nb enfants à charge','sal-enfants',s.nbEnfants||0,'number');
-  html+='</div>';
-  html+='<div class="form-grid" style="margin-top:14px">';
-  html+=fieldArea('Adresse complète','sal-adresse',s.adresse||'');
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverInfosSalarie('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div>';
+  // TAB 0 — Infos
+  h+='<div id="dt0" class="tab-content on">';
+  h+='<div class="form-section"><div class="form-section-title">👤 Identité</div>';
+  h+='<div class="form-grid">';
+  h+=F('Prénom','f-prenom',s.prenom,'text')+F('Nom','f-nom',s.nom,'text');
+  h+=F('Date de naissance','f-dob',s.dateNaissance,'date')+F('Lieu de naissance','f-lob',s.lieuNaissance,'text');
+  h+=F('Nationalité','f-nat',s.nationalite,'text')+F('Téléphone','f-tel',s.telephone,'tel');
+  h+=F('Email','f-email',s.email,'email')+FS('Situation familiale','f-sitfam',s.situationFamiliale,['Célibataire','Marié(e)','Pacsé(e)','Divorcé(e)','Séparé(e)','Veuf/Veuve']);
+  h+=F('Nb enfants à charge','f-enfants',s.nbEnfants,'number');
+  h+='<div class="field field-full">'+FL('Adresse','f-adresse',s.adresse)+'</div>';
+  h+='</div><div class="btn-row"><button class="btn btn-primary" onclick="sauverSal('+s.id+')">💾 Enregistrer</button></div></div>';
 
-  html+='<div class="card"><div class="card-title">📋 Situation à l\'entrée</div>';
-  html+='<div class="form-grid">';
-  html+=field('Prescripteur','sal-prescripteur',s.prescripteur||'','select',['Pôle Emploi','Mission Locale','CAF','CCAS','Médecin','Partenaire social','Autre']);
-  html+=field('Structure prescripteur','sal-struct',s.structurePrescripteur||'','text');
-  html+=field('Situation avant contrat','sal-sitav',s.situationAvant||'','select',['Chômage longue durée','RSA','Inactivité','Autre emploi','Sortie de détention','Sans domicile fixe','Autre']);
-  html+=field('Durée sans emploi','sal-duree',s.dureeChomage||'','text');
-  html+=field('Niveau de formation','sal-formation',s.niveauFormation||'','select',['Sans diplôme','CAP/BEP','Bac','Bac+2','Bac+3 et plus']);
-  html+=field('Mobilité','sal-mobilite',s.mobilite||'vehicule','select',['Véhicule personnel','Transports en commun','Vélo','Aucune']);
-  html+='</div>';
-  html+='<div class="form-grid" style="margin-top:10px">';
-  html+='<div class="field"><label>Minima sociaux</label><div style="display:flex;gap:12px;margin-top:6px">';
-  html+=checkbox('sal-rsa','RSA',s.rsa);
-  html+=checkbox('sal-aah','AAH',s.aah);
-  html+=checkbox('sal-th','TH/RQTH',s.th);
-  html+='</div></div>';
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverInfosSalarie('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div>';
-  html+='</div>'; // fin tab 0
+  h+='<div class="form-section"><div class="form-section-title">📋 Situation à l\'entrée</div>';
+  h+='<div class="form-grid">';
+  h+=FS('Prescripteur','f-presc',s.prescripteur,['','Pôle Emploi','Mission Locale','CAF','CCAS','Médecin du travail','Partenaire social','Autre']);
+  h+=F('Structure prescripteur','f-struct',s.structurePrescripteur,'text');
+  h+=FS('Situation avant contrat','f-sitav',s.situationAvant,['','Chômage longue durée','RSA','Inactivité','Autre emploi','Sortie de détention','SDF','Autre']);
+  h+=F('Durée sans emploi','f-duree',s.dureeChomage,'text');
+  h+=FS('Niveau de formation','f-form',s.niveauFormation,['','Sans diplôme','CAP/BEP','Bac','Bac+2','Bac+3 et plus']);
+  h+=FS('Mobilité','f-mob',s.mobilite,['vehicule','Transports en commun','Vélo','Aucune']);
+  h+='</div>';
+  h+='<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">';
+  h+=CB('f-rsa','RSA',s.rsa)+CB('f-aah','AAH',s.aah)+CB('f-th','TH / RQTH',s.th);
+  h+='</div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverSal('+s.id+')">💾 Enregistrer</button></div></div>';
+  h+='</div>'; // fin dt0
 
-  // Tab 1 — Contrat
-  html+='<div id="fiche-tab-1" style="display:none">';
-  html+='<div class="card"><div class="card-title">📑 Informations contractuelles</div>';
-  html+='<div class="form-grid">';
-  html+=field('Type de contrat','sal-typecontrat',s.typeContrat||'CDDI','select',['CDDI','CDD','CDI','Alternance','Stage','Bénévolat']);
-  html+=field('Poste','sal-poste',s.poste||'','text');
-  html+=field('Date d\'entrée','sal-dentree',s.dateEntree||'','date');
-  html+=field('Date de fin prévue','sal-dfin',s.dateFin||'','date');
-  html+=field('Durée initiale (mois)','sal-dureeini',s.dureeInitiale||6,'number');
-  html+=field('Heures/semaine','sal-heures',s.heuresSemaine||26,'number');
-  html+=field('Salaire brut','sal-salaire',s.salaire||'','text');
-  html+=field('Véhicule assigné','sal-vehicule',s.vehiculeAssigne||'','text');
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverInfosSalarie('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div>';
+  // TAB 1 — Contrat
+  h+='<div id="dt1" class="tab-content">';
+  h+='<div class="form-section"><div class="form-section-title">📑 Contrat de travail</div>';
+  h+='<div class="form-grid">';
+  h+=FS('Type de contrat','f-typecontrat',s.typeContrat,['CDDI','CDD','CDI','Alternance','Stage']);
+  h+=F('Poste','f-poste',s.poste,'text');
+  h+=F('Véhicule assigné','f-vehicule',s.vehicule,'text');
+  h+=F('Horaires','f-horaires',s.horaires,'text');
+  h+=F('Date d\'entrée','f-dentree',s.dateEntree,'date');
+  h+=F('Date de fin prévue','f-dfin',s.dateFin,'date');
+  h+=F('Heures / semaine','f-heures',s.heuresSemaine,'number');
+  h+=F('Salaire brut mensuel','f-salaire',s.salaire,'text');
+  h+='</div><div class="btn-row"><button class="btn btn-primary" onclick="sauverSal('+s.id+')">💾 Enregistrer</button></div></div>';
 
-  // Renouvellements
-  html+='<div class="card"><div class="card-title">🔄 Renouvellements de contrat</div>';
+  h+='<div class="form-section"><div class="form-section-title">🔄 Renouvellements</div>';
   if(s.renouvellements&&s.renouvellements.length){
     s.renouvellements.forEach(function(r,i){
-      html+='<div style="display:flex;gap:10px;align-items:center;padding:8px;background:var(--panel2);border-radius:8px;margin-bottom:6px">';
-      html+='<span style="font-size:11px">Renouvellement '+( i+1)+' — Du '+fmt(r.du)+' au '+fmt(r.au)+' — '+r.motif+'</span>';
-      html+='</div>';
+      h+='<div style="background:var(--panel2);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
+      h+='<span style="font-size:11px;flex:1">Renouvellement '+(i+1)+' — Du '+fmt(r.du)+' au '+fmt(r.au)+' — '+r.motif+'</span>';
+      h+='<button class="btn btn-sm btn-red" onclick="supprimerRenouv('+s.id+','+i+')">✕</button></div>';
     });
-  }
-  html+='<button class="btn btn-secondary" style="margin-top:8px" onclick="ajouterRenouvellement('+(s.id||0)+')">+ Ajouter renouvellement</button>';
-  html+='</div>';
+  } else {h+='<div style="color:var(--sub);font-size:12px;margin-bottom:12px">Aucun renouvellement enregistré</div>';}
+  h+='<button class="btn btn-secondary btn-sm" onclick="ajouterRenouv('+s.id+')">+ Ajouter un renouvellement</button>';
+  h+='</div>';
 
-  // Statut du parcours
-  html+='<div class="card"><div class="card-title">🚦 Statut du parcours</div>';
-  html+='<div class="form-grid">';
-  html+=field('Statut','sal-statut',s.statut||'actif','select',['actif','sorti','suspendu']);
-  html+=field('Type de sortie','sal-typesortie',s.typeSortie||'','select',['','Emploi CDI','Emploi CDD','Emploi intérim','Formation qualifiante','Création entreprise','Retraite','Abandon','Fin de droit','Autre']);
-  html+=field('Date de sortie','sal-datesortie',s.dateSortie||'','date');
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverInfosSalarie('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div>';
-  html+='</div>'; // fin tab 1
+  h+='<div class="form-section"><div class="form-section-title">🚦 Statut du parcours</div>';
+  h+='<div class="form-grid">';
+  h+=FS('Statut','f-statut',s.statut,['actif','sorti','suspendu']);
+  h+=FS('Type de sortie','f-typesortie',s.typeSortie,['','Emploi CDI','Emploi CDD','Emploi intérim','Formation qualifiante','Création d\'entreprise','Retraite','Abandon','Fin de droit','Autre']);
+  h+=F('Date de sortie','f-datesortie',s.dateSortie,'date');
+  h+='</div><div class="btn-row"><button class="btn btn-primary" onclick="sauverSal('+s.id+')">💾 Enregistrer</button></div></div>';
+  h+='</div>'; // fin dt1
 
-  // Tab 2 — Projet pro
-  html+='<div id="fiche-tab-2" style="display:none">';
-  html+='<div class="card"><div class="card-title">🎯 Projet professionnel</div>';
-  html+='<div class="form-grid">';
-  html+=field('Projet professionnel visé','sal-projetpro',s.projetPro||'','text');
-  html+=field('Secteur visé','sal-secteur',s.secteurVise||'','select',['Logistique/Transport','Restauration','BTP','Commerce','Santé/Social','Administration','Autre']);
-  html+=field('Niveau visé','sal-niveau',s.niveauVisee||'','select',['Opérateur','Technicien','Agent de maîtrise','Cadre','Créateur d\'entreprise']);
-  html+='</div>';
-  html+='<div class="form-grid" style="margin-top:10px">';
-  html+=fieldArea('Formations envisagées','sal-formations',s.formationsEnvisagees||'');
-  html+=fieldArea('Objectifs du mois','sal-objectifs',s.objectifsMois||'');
-  html+=fieldArea('Contraintes personnelles','sal-contraintes',s.contraintes||'');
-  html+=fieldArea('Contraintes santé','sal-sante',s.contraintesSante||'');
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverInfosSalarie('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div>';
+  // TAB 2 — Projet pro
+  h+='<div id="dt2" class="tab-content">';
+  h+='<div class="form-section"><div class="form-section-title">🎯 Projet professionnel</div>';
+  h+='<div class="form-grid">';
+  h+=F('Projet professionnel visé','f-projetpro',s.projetPro,'text');
+  h+=FS('Secteur visé','f-secteur',s.secteurVise,['Logistique/Transport','Restauration','BTP','Commerce','Santé/Social','Administratif','Autre']);
+  h+=FS('Niveau visé','f-niveau',s.niveauVisee||'',['','Opérateur','Technicien','Maîtrise','Cadre','Créateur d\'entreprise']);
+  h+='<div class="field field-full">'+FL('Objectifs du mois','f-objectifs',s.objectifsMois)+'</div>';
+  h+='<div class="field field-full">'+FL('Formations envisagées','f-formations',s.formationsEnvisagees||'')+'</div>';
+  h+='<div class="field field-full">'+FL('Contraintes et freins','f-contraintes',s.contraintes)+'</div>';
+  h+='<div class="field field-full">'+FL('Contraintes santé','f-sante',s.contraintesSante)+'</div>';
+  h+='</div><div class="btn-row"><button class="btn btn-primary" onclick="sauverSal('+s.id+')">💾 Enregistrer</button></div></div>';
 
-  // Progression graphique
+  // Progression graphique si plusieurs évals
   if(evals.length>=2){
-    html+='<div class="card"><div class="card-title">📈 Progression dans le temps</div>';
-    html+='<div id="chart-prog" style="padding:10px">';
-    evals.slice().reverse().forEach(function(ev,i){
-      var criteres=['ponctualite','assiduite','communication','conduite','initiative'];
-      var moy=0,n=0;
-      criteres.forEach(function(k){if(ev[k]>0){moy+=ev[k];n++;}});
-      moy=n>0?(moy/n):0;
-      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-      html+='<div style="font-size:11px;color:var(--sub);width:80px">'+fmtMois(ev.date)+'</div>';
-      html+='<div class="score-bar" style="flex:1"><div class="score-fill" style="width:'+(moy/4*100)+'%;background:'+scoreColor(moy)+'"></div></div>';
-      html+='<div style="font-size:12px;font-weight:800;color:'+scoreColor(moy)+';width:30px">'+moy.toFixed(1)+'</div>';
-      html+='</div>';
+    h+='<div class="form-section"><div class="form-section-title">📈 Progression dans le temps</div>';
+    evals.slice().reverse().forEach(function(ev){
+      var moy=calculMoyEval(ev);
+      h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">';
+      h+='<div style="font-size:11px;color:var(--sub);width:100px">'+fmtM(ev.date)+'</div>';
+      h+='<div class="score-bar" style="flex:1"><div class="score-fill" style="width:'+(moy/4*100)+'%;background:'+scoreColor(moy)+'"></div></div>';
+      h+='<div style="font-size:12px;font-weight:800;color:'+scoreColor(moy)+';width:35px">'+moy.toFixed(1)+'</div>';
+      h+='<div style="font-size:11px;color:'+scoreColor(moy)+';width:80px">'+scoreLbl(moy)+'</div>';
+      h+='</div>';
     });
-    html+='</div></div>';
+    h+='</div>';
   }
-  html+='</div>'; // fin tab 2
+  h+='</div>'; // fin dt2
 
-  // Tab 3 — Entretiens
-  html+='<div id="fiche-tab-3" style="display:none">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
-  html+='<h3 style="font-size:14px;font-weight:800;color:#fff">'+ents.length+' entretien(s)</h3>';
-  html+='<button class="btn btn-primary" onclick="ajouterEntretien('+s.id+')">+ Nouvel entretien</button>';
-  html+='</div>';
-  if(!ents.length){
-    html+='<div style="text-align:center;color:var(--sub);padding:30px">Aucun entretien enregistré pour ce salarié.</div>';
-  } else {
-    html+='<div class="timeline">';
+  // TAB 3 — Entretiens
+  h+='<div id="dt3" class="tab-content">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+  h+='<div style="font-size:14px;font-weight:800;color:#fff">'+ents.length+' entretien(s)</div>';
+  h+='<button class="btn btn-blue" onclick="modalEntretien('+s.id+',0)">+ Nouvel entretien</button></div>';
+  if(!ents.length){h+='<div style="text-align:center;color:var(--sub);padding:40px">Aucun entretien. Cliquez sur + pour en ajouter un.</div>';}
+  else{
+    h+='<div class="timeline">';
     ents.forEach(function(e){
       var icon={suivi:'💬',bilan:'📊',recadrage:'⚡',urgence:'🚨',bilan_mi:'📋',bilan_fin:'🏁'}[e.type]||'💬';
-      html+='<div class="tl-item">';
-      html+='<div class="tl-dot" style="background:'+( e.type==='urgence'?'var(--red)':e.type==='recadrage'?'var(--yellow)':'var(--accent)')+'"></div>';
-      html+='<div class="tl-date">'+icon+' '+e.type.replace('_',' ')+' — '+fmt(e.date)+(e.duree?' ('+e.duree+'min)':'')+'</div>';
-      html+='<div class="tl-content">';
-      if(e.pointsPositifs)html+='<div style="margin-bottom:6px"><strong>✅ Points positifs :</strong> '+e.pointsPositifs+'</div>';
-      if(e.pointsAmeliorer)html+='<div style="margin-bottom:6px"><strong>🔧 À améliorer :</strong> '+e.pointsAmeliorer+'</div>';
-      if(e.engagementsSalarie)html+='<div style="margin-bottom:6px"><strong>📌 Engagements salarié :</strong> '+e.engagementsSalarie+'</div>';
-      if(e.engagementsEncadrant)html+='<div><strong>📌 Engagements encadrant :</strong> '+e.engagementsEncadrant+'</div>';
-      html+='<div style="margin-top:8px;display:flex;gap:6px">';
-      html+='<button class="btn btn-secondary" onclick="modifierEntretien('+e.id+')" style="font-size:10px;padding:3px 9px">✏️ Modifier</button>';
-      html+='<button class="btn btn-danger" onclick="supprimerEntretien('+e.id+','+s.id+')" style="font-size:10px;padding:3px 9px">✕</button>';
-      html+='</div>';
-      html+='</div></div>';
+      var dotCol={urgence:'var(--red)',recadrage:'var(--yellow)',bilan_fin:'var(--green)'}[e.type]||'var(--orange)';
+      h+='<div class="tl-item"><div class="tl-dot" style="background:'+dotCol+'"></div>';
+      h+='<div class="tl-date">'+icon+' '+e.type.replace(/_/g,' ').toUpperCase()+' — '+fmt(e.date)+(e.duree?' ('+e.duree+' min)':'')+(e.encadrant?' · '+e.encadrant:'')+'</div>';
+      h+='<div class="tl-box">';
+      if(e.pointsPositifs)h+='<div style="margin-bottom:8px"><span style="color:var(--green);font-weight:800">✅ Points positifs</span><br><span style="font-size:12px;line-height:1.6">'+e.pointsPositifs+'</span></div>';
+      if(e.pointsAmeliorer)h+='<div style="margin-bottom:8px"><span style="color:var(--yellow);font-weight:800">🔧 À améliorer</span><br><span style="font-size:12px;line-height:1.6">'+e.pointsAmeliorer+'</span></div>';
+      if(e.axe_professionnel)h+='<div style="margin-bottom:8px"><span style="color:var(--blue);font-weight:800">💼 Axe professionnel</span><br><span style="font-size:12px;line-height:1.6">'+e.axe_professionnel+'</span></div>';
+      if(e.axe_social)h+='<div style="margin-bottom:8px"><span style="color:var(--purple);font-weight:800">🤝 Axe social</span><br><span style="font-size:12px;line-height:1.6">'+e.axe_social+'</span></div>';
+      if(e.engagementsSalarie)h+='<div style="margin-bottom:8px"><span style="color:var(--orange);font-weight:800">📌 Engagements salarié</span><br><span style="font-size:12px;line-height:1.6">'+e.engagementsSalarie+'</span></div>';
+      if(e.engagementsEncadrant)h+='<div style="margin-bottom:6px"><span style="color:var(--orange);font-weight:800">📌 Engagements encadrant</span><br><span style="font-size:12px;line-height:1.6">'+e.engagementsEncadrant+'</span></div>';
+      if(e.dateProchainRDV)h+='<div style="font-size:11px;color:var(--sub);margin-top:8px">📅 Prochain RDV : '+fmt(e.dateProchainRDV)+'</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn btn-sm btn-secondary" onclick="modalEntretien('+s.id+','+e.id+')">✏️ Modifier</button><button class="btn btn-sm btn-red" onclick="supprimerEnt('+e.id+','+s.id+')">✕</button></div>';
+      h+='</div></div>';
     });
-    html+='</div>';
+    h+='</div>';
   }
-  html+='</div>'; // fin tab 3
+  h+='</div>'; // fin dt3
 
-  // Tab 4 — Évaluations
-  html+='<div id="fiche-tab-4" style="display:none">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
-  html+='<h3 style="font-size:14px;font-weight:800;color:#fff">'+evals.length+' évaluation(s)</h3>';
-  html+='<button class="btn btn-primary" onclick="ajouterEvaluation('+s.id+')">+ Nouvelle évaluation</button>';
-  html+='</div>';
-  if(!evals.length){
-    html+='<div style="text-align:center;color:var(--sub);padding:30px">Aucune évaluation enregistrée.</div>';
-  } else {
+  // TAB 4 — Évaluations
+  h+='<div id="dt4" class="tab-content">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+  h+='<div style="font-size:14px;font-weight:800;color:#fff">'+evals.length+' évaluation(s)</div>';
+  h+='<button class="btn btn-green" onclick="modalEvaluation('+s.id+',0)">+ Nouvelle évaluation</button></div>';
+  if(!evals.length){h+='<div style="text-align:center;color:var(--sub);padding:40px">Aucune évaluation. Cliquez sur + pour évaluer ce salarié.</div>';}
+  else{
     evals.forEach(function(ev){
-      html+='<div class="card" style="margin-bottom:12px">';
-      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-      html+='<div style="font-weight:800;color:#fff">'+fmtMois(ev.date)+'</div>';
-      var moy=calculerMoyenneEval(ev);
-      html+='<div style="display:flex;align-items:center;gap:8px">';
-      html+='<div class="score-bar" style="width:80px"><div class="score-fill" style="width:'+(moy/4*100)+'%;background:'+scoreColor(moy)+'"></div></div>';
-      html+='<span style="font-size:15px;font-weight:900;color:'+scoreColor(moy)+'">'+moy.toFixed(1)+'/4</span>';
-      html+='<span class="badge" style="background:'+scoreColor(moy)+'22;color:'+scoreColor(moy)+';border-color:'+scoreColor(moy)+'44">'+scoreLabel(moy)+'</span>';
-      html+='</div></div>';
-      // Grille critères
-      html+=renderGrilleEval(ev);
-      if(ev.appreciation)html+='<div style="margin-top:10px;padding:10px;background:var(--panel2);border-radius:8px;font-size:12px"><strong>Appréciation :</strong> '+ev.appreciation+'</div>';
-      html+='<div style="margin-top:8px;display:flex;gap:6px">';
-      html+='<button class="btn btn-secondary" onclick="modifierEvaluation('+ev.id+')" style="font-size:10px;padding:3px 9px">✏️ Modifier</button>';
-      html+='<button class="btn btn-danger" onclick="supprimerEvaluation('+ev.id+','+s.id+')" style="font-size:10px;padding:3px 9px">✕</button>';
-      html+='</div></div>';
+      var moy=calculMoyEval(ev);
+      h+='<div class="form-section" style="margin-bottom:14px">';
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+      h+='<div style="font-size:15px;font-weight:900;color:#fff">'+fmtM(ev.date)+'</div>';
+      h+='<div style="display:flex;align-items:center;gap:10px">';
+      h+='<div class="score-wrap" style="width:100px"><div class="score-bar"><div class="score-fill" style="width:'+(moy/4*100)+'%;background:'+scoreColor(moy)+'"></div></div></div>';
+      h+='<span style="font-size:18px;font-weight:900;color:'+scoreColor(moy)+'">'+moy.toFixed(1)+'</span>';
+      h+='<span class="badge" style="background:'+scoreColor(moy)+'22;color:'+scoreColor(moy)+';border:1px solid '+scoreColor(moy)+'44">'+scoreLbl(moy)+'</span>';
+      h+='</div></div>';
+      h+=grilleEvalView(ev);
+      if(ev.appreciation)h+='<div style="background:var(--panel2);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;line-height:1.6"><strong>Appréciation :</strong> '+ev.appreciation+'</div>';
+      if(ev.pointsForts)h+='<div style="background:rgba(34,197,94,.08);border-left:3px solid var(--green);border-radius:6px;padding:10px;margin-top:8px;font-size:12px">💪 <strong>Points forts :</strong> '+ev.pointsForts+'</div>';
+      if(ev.axesProgression)h+='<div style="background:rgba(249,115,22,.08);border-left:3px solid var(--orange);border-radius:6px;padding:10px;margin-top:8px;font-size:12px">↗️ <strong>Axes de progression :</strong> '+ev.axesProgression+'</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:12px"><button class="btn btn-sm btn-secondary" onclick="modalEvaluation('+s.id+','+ev.id+')">✏️ Modifier</button><button class="btn btn-sm btn-red" onclick="supprimerEval('+ev.id+','+s.id+')">✕</button></div>';
+      h+='</div>';
     });
   }
-  html+='</div>'; // fin tab 4
+  h+='</div>'; // fin dt4
 
-  // Tab 5 — Documents
-  html+='<div id="fiche-tab-5" style="display:none">';
-  html+='<div class="card"><div class="card-title">📁 Documents du salarié</div>';
-  html+=renderBoutonsDocuments(s);
-  html+='</div></div>';
-
-  // Tab 6 — Notes CIP
-  html+='<div id="fiche-tab-6" style="display:none">';
-  html+='<div class="card"><div class="card-title">📝 Notes confidentielles CIP</div>';
-  html+='<div class="field"><textarea id="sal-notescip" style="min-height:200px;width:100%">'+( s.notesCIP||'')+'</textarea></div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverNotesCIP('+(s.id||0)+')">💾 Enregistrer</button></div>';
-  html+='</div></div>';
-
-  el.innerHTML=html;
-}
-
-function renderGrilleEval(ev){
-  var groupes=[
-    {label:'Savoir-être',criteres:[{k:'ponctualite',l:'Ponctualité'},{k:'assiduite',l:'Assiduité'},{k:'tenueTravail',l:'Tenue de travail'},{k:'communication',l:'Communication'},{k:'relationEquipe',l:'Relation équipe'},{k:'relationClient',l:'Relation client'},{k:'respectConsignes',l:'Respect des consignes'},{k:'initiative',l:'Prise d\'initiative'}]},
-    {label:'Savoir-faire',criteres:[{k:'conduite',l:'Conduite véhicule'},{k:'chargement',l:'Chargement/déchargement'},{k:'livraison',l:'Livraison client'},{k:'gestionMateriel',l:'Gestion matériel'},{k:'securite',l:'Sécurité'},{k:'gestionTemps',l:'Gestion du temps'}]},
-  ];
-  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  groupes.forEach(function(g){
-    html+='<div><div style="font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">'+g.label+'</div>';
-    g.criteres.forEach(function(c){
-      var val=ev[c.k]||0;
-      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-      html+='<div style="font-size:11px;flex:1;color:'+( val>0?'var(--text)':'var(--sub)')+'">'+c.l+'</div>';
-      html+='<div style="display:flex;gap:3px">';
-      for(var i=1;i<=4;i++){
-        html+='<div style="width:14px;height:14px;border-radius:3px;background:'+( i<=val?scoreColor(val):'var(--border2)')+';"></div>';
-      }
-      html+='<span style="font-size:10px;color:var(--sub);margin-left:3px">'+( val>0?val:'—')+'</span>';
-      html+='</div></div>';
-    });
-    html+='</div>';
-  });
-  html+='</div>';
-  return html;
-}
-
-function calculerMoyenneEval(ev){
-  var criteres=['ponctualite','assiduite','tenueTravail','communication','relationEquipe','relationClient','respectConsignes','initiative','conduite','chargement','livraison','gestionMateriel','securite','gestionTemps'];
-  var t=0,n=0;
-  criteres.forEach(function(k){if(ev[k]>0){t+=ev[k];n++;}});
-  return n>0?(t/n):0;
-}
-
-function renderBoutonsDocuments(s){
-  var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">';
+  // TAB 5 — Documents
+  h+='<div id="dt5" class="tab-content">';
+  h+='<div class="form-section"><div class="form-section-title">📁 Documents à générer et imprimer</div>';
+  h+='<div class="grid-2">';
   var docs=[
-    {label:'Bilan mi-parcours',icon:'📋',key:'bilan_mi_parcours'},
-    {label:'Bilan fin de parcours',icon:'🏁',key:'bilan_fin_parcours'},
-    {label:'Fiche de poste',icon:'📄',key:'fiche_poste'},
-    {label:'Plan d\'action individuel',icon:'🎯',key:'plan_action'},
-    {label:'Compte-rendu entretien',icon:'💬',key:'compte_rendu'},
-    {label:'Attestation compétences',icon:'🏆',key:'attestation'},
+    {l:'Bilan mi-parcours',i:'📋',c:'var(--blue)',k:'bilan_mi'},
+    {l:'Bilan fin de parcours',i:'🏁',c:'var(--green)',k:'bilan_fin'},
+    {l:'Plan d\'action individuel',i:'🎯',c:'var(--orange)',k:'plan_action'},
+    {l:'Compte-rendu d\'entretien',i:'💬',c:'var(--purple)',k:'cr_entretien'},
+    {l:'Attestation de compétences',i:'🏆',c:'var(--yellow)',k:'attestation'},
+    {l:'Fiche de poste personnalisée',i:'📄',c:'var(--blue)',k:'fiche_poste'},
+    {l:'Dossier complet imprimable',i:'🖨️',c:'var(--sub)',k:'dossier'},
+    {l:'Objectifs du mois',i:'📌',c:'var(--orange)',k:'objectifs'},
   ];
   docs.forEach(function(d){
-    html+='<button class="btn btn-secondary" onclick="genererDocument('+s.id+',\''+d.key+'\')" style="display:flex;align-items:center;gap:8px;padding:12px;text-align:left;font-size:12px">';
-    html+='<span style="font-size:20px">'+d.icon+'</span><span>'+d.label+'</span></button>';
+    h+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">';
+    h+='<span style="font-size:28px">'+d.i+'</span>';
+    h+='<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#fff">'+d.l+'</div></div>';
+    h+='<button class="btn btn-sm" style="background:'+d.c+'22;border:1px solid '+d.c+'44;color:'+d.c+'" onclick="genDoc('+s.id+',\''+d.k+'\')">Générer</button>';
+    h+='</div>';
   });
-  html+='</div>';
-  return html;
-}
+  h+='</div></div>';
+  h+='</div>'; // fin dt5
 
-/* Helpers formulaires */
-function field(label,id,val,type,options){
-  var html='<div class="field"><label>'+label+'</label>';
-  if(type==='select'){
-    html+='<select id="'+id+'">';
-    (options||[]).forEach(function(o){html+='<option value="'+o+'"'+(o===val?' selected':'')+'>'+o+'</option>';});
-    html+='</select>';
-  } else {
-    html+='<input type="'+(type||'text')+'" id="'+id+'" value="'+(val||'')+'">';
-  }
-  html+='</div>';
-  return html;
-}
-function fieldArea(label,id,val){
-  return '<div class="field" style="grid-column:1/-1"><label>'+label+'</label><textarea id="'+id+'">'+( val||'')+'</textarea></div>';
-}
-function checkbox(id,label,checked){
-  return '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="'+id+'"'+(checked?' checked':'')+' style="accent-color:var(--accent)"> '+label+'</label>';
-}
-function switchTab(btn,tabId){
-  btn.closest('.tabs').querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  // TAB 6 — Notes CIP
+  h+='<div id="dt6" class="tab-content">';
+  h+='<div class="form-section"><div class="form-section-title">📝 Notes confidentielles — CIP</div>';
+  h+='<div class="field"><textarea id="f-notescip" style="min-height:250px">'+( s.notesCIP||'')+'</textarea></div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverNotes('+s.id+')">💾 Enregistrer les notes</button></div></div>';
+  h+='<div class="form-section"><div class="form-section-title">📝 Notes RH</div>';
+  h+='<div class="field"><textarea id="f-notesrh" style="min-height:150px">'+( s.notesRH||'')+'</textarea></div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverNotes('+s.id+')">💾 Enregistrer</button></div></div>';
+  h+='</div>'; // fin dt6
+
+  c.innerHTML=h;
+};
+
+/* ═══ FORMULAIRES HELPERS ═══ */
+function F(l,id,v,t){return '<div class="field"><label>'+l+'</label><input type="'+(t||'text')+'" id="'+id+'" value="'+(v||'')+'"></div>';}
+function FS(l,id,v,opts){var h='<div class="field"><label>'+l+'</label><select id="'+id+'">';opts.forEach(function(o){h+='<option value="'+o+'"'+(o===v?' selected':'')+'>'+o+'</option>';});return h+'</select></div>';}
+function FL(l,id,v){return '<div class="field"><label>'+l+'</label><textarea id="'+id+'">'+(v||'')+'</textarea></div>';}
+function CB(id,l,v){return '<label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;color:var(--text)"><input type="checkbox" id="'+id+'"'+(v?' checked':'')+' style="accent-color:var(--orange);width:16px;height:16px"> '+l+'</label>';}
+function switchTab(btn,tid){
+  var wrap=btn.closest('.content');
+  wrap.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
   btn.classList.add('on');
-  var parent=btn.closest('.card,#crm-content');
-  if(!parent)parent=document.getElementById('crm-content');
-  parent.querySelectorAll('[id^="fiche-tab"]').forEach(function(t){t.style.display='none';});
-  var tab=document.getElementById(tabId);
-  if(tab)tab.style.display='';
+  wrap.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('on');});
+  var tab=wrap.querySelector('#'+tid);if(tab)tab.classList.add('on');
 }
 
-/* ══ ENTRETIENS ══ */
-function renderEntretiens(el){
-  var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">';
-  html+='<h2 style="font-size:18px;font-weight:900;color:#fff">Tous les entretiens ('+DB.entretiens.length+')</h2>';
-  html+='</div>';
-  if(!DB.entretiens.length){
-    html+='<div style="text-align:center;color:var(--sub);padding:40px">Aucun entretien enregistré. Ouvrez une fiche salarié pour ajouter un entretien.</div>';
-  } else {
-    var sorted=DB.entretiens.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+/* ═══ SAUVEGARDE SALARIÉ ═══ */
+window.sauverSal=function(id){
+  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
+  var gc=function(i){var el=document.getElementById(i);return el?el.checked:false;};
+  var idx=id?DB.salaries.findIndex(function(s){return s.id==id;}): -1;
+  if(idx<0){toast('Salarié introuvable','err');return;}
+  var s=DB.salaries[idx];
+  s.prenom=g('f-prenom')||s.prenom;s.nom=g('f-nom');
+  s.dateNaissance=g('f-dob');s.lieuNaissance=g('f-lob');
+  s.nationalite=g('f-nat');s.telephone=g('f-tel');
+  s.email=g('f-email');s.situationFamiliale=g('f-sitfam');
+  s.nbEnfants=parseInt(g('f-enfants'))||0;s.adresse=g('f-adresse');
+  s.prescripteur=g('f-presc');s.structurePrescripteur=g('f-struct');
+  s.situationAvant=g('f-sitav');s.dureeChomage=g('f-duree');
+  s.niveauFormation=g('f-form');s.mobilite=g('f-mob');
+  s.rsa=gc('f-rsa');s.aah=gc('f-aah');s.th=gc('f-th');
+  s.typeContrat=g('f-typecontrat')||s.typeContrat;
+  s.poste=g('f-poste')||s.poste;s.vehicule=g('f-vehicule');
+  s.horaires=g('f-horaires');s.dateEntree=g('f-dentree');
+  s.dateFin=g('f-dfin');s.heuresSemaine=parseInt(g('f-heures'))||26;
+  s.salaire=g('f-salaire');s.projetPro=g('f-projetpro');
+  s.secteurVise=g('f-secteur');s.niveauVisee=g('f-niveau');
+  s.objectifsMois=g('f-objectifs');s.formationsEnvisagees=g('f-formations');
+  s.contraintes=g('f-contraintes');s.contraintesSante=g('f-sante');
+  s.statut=g('f-statut')||s.statut;s.typeSortie=g('f-typesortie');s.dateSortie=g('f-datesortie');
+  s.updatedAt=new Date().toISOString();
+  sauver();toast('✅ '+s.prenom+' enregistré','ok');verifierAlertes();
+};
+
+window.sauverNotes=function(id){
+  var idx=DB.salaries.findIndex(function(s){return s.id==id;});if(idx<0)return;
+  var nc=document.getElementById('f-notescip');var nr=document.getElementById('f-notesrh');
+  if(nc)DB.salaries[idx].notesCIP=nc.value;
+  if(nr)DB.salaries[idx].notesRH=nr.value;
+  sauver();toast('Notes enregistrées','ok');
+};
+window.supprimerSal=function(id){
+  if(!confirm('Supprimer ce salarié et toutes ses données ?'))return;
+  DB.salaries=DB.salaries.filter(function(s){return s.id!=id;});
+  DB.entretiens=DB.entretiens.filter(function(e){return e.salId!=id;});
+  DB.evaluations=DB.evaluations.filter(function(e){return e.salId!=id;});
+  sauver();nav('salaries');toast('Salarié supprimé','ok');
+};
+window.ajouterRenouv=function(id){
+  var du=prompt('Début du renouvellement (AAAA-MM-JJ) :');
+  var au=prompt('Fin du renouvellement (AAAA-MM-JJ) :');
+  var motif=prompt('Motif :','Bonne progression');
+  if(!du||!au)return;
+  var idx=DB.salaries.findIndex(function(s){return s.id==id;});if(idx<0)return;
+  if(!DB.salaries[idx].renouvellements)DB.salaries[idx].renouvellements=[];
+  DB.salaries[idx].renouvellements.push({du:du,au:au,motif:motif||''});
+  DB.salaries[idx].dateFin=au;
+  sauver();toast('Renouvellement ajouté','ok');ouvrirDossier(id);
+};
+window.supprimerRenouv=function(id,i){
+  var idx=DB.salaries.findIndex(function(s){return s.id==id;});if(idx<0)return;
+  DB.salaries[idx].renouvellements.splice(i,1);
+  sauver();ouvrirDossier(id);
+};
+
+/* ═══ NOUVEAU SALARIÉ ═══ */
+window.ouvrirNouveauSalarie=function(){
+  var newS={
+    id:Date.now(),prenom:'',nom:'',dateNaissance:'',lieuNaissance:'',nationalite:'',adresse:'',telephone:'',email:'',situationFamiliale:'',nbEnfants:0,prescripteur:'',structurePrescripteur:'',situationAvant:'',dureeChomage:'',niveauFormation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heuresSemaine:26,salaire:'',projetPro:'',secteurVise:'Logistique/Transport',niveauVisee:'',objectifsMois:'',formationsEnvisagees:'',contraintesSante:'',contraintes:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],
+    avatar:['🌟','⚡','🎯','🚀','🏋','🦁','🔥','💪'][Math.floor(Math.random()*8)],
+    couleur:['#3b82f6','#22c55e','#f97316','#a855f7','#0ea5e9','#ef4444'][Math.floor(Math.random()*6)],
+    createdAt:new Date().toISOString()
+  };
+  DB.salaries.push(newS);
+  sauver();
+  ouvrirDossier(newS.id);
+};
+
+/* ═══ MODAL ENTRETIEN ═══ */
+window.modalEntretien=function(salId,entId){
+  var s=DB.salaries.find(function(x){return x.id==salId;});
+  var isNew=!entId;
+  var e=isNew?{id:0,salId:salId,date:today(),type:'suivi',duree:30,encadrant:SESSION?SESSION.nom:'',pointsPositifs:'',pointsAmeliorer:'',axe_professionnel:'',axe_social:'',axe_formation:'',engagementsSalarie:'',engagementsEncadrant:'',dateProchainRDV:''}:DB.entretiens.find(function(x){return x.id==entId;});
+  if(!e)return;
+  var types=['suivi','bilan','bilan_mi','bilan_fin','recadrage','urgence'];
+  var h='<div class="modal-title">'+( isNew?'Nouvel entretien':'Modifier entretien')+' — '+(s?s.prenom+(s.nom?' '+s.nom:''):'');
+  h+='<button class="btn btn-secondary btn-sm" onclick="fermerModal()">✕</button></div>';
+  h+='<div class="form-grid">';
+  h+=F('Date','me-date',e.date,'date');
+  h+='<div class="field"><label>Type</label><select id="me-type">'+types.map(function(t){return '<option value="'+t+'"'+(e.type===t?' selected':'')+'>'+t.replace(/_/g,' ')+'</option>';}).join('')+'</select></div>';
+  h+=F('Durée (min)','me-duree',e.duree,'number');
+  h+=F('Encadrant','me-enc',e.encadrant,'text');
+  h+='</div>';
+  var areas=[['Axe professionnel','me-axepro',e.axe_professionnel],['Axe social / personnel','me-axesoc',e.axe_social],['Points positifs / progrès','me-positifs',e.pointsPositifs],['Points à améliorer','me-amelio',e.pointsAmeliorer],['Engagements du salarié','me-engsalar',e.engagementsSalarie],['Engagements de l\'encadrant','me-engenc',e.engagementsEncadrant]];
+  h+='<div class="form-grid" style="margin-top:14px">';
+  areas.forEach(function(a){h+=FL(a[0],a[1],a[2]);});
+  h+=F('Date prochain RDV','me-rdv',e.dateProchainRDV,'date');
+  h+='</div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverEnt('+(e.id)+','+salId+','+isNew+')">💾 Enregistrer</button><button class="btn btn-secondary" onclick="fermerModal()">Annuler</button>';
+  h+='<button class="btn btn-blue" onclick="imprimerEntretien('+(e.id)+','+salId+')">🖨️ Imprimer</button></div>';
+  ouvrirModal(h);
+};
+window.sauverEnt=function(entId,salId,isNew){
+  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
+  var ent={id:isNew?Date.now():entId,salId:salId,date:g('me-date'),type:g('me-type'),duree:parseInt(g('me-duree'))||30,encadrant:g('me-enc'),pointsPositifs:g('me-positifs'),pointsAmeliorer:g('me-amelio'),axe_professionnel:g('me-axepro'),axe_social:g('me-axesoc'),engagementsSalarie:g('me-engsalar'),engagementsEncadrant:g('me-engenc'),dateProchainRDV:g('me-rdv'),createdAt:new Date().toISOString()};
+  if(isNew)DB.entretiens.push(ent);
+  else{var idx=DB.entretiens.findIndex(function(e){return e.id==entId;});if(idx>=0)DB.entretiens[idx]=ent;}
+  sauver();fermerModal();toast('✅ Entretien enregistré','ok');verifierAlertes();ouvrirDossier(salId);
+};
+window.supprimerEnt=function(id,salId){
+  if(!confirm('Supprimer cet entretien ?'))return;
+  DB.entretiens=DB.entretiens.filter(function(e){return e.id!=id;});
+  sauver();ouvrirDossier(salId);toast('Entretien supprimé','ok');
+};
+
+/* ═══ MODAL ÉVALUATION ═══ */
+window.modalEvaluation=function(salId,evalId){
+  var s=DB.salaries.find(function(x){return x.id==salId;});
+  var isNew=!evalId;
+  var ev=isNew?{id:0,salId:salId,date:today(),mois:today().slice(0,7),evaluateur:SESSION?SESSION.nom:'',ponctualite:0,assiduite:0,tenueTravail:0,communication:0,relationEquipe:0,relationClient:0,respectConsignes:0,initiative:0,conduite:0,chargement:0,livraison:0,gestionMateriel:0,securite:0,gestionTemps:0,appreciation:'',pointsForts:'',axesProgression:''}:DB.evaluations.find(function(x){return x.id==evalId;});
+  if(!ev)return;
+  var SE=[{k:'ponctualite',l:'Ponctualité'},{k:'assiduite',l:'Assiduité'},{k:'tenueTravail',l:'Tenue de travail'},{k:'communication',l:'Communication'},{k:'relationEquipe',l:'Relation équipe'},{k:'relationClient',l:'Relation client'},{k:'respectConsignes',l:'Respect des consignes'},{k:'initiative',l:'Initiative'}];
+  var SF=[{k:'conduite',l:'Conduite véhicule'},{k:'chargement',l:'Chargement/déchargement'},{k:'livraison',l:'Livraison client'},{k:'gestionMateriel',l:'Gestion matériel'},{k:'securite',l:'Sécurité'},{k:'gestionTemps',l:'Gestion du temps'}];
+  function crit(arr){
+    return arr.map(function(c){
+      var val=ev[c.k]||0;
+      var stars='<div class="eval-stars">';
+      for(var i=1;i<=4;i++)stars+='<div class="eval-star'+(val>=i?' on':'')+'" onclick="setEvalStar(this,\'ev-'+c.k+'\','+i+')" id="ev-'+c.k+'-'+i+'">'+i+'</div>';
+      return '<div class="eval-crit"><span class="eval-crit-lbl">'+c.l+'</span>'+stars+'</div></div>';
+    }).join('');
+  }
+  var h='<div class="modal-title">'+(isNew?'Évaluation mensuelle':'Modifier évaluation')+' — '+(s?s.prenom+(s.nom?' '+s.nom:''):'');
+  h+='<button class="btn btn-secondary btn-sm" onclick="fermerModal()">✕</button></div>';
+  h+='<div class="form-grid"><div class="field"><label>Mois évalué</label><input type="month" id="ev-mois" value="'+(ev.mois||today().slice(0,7))+'"></div>';
+  h+=F('Évaluateur','ev-eval',ev.evaluateur,'text')+'</div>';
+  h+='<div class="eval-grid" style="margin-top:16px">';
+  h+='<div class="eval-groupe"><div class="eval-groupe-title">Savoir-être</div>'+crit(SE)+'</div>';
+  h+='<div class="eval-groupe"><div class="eval-groupe-title">Savoir-faire technique</div>'+crit(SF)+'</div>';
+  h+='</div>';
+  h+='<div class="form-grid" style="margin-top:14px">';
+  h+=FL('Appréciation générale','ev-apprec',ev.appreciation);
+  h+=FL('Points forts','ev-positifs',ev.pointsForts);
+  h+=FL('Axes de progression','ev-axes',ev.axesProgression);
+  h+='</div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverEval('+(ev.id)+','+salId+','+isNew+')">💾 Enregistrer</button><button class="btn btn-secondary" onclick="fermerModal()">Annuler</button></div>';
+  ouvrirModal(h);
+};
+window.setEvalStar=function(el,name,val){
+  document.querySelectorAll('[id^="'+name+'-"]').forEach(function(s,i){s.classList.toggle('on',i<val);});
+};
+window.sauverEval=function(evalId,salId,isNew){
+  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
+  function getStar(k){
+    for(var i=4;i>=1;i--){var el=document.getElementById('ev-'+k+'-'+i);if(el&&el.classList.contains('on'))return i;}
+    return 0;
+  }
+  var ev={id:isNew?Date.now():evalId,salId:salId,date:today(),mois:g('ev-mois'),evaluateur:g('ev-eval'),
+    ponctualite:getStar('ponctualite'),assiduite:getStar('assiduite'),tenueTravail:getStar('tenueTravail'),communication:getStar('communication'),relationEquipe:getStar('relationEquipe'),relationClient:getStar('relationClient'),respectConsignes:getStar('respectConsignes'),initiative:getStar('initiative'),
+    conduite:getStar('conduite'),chargement:getStar('chargement'),livraison:getStar('livraison'),gestionMateriel:getStar('gestionMateriel'),securite:getStar('securite'),gestionTemps:getStar('gestionTemps'),
+    appreciation:g('ev-apprec'),pointsForts:g('ev-positifs'),axesProgression:g('ev-axes'),
+    createdAt:new Date().toISOString()};
+  if(isNew)DB.evaluations.push(ev);
+  else{var idx=DB.evaluations.findIndex(function(e){return e.id==evalId;});if(idx>=0)DB.evaluations[idx]=ev;}
+  sauver();fermerModal();toast('✅ Évaluation enregistrée','ok');ouvrirDossier(salId);
+};
+window.supprimerEval=function(id,salId){
+  if(!confirm('Supprimer cette évaluation ?'))return;
+  DB.evaluations=DB.evaluations.filter(function(e){return e.id!=id;});
+  sauver();ouvrirDossier(salId);
+};
+function calculMoyEval(ev){
+  var keys=['ponctualite','assiduite','tenueTravail','communication','relationEquipe','relationClient','respectConsignes','initiative','conduite','chargement','livraison','gestionMateriel','securite','gestionTemps'];
+  var t=0,n=0;keys.forEach(function(k){if(ev[k]>0){t+=ev[k];n++;}});return n>0?(t/n):0;
+}
+function grilleEvalView(ev){
+  var SE=[{k:'ponctualite',l:'Ponctualité'},{k:'assiduite',l:'Assiduité'},{k:'tenueTravail',l:'Tenue'},{k:'communication',l:'Communication'},{k:'relationEquipe',l:'Équipe'},{k:'relationClient',l:'Client'},{k:'respectConsignes',l:'Consignes'},{k:'initiative',l:'Initiative'}];
+  var SF=[{k:'conduite',l:'Conduite'},{k:'chargement',l:'Chargement'},{k:'livraison',l:'Livraison'},{k:'gestionMateriel',l:'Matériel'},{k:'securite',l:'Sécurité'},{k:'gestionTemps',l:'Temps'}];
+  function grp(title,arr){
+    var h='<div class="eval-groupe"><div class="eval-groupe-title">'+title+'</div>';
+    arr.forEach(function(c){
+      var v=ev[c.k]||0;
+      h+='<div class="eval-crit"><span class="eval-crit-lbl">'+c.l+'</span><div class="eval-stars">';
+      for(var i=1;i<=4;i++)h+='<div class="eval-star'+(v>=i?' on':'')+'" style="cursor:default">'+i+'</div>';
+      h+='</div></div>';
+    });
+    return h+'</div>';
+  }
+  return '<div class="eval-grid">'+grp('Savoir-être',SE)+grp('Savoir-faire',SF)+'</div>';
+}
+
+/* ═══ PAGES SECONDAIRES ═══ */
+function renderEntretiens(c){
+  var h='<div class="page-title">Tous les entretiens ('+DB.entretiens.length+')</div><div class="page-sub" style="margin-bottom:20px">Historique complet de l\'équipe</div>';
+  var sorted=DB.entretiens.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+  if(!sorted.length){h+='<div style="text-align:center;color:var(--sub);padding:40px">Aucun entretien. Ouvrez un dossier salarié pour ajouter des entretiens.</div>';}
+  else{
     sorted.forEach(function(e){
       var s=DB.salaries.find(function(x){return x.id==e.salId;});
-      html+='<div class="card" style="margin-bottom:10px">';
-      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
-      html+='<div><strong>'+(s?s.prenom+' '+s.nom:'?')+'</strong> — <span class="badge badge-orange">'+e.type+'</span> — '+fmt(e.date)+'</div>';
-      html+='<button class="btn btn-secondary" onclick="voirSalarie('+(s?s.id:'')+')" style="font-size:10px;padding:4px 10px">Fiche</button>';
-      html+='</div>';
-      if(e.pointsPositifs)html+='<div style="font-size:12px;margin-bottom:4px"><strong>+</strong> '+e.pointsPositifs+'</div>';
-      if(e.pointsAmeliorer)html+='<div style="font-size:12px"><strong>↗</strong> '+e.pointsAmeliorer+'</div>';
-      html+='</div>';
+      h+='<div class="form-section" style="margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div><span style="font-size:15px;font-weight:800;color:#fff">'+(s?s.prenom+(s.nom?' '+s.nom:''):'?')+'</span> <span class="badge badge-orange" style="margin-left:8px">'+e.type+'</span></div><div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:var(--sub)">'+fmt(e.date)+'</span><button class="btn btn-sm btn-secondary" onclick="ouvrirDossier('+(s?s.id:'0')+')">Dossier</button></div></div>';
+      if(e.pointsPositifs)h+='<div style="font-size:12px;margin-bottom:6px;line-height:1.6"><strong style="color:var(--green)">✅</strong> '+e.pointsPositifs+'</div>';
+      if(e.pointsAmeliorer)h+='<div style="font-size:12px;line-height:1.6"><strong style="color:var(--yellow)">↗️</strong> '+e.pointsAmeliorer+'</div>';
+      h+='</div>';
     });
   }
-  el.innerHTML=html;
+  c.innerHTML=h;
 }
 
-/* ══ ÉVALUATIONS ══ */
-function renderEvaluations(el){
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:20px">Évaluations</h2>';
+function renderEvaluations(c){
+  var h='<div class="page-title">Toutes les évaluations</div><div class="page-sub" style="margin-bottom:20px">Vue d\'ensemble des scores de l\'équipe</div>';
   DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    var score=scoreGlobal(s.id);
     var evals=DB.evaluations.filter(function(e){return e.salId==s.id;});
-    var score=calculerScoreMoyen(s.id);
-    html+='<div class="card" style="margin-bottom:12px">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-    html+='<div><strong>'+s.prenom+' '+s.nom+'</strong> — <span style="color:var(--sub);font-size:11px">'+evals.length+' évaluation(s)</span></div>';
-    html+='<div style="display:flex;align-items:center;gap:8px">';
-    if(score>0)html+='<span style="font-size:15px;font-weight:900;color:'+scoreColor(score)+'">'+score.toFixed(1)+'/4</span>';
-    html+='<button class="btn btn-primary" onclick="ajouterEvaluation('+s.id+')" style="font-size:10px;padding:4px 10px">+ Évaluer</button>';
-    html+='<button class="btn btn-secondary" onclick="voirSalarie('+s.id+')" style="font-size:10px;padding:4px 10px">Fiche</button>';
-    html+='</div></div>';
-    html+='</div>';
+    h+='<div class="form-section" style="margin-bottom:12px">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:9px;background:'+s.couleur+'22;color:'+s.couleur+';display:flex;align-items:center;justify-content:center;font-size:18px">'+s.avatar+'</div><div><div style="font-weight:800;color:#fff">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div style="font-size:11px;color:var(--sub)">'+evals.length+' évaluation(s)</div></div></div>';
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    if(score>0){h+='<div class="score-wrap"><div class="score-bar" style="width:80px"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scoreColor(score)+'"></div></div></div><span style="font-size:16px;font-weight:900;color:'+scoreColor(score)+'">'+score.toFixed(1)+'</span><span class="badge" style="background:'+scoreColor(score)+'22;color:'+scoreColor(score)+'">'+scoreLbl(score)+'</span>';}
+    h+='<button class="btn btn-green btn-sm" onclick="modalEvaluation('+s.id+',0)">+ Évaluer</button>';
+    h+='<button class="btn btn-secondary btn-sm" onclick="ouvrirDossier('+s.id+')">Dossier</button>';
+    h+='</div></div></div>';
   });
-  el.innerHTML=html;
+  c.innerHTML=h;
 }
 
-/* ══ FICHES TYPES ══ */
-function renderFichesTypes(el){
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:8px">Fiches prêtes à utiliser</h2>';
-  html+='<p style="color:var(--sub);font-size:12px;margin-bottom:20px">Sélectionnez un salarié et une fiche — le document se génère automatiquement rempli avec ses données.</p>';
-
-  // Sélecteur salarié
-  html+='<div style="margin-bottom:20px"><select id="fiche-sal-select" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:10px;font-size:13px;width:300px">';
-  html+='<option value="">Choisir un salarié...</option>';
-  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
-    html+='<option value="'+s.id+'">'+s.prenom+' '+s.nom+'</option>';
-  });
-  html+='</select></div>';
-
-  html+='<div class="card-grid">';
-  Object.keys(FICHES_TYPES).forEach(function(key){
-    var f=FICHES_TYPES[key];
-    html+='<div class="card" style="cursor:pointer" onclick="genererFicheType(\''+key+'\')">';
-    html+='<div style="font-size:28px;margin-bottom:10px">📋</div>';
-    html+='<div style="font-weight:800;color:#fff;margin-bottom:6px">'+f.titre+'</div>';
-    html+='<div style="font-size:11px;color:var(--sub)">'+f.sections.length+' sections</div>';
-    html+='<button class="btn btn-primary" style="margin-top:12px;width:100%;font-size:11px">Générer et imprimer</button>';
-    html+='</div>';
-  });
-  html+='</div>';
-  el.innerHTML=html;
-}
-
-/* ══ MANAGEMENT ══ */
-function renderManagement(el){
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:4px">Ressources Management & Accompagnement</h2>';
-  html+='<p style="color:var(--sub);font-size:12px;margin-bottom:20px">Outils et méthodes professionnels pour l\'encadrant en insertion</p>';
-
-  // Filtres par catégorie
-  var cats=[...new Set(RESSOURCES_MANAGEMENT.map(function(r){return r.cat;}))];
-  html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">';
-  html+='<button class="btn btn-primary" onclick="filtrerRessources(\'\')">Toutes</button>';
-  cats.forEach(function(c){
-    html+='<button class="btn btn-secondary" onclick="filtrerRessources(\''+c+'\')">'+c+'</button>';
-  });
-  html+='</div>';
-
-  html+='<div id="ressources-list">';
-  html+=renderListeRessources('');
-  html+='</div>';
-  el.innerHTML=html;
-}
-window.filtrerRessources=function(cat){
-  document.getElementById('ressources-list').innerHTML=renderListeRessources(cat);
-};
-function renderListeRessources(cat){
-  var liste=cat?RESSOURCES_MANAGEMENT.filter(function(r){return r.cat===cat;}):RESSOURCES_MANAGEMENT;
-  var html='';
-  liste.forEach(function(r){
-    html+='<div class="card" style="margin-bottom:12px">';
-    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-    html+='<span class="badge badge-purple">'+r.cat+'</span>';
-    html+='<strong style="color:#fff;font-size:14px">'+r.titre+'</strong>';
-    html+='</div>';
-    html+='<p style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.6">'+r.desc+'</p>';
-    html+='<div style="background:var(--panel2);border-left:3px solid var(--accent);border-radius:6px;padding:12px;font-size:12px;line-height:1.6">';
-    html+='<strong style="color:var(--accent)">💡 Comment l\'utiliser :</strong><br>'+r.outil+'</div>';
-    html+='</div>';
-  });
-  return html;
-}
-
-/* ══ ALERTES ══ */
-function renderAlertes(el){
+function renderAlertes(c){
   verifierAlertes();
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:20px">Alertes ('+DB.alertes.length+')</h2>';
-  if(!DB.alertes.length){
-    html+='<div class="alert alert-ok">✅ Aucune alerte active — tout est en ordre.</div>';
-  } else {
+  var h='<div class="page-title">Alertes ('+DB.alertes.length+')</div><div class="page-sub" style="margin-bottom:20px">Suivi automatique des échéances importantes</div>';
+  if(!DB.alertes.length){h+='<div class="alert alert-ok">✅ Aucune alerte — tout est en ordre.</div>';}
+  else{
     DB.alertes.forEach(function(a){
-      html+='<div class="card" style="margin-bottom:10px;border-color:'+(a.niveau==='error'?'rgba(239,68,68,.3)':'rgba(245,158,11,.3)')+'">';
-      html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-      html+='<div><strong>'+a.nom+'</strong><br><span style="font-size:12px;color:'+(a.niveau==='error'?'var(--red)':'var(--yellow)')+'">'+a.label+'</span></div>';
-      html+='<button class="btn btn-secondary" onclick="voirSalarie('+a.salId+')" style="font-size:10px;padding:4px 10px">Voir la fiche</button>';
-      html+='</div></div>';
+      h+='<div class="alert alert-'+(a.niv==='err'?'err':'warn')+'" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><strong>'+a.nom+'</strong> — '+a.msg+'</div><button class="btn btn-sm btn-secondary" onclick="ouvrirDossier('+a.salId+')">Voir la fiche</button></div>';
     });
   }
-  el.innerHTML=html;
+  c.innerHTML=h;
 }
 
-/* ══ STATISTIQUES ══ */
-function renderStatistiques(el){
+function renderFiches(c){
+  var h='<div class="page-title">Fiches prêtes à utiliser</div><div class="page-sub" style="margin-bottom:20px">Choisissez un salarié et générez instantanément une fiche professionnelle complète et imprimable.</div>';
+  h+='<div style="margin-bottom:20px"><select id="fiche-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
+  DB.salaries.forEach(function(s){h+='<option value="'+s.id+'">'+s.prenom+(s.nom?' '+s.nom:'')+'</option>';});
+  h+='</select></div>';
+  var fiches=[
+    {k:'bilan_mi',i:'📋',l:'Bilan mi-parcours',desc:'Bilan à 3-6 mois avec compétences acquises, difficultés, objectifs'},
+    {k:'bilan_fin',i:'🏁',l:'Bilan fin de parcours',desc:'Récapitulatif complet avec type de sortie et recommandations'},
+    {k:'plan_action',i:'🎯',l:'Plan d\'action individuel',desc:'Objectifs SMART avec actions, ressources et critères de réussite'},
+    {k:'cr_entretien',i:'💬',l:'Compte-rendu d\'entretien',desc:'CR vierge ou pré-rempli avec les données du dernier entretien'},
+    {k:'attestation',i:'🏆',l:'Attestation de compétences',desc:'Liste les compétences acquises pendant le parcours'},
+    {k:'fiche_poste',i:'📄',l:'Fiche de poste personnalisée',desc:'Fiche de poste chauffeur livreur adaptée au salarié'},
+    {k:'objectifs',i:'📌',l:'Fiche objectifs du mois',desc:'Objectifs mensuels avec suivi hebdomadaire intégré'},
+    {k:'dossier',i:'🖨️',l:'Dossier complet imprimable',desc:'Toutes les informations + évaluations + entretiens sur 1 document'},
+  ];
+  h+='<div class="grid-2">';
+  fiches.forEach(function(f){
+    h+='<div class="form-section" style="cursor:pointer" onclick="genFiche(\''+f.k+'\')">';
+    h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span style="font-size:28px">'+f.i+'</span><div><div style="font-size:14px;font-weight:800;color:#fff">'+f.l+'</div><div style="font-size:11px;color:var(--sub);margin-top:3px">'+f.desc+'</div></div></div>';
+    h+='<button class="btn btn-primary btn-sm" style="width:100%">Générer et imprimer</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  c.innerHTML=h;
+}
+
+window.genFiche=function(key){
+  var selEl=document.getElementById('fiche-sal');
+  var salId=selEl?selEl.value:'';
+  var s=salId?DB.salaries.find(function(x){return x.id==salId;}):null;
+  genDoc(salId?parseInt(salId):0,key,s);
+};
+
+/* ═══ GÉNÉRATION DOCUMENTS ═══ */
+window.genDoc=function(salId,key){
+  var s=salId?DB.salaries.find(function(x){return x.id==salId;}):null;
+  var win=window.open('','_blank','width=900,height=700');if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:20px;border-bottom:3px solid #f97316;padding-bottom:10px;margin-bottom:18px}h2{font-size:14px;color:#f97316;margin:20px 0 8px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f8fafc;padding:14px;border-radius:8px;margin-bottom:18px}.info-item label{font-size:9px;font-weight:800;text-transform:uppercase;color:#64748b;display:block;margin-bottom:2px}.info-item span{font-size:13px;font-weight:700}.section{margin-bottom:18px;border:1px solid #e2e8f0;border-radius:8px;padding:14px}.section-blank{min-height:90px;border:1px dashed #cbd5e1;border-radius:6px;padding:8px;color:#94a3b8;font-size:11px;margin-top:6px}.eval-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.eval-bar{flex:1;background:#e2e8f0;border-radius:4px;height:8px}.eval-fill{height:8px;border-radius:4px}.footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between}.sig{text-align:center}.sig-line{height:40px;border-bottom:1px solid #94a3b8;width:160px;margin:0 auto 4px}@media print{button{display:none}}';
+  var nom=s?(s.prenom+(s.nom?' '+s.nom:'')):'Non défini';
+  var header='<button onclick="window.print()" style="position:fixed;top:14px;right:14px;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">🖨️ Imprimer</button>';
+  header+='<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">LA TABLE DE CANA · MARSEILLE · INSERTION PROFESSIONNELLE</div>';
+  var infoGrid=s?('<div class="info-grid"><div class="info-item"><label>Salarié</label><span>'+nom+'</span></div><div class="info-item"><label>Poste</label><span>'+(s.poste||'—')+'</span></div><div class="info-item"><label>Contrat</label><span>'+(s.typeContrat||'—')+'</span></div><div class="info-item"><label>Véhicule</label><span>'+(s.vehicule||'—')+'</span></div><div class="info-item"><label>Entrée</label><span>'+fmt(s.dateEntree)+'</span></div><div class="info-item"><label>Fin prévue</label><span>'+fmt(s.dateFin)+'</span></div></div>'):'';
+  var footer='<div class="footer"><div class="sig"><div class="sig-line"></div><div>Signature du salarié</div></div><div style="font-size:11px;color:#94a3b8;text-align:center;padding-top:20px">Document généré le '+new Date().toLocaleDateString('fr-FR')+'<br>La Table de Cana · Marseille</div><div class="sig"><div class="sig-line"></div><div>Signature de l\'encadrant</div></div></div>';
+  
+  var body='';
+  if(key==='bilan_mi'){
+    body='<h1>📋 Bilan mi-parcours</h1>'+infoGrid;
+    ['Objectifs initiaux du parcours','Compétences acquises','Difficultés rencontrées et actions mises en place','Situation sociale et personnelle','Objectifs pour la seconde partie du parcours','Perspectives de sortie et projet professionnel'].forEach(function(sec){body+='<div class="section"><h2>'+sec+'</h2><div class="section-blank">'+(s&&key==='bilan_mi'&&sec==='Objectifs pour la seconde partie du parcours'&&s.objectifsMois?s.objectifsMois:'À compléter...')+'</div></div>';});
+  } else if(key==='bilan_fin'){
+    body='<h1>🏁 Bilan de fin de parcours</h1>'+infoGrid;
+    ['Récapitulatif du parcours et évolution observée','Compétences professionnelles développées','Résultats obtenus (missions, tournées, relations clients)','Type de sortie et situation à la sortie','Recommandations pour la suite du parcours','Bilan partenaire et préconisations'].forEach(function(sec){body+='<div class="section"><h2>'+sec+'</h2><div class="section-blank">À compléter...</div></div>';});
+  } else if(key==='plan_action'){
+    body='<h1>🎯 Plan d\'action individuel</h1>'+infoGrid;
+    body+='<div class="section"><h2>Situation actuelle</h2><div class="section-blank">'+(s&&s.situationAvant?s.situationAvant:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Objectifs à 3 mois</h2><div class="section-blank">'+(s&&s.objectifsMois?s.objectifsMois:'À compléter...')+'</div></div>';
+    ['Actions à mener','Ressources à mobiliser (formations, partenaires, aides)','Points de vigilance','Critères de réussite'].forEach(function(sec){body+='<div class="section"><h2>'+sec+'</h2><div class="section-blank">À compléter...</div></div>';});
+  } else if(key==='cr_entretien'){
+    var lastEnt=s?DB.entretiens.filter(function(e){return e.salId==s.id;}).sort(function(a,b){return b.date.localeCompare(a.date);})[0]:null;
+    body='<h1>💬 Compte-rendu d\'entretien</h1>'+infoGrid;
+    body+='<div class="info-grid" style="margin-bottom:16px"><div class="info-item"><label>Date</label><span>'+(lastEnt?fmt(lastEnt.date):new Date().toLocaleDateString('fr-FR'))+'</span></div><div class="info-item"><label>Type</label><span>'+(lastEnt?lastEnt.type:'Suivi')+'</span></div><div class="info-item"><label>Durée</label><span>'+(lastEnt&&lastEnt.duree?lastEnt.duree+' min':'30 min')+'</span></div></div>';
+    body+='<div class="section"><h2>Points positifs et progrès observés</h2><div class="section-blank">'+(lastEnt&&lastEnt.pointsPositifs?lastEnt.pointsPositifs:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Points à améliorer</h2><div class="section-blank">'+(lastEnt&&lastEnt.pointsAmeliorer?lastEnt.pointsAmeliorer:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Engagements du salarié</h2><div class="section-blank">'+(lastEnt&&lastEnt.engagementsSalarie?lastEnt.engagementsSalarie:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Engagements de l\'encadrant</h2><div class="section-blank">'+(lastEnt&&lastEnt.engagementsEncadrant?lastEnt.engagementsEncadrant:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Prochain rendez-vous</h2><div class="section-blank">'+(lastEnt&&lastEnt.dateProchainRDV?fmt(lastEnt.dateProchainRDV):'Date à définir')+'</div></div>';
+  } else if(key==='attestation'){
+    body='<h1>🏆 Attestation de compétences professionnelles</h1>'+infoGrid;
+    body+='<div class="section"><h2>Compétences en conduite et sécurité routière</h2>';
+    var competences=['Conduite en toute sécurité d\'un véhicule utilitaire','Respect du code de la route et des règles de sécurité','Gestion des temps de conduite et de repos','Entretien de premier niveau du véhicule'];
+    competences.forEach(function(c){body+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8"><span style="width:16px;height:16px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0"></span>'+c+'</div>';});
+    body+='</div><div class="section"><h2>Compétences en livraison et relation client</h2>';
+    ['Organisation d\'une tournée de livraison','Chargement et déchargement en sécurité','Relation professionnelle avec les clients','Gestion des documents de livraison'].forEach(function(c){body+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8"><span style="width:16px;height:16px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0"></span>'+c+'</div>';});
+    body+='</div><div class="section"><h2>Savoir-être professionnels</h2>';
+    ['Ponctualité et respect des horaires','Tenue et présentation professionnelle','Travail en équipe','Respect des consignes et de la hiérarchie'].forEach(function(c){body+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8"><span style="width:16px;height:16px;border-radius:50%;background:#3b82f6;display:inline-block;flex-shrink:0"></span>'+c+'</div>';});
+    body+='</div>';
+  } else if(key==='fiche_poste'){
+    body='<h1>📄 Fiche de poste — Chauffeur Livreur</h1>';
+    if(s)body+='<div style="background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:12px;margin-bottom:16px"><strong>'+nom+'</strong> · '+s.poste+' · '+s.vehicule+' · '+(s.horaires||'06:00-14:00')+'</div>';
+    body+='<div class="section"><h2>Mission principale</h2><div class="section-blank">Assurer la livraison des repas et prestations traiteur aux clients (collectivités, centres aérés, restaurants) dans le respect des horaires, de la sécurité et de la qualité de service.</div></div>';
+    body+='<div class="section"><h2>Activités quotidiennes</h2><div class="section-blank">Prise de poste · Chargement du véhicule · Réalisation de la tournée · Livraison aux clients · Retour dépôt · Déchargement · Compte-rendu</div></div>';
+    ['Compétences techniques requises','Conditions de travail','Évolution et perspectives'].forEach(function(sec){body+='<div class="section"><h2>'+sec+'</h2><div class="section-blank">À compléter...</div></div>';});
+  } else if(key==='objectifs'){
+    body='<h1>📌 Fiche objectifs du mois</h1>'+infoGrid;
+    body+='<div class="section"><h2>Objectifs professionnels ce mois</h2><div class="section-blank">'+(s&&s.objectifsMois?s.objectifsMois:'À compléter...')+'</div></div>';
+    body+='<div class="section"><h2>Objectifs personnels et sociaux</h2><div class="section-blank">À compléter...</div></div>';
+    body+='<div class="section"><h2>Suivi hebdomadaire</h2>';
+    ['Semaine 1','Semaine 2','Semaine 3','Semaine 4'].forEach(function(s){body+='<div style="display:flex;align-items:top;gap:8px;margin-bottom:10px"><span style="min-width:70px;font-weight:700;font-size:11px">'+s+'</span><div style="flex:1;border-bottom:2px dashed #e2e8f0;min-height:30px"></div></div>';});
+    body+='</div>';
+    body+='<div class="section"><h2>Bilan de fin de mois</h2><div class="section-blank">À compléter...</div></div>';
+  } else if(key==='dossier'){
+    body='<h1>📂 Dossier complet — '+nom+'</h1>';
+    if(s){
+      body+=infoGrid;
+      if(s.projetPro)body+='<div class="section"><h2>Projet professionnel</h2>'+s.projetPro+'</div>';
+      if(s.objectifsMois)body+='<div class="section"><h2>Objectifs en cours</h2>'+s.objectifsMois+'</div>';
+      var evals=DB.evaluations.filter(function(e){return e.salId==s.id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+      if(evals.length){
+        var last=evals[0];var moy=calculMoyEval(last);
+        body+='<div class="section"><h2>Dernière évaluation — '+fmtM(last.date)+' — Score : '+moy.toFixed(1)+'/4</h2>';
+        var ckeys=[['ponctualite','Ponctualité'],['assiduite','Assiduité'],['communication','Communication'],['conduite','Conduite'],['livraison','Livraison'],['securite','Sécurité']];
+        ckeys.forEach(function(c){
+          var v=last[c[0]]||0;
+          body+='<div class="eval-row"><span style="min-width:130px;font-size:11px">'+c[1]+'</span><div class="eval-bar"><div class="eval-fill" style="width:'+(v/4*100)+'%;background:'+(v>=3?'#22c55e':v>=2?'#f97316':'#ef4444')+'"></div></div><span style="min-width:20px;font-weight:700;font-size:11px">'+v+'/4</span></div>';
+        });
+        if(last.appreciation)body+='<p style="margin-top:10px;font-size:11px"><em>'+last.appreciation+'</em></p>';
+        body+='</div>';
+      }
+      var ents=DB.entretiens.filter(function(e){return e.salId==s.id;}).sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,3);
+      if(ents.length){
+        body+='<div class="section"><h2>Derniers entretiens</h2>';
+        ents.forEach(function(e){
+          body+='<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f4f8"><strong>'+e.type+' — '+fmt(e.date)+'</strong>';
+          if(e.pointsPositifs)body+='<br><span style="color:#22c55e">✅ '+e.pointsPositifs.slice(0,100)+'</span>';
+          if(e.engagementsSalarie)body+='<br><span>📌 '+e.engagementsSalarie.slice(0,100)+'</span>';
+          body+='</div>';
+        });
+        body+='</div>';
+      }
+    }
+  }
+  
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>'+header+body+footer+'</body></html>';
+  win.document.write(html);win.document.close();
+};
+
+/* ═══ MANAGEMENT ═══ */
+var MGMT=[
+  {cat:'Communication',col:'var(--blue)',t:'L\'écoute active',d:'Technique fondamentale : reformuler, questionner, valider. Crée un espace de confiance où le salarié ose parler de ses vraies difficultés.',o:'Reformulez systématiquement : "Si je comprends bien, vous dites que..." Posez des questions ouvertes : "Qu\'est-ce qui vous a été le plus difficile cette semaine ?"'},
+  {cat:'Communication',col:'var(--blue)',t:'Le feedback constructif — Méthode DESC',d:'Décrire les faits · Exprimer le ressenti · Spécifier ce qu\'on attend · Conséquences positives. Transforme un reproche en levier de progrès.',o:'Évitez "Tu es souvent en retard" → Dites "Lundi et mercredi tu es arrivé à 6h45 alors que la prise de poste est à 6h. Qu\'est-ce qui s\'est passé ? Comment peut-on résoudre ça ensemble ?"'},
+  {cat:'Motivation',col:'var(--green)',t:'Pyramide de Maslow adaptée à l\'insertion',d:'Vérifiez d\'abord que les besoins primaires sont couverts : logement stable, alimentation, santé. Sans cela, la motivation professionnelle reste fragile et l\'accompagnement peu efficace.',o:'En entretien : abordez toujours la situation personnelle avant les objectifs professionnels. "Comment ça se passe à la maison en ce moment ?" avant "Où en êtes-vous dans votre recherche d\'emploi ?"'},
+  {cat:'Motivation',col:'var(--green)',t:'Théorie de l\'autodétermination',d:'Les personnes sont plus motivées quand elles se sentent compétentes, autonomes et reliées aux autres. Ces trois besoins psychologiques fondamentaux s\'appliquent directement à l\'insertion.',o:'Compétence : valorisez chaque réussite même petite. Autonomie : laissez le salarié choisir comment faire (pas seulement quoi faire). Lien : créez une vraie cohésion d\'équipe.'},
+  {cat:'Recadrage',col:'var(--yellow)',t:'Le recadrage bienveillant',d:'Un recadrage efficace maintient la relation tout en étant clair sur ce qui n\'est pas acceptable. La sanction sans explication crée du ressentiment et ne change rien.',o:'Structure en 5 temps : 1) Reconnaître le contexte 2) Nommer le comportement problème sans juger 3) Expliquer l\'impact concret 4) Chercher ensemble une solution 5) Fixer un objectif précis et daté'},
+  {cat:'Recadrage',col:'var(--yellow)',t:'Gérer les résistances au changement',d:'La résistance est normale. Elle cache souvent une peur légitime. Identifier cette peur est plus efficace que d\'insister sur l\'obligation de changer.',o:'Quand quelqu\'un refuse : "Je vois que c\'est compliqué pour vous. Qu\'est-ce qui vous inquiète dans ce changement ?" Puis écoutez vraiment, sans couper.'},
+  {cat:'Analyse transactionnelle',col:'var(--purple)',t:'Les états du Moi (AT)',d:'En situation de conflit, nous oscillons entre Parent (normes/jugements), Adulte (rationnel/factuel) et Enfant (émotionnel/spontané). Rester dans l\'état Adulte est la clé des échanges constructifs.',o:'Si le salarié est en "Enfant" (réaction émotionnelle) : ne répondez pas en "Parent" (autoritaire). Restez "Adulte" : calme, factuel, bienveillant. "Je comprends que vous soyez en colère. Reparlons-en quand vous serez prêt."'},
+  {cat:'Analyse transactionnelle',col:'var(--purple)',t:'Triangle de Karpman — sortir des jeux',d:'Victime-Sauveur-Persécuteur : un triangle relationnel piégeux. Le professionnel peut glisser dans le rôle de Sauveur (fait à la place de), de Persécuteur (trop dur) ou être perçu comme un Persécuteur quand il pose des limites.',o:'Restez dans le rôle d\'accompagnateur : ni sauveur ni persécuteur. "Je vous aide à trouver la solution, je ne la trouve pas pour vous." "Je suis là pour vous soutenir, mais la décision vous appartient."'},
+  {cat:'Posture professionnelle',col:'var(--orange)',t:'L\'accompagnement sans substitution',d:'L\'erreur la plus fréquente : faire à la place de la personne. Cela crée de la dépendance et nuit à l\'autonomie. À court terme ça aide, à long terme ça fragilise.',o:'Posture juste : "Qu\'est-ce que vous pensez qu\'on pourrait faire ?" avant de proposer. "Essayons ensemble" avant de faire seul. "Je vous montre une fois, vous refaites avec moi, puis vous faites seul."'},
+  {cat:'Posture professionnelle',col:'var(--orange)',t:'Objectifs SMART',d:'Spécifique, Mesurable, Atteignable, Réaliste, Temporel. Un objectif vague n\'est pas engageant et ne permet pas d\'évaluer les progrès.',o:'Mauvais : "Il faut être plus ponctuel." Bon : "À partir de lundi, vous pointez avant 6h05, pendant 4 semaines. On fait le bilan ensemble le 1er du mois prochain."'},
+  {cat:'Gestion émotionnelle',col:'var(--red)',t:'Reconnaître les signaux de détresse',d:'Absences répétées, isolement, baisse de performance soudaine, irritabilité, changement de comportement : ces signaux peuvent indiquer une crise personnelle. Agir tôt est crucial.',o:'Créez un entretien informel rapide : "J\'ai remarqué que tu n\'as pas l\'air dans ton assiette ces derniers jours. Est-ce que tout va bien ?" Ne forcez pas mais ouvrez clairement la porte.'},
+  {cat:'Gestion émotionnelle',col:'var(--red)',t:'Gérer sa propre charge émotionnelle',d:'L\'accompagnement intensif de personnes en difficulté peut générer de l\'épuisement professionnel (burn-out) ou de la fatigue compassionnelle. En prendre conscience est essentiel.',o:'Prenez du recul régulièrement. Partagez les situations difficiles en équipe. Distinguez "être touché" (sain) et "être submergé" (signal d\'alarme). La supervision professionnelle est une aide précieuse.'},
+  {cat:'Insertion',col:'var(--blue)',t:'Cartographier les freins à l\'emploi',d:'Mobilité, garde d\'enfants, santé mentale, endettement, logement instable, maîtrise du français, manque de confiance : ces freins sont souvent invisibles mais bloquants. Les identifier dès le début est indispensable.',o:'Créez un outil de diagnostic à l\'entrée : liste systématique des freins potentiels. Orientez vers les partenaires adaptés AVANT de se concentrer sur le projet professionnel. Souvent le frein caché est la clé.'},
+  {cat:'Insertion',col:'var(--blue)',t:'Reconstruire l\'estime de soi',d:'De nombreuses personnes en insertion longue durée ont une image très dégradée d\'elles-mêmes. Reconstruire cette estime est un travail de fond, préalable à tout projet professionnel.',o:'Valorisez les compétences informelles ("Vous gérez une famille, c\'est une vraie organisation"). Mettez en lumière les progrès même minimes. Evitez tout discours condescendant. Proposez des succès accessibles d\'abord.'},
+];
+
+function renderManagement(c){
+  var cats=[...new Set(MGMT.map(function(r){return r.cat;}))];
+  var h='<div class="page-title">Management & Accompagnement</div><div class="page-sub" style="margin-bottom:20px">Méthodes professionnelles · Analyse transactionnelle · Psychologie de l\'insertion</div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px"><button class="btn btn-primary btn-sm" onclick="filtMgmt(\'\')">Toutes</button>';
+  cats.forEach(function(cat){h+='<button class="btn btn-secondary btn-sm" onclick="filtMgmt(\''+cat+'\')">'+cat+'</button>';});
+  h+='</div><div id="mgmt-list">'+listMgmt('')+'</div>';
+  c.innerHTML=h;
+}
+window.filtMgmt=function(cat){document.getElementById('mgmt-list').innerHTML=listMgmt(cat);};
+function listMgmt(cat){
+  var list=cat?MGMT.filter(function(r){return r.cat===cat;}):MGMT;
+  return list.map(function(r){
+    return '<div class="res-card"><div class="res-cat" style="color:'+r.col+'">'+r.cat+'</div><div class="res-title">'+r.t+'</div><div class="res-desc">'+r.d+'</div><div class="res-outil"><strong style="color:var(--orange)">💡 En pratique :</strong><br>'+r.o+'</div></div>';
+  }).join('');
+}
+
+/* ═══ ASSISTANT IA ═══ */
+function renderIA(c){
+  var h='<div class="page-title">Assistant IA — CIP Insertion</div><div class="page-sub" style="margin-bottom:20px">Expert en accompagnement, dispositifs IAE, management logistique</div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">';
+  ['Comment motiver un salarié qui se décourage ?','Rédigez un bilan mi-parcours pour un chauffeur en progrès','Comment gérer un conflit entre salariés ?','Quelles questions poser en entretien de suivi ?','Comment préparer une sortie positive ?','Que faire si un salarié est en difficulté personnelle ?','Comment rédiger un plan d\'action SMART ?','Les freins à l\'insertion les plus fréquents'].forEach(function(s){
+    h+='<button class="btn btn-secondary btn-sm" onclick="sendIA(\''+s.replace(/'/g,"\\'")+'\')" style="font-size:10px">'+s+'</button>';
+  });
+  h+='</div>';
+  h+='<div id="ia-chat" style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;min-height:300px;max-height:420px;overflow-y:auto;margin-bottom:14px">';
+  h+='<div style="text-align:center;color:var(--sub);padding:40px;font-size:12px">Posez votre question sur l\'accompagnement, la rédaction de documents, le management en insertion...</div></div>';
+  h+='<div style="display:flex;gap:8px"><input id="ia-inp" placeholder="Votre question..." style="flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:9px;color:#fff;padding:11px 14px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendIA()}">';
+  h+='<button class="btn btn-primary" onclick="sendIA()">Envoyer →</button>';
+  h+='<button class="btn btn-secondary" onclick="AI_H=AI_H.slice(0,1);document.getElementById(\'ia-chat\').innerHTML=\'<div style=\\\"text-align:center;color:var(--sub);padding:20px\\\">Conversation effacée.</div>\'">Effacer</button></div>';
+  c.innerHTML=h;
+}
+window.sendIA=async function(msg){
+  var inp=document.getElementById('ia-inp');
+  var q=msg||(inp?inp.value.trim():'');if(!q)return;
+  if(inp)inp.value='';
+  var chat=document.getElementById('ia-chat');if(!chat)return;
+  chat.innerHTML+='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><div style="background:var(--orange);color:#fff;border-radius:12px;padding:10px 14px;max-width:75%;font-size:12px;line-height:1.6">'+q+'</div></div>';
+  chat.innerHTML+='<div id="ia-load" style="color:var(--sub);font-size:12px;padding:10px">⏳ Réflexion...</div>';
+  chat.scrollTop=chat.scrollHeight;
+  AI_H.push({role:'user',content:q});
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:AI_H.slice(1)})});
+    var d=await r.json();
+    var rep=d.content&&d.content[0]?d.content[0].text:'Désolé, je n\'ai pas pu répondre.';
+    AI_H.push({role:'assistant',content:rep});
+    var ld=document.getElementById('ia-load');if(ld)ld.remove();
+    var fmt2=rep.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    chat.innerHTML+='<div style="display:flex;margin-bottom:12px"><div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;max-width:85%;font-size:12px;line-height:1.7">'+fmt2+'</div></div>';
+  }catch(e){var l=document.getElementById('ia-load');if(l)l.remove();chat.innerHTML+='<div style="color:var(--red);font-size:12px">Erreur de connexion.</div>';}
+  chat.scrollTop=chat.scrollHeight;
+};
+
+/* ═══ STATS ═══ */
+function renderStats(c){
   var actifs=DB.salaries.filter(function(s){return s.statut==='actif';}).length;
   var sortis=DB.salaries.filter(function(s){return s.statut==='sorti';}).length;
   var emplois=DB.salaries.filter(function(s){return s.statut==='sorti'&&(s.typeSortie||'').toLowerCase().indexOf('emploi')>=0;}).length;
   var formations=DB.salaries.filter(function(s){return s.statut==='sorti'&&(s.typeSortie||'').toLowerCase().indexOf('formation')>=0;}).length;
-  var tauxSortiePositive=sortis>0?Math.round((emplois+formations)/sortis*100):0;
-
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:20px">Statistiques & Pilotage</h2>';
-
-  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">';
-  var stats=[
-    {val:actifs,lbl:'Salariés actifs',color:'var(--green)'},
-    {val:sortis,lbl:'Sorties totales',color:'var(--blue)'},
-    {val:emplois,lbl:'Sorties emploi',color:'var(--accent)'},
-    {val:formations,lbl:'Sorties formation',color:'var(--purple)'},
-    {val:tauxSortiePositive+'%',lbl:'Taux sortie positive',color:tauxSortiePositive>=50?'var(--green)':'var(--red)'},
-    {val:DB.entretiens.length,lbl:'Entretiens réalisés',color:'var(--sub)'},
-  ];
-  stats.forEach(function(s){
-    html+='<div class="stat"><div class="stat-val" style="color:'+s.color+'">'+s.val+'</div><div class="stat-lbl">'+s.lbl+'</div></div>';
+  var taux=sortis>0?Math.round((emplois+formations)/sortis*100):0;
+  var h='<div class="page-title">Statistiques & Pilotage</div><div class="page-sub" style="margin-bottom:20px">Vue d\'ensemble de l\'activité insertion</div>';
+  h+='<div class="grid-3" style="margin-bottom:20px">';
+  [{v:actifs,l:'Actifs',c:'var(--blue)'},{v:sortis,l:'Sorties totales',c:'var(--green)'},{v:emplois,l:'Emploi',c:'var(--orange)'},{v:formations,l:'Formation',c:'var(--purple)'},{v:taux+'%',l:'Taux sortie positive',c:taux>=50?'var(--green)':'var(--red)'},{v:DB.entretiens.length,l:'Entretiens total',c:'var(--sub)'}].forEach(function(s){
+    h+='<div class="stat-card" style="border-color:'+s.c+'33"><div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div></div>';
   });
-  html+='</div>';
-
-  // Scores par salarié
-  html+='<div class="card"><div class="card-title">📊 Scores par salarié actif</div>';
-  var actifsSal=DB.salaries.filter(function(s){return s.statut==='actif';});
-  if(!actifsSal.length){html+='<div style="color:var(--sub)">Aucun salarié actif</div>';}
-  else{
-    actifsSal.forEach(function(s){
-      var score=calculerScoreMoyen(s.id);
-      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
-      html+='<div style="width:130px;font-size:12px;font-weight:700">'+s.prenom+' '+s.nom+'</div>';
-      html+='<div class="score-bar" style="flex:1"><div class="score-fill" style="width:'+(score>0?score/4*100:0)+'%;background:'+scoreColor(score)+'"></div></div>';
-      html+='<div style="font-size:12px;font-weight:800;color:'+scoreColor(score)+';width:35px">'+(score>0?score.toFixed(1):'—')+'</div>';
-      html+='<div style="font-size:11px;color:var(--sub);width:80px">'+scoreLabel(score)+'</div>';
-      html+='</div>';
-    });
-  }
-  html+='</div>';
-
-  // Types de sortie
-  if(sortis>0){
-    html+='<div class="card"><div class="card-title">🎓 Types de sortie</div>';
-    var typesSortie={};
-    DB.salaries.filter(function(s){return s.statut==='sorti'&&s.typeSortie;}).forEach(function(s){
-      typesSortie[s.typeSortie]=(typesSortie[s.typeSortie]||0)+1;
-    });
-    Object.keys(typesSortie).forEach(function(t){
-      var pct=Math.round(typesSortie[t]/sortis*100);
-      html+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>'+t+'</span><span>'+typesSortie[t]+' ('+pct+'%)</span></div>';
-      html+='<div class="score-bar"><div class="score-fill" style="width:'+pct+'%;background:var(--green)"></div></div></div>';
-    });
-    html+='</div>';
-  }
-
-  el.innerHTML=html;
+  h+='</div>';
+  h+='<div class="form-section"><div class="form-section-title">📊 Scores de l\'équipe</div>';
+  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    var score=scoreGlobal(s.id);
+    h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:10px;background:var(--panel2);border-radius:10px">';
+    h+='<div style="width:36px;height:36px;border-radius:9px;background:'+s.couleur+'22;color:'+s.couleur+';display:flex;align-items:center;justify-content:center;font-size:18px">'+s.avatar+'</div>';
+    h+='<div style="min-width:120px;font-weight:800;color:#fff">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h+='<div class="score-bar" style="flex:1"><div class="score-fill" style="width:'+(score>0?score/4*100:0)+'%;background:'+scoreColor(score)+'"></div></div>';
+    h+='<div style="font-size:14px;font-weight:900;color:'+scoreColor(score)+';min-width:35px">'+(score>0?score.toFixed(1):'—')+'</div>';
+    h+='<div style="font-size:11px;color:'+scoreColor(score)+';min-width:90px">'+scoreLbl(score)+'</div>';
+    h+='<button class="btn btn-sm btn-secondary" onclick="ouvrirDossier('+s.id+')">Voir</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  c.innerHTML=h;
 }
 
-/* ══ IA ASSISTANT ══ */
-var AI_HIST=[{role:'system',content:'Tu es un expert CIP spécialisé en insertion professionnelle dans la logistique et le transport. Tu connais les dispositifs IAE, les CDDI, les structures de type ACI et EI. Tu aides les encadrants à accompagner leurs salariés en insertion : logistique, chauffeurs livreurs, manutentionnaires. Réponds en français, de façon concrète et pratique. Tu peux proposer des exemples de formulations pour les entretiens, des pistes pour lever les freins à l\'emploi, des conseils de management adapté à ce public.'}];
+/* ═══ IMPRESSION ═══ */
+window.imprimerDossier=function(id){genDoc(id,'dossier');};
+window.imprimerEntretien=function(entId,salId){genDoc(salId,'cr_entretien');};
 
-function renderIA(el){
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:4px">Assistant IA — CIP Insertion</h2>';
-  html+='<p style="color:var(--sub);font-size:12px;margin-bottom:16px">Posez vos questions sur l\'accompagnement, le management, les dispositifs insertion, la rédaction de bilans...</p>';
-
-  // Suggestions rapides
-  html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">';
-  var suggestions=[
-    'Comment motiver un salarié qui se décourage ?',
-    'Rédigez un bilan mi-parcours pour un chauffeur en progrès',
-    'Comment gérer un conflit entre deux salariés ?',
-    'Quelles questions poser lors d\'un entretien de suivi ?',
-    'Comment préparer une sortie positive vers l\'emploi ?',
-    'Que faire si un salarié est en difficulté personnelle ?',
-  ];
-  suggestions.forEach(function(s){
-    html+='<button class="btn btn-secondary" onclick="envoyerIA(\''+s+'\')" style="font-size:10px;padding:4px 10px">'+s+'</button>';
-  });
-  html+='</div>';
-
-  html+='<div id="ia-chat" style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;min-height:300px;max-height:400px;overflow-y:auto;margin-bottom:12px">';
-  html+='<div style="color:var(--sub);font-size:12px;text-align:center;padding:20px">Posez votre première question...</div>';
-  html+='</div>';
-  html+='<div style="display:flex;gap:8px">';
-  html+='<input id="ia-input" placeholder="Votre question..." style="flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();envoyerIA()}">';
-  html+='<button class="btn btn-primary" onclick="envoyerIA()">Envoyer →</button>';
-  html+='<button class="btn btn-secondary" onclick="clearIA()">Effacer</button>';
-  html+='</div>';
-  el.innerHTML=html;
+/* ═══ MODAL ═══ */
+function ouvrirModal(html){
+  var b=document.getElementById('modal-box');
+  if(b)b.innerHTML=html;
+  document.getElementById('modal-bg').classList.add('on');
 }
-
-window.clearIA=function(){AI_HIST=AI_HIST.slice(0,1);document.getElementById('ia-chat').innerHTML='<div style="color:var(--sub);font-size:12px;text-align:center;padding:20px">Historique effacé.</div>';};
-
-window.envoyerIA=async function(msg){
-  var input=document.getElementById('ia-input');
-  var question=msg||(input?input.value.trim():'');
-  if(!question)return;
-  if(input)input.value='';
-  var chat=document.getElementById('ia-chat');
-  if(!chat)return;
-
-  // Afficher question
-  chat.innerHTML+='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><div style="background:var(--accent);color:#fff;border-radius:10px;padding:10px 14px;max-width:75%;font-size:12px">'+question+'</div></div>';
-
-  // Indicateur
-  chat.innerHTML+='<div id="ia-loading" style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--sub)">⏳ Réflexion en cours...</div></div>';
-  chat.scrollTop=chat.scrollHeight;
-
-  AI_HIST.push({role:'user',content:question});
-
-  try{
-    var resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:AI_HIST.slice(1)})
-    });
-    var data=await resp.json();
-    var rep=data.content&&data.content[0]?data.content[0].text:'Désolé, je n\'ai pas pu répondre.';
-    AI_HIST.push({role:'assistant',content:rep});
-    document.getElementById('ia-loading').remove();
-    var formatted=rep.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-    chat.innerHTML+='<div style="display:flex;margin-bottom:12px"><div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-width:80%;font-size:12px;line-height:1.6">'+formatted+'</div></div>';
-  }catch(e){
-    var ld=document.getElementById('ia-loading');if(ld)ld.remove();
-    chat.innerHTML+='<div style="color:var(--red);font-size:12px;padding:10px">Erreur de connexion à l\'IA. Vérifiez votre connexion.</div>';
-  }
-  chat.scrollTop=chat.scrollHeight;
-};
-
-/* ══ DOCUMENTS ══ */
-function renderDocuments(el){
-  var html='<h2 style="font-size:18px;font-weight:900;color:#fff;margin-bottom:20px">Documents & Impressions</h2>';
-  html+='<div class="card-grid">';
-  var docs=[
-    {label:'Bilan mi-parcours',icon:'📋',color:'var(--blue)'},
-    {label:'Bilan fin de parcours',icon:'🏁',color:'var(--green)'},
-    {label:'Fiche de poste logistique',icon:'📄',color:'var(--accent)'},
-    {label:'Plan d\'action individuel',icon:'🎯',color:'var(--purple)'},
-    {label:'Compte-rendu d\'entretien',icon:'💬',color:'var(--yellow)'},
-    {label:'Attestation de compétences',icon:'🏆',color:'var(--green)'},
-    {label:'Rapport mensuel (tous)',icon:'📊',color:'var(--blue)'},
-    {label:'Liste des salariés actifs',icon:'👷',color:'var(--accent)'},
-  ];
-  docs.forEach(function(d){
-    html+='<div class="card" style="border-color:'+d.color+'33;text-align:center;cursor:pointer" onclick="ouvrirDocVierge(\''+d.label+'\')">';
-    html+='<div style="font-size:36px;margin-bottom:10px">'+d.icon+'</div>';
-    html+='<div style="font-weight:800;color:#fff;margin-bottom:6px;font-size:13px">'+d.label+'</div>';
-    html+='<button class="btn" style="background:'+d.color+'22;border:1px solid '+d.color+'44;color:'+d.color+';width:100%;font-size:11px;margin-top:8px">Ouvrir</button>';
-    html+='</div>';
-  });
-  html+='</div>';
-  el.innerHTML=html;
-}
+window.fermerModal=function(){document.getElementById('modal-bg').classList.remove('on');};
 
 </script>
-<script>
-/* ═══════════════════════════════════════════
-   ACTIONS — MODALS ET CRUD
-═══════════════════════════════════════════ */
-
-/* Voir un salarié */
-window.voirSalarie=function(id){
-  SALARIÉ_ACTIF=id;
-  naviguer('fiche');
-};
-
-/* Sauvegarder infos salarié */
-window.sauverInfosSalarie=function(id){
-  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
-  var gc=function(i){var el=document.getElementById(i);return el?el.checked:false;};
-
-  var idx=id?DB.salaries.findIndex(function(s){return s.id==id;}): -1;
-  var s=idx>=0?DB.salaries[idx]:nouveauSalarie();
-
-  s.prenom=g('sal-prenom');s.nom=g('sal-nom');
-  s.dateNaissance=g('sal-dob');s.lieuNaissance=g('sal-lob');
-  s.nationalite=g('sal-nat');s.telephone=g('sal-tel');
-  s.email=g('sal-email');s.situationFamiliale=g('sal-sitfam');
-  s.nbEnfants=parseInt(g('sal-enfants'))||0;
-  s.adresse=g('sal-adresse');
-  s.prescripteur=g('sal-prescripteur');s.structurePrescripteur=g('sal-struct');
-  s.situationAvant=g('sal-sitav');s.dureeChomage=g('sal-duree');
-  s.niveauFormation=g('sal-formation');s.mobilite=g('sal-mobilite');
-  s.rsa=gc('sal-rsa');s.aah=gc('sal-aah');s.th=gc('sal-th');
-  s.typeContrat=g('sal-typecontrat');s.poste=g('sal-poste');
-  s.dateEntree=g('sal-dentree');s.dateFin=g('sal-dfin');
-  s.dureeInitiale=parseInt(g('sal-dureeini'))||6;
-  s.heuresSemaine=parseInt(g('sal-heures'))||26;
-  s.salaire=g('sal-salaire');s.vehiculeAssigne=g('sal-vehicule');
-  s.projetPro=g('sal-projetpro');s.secteurVise=g('sal-secteur');
-  s.niveauVisee=g('sal-niveau');s.formationsEnvisagees=g('sal-formations');
-  s.objectifsMois=g('sal-objectifs');s.contraintes=g('sal-contraintes');
-  s.contraintesSante=g('sal-sante');
-  s.statut=g('sal-statut')||'actif';s.typeSortie=g('sal-typesortie');s.dateSortie=g('sal-datesortie');
-  s.updatedAt=new Date().toISOString();
-
-  if(!s.nom||!s.prenom){showToast('Le nom et prénom sont requis','error');return;}
-
-  if(idx>=0){DB.salaries[idx]=s;}
-  else{DB.salaries.push(s);SALARIÉ_ACTIF=s.id;}
-
-  sauver();showToast('Salarié enregistré ✅','ok');
-  verifierAlertes();
-};
-
-/* Notes CIP */
-window.sauverNotesCIP=function(id){
-  var idx=DB.salaries.findIndex(function(s){return s.id==id;});
-  if(idx<0)return;
-  var ta=document.getElementById('sal-notescip');
-  if(!ta)return;
-  DB.salaries[idx].notesCIP=ta.value;
-  sauver();showToast('Notes sauvegardées','ok');
-};
-
-/* Supprimer salarié */
-window.supprimerSalarie=function(id){
-  if(!confirm('Supprimer ce salarié et toutes ses données ?'))return;
-  DB.salaries=DB.salaries.filter(function(s){return s.id!==id;});
-  DB.entretiens=DB.entretiens.filter(function(e){return e.salId!==id;});
-  DB.evaluations=DB.evaluations.filter(function(e){return e.salId!==id;});
-  sauver();naviguer('salaries');showToast('Salarié supprimé','ok');
-};
-
-/* MODAL ENTRETIEN */
-window.ajouterEntretien=function(salId){
-  var s=DB.salaries.find(function(x){return x.id==salId;});
-  if(!s){showToast('Salarié introuvable','error');return;}
-  ouvrirModalEntretien(salId,null);
-};
-window.modifierEntretien=function(entId){
-  var ent=DB.entretiens.find(function(e){return e.id==entId;});
-  if(!ent)return;
-  ouvrirModalEntretien(ent.salId,ent);
-};
-function ouvrirModalEntretien(salId,ent){
-  var s=DB.salaries.find(function(x){return x.id==salId;});
-  var isNew=!ent;
-  var e=ent||nouvelEntretien(salId);
-  var mbg=document.getElementById('modal-bg');
-  if(!mbg)return;
-  mbg.innerHTML='';
-  var modal=document.createElement('div');modal.className='modal';
-  var html='<div class="modal-title">'+( isNew?'Nouvel entretien — ':'Modifier entretien — ')+(s?s.prenom+' '+s.nom:'');
-  html+='<button class="btn btn-secondary" onclick="fermerModal()" style="font-size:11px;padding:4px 10px">✕</button></div>';
-  html+='<div class="form-grid">';
-  html+='<div class="field"><label>Date</label><input type="date" id="ent-date" value="'+(e.date||today())+'"></div>';
-  html+='<div class="field"><label>Type d\'entretien</label><select id="ent-type"><option value="suivi"'+(e.type==='suivi'?' selected':'')+'>Suivi régulier</option><option value="bilan"'+(e.type==='bilan'?' selected':'')+'>Bilan mensuel</option><option value="bilan_mi"'+(e.type==='bilan_mi'?' selected':'')+'>Bilan mi-parcours</option><option value="bilan_fin"'+(e.type==='bilan_fin'?' selected':'')+'>Bilan fin de parcours</option><option value="recadrage"'+(e.type==='recadrage'?' selected':'')+'>Recadrage</option><option value="urgence"'+(e.type==='urgence'?' selected':'')+'>Urgence</option></select></div>';
-  html+='<div class="field"><label>Durée (min)</label><input type="number" id="ent-duree" value="'+(e.duree||30)+'"></div>';
-  html+='<div class="field"><label>Encadrant présent</label><input type="text" id="ent-encadrant" value="'+(e.encadrant||SESSION.nom||'')+'"></div>';
-  html+='</div>';
-  html+='<div class="form-grid" style="margin-top:14px">';
-  html+='<div class="field" style="grid-column:1/-1"><label>Points positifs / progrès observés</label><textarea id="ent-positifs" style="min-height:80px">'+(e.pointsPositifs||'')+'</textarea></div>';
-  html+='<div class="field" style="grid-column:1/-1"><label>Points à améliorer / difficultés</label><textarea id="ent-ameliorer" style="min-height:80px">'+(e.pointsAmeliorer||'')+'</textarea></div>';
-  html+='<div class="field"><label>Axe professionnel</label><textarea id="ent-axepro" style="min-height:70px">'+(e.axe_professionnel||'')+'</textarea></div>';
-  html+='<div class="field"><label>Axe social/personnel</label><textarea id="ent-axesoc" style="min-height:70px">'+(e.axe_social||'')+'</textarea></div>';
-  html+='<div class="field" style="grid-column:1/-1"><label>Engagements du salarié</label><textarea id="ent-engsalar" style="min-height:70px">'+(e.engagementsSalarie||'')+'</textarea></div>';
-  html+='<div class="field" style="grid-column:1/-1"><label>Engagements de l\'encadrant</label><textarea id="ent-engenc" style="min-height:70px">'+(e.engagementsEncadrant||'')+'</textarea></div>';
-  html+='<div class="field"><label>Date prochain RDV</label><input type="date" id="ent-prochainrdv" value="'+(e.dateProchainRDV||'')+'"></div>';
-  html+='</div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverEntretien('+(e.id)+','+salId+','+isNew+')">💾 Enregistrer</button><button class="btn btn-secondary" onclick="fermerModal()">Annuler</button></div>';
-  modal.innerHTML=html;
-  mbg.appendChild(modal);
-  mbg.classList.add('on');
-}
-window.sauverEntretien=function(entId,salId,isNew){
-  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
-  var ent={
-    id:isNew?Date.now():entId,
-    salId:salId,
-    date:g('ent-date'),type:g('ent-type'),duree:parseInt(g('ent-duree'))||30,
-    encadrant:g('ent-encadrant'),
-    pointsPositifs:g('ent-positifs'),pointsAmeliorer:g('ent-ameliorer'),
-    axe_professionnel:g('ent-axepro'),axe_social:g('ent-axesoc'),
-    engagementsSalarie:g('ent-engsalar'),engagementsEncadrant:g('ent-engenc'),
-    dateProchainRDV:g('ent-prochainrdv'),
-    createdAt:new Date().toISOString()
-  };
-  if(isNew){DB.entretiens.push(ent);}
-  else{var idx=DB.entretiens.findIndex(function(e){return e.id==entId;});if(idx>=0)DB.entretiens[idx]=ent;}
-  sauver();fermerModal();
-  showToast('Entretien enregistré ✅','ok');
-  verifierAlertes();
-  voirSalarie(salId);
-};
-window.supprimerEntretien=function(entId,salId){
-  if(!confirm('Supprimer cet entretien ?'))return;
-  DB.entretiens=DB.entretiens.filter(function(e){return e.id!==entId;});
-  sauver();voirSalarie(salId);showToast('Entretien supprimé','ok');
-};
-
-/* MODAL ÉVALUATION */
-window.ajouterEvaluation=function(salId){ouvrirModalEvaluation(salId,null);};
-window.modifierEvaluation=function(evalId){
-  var ev=DB.evaluations.find(function(e){return e.id==evalId;});
-  if(!ev)return;
-  ouvrirModalEvaluation(ev.salId,ev);
-};
-function ouvrirModalEvaluation(salId,ev){
-  var s=DB.salaries.find(function(x){return x.id==salId;});
-  var isNew=!ev;
-  var e=ev||nouvelleEvaluation(salId);
-  var mbg=document.getElementById('modal-bg');if(!mbg)return;
-  mbg.innerHTML='';
-  var modal=document.createElement('div');modal.className='modal';
-
-  var criteresSE=[
-    {k:'ponctualite',l:'Ponctualité — Arrive à l\'heure, prévient en cas de retard'},
-    {k:'assiduite',l:'Assiduité — Présent, régulier, absences justifiées'},
-    {k:'tenueTravail',l:'Tenue de travail — EPI, présentation, hygiène'},
-    {k:'communication',l:'Communication — S\'exprime clairement, pose des questions'},
-    {k:'relationEquipe',l:'Relation équipe — Solidaire, évite les conflits'},
-    {k:'relationClient',l:'Relation client — Poli, professionnel, représente bien la structure'},
-    {k:'respectConsignes',l:'Respect des consignes — Applique sans qu\'on répète'},
-    {k:'initiative',l:'Prise d\'initiative — Propose des solutions, anticipe'},
-  ];
-  var criteresSF=[
-    {k:'conduite',l:'Conduite — Sécurité routière, véhicule'},
-    {k:'chargement',l:'Chargement/déchargement — Gestes, organisation'},
-    {k:'livraison',l:'Livraison — Ponctualité, qualité du service'},
-    {k:'gestionMateriel',l:'Gestion matériel — Soin, vérification'},
-    {k:'securite',l:'Sécurité — Consignes, EPI, signalement'},
-    {k:'gestionTemps',l:'Gestion du temps — Tournée optimisée'},
-  ];
-
-  function critereHTML(liste){
-    var h='';
-    liste.forEach(function(c){
-      var val=e[c.k]||0;
-      h+='<div style="margin-bottom:12px;padding:10px;background:var(--panel2);border-radius:8px">';
-      h+='<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">'+c.l+'</div>';
-      h+='<div style="display:flex;gap:8px;align-items:center">';
-      for(var i=1;i<=4;i++){
-        var labels=['','Insuffisant','En progrès','Bien','Excellent'];
-        h+='<label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer">';
-        h+='<input type="radio" name="eval-'+c.k+'" value="'+i+'"'+(val===i?' checked':'')+' style="accent-color:var(--accent)">';
-        h+='<span style="font-size:9px;color:var(--sub)">'+labels[i]+'</span></label>';
-      }
-      h+='</div></div>';
-    });
-    return h;
-  }
-
-  var html='<div class="modal-title">Évaluation mensuelle — '+(s?s.prenom+' '+s.nom:'');
-  html+='<button class="btn btn-secondary" onclick="fermerModal()" style="font-size:11px;padding:4px 10px">✕</button></div>';
-  html+='<div class="form-grid"><div class="field"><label>Mois évalué</label><input type="month" id="eval-mois" value="'+(e.mois||today().slice(0,7))+'"></div>';
-  html+='<div class="field"><label>Évaluateur</label><input type="text" id="eval-eval" value="'+(e.evaluateur||SESSION.nom||'')+'"></div></div>';
-  html+='<div class="tabs" style="margin-top:14px"><div class="tab on" onclick="switchTab(this,\'evtab-0\')">Savoir-être</div><div class="tab" onclick="switchTab(this,\'evtab-1\')">Savoir-faire</div><div class="tab" onclick="switchTab(this,\'evtab-2\')">Synthèse</div></div>';
-  html+='<div id="evtab-0">'+critereHTML(criteresSE)+'</div>';
-  html+='<div id="evtab-1" style="display:none">'+critereHTML(criteresSF)+'</div>';
-  html+='<div id="evtab-2" style="display:none"><div class="form-grid">';
-  html+='<div class="field" style="grid-column:1/-1"><label>Appréciation générale</label><textarea id="eval-apprec" style="min-height:100px">'+(e.appreciation||'')+'</textarea></div>';
-  html+='<div class="field" style="grid-column:1/-1"><label>Points forts</label><textarea id="eval-positifs" style="min-height:70px">'+(e.pointsForts||'')+'</textarea></div>';
-  html+='<div class="field" style="grid-column:1/-1"><label>Axes de progression</label><textarea id="eval-axes" style="min-height:70px">'+(e.axesProgression||'')+'</textarea></div>';
-  html+='</div></div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverEvaluation('+(e.id)+','+salId+','+isNew+')">💾 Enregistrer</button><button class="btn btn-secondary" onclick="fermerModal()">Annuler</button></div>';
-  modal.innerHTML=html;
-  mbg.appendChild(modal);mbg.classList.add('on');
-}
-window.sauverEvaluation=function(evalId,salId,isNew){
-  var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
-  var gr=function(name){var el=document.querySelector('input[name="eval-'+name+'"]:checked');return el?parseInt(el.value):0;};
-  var ev={
-    id:isNew?Date.now():evalId,salId:salId,
-    date:today(),mois:g('eval-mois'),
-    evaluateur:g('eval-eval'),
-    ponctualite:gr('ponctualite'),assiduite:gr('assiduite'),
-    tenueTravail:gr('tenueTravail'),communication:gr('communication'),
-    relationEquipe:gr('relationEquipe'),relationClient:gr('relationClient'),
-    respectConsignes:gr('respectConsignes'),initiative:gr('initiative'),
-    conduite:gr('conduite'),chargement:gr('chargement'),
-    livraison:gr('livraison'),gestionMateriel:gr('gestionMateriel'),
-    securite:gr('securite'),gestionTemps:gr('gestionTemps'),
-    appreciation:g('eval-apprec'),pointsForts:g('eval-positifs'),
-    axesProgression:g('eval-axes'),
-    createdAt:new Date().toISOString()
-  };
-  if(isNew){DB.evaluations.push(ev);}
-  else{var idx=DB.evaluations.findIndex(function(e){return e.id==evalId;});if(idx>=0)DB.evaluations[idx]=ev;}
-  sauver();fermerModal();showToast('Évaluation enregistrée ✅','ok');
-  voirSalarie(salId);
-};
-window.supprimerEvaluation=function(evalId,salId){
-  if(!confirm('Supprimer cette évaluation ?'))return;
-  DB.evaluations=DB.evaluations.filter(function(e){return e.id!==evalId;});
-  sauver();voirSalarie(salId);showToast('Évaluation supprimée','ok');
-};
-
-/* Renouvellement */
-window.ajouterRenouvellement=function(salId){
-  var du=prompt('Date de début du renouvellement (AAAA-MM-JJ) :');
-  var au=prompt('Date de fin du renouvellement (AAAA-MM-JJ) :');
-  var motif=prompt('Motif du renouvellement :','Progression satisfaisante');
-  if(!du||!au)return;
-  var idx=DB.salaries.findIndex(function(s){return s.id==salId;});
-  if(idx<0)return;
-  if(!DB.salaries[idx].renouvellements)DB.salaries[idx].renouvellements=[];
-  DB.salaries[idx].renouvellements.push({du:du,au:au,motif:motif||''});
-  DB.salaries[idx].dateFin=au;
-  sauver();showToast('Renouvellement ajouté','ok');
-  voirSalarie(salId);
-};
-
-/* GÉNÉRATION DOCUMENTS */
-window.genererDocument=function(salId,type){
-  var s=DB.salaries.find(function(x){return x.id==salId;});
-  if(!s){showToast('Sélectionnez d\'abord un salarié','error');return;}
-  genererDocPrint(s,type);
-};
-window.genererFicheType=function(key){
-  var selEl=document.getElementById('fiche-sal-select');
-  var salId=selEl?selEl.value:'';
-  var s=salId?DB.salaries.find(function(x){return x.id==salId;}):null;
-  var fiche=FICHES_TYPES[key];
-  if(!fiche)return;
-  var win=window.open('','_blank');
-  if(!win)return;
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:30px;color:#1a2435;max-width:800px;margin:0 auto}h1{font-size:22px;border-bottom:3px solid #f97316;padding-bottom:10px;margin-bottom:20px}h2{font-size:15px;color:#f97316;margin-top:24px;margin-bottom:6px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8fafc;padding:14px;border-radius:8px;margin-bottom:20px}.info-item label{font-size:10px;font-weight:800;text-transform:uppercase;color:#64748b;display:block}.info-item span{font-size:13px;font-weight:700}.section{margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;padding:14px}.section-space{min-height:80px;border:1px dashed #cbd5e1;border-radius:6px;margin-top:8px;padding:8px;color:#94a3b8;font-size:11px}.footer{margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#64748b}@media print{button{display:none}}</style></head><body>';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:11px;color:#94a3b8;font-weight:700">LA TABLE DE CANA · MARSEILLE</div><h1>'+fiche.titre+'</h1></div><button onclick="window.print()" style="padding:10px 20px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:13px">🖨️ Imprimer</button></div>';
-  if(s){
-    html+='<div class="info-grid">';
-    html+='<div class="info-item"><label>Salarié</label><span>'+s.prenom+' '+s.nom+'</span></div>';
-    html+='<div class="info-item"><label>Poste</label><span>'+s.poste+'</span></div>';
-    html+='<div class="info-item"><label>Type contrat</label><span>'+s.typeContrat+'</span></div>';
-    html+='<div class="info-item"><label>Date</label><span>'+fmt(today())+'</span></div>';
-    html+='</div>';
-  }
-  fiche.sections.forEach(function(sec){
-    html+='<div class="section"><h2>'+sec+'</h2><div class="section-space">À compléter...</div></div>';
-  });
-  html+='<div class="footer"><span>Document généré le '+new Date().toLocaleDateString('fr-FR')+'</span><div style="display:flex;gap:40px"><div style="text-align:center"><div style="height:40px;border-bottom:1px solid #94a3b8;width:150px;margin-bottom:4px"></div><div>Signature salarié</div></div><div style="text-align:center"><div style="height:40px;border-bottom:1px solid #94a3b8;width:150px;margin-bottom:4px"></div><div>Signature encadrant</div></div></div></span></div>';
-  html+='</body></html>';
-  win.document.write(html);win.document.close();
-};
-window.genererDocPrint=window.genererFicheType;
-window.ouvrirDocVierge=function(label){
-  var win=window.open('','_blank');
-  if(!win)return;
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:30px;color:#1a2435;max-width:800px;margin:0 auto}h1{font-size:22px;border-bottom:3px solid #f97316;padding-bottom:10px}textarea{width:100%;border:1px dashed #cbd5e1;border-radius:6px;min-height:120px;padding:10px;font-size:13px;margin-top:8px;font-family:Arial,sans-serif}.section{margin-bottom:20px}.lbl{font-size:11px;font-weight:800;text-transform:uppercase;color:#64748b}@media print{button{display:none}textarea{border:1px solid #e2e8f0}}</style></head><body>';
-  html+='<button onclick="window.print()" style="float:right;padding:10px 20px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">🖨️ Imprimer</button>';
-  html+='<div style="font-size:11px;color:#94a3b8;font-weight:700">LA TABLE DE CANA · MARSEILLE</div>';
-  html+='<h1>'+label+'</h1>';
-  html+='<div class="section"><div class="lbl">Salarié</div><textarea rows="1"></textarea></div>';
-  html+='<div class="section"><div class="lbl">Date</div><input type="date" style="border:1px solid #e2e8f0;padding:6px 10px;border-radius:6px;font-size:13px;margin-top:4px"></div>';
-  html+='<div class="section"><div class="lbl">Contenu</div><textarea rows="15"></textarea></div>';
-  html+='<div class="section"><div class="lbl">Observations</div><textarea rows="5"></textarea></div>';
-  html+='<div style="display:flex;gap:40px;margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0"><div style="text-align:center"><div style="height:40px;border-bottom:1px solid #94a3b8;width:150px;margin-bottom:4px"></div><div style="font-size:11px">Signature salarié</div></div><div style="text-align:center"><div style="height:40px;border-bottom:1px solid #94a3b8;width:150px;margin-bottom:4px"></div><div style="font-size:11px">Signature encadrant</div></div></div>';
-  html+='</body></html>';
-  win.document.write(html);win.document.close();
-};
-
-/* IMPRESSION FICHE */
-window.imprimerFiche=function(salId){
-  var s=DB.salaries.find(function(x){return x.id==salId;});
-  if(!s)return;
-  var score=calculerScoreMoyen(s.id);
-  var evals=DB.evaluations.filter(function(e){return e.salId==salId;});
-  var ents=DB.entretiens.filter(function(e){return e.salId==salId;});
-  var win=window.open('','_blank');if(!win)return;
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;font-size:12px}h1{font-size:20px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}h2{font-size:13px;color:#f97316;margin:16px 0 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}.item{background:#f8fafc;padding:8px 10px;border-radius:6px}.item label{font-size:9px;font-weight:800;text-transform:uppercase;color:#64748b;display:block}.item span{font-weight:700}.section{margin-bottom:14px;padding:12px;border:1px solid #e2e8f0;border-radius:8px}.timeline .t-item{margin-bottom:10px;padding:8px;background:#f8fafc;border-left:3px solid #f97316;border-radius:4px}@media print{button{display:none}}</style></head><body>';
-  html+='<button onclick="window.print()" style="float:right;padding:8px 16px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
-  html+='<div style="font-size:10px;color:#94a3b8;font-weight:700">LA TABLE DE CANA · MARSEILLE — FICHE SALARIÉ</div>';
-  html+='<h1>'+s.prenom+' '+s.nom+'</h1>';
-  html+='<div class="grid">';
-  html+='<div class="item"><label>Poste</label><span>'+s.poste+'</span></div>';
-  html+='<div class="item"><label>Contrat</label><span>'+s.typeContrat+'</span></div>';
-  html+='<div class="item"><label>Entrée</label><span>'+fmt(s.dateEntree)+'</span></div>';
-  html+='<div class="item"><label>Fin prévue</label><span>'+fmt(s.dateFin)+'</span></div>';
-  html+='<div class="item"><label>Téléphone</label><span>'+s.telephone+'</span></div>';
-  html+='<div class="item"><label>Prescripteur</label><span>'+s.prescripteur+'</span></div>';
-  if(score>0)html+='<div class="item"><label>Score global</label><span style="color:'+scoreColor(score)+'">'+score.toFixed(1)+'/4 — '+scoreLabel(score)+'</span></div>';
-  html+='<div class="item"><label>Statut</label><span>'+s.statut.toUpperCase()+'</span></div>';
-  html+='</div>';
-  if(s.projetPro){html+='<div class="section"><h2>Projet professionnel</h2>'+s.projetPro+'</div>';}
-  if(s.objectifsMois){html+='<div class="section"><h2>Objectifs du mois</h2>'+s.objectifsMois+'</div>';}
-  // Derniers entretiens
-  if(ents.length){
-    html+='<h2>Derniers entretiens ('+ents.length+')</h2><div class="timeline">';
-    ents.slice(0,3).forEach(function(e){
-      html+='<div class="t-item"><strong>'+e.type+'</strong> — '+fmt(e.date);
-      if(e.pointsPositifs)html+='<br>+ '+e.pointsPositifs.slice(0,100);
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-  // Dernière évaluation
-  if(evals.length){
-    var last=evals[evals.length-1];
-    html+='<div class="section"><h2>Dernière évaluation — '+fmtMois(last.date)+'</h2>';
-    html+=renderGrilleEval(last);
-    html+='</div>';
-  }
-  html+='<div style="margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8">Imprimé le '+new Date().toLocaleDateString('fr-FR')+'</div>';
-  html+='</body></html>';
-  win.document.write(html);win.document.close();
-};
-
-/* Modal */
-window.fermerModal=function(){
-  var mbg=document.getElementById('modal-bg');
-  if(mbg){mbg.classList.remove('on');mbg.innerHTML='';}
-};
-
-</script>
-
 </body>
 </html>
