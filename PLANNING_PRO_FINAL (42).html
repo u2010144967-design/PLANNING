@@ -20578,15 +20578,13 @@ window._erreursJS = [];
 
 window.addEventListener('error', function(e){
   var msg = (e.message||'Erreur inconnue')+' ('+(e.filename||'?')+':'+(e.lineno||'?')+')';
+  window._erreursJS = window._erreursJS||[];
   window._erreursJS.push({date:new Date().toLocaleTimeString('fr-FR'),msg:msg});
-
-
-window.addEventListener('unhandledrejection',function(e){e.preventDefault();});
   if(window._erreursJS.length>30) window._erreursJS.shift();
-  if(typeof showT==='function'){
-    showT('Erreur technique detectee - voir Aide > Rapport d erreurs','#ef4444');
-  }
+  console.error('JS Error:', msg);
+  /* showT desactive pour ne pas polluer l utilisateur */
 });
+window.addEventListener('unhandledrejection',function(e){e.preventDefault();});
 
 /* ══ 2. AFFICHAGE DU RAPPORT D'ERREURS ══ */
 function ouvrirRapportErreurs(){
@@ -26289,40 +26287,47 @@ window.formulaireHC = function(id){
   setTimeout(function(){var f=document.getElementById('hcf-client');if(f)f.focus();},50);
 
   document.getElementById('hcf-btn-ok').addEventListener('click',function(){
-    var article = (document.getElementById('hcf-article').value||'').trim();
-    var client  = (document.getElementById('hcf-client').value||'').trim();
-    if(!article){alert('L\'article est requis');return;}
-    if(!client){alert('Le client est requis');return;}
-
-    initHorsCarte();
-    var item = {
-      id: isNew ? Date.now() : h.id,
-      article: article,
-      client: client,
-      quantite: (document.getElementById('hcf-qte').value||'').trim(),
-      dateEvenement: document.getElementById('hcf-date').value||'',
-      note: (document.getElementById('hcf-note').value||'').trim(),
-      saisiepar: (document.getElementById('hcf-saisiepar').value||'').trim(),
-      statut: isNew ? 'atraiter' : h.statut,
-      createdAt: isNew ? new Date().toISOString() : h.createdAt,
-      traiteLe: h.traiteLe||''
-    };
-
-    if(isNew){
-      ST.horsCarte.push(item);
-    } else {
-      var idx = ST.horsCarte.findIndex(function(x){return x.id===h.id;});
-      if(idx>=0) ST.horsCarte[idx] = item;
+    try{
+      var elArticle=document.getElementById('hcf-article');
+      var elClient=document.getElementById('hcf-client');
+      var elQte=document.getElementById('hcf-qte');
+      var elDate=document.getElementById('hcf-date');
+      var elNote=document.getElementById('hcf-note');
+      var elSaisie=document.getElementById('hcf-saisiepar');
+      var article=(elArticle?elArticle.value:'').trim();
+      var client=(elClient?elClient.value:'').trim();
+      if(!article){showT('Article requis','#ef4444');return;}
+      if(!client){showT('Client requis','#ef4444');return;}
+      if(!ST.horsCarte)ST.horsCarte=[];
+      var item={
+        id:isNew?Date.now():h.id,
+        article:article,
+        client:client,
+        quantite:elQte?elQte.value.trim():'',
+        dateEvenement:elDate?elDate.value:'',
+        note:elNote?elNote.value.trim():'',
+        saisiepar:elSaisie?elSaisie.value.trim():'',
+        statut:isNew?'atraiter':h.statut,
+        createdAt:isNew?new Date().toISOString():h.createdAt,
+        traiteLe:h.traiteLe||''
+      };
+      if(isNew){
+        ST.horsCarte.push(item);
+      } else {
+        var hcIdx=ST.horsCarte.findIndex(function(x){return x.id===h.id;});
+        if(hcIdx>=0)ST.horsCarte[hcIdx]=item;
+      }
+      save();
+      setTimeout(sauverDansSupabase,500);
+      majBadgeHC();
+      var fm=document.getElementById('hc-form-modal');
+      if(fm)fm.remove();
+      if(document.getElementById('hc-modal'))ouvrirHorsCarte();
+      showT('Article hors carte enregistre','#22c55e');
+    }catch(err){
+      showT('Erreur enregistrement: '+err.message,'#ef4444');
+      console.error('HC save error:',err);
     }
-
-    save();
-    setTimeout(sauverDansSupabase,500);
-    majBadgeHC();
-    document.getElementById('hc-form-modal').remove();
-    if(document.getElementById('hc-modal')){
-      ouvrirHorsCarte();
-    }
-    if(typeof showT==='function') showT('Article hors carte enregistré ✅','#22c55e');
   });
 };
 
