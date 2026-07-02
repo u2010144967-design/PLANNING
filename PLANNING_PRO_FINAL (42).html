@@ -26051,31 +26051,58 @@ function hcInit(){
 }
 
 window.ouvrirHorsCarte = function(){
-  /* Initialiser ST.horsCarte si besoin */
   if(typeof ST==='undefined') window.ST={};
   if(!ST.horsCarte) ST.horsCarte=[];
 
-  /* Si déjà ouvert, juste afficher */
+  /* Si déjà ouvert */
   var ov = document.getElementById('hc-overlay');
   if(ov){ ov.style.display='flex'; hcRenderListe(); return; }
 
-  /* Créer l'overlay une seule fois */
+  /* Overlay */
   ov = document.createElement('div');
   ov.id = 'hc-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML = '<div style="background:#0f1e35;border:2px solid #f97316;border-radius:16px;padding:22px;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:12px">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between">'
-      +'<div style="font-size:18px;font-weight:900;color:#fff">🛒 Hors Carte</div>'
-      +'<button id="hc-close" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ Fermer</button>'
-    +'</div>'
-    +'<button onclick="hcFormulaire()" style="padding:10px;background:rgba(249,115,22,.12);border:2px dashed rgba(249,115,22,.4);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer;width:100%">+ Ajouter un article hors carte</button>'
-    +'<div id="hc-liste" style="overflow-y:auto;flex:1;min-height:100px"></div>'
-    +'</div>';
+
+  /* Boite principale */
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#0f1e35;border:2px solid #f97316;border-radius:16px;padding:22px;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:12px';
+
+  /* Header */
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between';
+
+  var titre = document.createElement('div');
+  titre.style.cssText = 'font-size:18px;font-weight:900;color:#fff';
+  titre.textContent = 'Hors Carte';
+
+  var btnFermer = document.createElement('button');
+  btnFermer.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer';
+  btnFermer.textContent = 'X Fermer';
+  btnFermer.onclick = function(){ ov.style.display='none'; };
+
+  hdr.appendChild(titre);
+  hdr.appendChild(btnFermer);
+
+  /* Bouton ajouter */
+  var btnAdd = document.createElement('button');
+  btnAdd.style.cssText = 'padding:10px;background:rgba(249,115,22,.12);border:2px dashed rgba(249,115,22,.4);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer;width:100%';
+  btnAdd.textContent = '+ Ajouter un article hors carte';
+  btnAdd.onclick = function(){ hcFormulaire(); };
+
+  /* Liste */
+  var liste = document.createElement('div');
+  liste.id = 'hc-liste';
+  liste.style.cssText = 'overflow-y:auto;flex:1;min-height:100px';
+
+  box.appendChild(hdr);
+  box.appendChild(btnAdd);
+  box.appendChild(liste);
+  ov.appendChild(box);
   document.body.appendChild(ov);
-  document.getElementById('hc-close').onclick = function(){ ov.style.display='none'; };
-  /* onclick direct dans le HTML */
+
   hcRenderListe();
 };
+
 
 function hcRenderListe(){
   if(!hcInit()) return;
