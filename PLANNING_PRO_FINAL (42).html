@@ -26130,110 +26130,6 @@ window.hcSupprimer = function(i){
   hcRenderListe();
 };
 
-window.hcFormulaire = function(){
-  var old = document.getElementById('hc-form');
-  if(old) old.remove();
-
-  var form = document.createElement('div');
-  form.id = 'hc-form';
-  form.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
-
-  function inp(lbl,id,type,ph){
-    return '<div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase">'+lbl+'</div>'
-      +'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+(ph||'')+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>';
-  }
-
-  form.innerHTML = '<div style="background:#0f1e35;border:2px solid #f97316;border-radius:14px;padding:24px;width:100%;max-width:420px">'
-    +'<div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">Nouvel article hors carte</div>'
-    +'<div style="display:flex;flex-direction:column;gap:10px">'
-      +inp('Client *','hcf-client','text','Nom du client...')
-      +inp('Article à prévoir *','hcf-article','text','Ce qu\'il faut acheter / préparer...')
-      +inp('Quantité','hcf-qte','text','Ex: 50 pièces')
-      +inp('Date de l\'événement','hcf-date','date','')
-      +inp('Note','hcf-note','text','Précisions...')
-      +inp('Votre prénom','hcf-saisiepar','text','Qui saisit...')
-    +'</div>'
-    +'<div style="display:flex;gap:8px;margin-top:18px">'
-      +'<button id="hcf-ok" style="flex:1;padding:12px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">💾 Enregistrer</button>'
-      +'<button id="hcf-cancel" style="padding:12px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer">Annuler</button>'
-    +'</div></div>';
-
-  document.body.appendChild(form);
-
-  document.getElementById('hcf-cancel').onclick = function(){ form.remove(); };
-
-  document.getElementById('hcf-ok').onclick = function(){
-    var article = (document.getElementById('hcf-article').value||'').trim();
-    var client  = (document.getElementById('hcf-client').value||'').trim();
-    if(!article){ alert('Merci de saisir l\'article'); return; }
-    if(!client){  alert('Merci de saisir le client');  return; }
-    if(!hcInit()) return;
-    ST.horsCarte.push({
-      id: Date.now(),
-      article: article,
-      client: client,
-      quantite: (document.getElementById('hcf-qte').value||'').trim(),
-      dateEvenement: document.getElementById('hcf-date').value||'',
-      note: (document.getElementById('hcf-note').value||'').trim(),
-      saisiepar: (document.getElementById('hcf-saisiepar').value||'').trim(),
-      statut: 'atraiter',
-      createdAt: new Date().toISOString(),
-      traiteLe: ''
-    });
-    /* Sauvegarder */
-    try{
-      if(typeof save==='function') save();
-      else { try{localStorage.setItem('hc_cana', JSON.stringify(ST.horsCarte));}catch(e){} }
-      if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,600);
-    }catch(e){ console.log('save error',e); }
-    form.remove();
-    hcRenderListe();
-    if(typeof showT==='function') showT('Article enregistré ✅','#22c55e');
-    else alert('Article enregistré !');
-  };
-}
-
-/* bouton HC branché directement via onclick */
-
-</script>
-</body>
-</html>
-/* ═══════════════════════
-   HORS CARTE — VERSION SIMPLE ET ROBUSTE
-═══════════════════════ */
-if(!window.ST) window.ST = {};
-
-function hcInit(){
-  if(!window.ST.horsCarte) window.ST.horsCarte = [];
-}
-
-/* Ouvrir la fenêtre principale */
-window.ouvrirHorsCarte = function(){
-  hcInit();
-  var el = document.getElementById('hc-overlay');
-  if(el){ el.style.display = 'flex'; hcRenderListe(); return; }
-
-  var overlay = document.createElement('div');
-  overlay.id = 'hc-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
-
-  overlay.innerHTML = [
-    '<div style="background:#0f1e35;border:2px solid #f97316;border-radius:16px;padding:24px;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:14px">',
-      '<div style="display:flex;align-items:center;justify-content:space-between">',
-        '<div style="font-size:18px;font-weight:900;color:#fff">🛒 Hors Carte</div>',
-        '<button id="hc-close" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ Fermer</button>',
-      '</div>',
-      '<button id="hc-add" style="padding:10px;background:rgba(249,115,22,.15);border:2px dashed rgba(249,115,22,.5);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer">+ Ajouter un article</button>',
-      '<div id="hc-liste" style="overflow-y:auto;flex:1"></div>',
-    '</div>'
-  ].join('');
-
-  document.body.appendChild(overlay);
-  document.getElementById('hc-close').onclick = function(){ overlay.style.display='none'; };
-  document.getElementById('hc-add').onclick = function(){ hcFormulaire(null); };
-  hcRenderListe();
-};
-
 /* Rendre la liste */
 function hcRenderListe(){
   hcInit();
@@ -26291,64 +26187,118 @@ window.hcSupprimer = function(i){
 };
 
 /* Formulaire ajout */
-function hcFormulaire(id){
+function hcChamp(label, id, type, placeholder){
+  return '<div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase">'+label+'</div>'
+    +'<input id="'+id+'" type="'+type+'" placeholder="'+placeholder+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>';
+}
+
+window.hcFormulaire = function(id){
   var old = document.getElementById('hc-form');
   if(old) old.remove();
 
+  /* Créer le formulaire */
   var form = document.createElement('div');
   form.id = 'hc-form';
   form.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
-  form.innerHTML = [
-    '<div style="background:#0f1e35;border:2px solid #f97316;border-radius:14px;padding:24px;width:100%;max-width:420px">',
-      '<div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:18px">+ Nouvel article hors carte</div>',
-      '<div style="display:flex;flex-direction:column;gap:10px">',
-        hcChamp('Client *','hcf-client','text','Nom du client...'),
-        hcChamp('Article *','hcf-article','text','Ce qu\'il faut prévoir...'),
-        hcChamp('Quantité','hcf-qte','text','Ex: 50 pièces'),
-        hcChamp('Date événement','hcf-date','date',''),
-        hcChamp('Note','hcf-note','text','Précisions...'),
-        hcChamp('Votre prénom','hcf-saisiepar','text','Qui saisit...'),
-      '</div>',
-      '<div style="display:flex;gap:8px;margin-top:18px">',
-        '<button id="hcf-ok" style="flex:1;padding:12px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">💾 Enregistrer</button>',
-        '<button id="hcf-cancel" style="padding:12px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer">Annuler</button>',
-      '</div>',
-    '</div>'
-  ].join('');
 
+  /* Construire le contenu */
+  var inner = document.createElement('div');
+  inner.style.cssText = 'background:#0f1e35;border:2px solid #f97316;border-radius:14px;padding:24px;width:100%;max-width:420px';
+
+  function makeInput(lbl, fieldId, type, ph){
+    var wrap = document.createElement('div');
+    var label = document.createElement('div');
+    label.style.cssText = 'font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase';
+    label.textContent = lbl;
+    var inp = document.createElement('input');
+    inp.id = fieldId;
+    inp.type = type||'text';
+    inp.placeholder = ph||'';
+    inp.style.cssText = 'width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box';
+    wrap.appendChild(label);
+    wrap.appendChild(inp);
+    return wrap;
+  }
+
+  var title = document.createElement('div');
+  title.style.cssText = 'font-size:16px;font-weight:900;color:#fff;margin-bottom:16px';
+  title.textContent = 'Nouvel article hors carte';
+
+  var fields = document.createElement('div');
+  fields.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  fields.appendChild(makeInput('Client *','hcf-client','text','Nom du client...'));
+  fields.appendChild(makeInput('Article *','hcf-article','text','Ce qu il faut prevoir...'));
+  fields.appendChild(makeInput('Quantite','hcf-qte','text','Ex: 50 pieces'));
+  fields.appendChild(makeInput('Date evenement','hcf-date','date',''));
+  fields.appendChild(makeInput('Note','hcf-note','text','Precisions...'));
+  fields.appendChild(makeInput('Votre prenom','hcf-saisiepar','text','Qui saisit...'));
+
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;margin-top:18px';
+
+  var btnOk = document.createElement('button');
+  btnOk.style.cssText = 'flex:1;padding:12px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:900;cursor:pointer';
+  btnOk.textContent = 'Enregistrer';
+
+  var btnCancel = document.createElement('button');
+  btnCancel.style.cssText = 'padding:12px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer';
+  btnCancel.textContent = 'Annuler';
+
+  btnRow.appendChild(btnOk);
+  btnRow.appendChild(btnCancel);
+
+  inner.appendChild(title);
+  inner.appendChild(fields);
+  inner.appendChild(btnRow);
+  form.appendChild(inner);
   document.body.appendChild(form);
 
-  document.getElementById('hcf-cancel').onclick = function(){ form.remove(); };
+  /* Listeners directs sur les éléments */
+  btnCancel.onclick = function(){ form.remove(); };
 
-  document.getElementById('hcf-ok').onclick = function(){
-    var article = (document.getElementById('hcf-article').value||'').trim();
-    var client  = (document.getElementById('hcf-client').value||'').trim();
-    if(!article){ alert('Article requis'); return; }
-    if(!client){  alert('Client requis');  return; }
+  btnOk.onclick = function(){
+    var elArticle = document.getElementById('hcf-article');
+    var elClient  = document.getElementById('hcf-client');
+    var elQte     = document.getElementById('hcf-qte');
+    var elDate    = document.getElementById('hcf-date');
+    var elNote    = document.getElementById('hcf-note');
+    var elSaisie  = document.getElementById('hcf-saisiepar');
+
+    var article = elArticle ? elArticle.value.trim() : '';
+    var client  = elClient  ? elClient.value.trim()  : '';
+
+    if(!article){ alert('Saisissez l article'); return; }
+    if(!client){  alert('Saisissez le client');  return; }
+
     hcInit();
-    window.ST.horsCarte.push({
+    ST.horsCarte.push({
       id: Date.now(),
       article: article,
       client: client,
-      quantite: (document.getElementById('hcf-qte').value||'').trim(),
-      dateEvenement: document.getElementById('hcf-date').value||'',
-      note: (document.getElementById('hcf-note').value||'').trim(),
-      saisiepar: (document.getElementById('hcf-saisiepar').value||'').trim(),
+      quantite: elQte   ? elQte.value.trim()  : '',
+      dateEvenement: elDate ? elDate.value    : '',
+      note: elNote  ? elNote.value.trim()  : '',
+      saisiepar: elSaisie ? elSaisie.value.trim() : '',
       statut: 'atraiter',
       createdAt: new Date().toISOString(),
       traiteLe: ''
     });
-    if(typeof save==='function') save();
-    if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,500);
+
+    try{
+      if(typeof save==='function') save();
+      if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,600);
+    }catch(e){}
+
     form.remove();
     hcRenderListe();
-    if(typeof showT==='function') showT('Article enregistré ✅','#22c55e');
+    if(typeof showT==='function') showT('Article enregistre !','#22c55e');
   };
-}
 
-function hcChamp(label, id, type, placeholder){
-  return '<div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase">'+label+'</div>'
-    +'<input id="'+id+'" type="'+type+'" placeholder="'+placeholder+'" style="width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>';
+  /* Focus sur le premier champ */
+  setTimeout(function(){
+    var f = document.getElementById('hcf-client');
+    if(f) f.focus();
+  }, 50);
 }
 
 
