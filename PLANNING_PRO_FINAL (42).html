@@ -24403,6 +24403,7 @@ function afficherHub(){
 
   var poles=[
     {id:'logistique',nom:'\uD83D\uDE9A LOGISTIQUE',color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'#3b82f6',items:[
+      {id:'horscarte',icon:'\uD83D\uDED2',label:'Hors Carte',sub:'Articles à commander',fn:'ouvrirHorsCarte'},
       {id:'planning',icon:'\uD83D\uDCC5',label:'Planning du jour',sub:'Livraisons rapides',fn:'ouvrirPlanningSimplifie'},
       {id:'planningfull',icon:'\uD83D\uDDD3',label:'Planning complet',sub:'Grille horaire',fn:function(){fermerHub();}},
       {id:'sync',icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle'},
@@ -24419,7 +24420,6 @@ function afficherHub(){
       {id:'copiejournee',icon:'\uD83D\uDCC4',label:'Copier la journée',sub:'Dupliquer vers autre date',fn:'ouvrirCopieeJournee'},
       {id:'feuillerouteprint',icon:'\uD83D\uDE9A',label:'Feuilles de route',sub:'Imprimer par chauffeur',fn:'ouvrirFeuillesRoute'},
       {id:'clientsoublies',icon:'\u26A0',label:'Clients non assignés',sub:'Détection oublis',fn:'ouvrirClientsNonAssignes'},
-      {id:'horscarte',icon:'\uD83D\uDED2',label:'Hors Carte',sub:'Articles à traiter',fn:'ouvrirHorsCarte'},
       {id:'qr',icon:'\uD83D\uDCF7',label:'Tableau départ QR',sub:'Pointage',fn:'ouvrirTableauDepart'},
       {id:'calendrier',icon:'\uD83D\uDDD3',label:'Calendrier mensuel',sub:'Vue mois',fn:'ouvrirCalendrier'},
       {id:'ecranmatin',icon:'\uD83C\uDF05',label:'Écran du matin',sub:'Démarrage journée',fn:'ouvrirEcranMatin'},
@@ -26050,7 +26050,8 @@ function hcInit(){
 }
 
 window.ouvrirHorsCarte = function(){
-  if(!hcInit()){ alert('Données non encore chargées, attendez 5 secondes.'); return; }
+  /* Initialiser ST.horsCarte si besoin */
+  if(typeof ST!=='undefined' && !ST.horsCarte) ST.horsCarte=[];
 
   /* Si déjà ouvert, juste afficher */
   var ov = document.getElementById('hc-overlay');
