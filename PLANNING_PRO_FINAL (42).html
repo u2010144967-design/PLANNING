@@ -949,8 +949,9 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <span id="hc-badge" style="display:none;background:#ef4444;color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:900">🛒 HC : <span id="hc-badge-txt">0</span></span>
+
     <button onclick="sauverDansSupabase();setTimeout(chargerDepuisSupabase,1500)" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer">&#9729; Sync</button>
+    <button id="btn-hc-unique" style="padding:6px 16px;background:#7c2d00;border:2px solid #f97316;border-radius:7px;color:#f97316;font-size:13px;font-weight:900;cursor:pointer">🛒 Hors Carte</button>
     <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:0 4px"><span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span><span id="sync-txt">OK</span></span>
     <button onclick="ouvrirPlaquesImmat()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer">&#128662; Plaques</button>
     <button onclick="window.print()" style="padding:6px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:7px;color:#92400e;font-size:12px;font-weight:700;cursor:pointer">&#128424; Imprimer</button>
@@ -1694,7 +1695,7 @@ function rGrid(){
       +'<button data-di="'+i+'" data-action="sel-restoco" title="Resto-Co" style="background:#f0f9ff;border:1px solid #0ea5e9;border-radius:5px;padding:2px 6px;font-size:9px;color:#0369a1;cursor:pointer;font-weight:800">🏛 RC</button>'
       +'<button data-di="'+i+'" data-action="sel-traiteur" title="Traiteur" style="background:#fff7ed;border:1px solid #f97316;border-radius:5px;padding:2px 6px;font-size:9px;color:#9a3412;cursor:pointer;font-weight:800">🍽 TR</button>'
       +'<button data-di="'+i+'" data-action="sel-tache" title="Tâches" style="background:#faf5ff;border:1px solid #a855f7;border-radius:5px;padding:2px 6px;font-size:9px;color:#6b21a8;cursor:pointer;font-weight:800">📋 TK</button>'
-      +'<button onclick="event.stopPropagation();ouvrirHorsCarte()" title="Hors Carte" style="background:#1a0a00;border:1px solid #f97316;border-radius:5px;padding:2px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:800">🛒 HC</button>'
+
       +'</div>'
       +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
@@ -5998,18 +5999,7 @@ function rCalendrier(){
     +'</div>';
 
   grid.innerHTML = html;
-  /* Branchement boutons HC apres render */
-  setTimeout(function(){
-    for(var bi=0;bi<10;bi++){
-      (function(idx){
-        var btn = document.getElementById('hc-btn-'+idx);
-        if(btn) btn.onclick = function(e){
-          e.stopPropagation();
-          if(typeof ouvrirHorsCarte==='function') ouvrirHorsCarte();
-        };
-      })(bi);
-    }
-  },50);
+
 }
 
 function calSelJour(ds){
@@ -26363,12 +26353,16 @@ window.formulaireHC = function(id){
   document.head.appendChild(style);
 })();
 
-/* Init bouton nav HC */
+/* Bouton Hors Carte unique */
 window.addEventListener('load', function(){
   setTimeout(function(){
-    var btn = document.getElementById('btn-hors-carte');
-    if(btn) btn.addEventListener('click', function(){ ouvrirHorsCarte(); });
-  }, 800);
+    var btn = document.getElementById('btn-hc-unique');
+    if(btn){
+      btn.addEventListener('click', function(){
+        if(typeof ouvrirHorsCarte === 'function') ouvrirHorsCarte();
+      });
+    }
+  }, 500);
 });
 
 </script>
