@@ -26044,14 +26044,16 @@ window.ouvrirFeuillesRoute = function(){
 /* ═══ HORS CARTE — SIMPLE ET ROBUSTE ═══ */
 
 function hcInit(){
-  if(typeof ST==='undefined') return false;
+  /* Créer ST si inexistant */
+  if(typeof ST==='undefined'){ window.ST={}; }
   if(!ST.horsCarte) ST.horsCarte=[];
   return true;
 }
 
 window.ouvrirHorsCarte = function(){
   /* Initialiser ST.horsCarte si besoin */
-  if(typeof ST!=='undefined' && !ST.horsCarte) ST.horsCarte=[];
+  if(typeof ST==='undefined') window.ST={};
+  if(!ST.horsCarte) ST.horsCarte=[];
 
   /* Si déjà ouvert, juste afficher */
   var ov = document.getElementById('hc-overlay');
@@ -26178,11 +26180,16 @@ function hcFormulaire(){
       createdAt: new Date().toISOString(),
       traiteLe: ''
     });
-    if(typeof save==='function') save();
-    if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,600);
+    /* Sauvegarder */
+    try{
+      if(typeof save==='function') save();
+      else { try{localStorage.setItem('hc_cana', JSON.stringify(ST.horsCarte));}catch(e){} }
+      if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,600);
+    }catch(e){ console.log('save error',e); }
     form.remove();
     hcRenderListe();
     if(typeof showT==='function') showT('Article enregistré ✅','#22c55e');
+    else alert('Article enregistré !');
   };
 }
 
