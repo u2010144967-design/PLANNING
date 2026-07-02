@@ -2619,5 +2619,816 @@ function iaReponseFallback(q){
 }
 
 </script>
+<script>
+/* ═══════════════════════════════════════════════════════
+   DOCUMENTS INTERACTIFS — TOUT PRÉ-REMPLI À COCHER
+   ═══════════════════════════════════════════════════════ */
+
+/* Styles pour les docs interactifs */
+(function(){
+  var st = document.createElement('style');
+  st.textContent = [
+    '.doc-wrap{max-width:720px;margin:0 auto;padding:20px}',
+    '.doc-header{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}',
+    '.doc-section{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}',
+    '.doc-sec-title{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}',
+    '.dc{display:flex;align-items:start;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:.12s;border:1px solid transparent}',
+    '.dc:hover{background:rgba(74,158,216,.06);border-color:rgba(74,158,216,.2)}',
+    '.dc.on{background:rgba(61,186,122,.08);border-color:rgba(61,186,122,.3)}',
+    '.dc input[type=checkbox]{width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin-top:2px}',
+    '.dc span{font-size:12px;line-height:1.6;color:var(--text)}',
+    '.dc.on span{color:var(--green)}',
+    '.doc-obs{background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px;font-size:13px;width:100%;min-height:80px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6}',
+    '.doc-btn-bar{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}',
+    '.doc-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}',
+    '.doc-info-item label{font-size:9px;font-weight:800;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:3px}',
+    '.doc-info-item span{font-size:13px;font-weight:700;color:var(--text)}',
+    '.radio-grp{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}',
+    '.ropt{padding:6px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;color:var(--sub);transition:.12s}',
+    '.ropt.on{border-color:var(--orange);background:rgba(249,115,22,.1);color:var(--orange)}',
+    '.eval-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}',
+    '.eval-stars{display:flex;gap:4px}',
+    '.es{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--sub);transition:.1s}',
+    '.es.on{background:var(--orange);border-color:var(--orange);color:#fff}',
+  ].join('');
+  document.head.appendChild(st);
+})();
+
+/* Utilitaire checkbox */
+function DC(id,label,checked){
+  return '<label class="dc'+(checked?' on':'')+'" id="dc-'+id+'"><input type="checkbox" id="cb-'+id+'"'+(checked?' checked':'')+' onchange="this.closest(\'.dc\').classList.toggle(\'on\',this.checked)"><span>'+label+'</span></label>';
+}
+function RADIO(name,opts,defVal){
+  return '<div class="radio-grp">'+opts.map(function(o){
+    return '<div class="ropt'+(o===defVal?' on':'')+'" onclick="selRadio(this,\''+name+'\')" data-val="'+o+'">'+o+'</div>';
+  }).join('')+'</div>';
+}
+window.selRadio=function(el,name){
+  document.querySelectorAll('[data-rname="'+name+'"]').forEach(function(e){e.classList.remove('on');});
+  el.setAttribute('data-rname',name);
+  el.classList.add('on');
+  document.querySelectorAll('[data-rname="'+name+'"]').forEach(function(e){});
+  el.closest('.radio-grp').querySelectorAll('.ropt').forEach(function(e){e.classList.remove('on');e.setAttribute('data-rname',name);});
+  el.classList.add('on');
+};
+function STARS(key,val){
+  var labels=['Insuffisant','En progrès','Bien','Excellent'];
+  return '<div class="eval-stars">'+[1,2,3,4].map(function(i){
+    return '<div class="es'+(val>=i?' on':'')+'" onclick="setStars(\''+key+'\','+i+')" id="es-'+key+'-'+i+'" title="'+labels[i-1]+'">'+i+'</div>';
+  }).join('')+'</div>';
+}
+window.setStars=function(key,val){
+  for(var i=1;i<=4;i++){
+    var el=document.getElementById('es-'+key+'-'+i);
+    if(el) el.className='es'+(val>=i?' on':'');
+  }
+};
+function getStars(key){
+  for(var i=4;i>=1;i--){
+    var el=document.getElementById('es-'+key+'-'+i);
+    if(el&&el.classList.contains('on')) return i;
+  }
+  return 0;
+}
+function getCBs(prefix){
+  var res=[];
+  document.querySelectorAll('[id^="cb-'+prefix+'"]').forEach(function(cb){
+    if(cb.checked){
+      var lbl=cb.closest('.dc').querySelector('span');
+      if(lbl) res.push(lbl.textContent);
+    }
+  });
+  return res;
+}
+function getObs(id){ var el=document.getElementById('obs-'+id); return el?el.value:''; }
+
+/* ═══ MODAL DOC INTERACTIF ═══ */
+function ouvrirDocInteractif(salId, docKey){
+  var s=DB.salaries.find(function(x){return x.id==salId;});
+  var nom=s?(s.prenom+(s.nom?' '+s.nom:'')):'';
+  var score=s?scoreGlobal(s.id):0;
+
+  var old=document.getElementById('doc-modal');
+  if(old)old.remove();
+  var m=document.createElement('div');
+  m.id='doc-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;overflow-y:auto;padding:20px';
+
+  var DOCS_FN={
+    bilan_mi:docBilanMi,bilan_fin:docBilanFin,cr_entretien:docCREntretien,
+    plan_action:docPlanAction,convocation:docConvocation,avertissement:docAvertissement,
+    felicitations:docFelicitations,recommandation:docRecommandation,
+    evaluation:docEvaluation,objectifs:docObjectifs
+  };
+
+  var fn=DOCS_FN[docKey];
+  if(!fn){m.innerHTML='<div style="color:var(--red);padding:40px;text-align:center">Document non disponible</div>';document.body.appendChild(m);return;}
+
+  m.innerHTML=fn(s,nom,score);
+  document.body.appendChild(m);
+}
+window.fermerDocModal=function(){var m=document.getElementById('doc-modal');if(m)m.remove();};
+
+/* Bouton fermer + imprimer communs */
+function docActions(docKey,salId){
+  return '<div class="doc-btn-bar">'
+    +'<button class="btn btn-primary" onclick="imprimerDoc(\''+docKey+'\','+salId+')">🖨️ Imprimer</button>'
+    +'<button class="btn btn-secondary" onclick="fermerDocModal()">Fermer</button>'
+    +'</div>';
+}
+
+/* Entête salarié commun */
+function docInfoSal(s){
+  if(!s) return '';
+  var j=jours(s.dateFin);
+  return '<div class="doc-header"><div class="doc-info-grid">'
+    +'<div class="doc-info-item"><label>Salarié</label><span>'+(s.prenom+(s.nom?' '+s.nom:''))+'</span></div>'
+    +'<div class="doc-info-item"><label>Poste</label><span>'+(s.poste||'—')+'</span></div>'
+    +'<div class="doc-info-item"><label>Véhicule</label><span>'+(s.vehicule||'—')+'</span></div>'
+    +'<div class="doc-info-item"><label>Contrat</label><span>'+(s.typeContrat||'—')+'</span></div>'
+    +'<div class="doc-info-item"><label>Entrée</label><span>'+fmt(s.dateEntree)+'</span></div>'
+    +'<div class="doc-info-item"><label>Fin prévue</label><span style="color:'+(j!==null&&j<=30?'var(--red)':'var(--text)')+'">'+fmt(s.dateFin)+(j!==null?' ('+j+'j)':'')+'</span></div>'
+    +'</div></div>';
+}
+
+/* ══════════════════════════════════════
+   1. BILAN MI-PARCOURS
+══════════════════════════════════════ */
+function docBilanMi(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">📋 Bilan Mi-Parcours</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">🎯 Objectifs initiaux — État d\'avancement</div>'
+    +DC('bm-o1','Objectifs de départ clairement définis dès l\'arrivée',true)
+    +DC('bm-o2','Objectif ponctualité atteint',false)
+    +DC('bm-o3','Objectif autonomie sur la tournée atteint',false)
+    +DC('bm-o4','Objectif relation client atteint',false)
+    +DC('bm-o5','Objectif conduite sécurisée atteint',true)
+    +DC('bm-o6','Objectif projet professionnel avancé',false)
+    +DC('bm-o7','Objectif formations suivies atteint',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">✅ Compétences acquises et observées</div>'
+    +DC('bm-c1','Conduite sécurisée du véhicule utilitaire',true)
+    +DC('bm-c2','Respect des horaires de tournée',false)
+    +DC('bm-c3','Chargement et déchargement maîtrisés',true)
+    +DC('bm-c4','Lecture et rédaction des BL',false)
+    +DC('bm-c5','Relation professionnelle avec les clients',false)
+    +DC('bm-c6','Communication avec l\'équipe et l\'encadrant',true)
+    +DC('bm-c7','Respect du règlement intérieur',true)
+    +DC('bm-c8','Port des EPI sans rappel nécessaire',false)
+    +DC('bm-c9','Gestion des imprévus sur la route',false)
+    +DC('bm-c10','Organisation personnelle (ponctualité, matériel)',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">🔧 Difficultés rencontrées — cochez ce qui s\'applique</div>'
+    +DC('bm-d1','Difficultés de ponctualité récurrentes',false)
+    +DC('bm-d2','Difficultés relationnelles avec les clients',false)
+    +DC('bm-d3','Difficultés relationnelles avec l\'équipe',false)
+    +DC('bm-d4','Difficultés de compréhension des consignes',false)
+    +DC('bm-d5','Problèmes de santé ayant impacté la présence',false)
+    +DC('bm-d6','Problèmes de transport / mobilité',false)
+    +DC('bm-d7','Gestion du stress et des émotions difficile',false)
+    +DC('bm-d8','Projet professionnel pas encore clarifié',false)
+    +DC('bm-d9','Manque d\'autonomie observé',false)
+    +DC('bm-d10','Fragilité personnelle ou sociale identifiée',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">📈 Progression globale</div>'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:8px">Niveau de progression observé depuis l\'entrée</div>'
+    +RADIO('bm-prog',['Progression excellente','Bonne progression','Progression lente','Stagnation observée','Régression à surveiller'],'Bonne progression')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--purple)">🎯 Objectifs du second semestre</div>'
+    +DC('bm-s1','Consolider la ponctualité',true)
+    +DC('bm-s2','Renforcer l\'autonomie sur la tournée',true)
+    +DC('bm-s3','Améliorer la relation client',false)
+    +DC('bm-s4','Préparer le permis C ou FIMO',false)
+    +DC('bm-s5','Avancer concrètement sur le projet professionnel',true)
+    +DC('bm-s6','Suivre une formation complémentaire',false)
+    +DC('bm-s7','Réduire les absences injustifiées',false)
+    +DC('bm-s8','Travailler la confiance en soi',false)
+    +DC('bm-s9','Préparer la sortie positive vers l\'emploi',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--cyan)">💬 Avis de l\'encadrant</div>'
+    +RADIO('bm-avis',['Renouvellement recommandé','Renouvellement sous conditions','À évaluer dans 1 mois','Fin de parcours préconisée'],'Renouvellement recommandé')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Observations libres</div>'
+    +'<textarea class="doc-obs" id="obs-bm" placeholder="Vos observations complémentaires..."></textarea></div>'
+
+    +docActions('bilan_mi',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   2. BILAN FIN DE PARCOURS
+══════════════════════════════════════ */
+function docBilanFin(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">🏁 Bilan Fin de Parcours</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">🏆 Compétences acquises et validées</div>'
+    +DC('bf-c1','Conduite sécurisée véhicule utilitaire — validée',false)
+    +DC('bf-c2','Organisation d\'une tournée de livraison — validée',false)
+    +DC('bf-c3','Relation client professionnelle — validée',false)
+    +DC('bf-c4','Chargement/déchargement en sécurité — validé',false)
+    +DC('bf-c5','Lecture et traitement des BL — validée',false)
+    +DC('bf-c6','Ponctualité et fiabilité — validées',false)
+    +DC('bf-c7','Travail en équipe — validé',false)
+    +DC('bf-c8','Respect des consignes de sécurité — validé',false)
+    +DC('bf-c9','Communication professionnelle — validée',false)
+    +DC('bf-c10','Autonomie sur le poste — validée',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">🚪 Type de sortie</div>'
+    +RADIO('bf-sortie',['Emploi CDI','Emploi CDD 6 mois et +','Emploi CDD court','Emploi intérim régulier','Formation qualifiante','Création d\'entreprise','Renouvellement CDDI','Fin de droit — accompagnement','Abandon de parcours','Autre'],'Emploi CDD 6 mois et +')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">📊 Bilan global du parcours</div>'
+    +DC('bf-b1','Objectifs principaux atteints',false)
+    +DC('bf-b2','Progression significative observée tout au long du parcours',false)
+    +DC('bf-b3','Comportement professionnel exemplaire',false)
+    +DC('bf-b4','Assiduité satisfaisante sur la durée du contrat',false)
+    +DC('bf-b5','Projet professionnel clarifié et réaliste',false)
+    +DC('bf-b6','Autonomie suffisante pour intégrer un emploi classique',false)
+    +DC('bf-b7','Compétences transférables vers un autre secteur si nécessaire',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--purple)">📋 Documents remis au salarié</div>'
+    +DC('bf-d1','Certificat de travail remis',false)
+    +DC('bf-d2','Attestation Pôle Emploi préparée',false)
+    +DC('bf-d3','Solde de tout compte calculé',false)
+    +DC('bf-d4','Attestation de compétences remise',false)
+    +DC('bf-d5','Lettre de recommandation proposée',false)
+    +DC('bf-d6','CV mis à jour avec les compétences acquises',false)
+    +DC('bf-d7','Contacts employeurs transmis',false)
+    +DC('bf-d8','Orientation Pôle Emploi / Mission Locale effectuée',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--cyan)">⭐ Recommandation encadrant</div>'
+    +RADIO('bf-reco',['Fortement recommandé','Recommandé','Recommandé avec réserves','Non recommandé pour ce secteur'],'Recommandé')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Observations libres</div>'
+    +'<textarea class="doc-obs" id="obs-bf" placeholder="Bilan global, anecdote marquante, conseils pour la suite..."></textarea></div>'
+
+    +docActions('bilan_fin',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   3. COMPTE-RENDU D'ENTRETIEN
+══════════════════════════════════════ */
+function docCREntretien(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">💬 Compte-rendu entretien</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+' - '+new Date().toLocaleDateString()+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title">Type d\'entretien</div>'
+    +RADIO('cr-type',['Suivi mensuel','Bilan mi-parcours','Bilan fin de parcours','Recadrage','Félicitations','Urgent / Crise','Retour absence','Projet professionnel'],'Suivi mensuel')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">✅ Points positifs — ce qui va bien</div>'
+    +DC('cr-p1','Ponctualité satisfaisante ce mois-ci',false)
+    +DC('cr-p2','Bonne relation avec les clients',false)
+    +DC('cr-p3','Autonomie en progression notable',false)
+    +DC('cr-p4','Esprit d\'équipe remarqué positivement',false)
+    +DC('cr-p5','Qualité du travail en amélioration',false)
+    +DC('cr-p6','Comportement professionnel irréprochable',false)
+    +DC('cr-p7','Prise d\'initiative positive observée',false)
+    +DC('cr-p8','Progrès sur la conduite et la sécurité',false)
+    +DC('cr-p9','Gestion du stress améliorée',false)
+    +DC('cr-p10','Avancement positif sur le projet professionnel',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">🔧 Points à améliorer</div>'
+    +DC('cr-a1','Ponctualité à renforcer',false)
+    +DC('cr-a2','Relation client à professionnaliser',false)
+    +DC('cr-a3','Communication à améliorer avec l\'équipe',false)
+    +DC('cr-a4','Soin du matériel insuffisant',false)
+    +DC('cr-a5','Autonomie à développer davantage',false)
+    +DC('cr-a6','Gestion du stress à travailler',false)
+    +DC('cr-a7','Port des EPI à rappeler',false)
+    +DC('cr-a8','Gestion du temps sur la tournée',false)
+    +DC('cr-a9','Projet professionnel à clarifier',false)
+    +DC('cr-a10','Absences à réduire',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">📌 Engagements du salarié</div>'
+    +DC('cr-es1','S\'engage à arriver à l\'heure chaque matin',false)
+    +DC('cr-es2','S\'engage à signaler tout problème à l\'encadrant',false)
+    +DC('cr-es3','S\'engage à porter les EPI sans rappel',false)
+    +DC('cr-es4','S\'engage à travailler son projet professionnel',false)
+    +DC('cr-es5','S\'engage à respecter le règlement intérieur',false)
+    +DC('cr-es6','S\'engage à suivre la formation proposée',false)
+    +DC('cr-es7','S\'engage à améliorer la relation client',false)
+    +DC('cr-es8','S\'engage à prendre soin du véhicule',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">📌 Engagements de l\'encadrant</div>'
+    +DC('cr-ee1','Mettre en place un suivi renforcé hebdomadaire',false)
+    +DC('cr-ee2','Proposer une formation adaptée',false)
+    +DC('cr-ee3','Organiser une mission de valorisation',false)
+    +DC('cr-ee4','Contacter le CIP / assistante sociale si besoin',false)
+    +DC('cr-ee5','Faire un point à J+15',false)
+    +DC('cr-ee6','Préparer la procédure si pas d\'amélioration',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📅 Prochain rendez-vous</div>'
+    +RADIO('cr-rdv',['Dans 1 semaine','Dans 2 semaines','Dans 1 mois','Dans 3 mois','À la fin du contrat'],'Dans 1 mois')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Observations libres</div>'
+    +'<textarea class="doc-obs" id="obs-cr" placeholder="Ce que vous souhaitez ajouter..."></textarea></div>'
+
+    +docActions('cr_entretien',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   4. PLAN D'ACTION
+══════════════════════════════════════ */
+function docPlanAction(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">🎯 Plan d\'action</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title">Objet du plan d\'action</div>'
+    +RADIO('pa-objet',['Ponctualité','Motivation','Relation client','Autonomie','Projet professionnel','Absentéisme','Comportement','Qualité du travail','Sécurité'],'Ponctualité')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">📊 Situation actuelle — cochez ce qui décrit la situation</div>'
+    +DC('pa-s1','Retards répétés malgré les rappels',false)
+    +DC('pa-s2','Absences fréquentes injustifiées',false)
+    +DC('pa-s3','Baisse de qualité du travail observée',false)
+    +DC('pa-s4','Conflits avec des collègues',false)
+    +DC('pa-s5','Désengagement et manque de motivation visible',false)
+    +DC('pa-s6','Non-respect des consignes répété',false)
+    +DC('pa-s7','Difficultés à progresser malgré l\'accompagnement',false)
+    +DC('pa-s8','Situation personnelle difficile impactant le travail',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">🎯 Objectif SMART du plan</div>'
+    +DC('pa-o1','Zéro retard pendant 4 semaines consécutives',false)
+    +DC('pa-o2','Présence 100% sur le prochain mois',false)
+    +DC('pa-o3','Aucune réclamation client sur la période',false)
+    +DC('pa-o4','Port des EPI systématique sans rappel',false)
+    +DC('pa-o5','Autonomie complète sur la tournée principale',false)
+    +DC('pa-o6','CV finalisé et 3 candidatures envoyées',false)
+    +DC('pa-o7','Formation suivie et validée',false)
+    +DC('pa-o8','Objectif défini ensemble — voir observations',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">⚙️ Actions à mettre en place</div>'
+    +DC('pa-a1','Suivi quotidien par l\'encadrant pendant 2 semaines',false)
+    +DC('pa-a2','Entretien individuel toutes les semaines',false)
+    +DC('pa-a3','Covoiturage organisé pour la ponctualité',false)
+    +DC('pa-a4','Accompagnement en tournée pendant 3 jours',false)
+    +DC('pa-a5','Orientation vers le CIP pour le projet pro',false)
+    +DC('pa-a6','Formation proposée et planifiée',false)
+    +DC('pa-a7','Binôme avec un salarié expérimenté',false)
+    +DC('pa-a8','Mission valorisante confiée pour remotiver',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">⏱️ Durée du plan</div>'
+    +RADIO('pa-duree',['2 semaines','1 mois','2 mois','3 mois'],'1 mois')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--red)">⚠️ Conséquences si non atteint</div>'
+    +DC('pa-c1','Entretien de recadrage formel',false)
+    +DC('pa-c2','Avertissement écrit',false)
+    +DC('pa-c3','Non-renouvellement du contrat',false)
+    +DC('pa-c4','Procédure disciplinaire',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Observations libres</div>'
+    +'<textarea class="doc-obs" id="obs-pa" placeholder="Contexte, précisions, objectif personnalisé..."></textarea></div>'
+
+    +docActions('plan_action',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   5. CONVOCATION ENTRETIEN
+══════════════════════════════════════ */
+function docConvocation(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">📨 Convocation à un entretien</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title">Type d\'entretien</div>'
+    +RADIO('conv-type',['Suivi mensuel','Bilan mi-parcours','Bilan fin de parcours','Recadrage','Entretien préalable à sanction','Félicitations','Projet professionnel','Urgence'],'Suivi mensuel')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">📋 Points qui seront abordés</div>'
+    +DC('conv-p1','Bilan de présence et ponctualité',false)
+    +DC('conv-p2','Évaluation de la progression',false)
+    +DC('conv-p3','Point sur le projet professionnel',false)
+    +DC('conv-p4','Renouvellement du contrat',false)
+    +DC('conv-p5','Faits reprochés — à expliquer',false)
+    +DC('conv-p6','Objectifs du prochain mois',false)
+    +DC('conv-p7','Formation en cours ou à venir',false)
+    +DC('conv-p8','Situation personnelle et sociale',false)
+    +DC('conv-p9','Orientation post-parcours',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">📅 Modalités</div>'
+    +DC('conv-m1','Le salarié peut se faire accompagner d\'un collègue salarié de son choix',true)
+    +DC('conv-m2','La présence est obligatoire',true)
+    +DC('conv-m3','Tout empêchement doit être signalé à l\'avance',true)
+    +DC('conv-m4','Le salarié peut préparer des questions',true)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Précisions et lieu du rendez-vous</div>'
+    +'<textarea class="doc-obs" id="obs-conv" placeholder="Date, heure, lieu, précisions particulières..."></textarea></div>'
+
+    +docActions('convocation',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   6. AVERTISSEMENT
+══════════════════════════════════════ */
+function docAvertissement(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">⚠️ Avertissement</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--red)">❌ Motifs de l\'avertissement — cochez les faits constatés</div>'
+    +DC('av-m1','Retards répétés malgré les rappels (plus de 3 fois ce mois)',false)
+    +DC('av-m2','Absences injustifiées et non signalées',false)
+    +DC('av-m3','Non-respect des consignes de sécurité',false)
+    +DC('av-m4','Non-port des EPI obligatoires',false)
+    +DC('av-m5','Comportement irrespectueux envers un collègue',false)
+    +DC('av-m6','Comportement irrespectueux envers un client',false)
+    +DC('av-m7','Utilisation du téléphone au volant',false)
+    +DC('av-m8','Utilisation personnelle du véhicule de service',false)
+    +DC('av-m9','Dégradation du matériel par négligence',false)
+    +DC('av-m10','Refus d\'obéir à une consigne de l\'encadrant',false)
+    +DC('av-m11','Consommation d\'alcool pendant le temps de travail',false)
+    +DC('av-m12','Non-respect du règlement intérieur',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">📋 Règles rappelées</div>'
+    +DC('av-r1','Règlement intérieur — article ponctualité',true)
+    +DC('av-r2','Charte du chauffeur — port des EPI',false)
+    +DC('av-r3','Code de la route — téléphone interdit au volant',false)
+    +DC('av-r4','Charte — alcool et stupéfiants zéro tolérance',false)
+    +DC('av-r5','Obligation de respect envers les collègues et clients',true)
+    +DC('av-r6','Obligation de signaler les absences à l\'avance',true)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">📌 Engagements demandés au salarié</div>'
+    +DC('av-e1','Ne plus reproduire le comportement incriminé',true)
+    +DC('av-e2','Respecter scrupuleusement les horaires à compter de maintenant',false)
+    +DC('av-e3','Signaler tout problème pouvant causer une absence',true)
+    +DC('av-e4','Se conformer aux consignes de sécurité sans exception',false)
+    +DC('av-e5','Respecter le règlement intérieur en toutes circonstances',true)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--red)">⚠️ Conséquences en cas de récidive</div>'
+    +DC('av-c1','Mise à pied disciplinaire',true)
+    +DC('av-c2','Non-renouvellement du contrat',true)
+    +DC('av-c3','Licenciement pour faute grave',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Contexte et précisions</div>'
+    +'<textarea class="doc-obs" id="obs-av" placeholder="Dates exactes, faits précis, contexte..."></textarea></div>'
+
+    +docActions('avertissement',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   7. FÉLICITATIONS
+══════════════════════════════════════ */
+function docFelicitations(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">🌟 Lettre de Félicitations</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">🏅 Motifs des félicitations</div>'
+    +DC('fl-m1','Ponctualité exemplaire sur toute la période',false)
+    +DC('fl-m2','Aucune absence injustifiée ce mois',false)
+    +DC('fl-m3','Progression remarquable et rapide',false)
+    +DC('fl-m4','Retour client exceptionnel signalé',false)
+    +DC('fl-m5','Comportement professionnel exemplaire',false)
+    +DC('fl-m6','Prise d\'initiative remarquée et appréciée',false)
+    +DC('fl-m7','Esprit d\'équipe exceptionnel',false)
+    +DC('fl-m8','Gestion exemplaire d\'une situation difficile',false)
+    +DC('fl-m9','Résultats dépassant les objectifs fixés',false)
+    +DC('fl-m10','Obtention d\'une formation ou d\'un permis',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">💪 Qualités observées</div>'
+    +DC('fl-q1','Sérieux et rigueur dans le travail',false)
+    +DC('fl-q2','Dynamisme et enthousiasme communicatifs',false)
+    +DC('fl-q3','Fiabilité et constance dans l\'effort',false)
+    +DC('fl-q4','Bienveillance envers les collègues',false)
+    +DC('fl-q5','Représentation excellente de l\'entreprise',false)
+    +DC('fl-q6','Capacité d\'adaptation remarquable',false)
+    +DC('fl-q7','Courage dans les moments difficiles',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Message personnel</div>'
+    +'<textarea class="doc-obs" id="obs-fl" placeholder="Votre message personnel de félicitations..."></textarea></div>'
+
+    +docActions('felicitations',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   8. RECOMMANDATION
+══════════════════════════════════════ */
+function docRecommandation(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">💼 Lettre de Recommandation</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">🎓 Compétences à mettre en avant</div>'
+    +DC('rec-c1','Conduite sécurisée — permis valide, bonne maîtrise',false)
+    +DC('rec-c2','Organisation des tournées de livraison',false)
+    +DC('rec-c3','Relation client professionnelle et soignée',false)
+    +DC('rec-c4','Travail en équipe et solidarité',false)
+    +DC('rec-c5','Ponctualité et fiabilité',false)
+    +DC('rec-c6','Capacité d\'adaptation aux imprévus',false)
+    +DC('rec-c7','Respect des consignes de sécurité',false)
+    +DC('rec-c8','Autonomie et prise d\'initiative',false)
+    +DC('rec-c9','Maîtrise des procédures logistiques',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">💪 Points forts personnels</div>'
+    +DC('rec-p1','Personne sérieuse et impliquée',false)
+    +DC('rec-p2','Grande capacité de progression',false)
+    +DC('rec-p3','Attitude positive et motivée',false)
+    +DC('rec-p4','Respect naturel envers les autres',false)
+    +DC('rec-p5','Sens des responsabilités affirmé',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">🎯 Niveau recommandé pour</div>'
+    +RADIO('rec-niv',['Poste chauffeur livreur CDI','Poste logistique / préparateur de commandes','Chauffeur PL après formation FIMO','Poste encadrant après expérience','Tout poste logistique et transport'],'Poste chauffeur livreur CDI')
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Message de recommandation</div>'
+    +'<textarea class="doc-obs" id="obs-rec" placeholder="Votre message de recommandation personnalisé..."></textarea></div>'
+
+    +docActions('recommandation',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   9. ÉVALUATION INTERACTIVE
+══════════════════════════════════════ */
+function docEvaluation(s,nom,score){
+  var CRIT_SE=[
+    {k:'ponctualite',l:'Ponctualité — respect des horaires'},
+    {k:'assiduite',l:'Assiduité — présence régulière'},
+    {k:'tenueTravail',l:'Tenue — EPI, présentation'},
+    {k:'communication',l:'Communication — clarté, écoute'},
+    {k:'relationEquipe',l:'Relation équipe — solidarité'},
+    {k:'relationClient',l:'Relation client — professionnalisme'},
+    {k:'respectConsignes',l:'Respect des consignes'},
+    {k:'initiative',l:'Initiative — proactivité'},
+  ];
+  var CRIT_SF=[
+    {k:'conduite',l:'Conduite — sécurité'},
+    {k:'chargement',l:'Chargement / déchargement'},
+    {k:'livraison',l:'Qualité des livraisons'},
+    {k:'gestionMateriel',l:'Soin du matériel'},
+    {k:'securite',l:'Sécurité — respect des normes'},
+    {k:'gestionTemps',l:'Gestion du temps'},
+  ];
+  var last=DB.evaluations.filter(function(e){return e.salId==(s?s.id:0);}).sort(function(a,b){return b.date.localeCompare(a.date);})[0]||{};
+
+  var h='<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">⭐ Évaluation mensuelle</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+' - '+new Date().toLocaleDateString()+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s);
+
+  h+='<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">👤 Savoir-être <span style="font-size:10px;font-weight:400;margin-left:8px">1=Insuffisant 2=En progrès 3=Bien 4=Excellent</span></div>';
+  CRIT_SE.forEach(function(c){
+    h+='<div class="eval-row"><span style="flex:1;font-size:12px">'+c.l+'</span>'+STARS(c.k,last[c.k]||0)+'</div>';
+  });
+  h+='</div>';
+
+  h+='<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">🔧 Savoir-faire</div>';
+  CRIT_SF.forEach(function(c){
+    h+='<div class="eval-row"><span style="flex:1;font-size:12px">'+c.l+'</span>'+STARS(c.k,last[c.k]||0)+'</div>';
+  });
+  h+='</div>';
+
+  h+='<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">📈 Points forts ce mois</div>'
+    +DC('ev-f1','Ponctualité irréprochable',false)
+    +DC('ev-f2','Forte progression sur la conduite',false)
+    +DC('ev-f3','Excellent comportement client',false)
+    +DC('ev-f4','Grand esprit d\'équipe',false)
+    +DC('ev-f5','Autonomie remarquable',false)
+    +DC('ev-f6','Attitude exemplaire en toutes circonstances',false)
+    +'</div>';
+
+  h+='<div class="doc-section"><div class="doc-sec-title" style="color:var(--orange)">🔧 Axes de progression prioritaires</div>'
+    +DC('ev-a1','Améliorer la ponctualité',false)
+    +DC('ev-a2','Renforcer la relation client',false)
+    +DC('ev-a3','Développer l\'autonomie',false)
+    +DC('ev-a4','Travailler la communication',false)
+    +DC('ev-a5','Améliorer le soin du matériel',false)
+    +DC('ev-a6','Progresser sur la gestion du temps',false)
+    +'</div>';
+
+  h+='<div class="doc-section"><div class="doc-sec-title">💬 Appréciation générale</div>'
+    +'<textarea class="doc-obs" id="obs-ev" placeholder="Appréciation globale de ce mois, contexte particulier, message au salarié..."></textarea></div>';
+
+  h+=docActions('evaluation',s?s.id:0)+'</div>';
+  return h;
+}
+
+/* ══════════════════════════════════════
+   10. OBJECTIFS DU MOIS
+══════════════════════════════════════ */
+function docObjectifs(s,nom,score){
+  return '<div class="doc-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:20px;font-weight:900;color:var(--text)">📌 Objectifs du mois</div>'
+    +'<div style="font-size:11px;color:var(--sub)">'+nom+'</div></div>'
+    +'<button class="btn btn-secondary btn-sm" onclick="fermerDocModal()">✕ Fermer</button></div>'
+    +docInfoSal(s)
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--blue)">🎯 Objectifs professionnels du mois</div>'
+    +DC('obj-p1','Ponctualité : arriver avant 5h55 chaque matin',false)
+    +DC('obj-p2','Zéro absence injustifiée',false)
+    +DC('obj-p3','Zéro réclamation client',false)
+    +DC('obj-p4','Véhicule rendu propre chaque soir',false)
+    +DC('obj-p5','Port des EPI systématique',false)
+    +DC('obj-p6','BL correctement remplis et remis chaque soir',false)
+    +DC('obj-p7','Km notés à chaque prise de poste',false)
+    +DC('obj-p8','Signaler tout incident ou problème immédiatement',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--green)">💼 Objectifs projet professionnel</div>'
+    +DC('obj-pp1','Travailler son CV cette semaine',false)
+    +DC('obj-pp2','Envoyer au moins 3 candidatures',false)
+    +DC('obj-pp3','Contacter Pôle Emploi / Mission Locale',false)
+    +DC('obj-pp4','Se renseigner sur le permis C ou FIMO',false)
+    +DC('obj-pp5','Participer à la formation proposée',false)
+    +DC('obj-pp6','Définir son secteur cible pour l\'emploi',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title" style="color:var(--yellow)">📅 Points de suivi du mois</div>'
+    +DC('obj-s1','Point intermédiaire à J+15',false)
+    +DC('obj-s2','Évaluation en fin de mois',false)
+    +DC('obj-s3','Entretien individuel planifié',false)
+    +'</div>'
+
+    +'<div class="doc-section"><div class="doc-sec-title">📝 Précisions</div>'
+    +'<textarea class="doc-obs" id="obs-obj" placeholder="Objectif spécifique de ce mois, contexte particulier..."></textarea></div>'
+
+    +docActions('objectifs',s?s.id:0)+'</div>';
+}
+
+/* ══════════════════════════════════════
+   IMPRESSION — GÉNÉRATION PDF PROPRE
+══════════════════════════════════════ */
+window.imprimerDoc=function(docKey,salId){
+  var s=salId?DB.salaries.find(function(x){return x.id==salId;}):null;
+  var nom=s?(s.prenom+(s.nom?' '+s.nom:'')):'';
+  var win=window.open('','_blank');
+  if(!win)return;
+
+  // Collecter toutes les cases cochées
+  var checked=[];
+  document.querySelectorAll('.dc.on span').forEach(function(el){
+    checked.push(el.closest('.doc-section')?el.textContent:'');
+  });
+
+  // Collecter les radios sélectionnés
+  var radios={};
+  document.querySelectorAll('.ropt.on').forEach(function(el){
+    var val=el.getAttribute('data-val');
+    var section=el.closest('.doc-section');
+    var title=section?section.querySelector('.doc-sec-title'):'';
+    if(title)radios[title.textContent.replace(/[🎯📋📅⭐💬⚠️📌🔧✅❌💪🏅📊🚪🏆💼📝]/g,'').trim()]=val;
+  });
+
+  var labels={
+    bilan_mi:'Bilan Mi-Parcours',bilan_fin:'Bilan Fin de Parcours',
+    cr_entretien:"Compte-rendu d'entretien",plan_action:"Plan d'action",
+    convocation:'Convocation',avertissement:'Avertissement',
+    felicitations:'Félicitations',recommandation:'Recommandation',
+    evaluation:'Évaluation mensuelle',objectifs:'Objectifs du mois'
+  };
+
+  var css=[
+    'body{font-family:Arial,sans-serif;padding:28px;color:#1a2435;max-width:820px;margin:0 auto;font-size:12px;line-height:1.6}',
+    'h1{font-size:18px;border-bottom:3px solid #f97316;padding-bottom:10px;margin-bottom:16px}',
+    '.hdr{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px}',
+    '.info-bar{display:flex;gap:20px;background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:16px;flex-wrap:wrap;font-size:11px}',
+    'h2{font-size:12px;font-weight:900;margin:16px 0 8px;padding:6px 12px;border-radius:6px;color:#fff}',
+    '.h2-blue{background:#3a8aaa}.h2-green{background:#2d9a6a}.h2-yellow{background:#b87820}.h2-orange{background:#d4703a}.h2-red{background:#c04848}.h2-purple{background:#7058a8}.h2-gray{background:#475569}',
+    '.item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8;font-size:11px}',
+    '.box{width:14px;height:14px;border-radius:3px;flex-shrink:0}',
+    '.box.on{background:#2d9a6a}',
+    '.box.off{border:2px solid #94a3b8}',
+    '.radio-val{background:#fff7ed;border:1px solid #f97316;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#d4703a;display:inline-block;margin-bottom:6px}',
+    '.obs-box{border:1px dashed #cbd5e1;border-radius:8px;min-height:80px;padding:10px;margin-top:6px;font-size:11px;color:#475569;white-space:pre-wrap}',
+    '.sig-row{display:flex;justify-content:space-between;margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0}',
+    '.sig-box{text-align:center;flex:1}',
+    '.sig-line{height:44px;border-bottom:1px solid #1a2435;margin:20px 20px 4px}',
+    'footer{margin-top:20px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}',
+    '@media print{.no-print{display:none}}'
+  ].join('');
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<div class="no-print" style="text-align:center;margin-bottom:20px"><button onclick="window.print()" style="padding:10px 24px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">🖨️ Imprimer</button></div>';
+  html+='<div class="hdr">La Table de Cana · Marseille · Structure Insertion</div>';
+  html+='<h1>'+(labels[docKey]||docKey)+'</h1>';
+
+  if(s){
+    html+='<div class="info-bar">'
+      +'<span><b>Salarié :</b> '+nom+'</span>'
+      +'<span><b>Poste :</b> '+(s.poste||'—')+'</span>'
+      +'<span><b>Véhicule :</b> '+(s.vehicule||'—')+'</span>'
+      +'<span><b>Contrat :</b> '+(s.typeContrat||'—')+'</span>'
+      +'<span><b>Date :</b> '+new Date().toLocaleDateString('fr-FR')+'</span>'
+      +'</div>';
+  }
+
+  // Sections depuis le DOM
+  var modal=document.getElementById('doc-modal');
+  if(modal){
+    modal.querySelectorAll('.doc-section').forEach(function(sec){
+      var titleEl=sec.querySelector('.doc-sec-title');
+      var title=titleEl?titleEl.textContent.replace(/[🎯📋📅⭐💬⚠️📌🔧✅❌💪🏅📊🚪🏆💼📝🔴🟡🟢🏕🏛🍽]/g,'').trim():'';
+      var color='h2-gray';
+      if(titleEl){
+        var col=titleEl.style.color||'';
+        if(col.indexOf('blue')>=0||col==='var(--blue)')color='h2-blue';
+        else if(col.indexOf('green')>=0||col==='var(--green)')color='h2-green';
+        else if(col.indexOf('yellow')>=0||col==='var(--yellow)')color='h2-yellow';
+        else if(col.indexOf('orange')>=0||col==='var(--orange)')color='h2-orange';
+        else if(col.indexOf('red')>=0||col==='var(--red)')color='h2-red';
+        else if(col.indexOf('purple')>=0||col==='var(--purple)')color='h2-purple';
+      }
+      html+='<h2 class="'+color+'">'+title+'</h2>';
+
+      // Radio sélectionné
+      var rOpt=sec.querySelector('.ropt.on');
+      if(rOpt)html+='<div class="radio-val">→ '+rOpt.getAttribute('data-val')+'</div>';
+
+      // Stars
+      sec.querySelectorAll('.eval-row').forEach(function(row){
+        var lbl=row.querySelector('span');
+        var stars=row.querySelectorAll('.es');
+        var val=0;stars.forEach(function(e,i){if(e.classList.contains('on'))val=i+1;});
+        if(lbl)html+='<div class="item"><div class="box on" style="background:'+(val>=3?'#2d9a6a':val>=2?'#b87820':'#c04848')+'"></div><span>'+lbl.textContent+'</span><span style="margin-left:auto;font-weight:900;color:'+(val>=3?'#2d9a6a':val>=2?'#b87820':'#c04848')+'">'+val+'/4</span></div>';
+      });
+
+      // Checkboxes
+      sec.querySelectorAll('.dc').forEach(function(dc){
+        var cb=dc.querySelector('input[type=checkbox]');
+        var lbl=dc.querySelector('span');
+        if(cb&&lbl)html+='<div class="item"><div class="box '+(cb.checked?'on':'off')+'"></div><span'+(cb.checked?' style="font-weight:700"':'')+'>'+(cb.checked?'✓ ':'')+lbl.textContent+'</span></div>';
+      });
+
+      // Textarea observations
+      var ta=sec.querySelector('textarea');
+      if(ta&&ta.value.trim())html+='<div class="obs-box">'+ta.value+'</div>';
+    });
+  }
+
+  // Signatures
+  html+='<div class="sig-row">'
+    +'<div class="sig-box"><div style="font-weight:800;font-size:12px">Le salarié</div><div style="font-size:10px;color:#64748b">Lu et approuvé</div><div class="sig-line"></div><div style="font-size:11px">'+nom+'</div></div>'
+    +'<div class="sig-box" style="font-size:10px;color:#64748b;padding-top:24px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div>'
+    +'<div class="sig-box"><div style="font-weight:800;font-size:12px">L\'encadrant</div><div style="font-size:10px;color:#64748b">Signature</div><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div>'
+    +'</div>';
+  html+='<footer><span>La Table de Cana · Marseille · Insertion professionnelle</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html);win.document.close();
+};
+
+/* Mettre à jour genDoc pour utiliser les docs interactifs */
+var _oldGenDoc=window.genDoc;
+window.genDoc=function(salId,key){
+  var interactifs=['bilan_mi','bilan_fin','cr_entretien','plan_action','convocation','avertissement','felicitations','recommandation','evaluation','objectifs'];
+  if(interactifs.indexOf(key)>=0){
+    ouvrirDocInteractif(salId,key);
+  } else if(typeof _oldGenDoc==='function'){
+    _oldGenDoc(salId,key);
+  }
+};
+
+</script>
 </body>
 </html>
