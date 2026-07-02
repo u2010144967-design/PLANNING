@@ -7,25 +7,29 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#111e2e;--panel:#162033;--panel2:#0e1a2d;--border:#1e293b;--border2:#1e3a5f;
-  --text:#e2e8f0;--sub:#64748b;--orange:#f97316;--blue:#3b82f6;
-  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;--cyan:#0ea5e9;
+  --bg:#f0f7f4;--panel:#ffffff;--panel2:#e8f4f0;--border:#c8e6dd;--border2:#a8d5c7;
+  --text:#1a3329;--sub:#5a8a7a;--orange:#e8814a;--blue:#4a9eba;
+  --green:#3daa7a;--red:#e05a5a;--yellow:#d4952a;--purple:#8a6ab5;--cyan:#3a9db5;
 }
+/* Scrollbar pastel */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#e8f4f0}
+::-webkit-scrollbar-thumb{background:#a8d5c7;border-radius:4px}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
 /* LOGIN */
-.login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#07111f 0%,#0d1829 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#e0f2eb 0%,#d0eae8 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
 .login-box{background:var(--panel);border:1px solid var(--border2);border-radius:24px;padding:48px 40px;width:400px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
-.login-inp{width:100%;background:#071526;border:2px solid var(--border2);border-radius:12px;color:#fff;padding:16px;font-size:20px;text-align:center;letter-spacing:6px;margin-bottom:16px;outline:none;transition:.2s}
+.login-inp{width:100%;background:#f0f7f4;border:2px solid #a8d5c7;border-radius:12px;color:#1a3329;padding:16px;font-size:20px;text-align:center;letter-spacing:6px;margin-bottom:16px;outline:none;transition:.2s}
 .login-inp:focus{border-color:var(--orange)}
-.login-btn{width:100%;padding:16px;background:linear-gradient(135deg,#f97316,#c2540a);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.03em}
+.login-btn{width:100%;padding:16px;background:linear-gradient(135deg,#3daa7a,#2d8a60);border:none;border-radius:12px;color:#1a3329;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.03em}
 /* APP */
 .app{display:none;flex-direction:column;min-height:100vh}
 /* HEADER */
-.hdr{background:var(--panel);border-bottom:2px solid var(--orange);padding:0 20px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200}
+.hdr{background:var(--panel);border-bottom:2px solid var(--green);padding:0 20px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200}
 .hdr-logo{width:38px;height:38px;background:linear-gradient(135deg,#f97316,#c2540a);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .hdr-title{font-size:15px;font-weight:900;color:#fff}
 .hdr-sub{font-size:10px;color:var(--sub)}
-.hdr-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:3px 12px;font-size:11px;font-weight:700;color:var(--orange)}
+.hdr-badge{background:rgba(61,170,122,.15);border:1px solid rgba(61,170,122,.4);border-radius:10px;padding:3px 12px;font-size:11px;font-weight:700;color:var(--green)}
 .hdr-btn{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--sub);cursor:pointer;transition:.15s}
 .hdr-btn:hover{border-color:var(--orange);color:#fff}
 .hdr-btn.red{color:var(--red);border-color:rgba(239,68,68,.3)}
@@ -33,20 +37,20 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 /* LAYOUT */
 .layout{display:flex;min-height:calc(100vh - 58px)}
 /* SIDEBAR */
-.sb{width:230px;background:#060d1a;border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
-.sb-sec{font-size:9px;font-weight:800;color:#1e3a5f;text-transform:uppercase;letter-spacing:.1em;padding:16px 16px 5px}
+.sb{width:230px;background:#d8efe8;border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.sb-sec{font-size:9px;font-weight:800;color:#5a8a7a;text-transform:uppercase;letter-spacing:.1em;padding:16px 16px 5px}
 .sb-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;border-left:3px solid transparent;transition:.12s;user-select:none}
 .sb-item:hover{background:rgba(249,115,22,.06);color:#cbd5e1}
-.sb-item.on{background:rgba(249,115,22,.1);color:#fff;border-left-color:var(--orange);font-weight:800}
+.sb-item.on{background:rgba(61,170,122,.15);color:#1a3329;border-left-color:var(--green);font-weight:800}
 .sb-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
-.sb-badge{background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:auto}
+.sb-badge{background:var(--red);color:#1a3329;border-radius:8px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:auto}
 /* CONTENU */
 .content{flex:1;padding:24px;overflow-y:auto;max-width:100%}
-.page-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
+.page-title{font-size:22px;font-weight:900;color:#1a3329;margin-bottom:4px}
 .page-sub{font-size:12px;color:var(--sub);margin-bottom:24px}
 /* CARDS */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
-.card-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:800;color:#1a3329;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
 .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 .grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -58,7 +62,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .sal-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:.2s;cursor:pointer}
 .sal-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 8px 30px rgba(249,115,22,.12)}
 .sal-hdr{background:linear-gradient(135deg,#0d1829,#071526);padding:18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
-.sal-avatar{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;flex-shrink:0}
+.sal-avatar{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#1a3329;flex-shrink:0}
 .sal-name{font-size:17px;font-weight:900;color:#fff}
 .sal-poste{font-size:11px;color:var(--sub);margin-top:2px}
 .sal-body{padding:14px}
@@ -82,19 +86,19 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 /* FORMS */
 .form-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
-.fs-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.fs-title{font-size:13px;font-weight:800;color:#1a3329;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
-.field input,.field select,.field textarea{background:#071526;border:1px solid var(--border2);border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;width:100%}
+.field input,.field select,.field textarea{background:#f8fcfa;border:1px solid var(--border2);border-radius:8px;color:#1a3329;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;width:100%}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange)}
 .field textarea{resize:vertical;min-height:80px;line-height:1.6}
 .field-full{grid-column:1/-1}
 select option{background:#0a1628}
 /* ONGLETS */
-.tabs{display:flex;gap:4px;background:#060d1a;border-radius:12px;padding:4px;margin-bottom:20px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;background:#e8f4f0;border-radius:12px;padding:4px;margin-bottom:20px;flex-wrap:wrap}
 .tab{padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;color:var(--sub);cursor:pointer;transition:.15s;white-space:nowrap}
-.tab.on{background:var(--panel);color:#fff;border:1px solid var(--border2)}
+.tab.on{background:var(--panel);color:#1a3329;border:1px solid var(--border2)}
 .tab-content{display:none}.tab-content.on{display:block}
 /* TIMELINE */
 .timeline{padding-left:28px;position:relative}
@@ -137,7 +141,7 @@ select option{background:#0a1628}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-bg.on{display:flex}
 .modal-box{background:var(--panel);border:1px solid var(--border2);border-radius:18px;padding:28px;max-width:720px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.modal-title{font-size:17px;font-weight:900;color:#fff;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.modal-title{font-size:17px;font-weight:900;color:#1a3329;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 /* ALERTS */
 .alert{border-radius:10px;padding:12px 16px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px}
 .alert-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
@@ -159,7 +163,7 @@ select option{background:#0a1628}
 .plan-step-txt{font-size:12px;color:var(--text);line-height:1.6}
 /* IA CHAT */
 .ia-msg-user{display:flex;justify-content:flex-end;margin-bottom:12px}
-.ia-msg-user>div{background:var(--orange);color:#fff;border-radius:14px;padding:10px 14px;max-width:78%;font-size:12px;line-height:1.6}
+.ia-msg-user>div{background:var(--orange);color:#1a3329;border-radius:14px;padding:10px 14px;max-width:78%;font-size:12px;line-height:1.6}
 .ia-msg-ai{display:flex;margin-bottom:14px}
 .ia-msg-ai>div{background:var(--panel2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;max-width:82%;font-size:12px;line-height:1.7}
 /* COURBE */
@@ -176,16 +180,16 @@ select option{background:#0a1628}
 <div class="login-wrap" id="login-wrap">
 <div class="login-box">
   <div style="font-size:56px;margin-bottom:14px">🏗️</div>
-  <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:4px">ERP Insertion</div>
-  <div style="font-size:12px;color:var(--sub);margin-bottom:4px">La Table de Cana · Marseille</div>
+  <div style="font-size:24px;font-weight:900;color:#1a3329;margin-bottom:4px">ERP Insertion</div>
+  <div style="font-size:12px;color:#5a8a7a;margin-bottom:4px">La Table de Cana · Marseille</div>
   <div style="font-size:11px;color:var(--sub);margin-bottom:30px">Accompagnement · Suivi · Pilotage</div>
   <input class="login-inp" type="password" id="login-code" placeholder="• • • • • •" onkeydown="if(event.key==='Enter')login()">
   <button class="login-btn" onclick="login()">Accéder →</button>
   <div id="login-err" style="color:var(--red);font-size:12px;margin-top:12px;display:none">❌ Code incorrect</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:20px">
-    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 10px;color:var(--orange)">admin2026</span>
-    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 10px;color:var(--orange)">cip2026</span>
-    <span style="font-size:10px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:3px 10px;color:var(--orange)">rh2026</span>
+    <span style="font-size:10px;background:rgba(61,170,122,.1);border:1px solid rgba(61,170,122,.3);border-radius:6px;padding:3px 10px;color:#3daa7a">admin2026</span>
+    <span style="font-size:10px;background:rgba(61,170,122,.1);border:1px solid rgba(61,170,122,.3);border-radius:6px;padding:3px 10px;color:#3daa7a">cip2026</span>
+    <span style="font-size:10px;background:rgba(61,170,122,.1);border:1px solid rgba(61,170,122,.3);border-radius:6px;padding:3px 10px;color:#3daa7a">rh2026</span>
   </div>
 </div>
 </div>
@@ -201,7 +205,7 @@ select option{background:#0a1628}
   <span id="save-ind" style="font-size:11px;color:var(--green);opacity:0;transition:.3s">✓ Sauvegardé</span>
   <div style="flex:1"></div>
   <button class="hdr-btn" onclick="nav('ia')">🤖 IA Coach</button>
-  <button class="hdr-btn" id="btn-alertes" onclick="nav('alertes')">⚠️ Alertes <span id="alerte-count" style="background:var(--red);color:#fff;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;display:none">0</span></button>
+  <button class="hdr-btn" id="btn-alertes" onclick="nav('alertes')">⚠️ Alertes <span id="alerte-count" style="background:var(--red);color:#1a3329;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;display:none">0</span></button>
   <button class="hdr-btn red" onclick="deconnecter()">⏻ Déconnexion</button>
 </div>
 <!-- LAYOUT -->
@@ -417,7 +421,7 @@ function scColor(n){return n>=3.5?'#22c55e':n>=2.5?'#3b82f6':n>=1.5?'#f59e0b':'#
 function scLbl(n){return n>=3.5?'Excellent':n>=2.5?'Bien':n>=1.5?'En progrès':n>0?'À accompagner':'';}
 function toast(msg,type){
   var t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:24px;right:24px;background:'+(type==='ok'?'#22c55e':type==='err'?'#ef4444':'#f97316')+';color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:400px';
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:'+(type==='ok'?'#22c55e':type==='err'?'#ef4444':'#f97316')+';color:#1a3329;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:400px';
   t.textContent=msg;document.body.appendChild(t);
   setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(function(){t.remove();},400);},3500);
 }
@@ -528,7 +532,7 @@ function renderDash(c){
   });
   h+='</div>';
   if(al){h+='<div class="card" style="border-color:rgba(239,68,68,.3)"><div class="card-title">⚠️ Alertes actives ('+al+')</div>';DB.alertes.slice(0,4).forEach(function(a){h+='<div class="alert alert-'+(a.niv==='err'?'err':'warn')+'" style="display:flex;align-items:center;gap:10px"><div style="flex:1">'+a.msg+'</div><button class="btn btn-xs btn-secondary" onclick="ouvrirDossier('+a.salId+')">Voir</button></div>';});h+='</div>';}
-  h+='<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:14px">Salariés — Vue rapide</div>';
+  h+='<div style="font-size:14px;font-weight:800;color:#1a3329;margin-bottom:14px">Salariés — Vue rapide</div>';
   h+='<div class="grid-2">';
   DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
     var score=scoreGlobal(s.id);var j=jours(s.dateFin);
@@ -689,7 +693,7 @@ window.ouvrirDossier=function(id){
     var remplies=DB.fiches_remplies.filter(function(r){return r.salId==s.id&&r.type===key;});
     h+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer" onclick="ouvrirFicheCocher('+s.id+',\''+key+'\')">';
     h+='<div style="font-size:26px;margin-bottom:8px">'+f.icon+'</div>';
-    h+='<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:6px">'+f.titre+'</div>';
+    h+='<div style="font-size:13px;font-weight:800;color:#1a3329;margin-bottom:6px">'+f.titre+'</div>';
     if(remplies.length){h+='<div class="badge badge-green">✓ '+remplies.length+' fois réalisée(s)</div>';}
     else{h+='<div class="badge badge-gray">Pas encore réalisée</div>';}
     h+='<button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px">Ouvrir</button>';
@@ -802,7 +806,7 @@ window.ouvrirFicheCocher=function(salId,type){
       var f=FICHES_TYPES[key];
       html+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer" onclick="fermerModal();ouvrirFicheCocher('+salId+',\''+key+'\')">';
       html+='<div style="font-size:30px;margin-bottom:8px">'+f.icon+'</div>';
-      html+='<div style="font-weight:800;color:#fff;margin-bottom:4px">'+f.titre+'</div>';
+      html+='<div style="font-weight:800;color:#1a3329;margin-bottom:4px">'+f.titre+'</div>';
       html+='<button class="btn btn-primary btn-sm" style="margin-top:8px">Ouvrir</button></div>';
     });
     html+='</div>';
@@ -827,7 +831,7 @@ window.ouvrirFicheCocher=function(salId,type){
     });
     html+='</div>';
   });
-  html+='<div style="margin-top:14px"><label style="font-size:10px;font-weight:800;color:var(--sub);display:block;margin-bottom:4px">OBSERVATIONS</label><textarea id="fiche-obs" style="width:100%;background:#071526;border:1px solid var(--border2);border-radius:8px;color:#fff;padding:9px;font-size:13px;min-height:80px;font-family:inherit;outline:none"></textarea></div>';
+  html+='<div style="margin-top:14px"><label style="font-size:10px;font-weight:800;color:var(--sub);display:block;margin-bottom:4px">OBSERVATIONS</label><textarea id="fiche-obs" style="width:100%;background:#f8fcfa;border:1px solid var(--border2);border-radius:8px;color:#1a3329;padding:9px;font-size:13px;min-height:80px;font-family:inherit;outline:none"></textarea></div>';
   html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverFicheCocher('+salId+',\''+type+'\')">💾 Enregistrer cette fiche</button><button class="btn btn-secondary" onclick="fermerModal()">Fermer</button><button class="btn btn-blue" onclick="imprimerFicheCocher('+salId+',\''+type+'\')">🖨️ Imprimer</button></div>';
   ouvrirModal(html);
 };
@@ -846,8 +850,8 @@ window.imprimerFicheCocher=function(salId,type){
   var fiche=FICHES_TYPES[type];
   var win=window.open('','_blank');if(!win)return;
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;max-width:800px;margin:0 auto}h1{font-size:18px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}h2{font-size:13px;color:#f97316;margin:16px 0 8px}.info-bar{background:#f8fafc;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:12px;display:flex;gap:20px}.check{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f4f8;font-size:12px}.check-box{width:18px;height:18px;border:2px solid #94a3b8;border-radius:4px;flex-shrink:0}.footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px}.sig-line{height:36px;border-bottom:1px solid #94a3b8;width:150px;margin:0 auto 4px}@media print{button{display:none}}</style></head><body>';
-  html+='<button onclick="window.print()" style="float:right;padding:8px 16px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:12px">🖨️ Imprimer</button>';
-  html+='<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase">LA TABLE DE CANA · MARSEILLE</div>';
+  html+='<button onclick="window.print()" style="float:right;padding:8px 16px;background:#f97316;border:none;border-radius:8px;color:#1a3329;font-weight:700;cursor:pointer;font-size:12px">🖨️ Imprimer</button>';
+  html+='<div style="font-size:10px;color:#5a8a7a;font-weight:700;text-transform:uppercase">LA TABLE DE CANA · MARSEILLE</div>';
   html+='<h1>'+fiche.icon+' '+fiche.titre+'</h1>';
   html+='<div class="info-bar"><span><strong>Salarié :</strong> '+(s?s.prenom+(s.nom?' '+s.nom:''):'-')+'</span><span><strong>Poste :</strong> '+(s?s.poste:'')+'</span><span><strong>Date :</strong> '+new Date().toLocaleDateString('fr-FR')+'</span></div>';
   fiche.sections.forEach(function(sec){
@@ -856,7 +860,7 @@ window.imprimerFicheCocher=function(salId,type){
     (sec.items||[]).forEach(function(item){html+='<div class="check"><div class="check-box"></div>'+item+'</div>';});
   });
   html+='<div style="margin-top:14px"><strong style="font-size:12px">Observations :</strong><div style="border:1px dashed #cbd5e1;border-radius:6px;min-height:80px;padding:8px;margin-top:6px;font-size:11px;color:#94a3b8">À compléter...</div></div>';
-  html+='<div class="footer"><div style="text-align:center"><div class="sig-line"></div><div>Signature salarié</div></div><div style="font-size:10px;color:#94a3b8;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div><div style="text-align:center"><div class="sig-line"></div><div>Signature encadrant</div></div></div>';
+  html+='<div class="footer"><div style="text-align:center"><div class="sig-line"></div><div>Signature salarié</div></div><div style="font-size:10px;color:#5a8a7a;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div><div style="text-align:center"><div class="sig-line"></div><div>Signature encadrant</div></div></div>';
   html+='</body></html>';
   win.document.write(html);win.document.close();
 };
@@ -889,7 +893,7 @@ window.attribuerBadge=function(salId){
 function renderSalaries(c){
   var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
   h+='<div class="page-title">Salariés ('+DB.salaries.length+')</div>';
-  h+='<div style="display:flex;gap:8px"><input id="s-search" placeholder="🔍 Rechercher..." oninput="filtrerSalaries()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:8px 12px;font-size:12px;width:200px;outline:none">';
+  h+='<div style="display:flex;gap:8px"><input id="s-search" placeholder="🔍 Rechercher..." oninput="filtrerSalaries()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#1a3329;padding:8px 12px;font-size:12px;width:200px;outline:none">';
   h+='<button class="btn btn-primary" onclick="ouvrirNouveauSalarie()">➕ Nouveau</button></div></div>';
   h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
   ['tous','actif','sorti','suspendu'].forEach(function(s){h+='<button class="btn btn-secondary btn-sm" onclick="filtrerStatut(\''+s+'\')">'+(s==='tous'?'Tous':s.charAt(0).toUpperCase()+s.slice(1))+'</button>';});
@@ -1056,7 +1060,7 @@ function renderStats(c){
 /* ═══ FICHES PAGE ═══ */
 function renderFiches(c){
   var h='<div class="page-title">Fiches à cocher</div><div class="page-sub" style="margin-bottom:20px">Sélectionnez un salarié puis la fiche à réaliser</div>';
-  h+='<div style="margin-bottom:20px"><select id="fiche-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
+  h+='<div style="margin-bottom:20px"><select id="fiche-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#1a3329;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
   DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){h+='<option value="'+s.id+'">'+s.prenom+(s.nom?' '+s.nom:'')+'</option>';});
   h+='</select></div>';
   h+='<div class="grid-2">';
@@ -1064,7 +1068,7 @@ function renderFiches(c){
     var f=FICHES_TYPES[key];
     h+='<div class="card" style="cursor:pointer" onclick="var sel=document.getElementById(\'fiche-sal\');if(!sel.value){toast(\'Choisissez un salarié\',\'err\');return;}ouvrirFicheCocher(parseInt(sel.value),\''+key+'\')">';
     h+='<div style="font-size:34px;margin-bottom:10px">'+f.icon+'</div>';
-    h+='<div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">'+f.titre+'</div>';
+    h+='<div style="font-size:15px;font-weight:800;color:#1a3329;margin-bottom:6px">'+f.titre+'</div>';
     h+='<div style="font-size:11px;color:var(--sub);margin-bottom:12px">'+f.sections.length+' section(s) · '+(f.sections.reduce(function(n,s){return n+(s.items||[]).length;},0))+' points à vérifier</div>';
     h+='<button class="btn btn-primary btn-sm">Ouvrir la fiche</button></div>';
   });
@@ -1087,13 +1091,13 @@ window.modalPlan=function(id){
   h+='<div class="fg"><div class="field"><label>Salarié</label><select id="pl-sal">'+DB.salaries.map(function(s){return '<option value="'+s.id+'"'+(s.id==p.salId?' selected':'')+'>'+s.prenom+(s.nom?' '+s.nom:'')+'</option>';}).join('')+'</select></div>';
   h+=F('Durée','pl-duree',p.duree)+F('Objectif principal','pl-obj',p.objectif);
   h+='<div class="field field-full"><label>Contexte / situation</label><textarea id="pl-ctx" style="min-height:70px">'+(p.contexte||'')+'</textarea></div></div>';
-  h+='<div style="margin-top:14px"><div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:10px">Étapes du plan</div><div id="pl-etapes">';
-  (p.etapes||[]).forEach(function(et,i){h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><input type="text" value="'+et.txt+'" id="pe-'+i+'" style="flex:1;background:#071526;border:1px solid var(--border2);border-radius:6px;color:#fff;padding:7px 10px;font-size:12px;outline:none"><button onclick="this.parentNode.remove()" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:14px">✕</button></div>';});
+  h+='<div style="margin-top:14px"><div style="font-size:12px;font-weight:800;color:#1a3329;margin-bottom:10px">Étapes du plan</div><div id="pl-etapes">';
+  (p.etapes||[]).forEach(function(et,i){h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><input type="text" value="'+et.txt+'" id="pe-'+i+'" style="flex:1;background:#f8fcfa;border:1px solid var(--border2);border-radius:6px;color:#1a3329;padding:7px 10px;font-size:12px;outline:none"><button onclick="this.parentNode.remove()" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:14px">✕</button></div>';});
   h+='</div><button onclick="ajouterEtapePlan()" class="btn btn-secondary btn-sm" style="margin-top:6px">+ Ajouter étape</button></div>';
   h+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverPlan('+(p.id)+','+isNew+')">💾 Enregistrer</button><button class="btn btn-secondary" onclick="fermerModal()">Annuler</button></div>';
   ouvrirModal(h);
 };
-window.ajouterEtapePlan=function(){var d=document.getElementById('pl-etapes');if(!d)return;var n=d.querySelectorAll('[id^="pe-"]').length;d.innerHTML+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><input type="text" value="" id="pe-'+n+'" placeholder="Nouvelle étape..." style="flex:1;background:#071526;border:1px solid var(--border2);border-radius:6px;color:#fff;padding:7px 10px;font-size:12px;outline:none"><button onclick="this.parentNode.remove()" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:14px">✕</button></div>';};
+window.ajouterEtapePlan=function(){var d=document.getElementById('pl-etapes');if(!d)return;var n=d.querySelectorAll('[id^="pe-"]').length;d.innerHTML+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><input type="text" value="" id="pe-'+n+'" placeholder="Nouvelle étape..." style="flex:1;background:#f8fcfa;border:1px solid var(--border2);border-radius:6px;color:#1a3329;padding:7px 10px;font-size:12px;outline:none"><button onclick="this.parentNode.remove()" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:14px">✕</button></div>';};
 window.sauverPlan=function(id,isNew){
   var g=function(i){var el=document.getElementById(i);return el?el.value:'';};
   var etapes=[];document.querySelectorAll('[id^="pe-"]').forEach(function(el){if(el.value.trim())etapes.push({txt:el.value.trim(),done:false});});
@@ -1168,7 +1172,7 @@ function renderManagement(c){
   c.innerHTML=h;
 }
 window.filtMgmt=function(cat){document.getElementById('mgmt-list').innerHTML=listMgmt(cat);};
-function listMgmt(cat){return (cat?MGMT.filter(function(r){return r.cat===cat;}):MGMT).map(function(r){return '<div class="card" style="margin-bottom:12px;border-color:'+r.col+'33"><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:'+r.col+';margin-bottom:6px">'+r.cat+'</div><div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:8px">'+r.t+'</div><div style="font-size:12px;color:var(--sub);line-height:1.7;margin-bottom:10px">'+r.d+'</div><div style="background:var(--panel2);border-left:3px solid var(--orange);border-radius:6px;padding:12px;font-size:12px;line-height:1.7"><strong style="color:var(--orange)">En pratique :</strong><br>'+r.o+'</div></div>';}).join('');}
+function listMgmt(cat){return (cat?MGMT.filter(function(r){return r.cat===cat;}):MGMT).map(function(r){return '<div class="card" style="margin-bottom:12px;border-color:'+r.col+'33"><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:'+r.col+';margin-bottom:6px">'+r.cat+'</div><div style="font-size:15px;font-weight:900;color:#1a3329;margin-bottom:8px">'+r.t+'</div><div style="font-size:12px;color:var(--sub);line-height:1.7;margin-bottom:10px">'+r.d+'</div><div style="background:var(--panel2);border-left:3px solid var(--orange);border-radius:6px;padding:12px;font-size:12px;line-height:1.7"><strong style="color:var(--orange)">En pratique :</strong><br>'+r.o+'</div></div>';}).join('');}
 
 /* ═══ MODULE LOGISTIQUE ═══ */
 function renderLogistique(c){
@@ -1190,7 +1194,7 @@ function renderLogistique(c){
 /* ═══ DOCUMENTS ═══ */
 function renderDocuments(c){
   var h='<div class="page-title">Documents</div><div class="page-sub" style="margin-bottom:20px">Sélectionnez un salarié et le document à générer</div>';
-  h+='<div style="margin-bottom:20px"><select id="doc-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#fff;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
+  h+='<div style="margin-bottom:20px"><select id="doc-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#1a3329;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
   DB.salaries.forEach(function(s){h+='<option value="'+s.id+'">'+s.prenom+(s.nom?' '+s.nom:'')+'</option>';});h+='</select></div>';
   h+='<div class="grid-2">';
   var docs=[{k:'bilan_mi',i:'📋',l:'Bilan mi-parcours',c:'var(--blue)'},{k:'bilan_fin',i:'🏁',l:'Bilan fin de parcours',c:'var(--green)'},{k:'plan_action',i:'🎯',l:'Plan d\'action',c:'var(--orange)'},{k:'cr_entretien',i:'💬',l:'CR d\'entretien',c:'var(--purple)'},{k:'attestation',i:'🏆',l:'Attestation compétences',c:'var(--yellow)'},{k:'fiche_poste',i:'📄',l:'Fiche de poste',c:'var(--blue)'},{k:'objectifs',i:'📌',l:'Objectifs du mois',c:'var(--orange)'},{k:'convocation',i:'📨',l:'Convocation entretien',c:'var(--sub)'},{k:'avertissement',i:'⚠️',l:'Avertissement',c:'var(--red)'},{k:'felicitations',i:'🌟',l:'Félicitations',c:'var(--yellow)'},{k:'recommandation',i:'💼',l:'Recommandation',c:'var(--green)'},{k:'dossier',i:'🖨️',l:'Dossier complet',c:'var(--sub)'}];
@@ -1214,7 +1218,7 @@ function renderIA(c){
   h+='</div></div>';
   h+='<div id="ia-chat" style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;min-height:320px;max-height:450px;overflow-y:auto;margin-bottom:14px">';
   h+='<div style="text-align:center;color:var(--sub);padding:50px;font-size:13px">Posez votre question sur l\'accompagnement, le management,<br>la rédaction de documents ou les dispositifs insertion...</div></div>';
-  h+='<div style="display:flex;gap:8px"><input id="ia-inp" placeholder="Votre question..." style="flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:9px;color:#fff;padding:11px 14px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendIA()}">';
+  h+='<div style="display:flex;gap:8px"><input id="ia-inp" placeholder="Votre question..." style="flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:9px;color:#1a3329;padding:11px 14px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendIA()}">';
   h+='<button class="btn btn-primary" onclick="sendIA()">Envoyer →</button>';
   h+='<button class="btn btn-secondary" onclick="AI_H=AI_H.slice(0,1);document.getElementById(\'ia-chat\').innerHTML=\'<div style=\\\"text-align:center;color:var(--sub);padding:20px\\\">Effacé.</div>\'">Effacer</button></div>';
   c.innerHTML=h;
@@ -1232,7 +1236,7 @@ window.sendIA=async function(msg){
     var rep=d.content&&d.content[0]?d.content[0].text:'Désolé, impossible de répondre.';
     AI_H.push({role:'assistant',content:rep});
     var ld=document.getElementById('ia-load');if(ld)ld.remove();
-    var fmt=rep.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^### (.*)/gm,'<div style="font-weight:900;color:var(--orange);margin:8px 0 4px">$1</div>').replace(/^## (.*)/gm,'<div style="font-weight:900;color:#fff;margin:10px 0 4px">$1</div>');
+    var fmt=rep.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^### (.*)/gm,'<div style="font-weight:900;color:var(--orange);margin:8px 0 4px">$1</div>').replace(/^## (.*)/gm,'<div style="font-weight:900;color:#1a3329;margin:10px 0 4px">$1</div>');
     chat.innerHTML+='<div class="ia-msg-ai"><div>'+fmt+'</div></div>';
   }catch(e){var l=document.getElementById('ia-load');if(l)l.remove();chat.innerHTML+='<div style="color:var(--red);font-size:12px;padding:10px">Erreur de connexion à l\'IA.</div>';}
   chat.scrollTop=chat.scrollHeight;
@@ -1259,11 +1263,11 @@ window.analyseIAEvalForm=async function(salId){
 window.genDoc=function(salId,key){
   var s=salId?DB.salaries.find(function(x){return x.id==salId;}):null;
   var win=window.open('','_blank');if(!win)return;
-  var css='body{font-family:Arial,sans-serif;padding:28px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:20px;border-bottom:3px solid #f97316;padding-bottom:10px;margin-bottom:18px}h2{font-size:14px;color:#f97316;margin:20px 0 8px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f8fafc;padding:14px;border-radius:8px;margin-bottom:18px}.info-item label{font-size:9px;font-weight:800;text-transform:uppercase;color:#64748b;display:block}.info-item span{font-size:13px;font-weight:700}.section{margin-bottom:18px;border:1px solid #e2e8f0;border-radius:8px;padding:14px}.blank{min-height:80px;border:1px dashed #cbd5e1;border-radius:6px;padding:8px;color:#94a3b8;font-size:11px;margin-top:6px}.sig-row{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between}.sig{text-align:center}.sig-line{height:40px;border-bottom:1px solid #94a3b8;width:160px;margin:0 auto 4px;font-size:10px}.eval-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.eval-bar{flex:1;background:#e2e8f0;border-radius:4px;height:8px}.eval-fill{height:8px;border-radius:4px}@media print{button{display:none}}';
+  var css='body{font-family:Arial,sans-serif;padding:28px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:20px;border-bottom:3px solid #f97316;padding-bottom:10px;margin-bottom:18px}h2{font-size:14px;color:#f97316;margin:20px 0 8px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f8fafc;padding:14px;border-radius:8px;margin-bottom:18px}.info-item label{font-size:9px;font-weight:800;text-transform:uppercase;color:#5a8a7a;display:block}.info-item span{font-size:13px;font-weight:700}.section{margin-bottom:18px;border:1px solid #e2e8f0;border-radius:8px;padding:14px}.blank{min-height:80px;border:1px dashed #cbd5e1;border-radius:6px;padding:8px;color:#5a8a7a;font-size:11px;margin-top:6px}.sig-row{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between}.sig{text-align:center}.sig-line{height:40px;border-bottom:1px solid #94a3b8;width:160px;margin:0 auto 4px;font-size:10px}.eval-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.eval-bar{flex:1;background:#e2e8f0;border-radius:4px;height:8px}.eval-fill{height:8px;border-radius:4px}@media print{button{display:none}}';
   var nom=s?(s.prenom+(s.nom?' '+s.nom:'')):'Non défini';
-  var hdr='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">🖨️ Imprimer</button><div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">LA TABLE DE CANA · MARSEILLE · INSERTION PROFESSIONNELLE</div>';
+  var hdr='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#1a3329;font-weight:700;cursor:pointer">🖨️ Imprimer</button><div style="font-size:10px;color:#5a8a7a;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">LA TABLE DE CANA · MARSEILLE · INSERTION PROFESSIONNELLE</div>';
   var igrid=s?'<div class="info-grid"><div class="info-item"><label>Salarié</label><span>'+nom+'</span></div><div class="info-item"><label>Poste</label><span>'+(s.poste||'—')+'</span></div><div class="info-item"><label>Contrat</label><span>'+(s.typeContrat||'—')+'</span></div><div class="info-item"><label>Véhicule</label><span>'+(s.vehicule||'—')+'</span></div><div class="info-item"><label>Entrée</label><span>'+fmt(s.dateEntree)+'</span></div><div class="info-item"><label>Fin prévue</label><span>'+fmt(s.dateFin)+'</span></div></div>':'';
-  var sig='<div class="sig-row"><div class="sig"><div class="sig-line"></div><div style="font-size:11px">Signature du salarié</div></div><div style="font-size:10px;color:#94a3b8;text-align:center;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div><div class="sig"><div class="sig-line"></div><div style="font-size:11px">Signature de l\'encadrant</div></div></div>';
+  var sig='<div class="sig-row"><div class="sig"><div class="sig-line"></div><div style="font-size:11px">Signature du salarié</div></div><div style="font-size:10px;color:#5a8a7a;text-align:center;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div><div class="sig"><div class="sig-line"></div><div style="font-size:11px">Signature de l\'encadrant</div></div></div>';
   var body='';
   var sections_bilan=['Objectifs initiaux du parcours','Compétences acquises','Difficultés rencontrées et actions mises en place','Situation personnelle et sociale','Objectifs second semestre','Perspectives de sortie et projet professionnel'];
   if(key==='bilan_mi'){body='<h1>Bilan mi-parcours</h1>'+igrid;sections_bilan.forEach(function(s){body+='<div class="section"><h2>'+s+'</h2><div class="blank">À compléter...</div></div>';});}
@@ -1279,7 +1283,7 @@ window.genDoc=function(salId,key){
   else if(key==='fiche_poste'){body='<h1>Fiche de poste — Chauffeur Livreur</h1>';if(s)body+='<div style="background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;font-weight:700">'+nom+' · '+s.poste+' · '+s.vehicule+' · '+(s.horaires||'06:00-14:00')+'</div>';body+='<div class="section"><h2>Mission principale</h2><div class="blank">Assurer la livraison des repas et prestations aux clients dans le respect des horaires, de la sécurité et de la qualité de service.</div></div>';['Activités quotidiennes','Compétences requises','Conditions de travail','Évolution possible'].forEach(function(s){body+='<div class="section"><h2>'+s+'</h2><div class="blank">À compléter...</div></div>';});}
   else if(key==='objectifs'){body='<h1>Fiche objectifs du mois</h1>'+igrid;body+='<div class="section"><h2>Objectifs professionnels</h2><div class="blank">'+(s&&s.objectifs?s.objectifs:'À compléter...')+'</div></div><div class="section"><h2>Objectifs personnels et sociaux</h2><div class="blank">À compléter...</div></div><div class="section"><h2>Suivi hebdomadaire</h2>';['Semaine 1','Semaine 2','Semaine 3','Semaine 4'].forEach(function(w){body+='<div style="display:flex;align-items:top;gap:8px;margin-bottom:10px"><span style="min-width:70px;font-weight:700">'+w+'</span><div style="flex:1;border-bottom:2px dashed #e2e8f0;min-height:28px"></div></div>';});body+='</div>';}
   else if(key==='convocation'){body='<h1>Convocation à un entretien</h1>'+igrid;body+='<div class="section"><h2>Objet de la convocation</h2><div class="blank">Entretien de : ☐ Suivi mensuel ☐ Bilan mi-parcours ☐ Recadrage ☐ Fin de parcours ☐ Autre</div></div><div class="section"><h2>Date et lieu</h2><div class="blank">Date : ____________ Heure : ____________ Lieu : ____________</div></div><div class="section"><h2>Points à aborder</h2><div class="blank">À compléter...</div></div><p style="margin-top:14px;font-size:12px">Vous êtes invité(e) à vous présenter à cet entretien. Vous pouvez vous faire accompagner par un salarié de votre choix.</p>';}
-  else if(key==='avertissement'){body='<h1>Avertissement</h1>'+igrid;body+='<p style="font-size:12px;margin-bottom:14px">Après examen de votre situation, nous vous notifions le présent avertissement pour les motifs suivants :</p><div class="section"><h2>Motifs</h2><div class="blank">À préciser...</div></div><div class="section"><h2>Rappel des obligations</h2><div class="blank">Règlement intérieur, contrat de travail, consignes...</div></div><div class="section"><h2>Objectifs fixés</h2><div class="blank">Pour éviter toute nouvelle situation similaire...</div></div><p style="font-size:11px;color:#64748b;margin-top:14px">Cet avertissement sera versé dans votre dossier. Il ne peut faire l\'objet d\'aucune sanction dans les 3 années suivantes si aucun fait ne s\'y ajoute.</p>';}
+  else if(key==='avertissement'){body='<h1>Avertissement</h1>'+igrid;body+='<p style="font-size:12px;margin-bottom:14px">Après examen de votre situation, nous vous notifions le présent avertissement pour les motifs suivants :</p><div class="section"><h2>Motifs</h2><div class="blank">À préciser...</div></div><div class="section"><h2>Rappel des obligations</h2><div class="blank">Règlement intérieur, contrat de travail, consignes...</div></div><div class="section"><h2>Objectifs fixés</h2><div class="blank">Pour éviter toute nouvelle situation similaire...</div></div><p style="font-size:11px;color:#5a8a7a;margin-top:14px">Cet avertissement sera versé dans votre dossier. Il ne peut faire l\'objet d\'aucune sanction dans les 3 années suivantes si aucun fait ne s\'y ajoute.</p>';}
   else if(key==='felicitations'){body='<h1>Lettre de félicitations</h1>';if(s)body+='<p style="margin-bottom:14px">Madame, Monsieur '+nom+',</p>';body+='<p style="line-height:1.8;margin-bottom:12px">C\'est avec grand plaisir que nous vous adressons ces félicitations pour la qualité exceptionnelle de votre travail et votre engagement au sein de La Table de Cana.</p><div class="section"><h2>Motifs des félicitations</h2><div class="blank">À compléter...</div></div><p style="line-height:1.8;margin-top:14px">Continuez sur cette belle lancée. Votre progression est remarquable et force l\'admiration de toute l\'équipe.</p>';}
   else if(key==='recommandation'){body='<h1>Lettre de recommandation</h1><p style="margin-bottom:14px">À qui de droit,</p>';if(s)body+='<p style="line-height:1.8;margin-bottom:12px">Je soussigné, responsable de La Table de Cana, atteste avoir employé '+nom+' en qualité de '+s.poste+' du '+fmt(s.dateEntree)+' au '+fmt(s.dateFin||today())+'.</p>';body+='<div class="section"><h2>Qualités professionnelles observées</h2><div class="blank">À compléter...</div></div><div class="section"><h2>Compétences acquises</h2><div class="blank">À compléter...</div></div><p style="line-height:1.8;margin-top:14px">Je recommande vivement cette personne pour toute opportunité professionnelle dans le domaine de la logistique et du transport.</p>';}
   else if(key==='dossier'){
@@ -1674,9 +1678,9 @@ function buildPsychoHTML(cat){
       h+='<div><div style="font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;margin-bottom:8px">Agir concrètement</div>';
       f.actions.forEach(function(a){h+='<div style="display:flex;gap:7px;margin-bottom:5px;font-size:11px;line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>'+a+'</div>';});
       h+='</div></div>';
-      h+='<div style="background:#071526;border-radius:8px;padding:12px;border-left:3px solid var(--orange)">';
+      h+='<div style="background:#f8fcfa;border-radius:8px;padding:12px;border-left:3px solid var(--orange)">';
       h+='<div style="font-size:10px;font-weight:800;color:var(--orange);text-transform:uppercase;margin-bottom:6px">Exemple terrain</div>';
-      h+='<div style="font-size:12px;line-height:1.7;color:#94a3b8;font-style:italic">'+f.exemple+'</div></div></div>';
+      h+='<div style="font-size:12px;line-height:1.7;color:#5a8a7a;font-style:italic">'+f.exemple+'</div></div></div>';
     });
   });
   return h;
@@ -1705,7 +1709,7 @@ function renderSalaries(c){
 
   /* Barre de recherche universelle */
   h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
-  h+='<input id="s-search" placeholder="🔍 Rechercher un nom, poste, véhicule, note..." oninput="majListeSalaries()" style="flex:1;min-width:250px;background:#0d1829;border:1px solid var(--border2);border-radius:9px;color:#fff;padding:10px 14px;font-size:13px;outline:none">';
+  h+='<input id="s-search" placeholder="🔍 Rechercher un nom, poste, véhicule, note..." oninput="majListeSalaries()" style="flex:1;min-width:250px;background:#0d1829;border:1px solid var(--border2);border-radius:9px;color:#1a3329;padding:10px 14px;font-size:13px;outline:none">';
   h+='<select id="s-sort" onchange="majListeSalaries()" style="background:#0d1829;border:1px solid var(--border);border-radius:9px;color:#fff;padding:10px 12px;font-size:12px;outline:none">';
   h+='<option value="nom">Trier : A-Z</option><option value="score">Trier : Score</option><option value="fin">Trier : Fin contrat</option><option value="entree">Trier : Entrée</option></select>';
   h+='</div>';
@@ -1719,7 +1723,7 @@ function renderSalaries(c){
   h+='</div>';
 
   /* Switcher vue */
-  h+='<div style="display:flex;gap:4px;background:#060d1a;border-radius:10px;padding:3px;width:fit-content;margin-bottom:16px">';
+  h+='<div style="display:flex;gap:4px;background:#e8f4f0;border-radius:10px;padding:3px;width:fit-content;margin-bottom:16px">';
   ['liste','cartes','tableau'].forEach(function(v){
     var icons={liste:'☰',cartes:'⊞',tableau:'≡'};
     h+='<button class="btn btn-sm vue-btn'+(VUE_SAL===v?' btn-primary':' btn-secondary')+'" onclick="setVueSal(\''+v+'\')" title="Vue '+v+'">'+icons[v]+' '+v.charAt(0).toUpperCase()+v.slice(1)+'</button>';
@@ -1937,7 +1941,7 @@ window.imprimerRecrutement=function(){
   var css='body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:18px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}h2{font-size:12px;color:#f97316;margin:14px 0 8px;text-transform:uppercase}.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:11px}.box{width:16px;height:16px;border:2px solid #94a3b8;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center}.info{display:flex;gap:20px;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:14px;font-size:11px}@media print{button{display:none}}';
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
   html+='<button onclick="window.print()" style="float:right;padding:7px 14px;background:#f97316;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Imprimer</button>';
-  html+='<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">La Table de Cana - Entretien de recrutement</div>';
+  html+='<div style="font-size:9px;color:#5a8a7a;text-transform:uppercase;font-weight:700">La Table de Cana - Entretien de recrutement</div>';
   html+='<h1>Grille entretien - Chauffeur Livreur / Logistique</h1>';
   html+='<div class="info"><span><b>Candidat :</b> '+prenom+' '+nom+'</span><span><b>Date :</b> '+new Date(date).toLocaleDateString('fr-FR')+'</span><span><b>Prescripteur :</b> '+presc+'</span></div>';
   fiche.sections.forEach(function(sec,si){
@@ -1962,6 +1966,354 @@ window.creerSalarieRecrutement=function(){
   var ns={id:Date.now(),prenom:prenom,nom:nom,dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:(document.getElementById('rec-presc')||{}).value||'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:(document.getElementById('rec-notes')||{}).value||'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:avatars[Math.floor(Math.random()*avatars.length)],couleur:couleurs[Math.floor(Math.random()*couleurs.length)],createdAt:new Date().toISOString()};
   DB.salaries.push(ns);sauver();toast('Dossier créé pour '+prenom+' '+nom,'ok');ouvrirDossier(ns.id);
 };
+
+</script>
+<script>
+/* ═══════════════════════════════════════════════════
+   DOCUMENTS D'EMBAUCHE — CHARTES ET ENGAGEMENTS
+   ═══════════════════════════════════════════════════ */
+
+var DOCS_EMBAUCHE = [
+  {
+    id: 'charte_complete',
+    icon: '📋',
+    titre: 'Charte complète du chauffeur',
+    sous: 'Document unique — Toutes les règles obligatoires',
+    couleur: '#3daa7a',
+    important: true
+  },
+  {
+    id: 'remise_vehicule',
+    icon: '🚐',
+    titre: 'État des lieux véhicule',
+    sous: 'Remise des clés et état du véhicule',
+    couleur: '#4a9eba',
+    important: false
+  },
+  {
+    id: 'reglement_interieur',
+    icon: '📜',
+    titre: 'Règlement intérieur',
+    sous: 'Règles de vie dans la structure',
+    couleur: '#8a6ab5',
+    important: false
+  },
+  {
+    id: 'confidentialite',
+    icon: '🔒',
+    titre: 'Engagement confidentialité',
+    sous: 'Clients, adresses, données sensibles',
+    couleur: '#e8814a',
+    important: false
+  }
+];
+
+/* ── GÉNÉRATEUR CHARTE COMPLÈTE ── */
+function genCharteComplete(s) {
+  var win = window.open('', '_blank');
+  if (!win) return;
+  var nom = s ? (s.prenom + (s.nom ? ' ' + s.nom : '')) : '______________________';
+  var poste = s ? s.poste : 'Chauffeur Livreur';
+  var vehicule = s ? (s.vehicule || '______') : '______';
+  var dateEntree = s ? fmt(s.dateEntree) : '______';
+  var today2 = new Date().toLocaleDateString('fr-FR');
+
+  var css = [
+    'body{font-family:"Arial",sans-serif;padding:30px;color:#1a2435;max-width:820px;margin:0 auto;font-size:12px;line-height:1.6}',
+    'h1{font-size:20px;text-align:center;color:#1a3329;border-bottom:3px solid #3daa7a;padding-bottom:12px;margin-bottom:6px}',
+    '.entete{text-align:center;margin-bottom:20px}',
+    '.entete img{height:50px}',
+    '.sous-titre{text-align:center;font-size:13px;color:#5a8a7a;margin-bottom:24px;font-style:italic}',
+    '.info-sal{background:#f0f7f4;border:1px solid #a8d5c7;border-radius:10px;padding:14px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}',
+    '.info-sal .lbl{font-size:9px;font-weight:800;color:#5a8a7a;text-transform:uppercase;display:block;margin-bottom:3px}',
+    '.info-sal .val{font-size:13px;font-weight:800;color:#1a3329}',
+    'h2{font-size:13px;font-weight:900;color:#ffffff;background:#3daa7a;padding:8px 14px;border-radius:8px;margin:18px 0 10px;display:flex;align-items:center;gap:8px}',
+    'h2.rouge{background:#e05a5a}',
+    'h2.bleu{background:#4a9eba}',
+    'h2.violet{background:#8a6ab5}',
+    'h2.orange{background:#e8814a}',
+    '.rule{display:flex;align-items:start;gap:10px;padding:7px 0;border-bottom:1px solid #e8f4f0}',
+    '.rule:last-child{border:none}',
+    '.num{width:22px;height:22px;border-radius:50%;background:#3daa7a;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}',
+    '.num.r{background:#e05a5a}',
+    '.num.b{background:#4a9eba}',
+    '.num.v{background:#8a6ab5}',
+    '.rule-txt{font-size:11px;line-height:1.6}',
+    '.rule-txt strong{color:#1a3329;font-size:12px}',
+    '.rule-txt .sanction{color:#e05a5a;font-size:10px;font-weight:700;display:block;margin-top:2px}',
+    '.encadre{border:2px solid #e05a5a;border-radius:10px;padding:12px 16px;margin:14px 0;background:#fff5f5}',
+    '.encadre-titre{font-size:12px;font-weight:900;color:#e05a5a;margin-bottom:8px}',
+    '.sig-section{margin-top:30px;padding-top:16px;border-top:2px solid #a8d5c7}',
+    '.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:16px}',
+    '.sig-box{border:1px solid #a8d5c7;border-radius:10px;padding:16px;text-align:center}',
+    '.sig-line{height:50px;border-bottom:2px solid #1a3329;margin:10px 20px;margin-top:30px}',
+    '.sig-label{font-size:10px;color:#5a8a7a;margin-top:6px}',
+    '.sig-nom{font-size:12px;font-weight:800;margin-top:4px}',
+    '.footer{margin-top:20px;padding-top:10px;border-top:1px solid #a8d5c7;display:flex;justify-content:space-between;font-size:9px;color:#5a8a7a}',
+    '.page-break{page-break-after:always}',
+    '@media print{.no-print{display:none}.body{padding:15px}}'
+  ].join('\n');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Charte Chauffeur — ' + nom + '</title><style>' + css + '</style></head><body>';
+
+  // Bouton imprimer
+  html += '<div class="no-print" style="text-align:center;margin-bottom:20px"><button onclick="window.print()" style="padding:12px 28px;background:#3daa7a;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer">🖨️ Imprimer ce document</button></div>';
+
+  // En-tête
+  html += '<div class="entete"><div style="font-size:22px;font-weight:900;color:#3daa7a">🏗️ LA TABLE DE CANA</div>';
+  html += '<div style="font-size:11px;color:#5a8a7a;margin-top:4px">Structure d\'Insertion par l\'Activité Économique · Marseille</div></div>';
+  html += '<h1>📋 CHARTE DU CHAUFFEUR LIVREUR<br><span style="font-size:14px;font-weight:600">Règles obligatoires — Document à signer à l\'embauche</span></h1>';
+  html += '<div class="sous-titre">Ce document engage le salarié et l\'encadrant. Il est obligatoire et fait partie intégrante du contrat de travail.</div>';
+
+  // Infos salarié
+  html += '<div class="info-sal">';
+  html += '<div><span class="lbl">Nom et prénom</span><span class="val">' + nom + '</span></div>';
+  html += '<div><span class="lbl">Poste</span><span class="val">' + poste + '</span></div>';
+  html += '<div><span class="lbl">Véhicule attribué</span><span class="val">' + vehicule + '</span></div>';
+  html += '<div><span class="lbl">Date d\'embauche</span><span class="val">' + dateEntree + '</span></div>';
+  html += '<div><span class="lbl">Type de contrat</span><span class="val">' + (s ? s.typeContrat : 'CDDI') + '</span></div>';
+  html += '<div><span class="lbl">Date du document</span><span class="val">' + today2 + '</span></div>';
+  html += '</div>';
+
+  // SECTION 1 — Conduite et code de la route
+  html += '<h2 class="bleu">🚗 1. Conduite et Code de la Route</h2>';
+  var regles_conduite = [
+    ['Le respect du Code de la Route est OBLIGATOIRE en tout temps et en toutes circonstances.', 'Toute infraction constatée entraîne un avertissement. Récidive = sanction disciplinaire.'],
+    ['La vitesse limite doit être respectée scrupuleusement. Aucune tolérance pour les excès de vitesse.', 'Les amendes pour excès de vitesse sont intégralement à la charge du chauffeur. L\'entreprise ne rembourse pas.'],
+    ['Les feux rouges, stops et priorités doivent être respectés sans exception.', 'Tout accident causé par un non-respect du code de la route engage la responsabilité personnelle du chauffeur.'],
+    ['Le stationnement en double file ou sur trottoir est interdit sauf nécessité absolue de livraison et durée minimale.', 'Les amendes de stationnement sont à la charge du chauffeur sauf accord préalable de l\'encadrant.'],
+    ['La ceinture de sécurité est obligatoire dès la mise en route du véhicule.', 'Non-port de la ceinture = amende à la charge du chauffeur + avertissement.'],
+    ['Le respect des distances de sécurité est obligatoire en toutes circonstances.', ''],
+    ['Tout retrait de points ou suspension de permis doit être signalé IMMÉDIATEMENT à l\'encadrant.', 'Dissimuler une suspension de permis est une faute grave pouvant entraîner un licenciement immédiat.'],
+  ];
+  regles_conduite.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num b">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+
+  // SECTION 2 — Téléphone interdit
+  html += '<h2 class="rouge">📱 2. Téléphone au Volant — Tolérance Zéro</h2>';
+  html += '<div class="encadre"><div class="encadre-titre">⛔ INTERDIT ABSOLUMENT</div>';
+  var regles_tel = [
+    ['Tenir son téléphone en main pendant la conduite est STRICTEMENT INTERDIT.', 'Amende de 135 € + 3 points retirés du permis. Intégralement à la charge du chauffeur.'],
+    ['Envoyer ou lire des SMS / messages WhatsApp en conduisant est interdit.', 'Même à l\'arrêt au feu rouge, le téléphone doit rester posé.'],
+    ['L\'utilisation du GPS est autorisée UNIQUEMENT si le téléphone est fixé sur support et paramétré avant le départ.', 'Toucher l\'écran en conduisant = infraction.'],
+    ['Les appels téléphoniques sont autorisés UNIQUEMENT en kit mains libres (oreillette ou Bluetooth voiture).', 'Appel en main = infraction + sanction disciplinaire interne.'],
+    ['En cas d\'appel urgent, s\'arrêter dans un endroit sécurisé avant de répondre.', ''],
+  ];
+  regles_tel.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num r">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+  html += '</div>';
+
+  // SECTION 3 — Alcool et stupéfiants
+  html += '<h2 class="rouge">🍺 3. Alcool et Stupéfiants — Tolérance Zéro Absolue</h2>';
+  html += '<div class="encadre"><div class="encadre-titre">⛔ INTERDICTION TOTALE ET ABSOLUE</div>';
+  var regles_alcool = [
+    ['La consommation d\'alcool avant ou pendant les heures de travail est FORMELLEMENT INTERDITE.', 'Taux légal : 0,2 g/L maximum. Contrôle possible à tout moment par l\'encadrant ou les forces de l\'ordre.'],
+    ['Prendre le volant sous influence de l\'alcool constitue une faute grave entraînant un licenciement immédiat.', 'L\'entreprise se réserve le droit de procéder à un éthylotest avant la prise de poste.'],
+    ['La consommation de stupéfiants (cannabis, cocaïne, etc.) est formellement interdite avant et pendant le travail.', 'Conduire sous l\'emprise de stupéfiants = faute grave + licenciement + dépôt de plainte possible.'],
+    ['Tout accident survenu sous l\'emprise de l\'alcool ou de stupéfiants n\'est pas couvert par l\'assurance de l\'entreprise.', 'Le chauffeur est personnellement et financièrement responsable des dommages causés.'],
+    ['Tout collègue ayant connaissance d\'un chauffeur en état de conduire sous influence a l\'obligation de le signaler.', ''],
+  ];
+  regles_alcool.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num r">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+  html += '</div>';
+
+  // SECTION 4 — EPI obligatoires
+  html += '<h2>🦺 4. Équipements de Protection Individuelle (EPI) — Port Obligatoire</h2>';
+  var regles_epi = [
+    ['Le gilet de sécurité haute visibilité doit être porté lors de chaque livraison et déchargement.', 'Absence de gilet = refus d\'accès possible chez le client + avertissement interne.'],
+    ['Les chaussures de sécurité (embout acier) sont obligatoires pendant toute la durée du service.', 'Tout accident survenu sans EPI réglementaire peut entraîner une diminution de l\'indemnisation.'],
+    ['Les gants de manutention doivent être portés lors du chargement et déchargement de matériel lourd.', ''],
+    ['En cas d\'intervention en chambre froide, la tenue adaptée (veste chaude) doit être portée.', ''],
+    ['Le port des EPI est non négociable. L\'encadrant peut contrôler le respect de cette règle à tout moment.', 'Refus répété de porter les EPI = sanction disciplinaire pouvant aller jusqu\'au licenciement.'],
+  ];
+  regles_epi.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+
+  // SECTION 5 — Véhicule et matériel
+  html += '<h2 class="bleu">🚐 5. Entretien et Utilisation du Véhicule</h2>';
+  var regles_vehicule = [
+    ['La vérification du véhicule avant chaque départ est obligatoire : carburant, niveaux, pneus, éclairages.', 'Tout départ sans vérification engage la responsabilité du chauffeur en cas d\'incident.'],
+    ['Le véhicule doit être rendu propre à chaque retour au dépôt, intérieur et extérieur.', 'Véhicule non nettoyé = avertissement après 2 occurrences.'],
+    ['Toute dégradation, rayure ou accident doit être signalé IMMÉDIATEMENT à l\'encadrant, même mineur.', 'Dissimuler un dommage constitue une faute grave.'],
+    ['L\'utilisation du véhicule à des fins personnelles est FORMELLEMENT INTERDITE.', 'Utilisation personnelle non autorisée = licenciement pour faute grave.'],
+    ['Le chargement doit être correctement arrimé avant tout départ. Aucun colis instable n\'est autorisé.', ''],
+    ['Les Km parcourus doivent être notés à chaque prise de poste et fin de service sur la feuille de route.', ''],
+  ];
+  regles_vehicule.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num b">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+
+  // SECTION 6 — Amendes
+  html += '<h2 class="rouge">💶 6. Amendes et Infractions — Règles Financières</h2>';
+  html += '<div class="encadre"><div class="encadre-titre">⚠️ PRINCIPE FONDAMENTAL : Les amendes routières sont toujours à la charge du chauffeur</div>';
+  var amendes = [
+    'Excès de vitesse (radar automatique ou contrôle police) → à la charge du chauffeur',
+    'Stationnement interdit / verbalisé sans accord préalable → à la charge du chauffeur',
+    'Téléphone au volant → à la charge du chauffeur (135 € + 3 points)',
+    'Non-port de la ceinture → à la charge du chauffeur (135 € + 3 points)',
+    'Feu rouge grillé → à la charge du chauffeur',
+    'Alcool au volant → à la charge du chauffeur + faute grave',
+    'Conduite sous stupéfiants → à la charge du chauffeur + faute grave + poursuite possible',
+  ];
+  amendes.forEach(function(a) {
+    html += '<div class="rule"><div class="num r">€</div><div class="rule-txt"><strong>' + a + '</strong></div></div>';
+  });
+  html += '<div style="margin-top:10px;font-size:11px;color:#e05a5a;font-weight:700">L\'entreprise La Table de Cana ne prendra en charge aucune amende résultant d\'une infraction au Code de la Route commise par le salarié dans l\'exercice de ses fonctions. Le salarié reconnaît et accepte ce principe en signant ce document.</div>';
+  html += '</div>';
+
+  // SECTION 7 — Comportement professionnel
+  html += '<h2 class="violet">🤝 7. Comportement Professionnel et Image de l\'Entreprise</h2>';
+  var regles_comport = [
+    ['Le chauffeur est l\'ambassadeur de La Table de Cana auprès des clients. La courtoisie est obligatoire.', ''],
+    ['Toute dispute, altercation ou comportement irrespectueux avec un client doit être signalé immédiatement.', 'Comportement agressif avec un client = faute grave.'],
+    ['La tenue vestimentaire doit être propre et soignée en toutes circonstances pendant les livraisons.', ''],
+    ['Le chauffeur ne doit jamais faire de commentaires négatifs sur l\'entreprise devant les clients.', ''],
+    ['En cas de problème de livraison (mauvaise adresse, client absent), appeler l\'encadrant AVANT de décider seul.', ''],
+    ['La confidentialité des adresses clients, plannings et informations internes est obligatoire.', 'Divulgation d\'informations confidentielles = faute grave + action en justice possible.'],
+  ];
+  regles_comport.forEach(function(r, i) {
+    html += '<div class="rule"><div class="num v">' + (i+1) + '</div><div class="rule-txt"><strong>' + r[0] + '</strong>' + (r[1] ? '<span class="sanction">⚠️ ' + r[1] + '</span>' : '') + '</div></div>';
+  });
+
+  // RÉCAPITULATIF
+  html += '<div style="background:#f0f7f4;border:2px solid #3daa7a;border-radius:12px;padding:16px;margin:20px 0">';
+  html += '<div style="font-size:13px;font-weight:900;color:#3daa7a;margin-bottom:10px">✅ En signant ce document, le salarié reconnaît et accepte</div>';
+  var recap = [
+    'Avoir pris connaissance de toutes les règles ci-dessus',
+    'S\'engager à les respecter scrupuleusement dès sa prise de poste',
+    'Savoir que les infractions routières sont à sa charge personnelle',
+    'Comprendre que certains manquements peuvent entraîner un licenciement pour faute grave',
+    'Avoir eu la possibilité de poser des questions avant de signer',
+  ];
+  recap.forEach(function(r) {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px"><span style="color:#3daa7a;font-weight:900">✓</span>' + r + '</div>';
+  });
+  html += '</div>';
+
+  // SIGNATURES
+  html += '<div class="sig-section">';
+  html += '<div style="font-size:13px;font-weight:800;color:#1a3329;margin-bottom:4px">Signatures des deux parties</div>';
+  html += '<div style="font-size:11px;color:#5a8a7a;margin-bottom:14px">Fait à Marseille, le ' + today2 + ' — En double exemplaire, un pour chaque partie</div>';
+  html += '<div class="sig-grid">';
+  html += '<div class="sig-box"><div style="font-size:12px;font-weight:800;color:#1a3329;margin-bottom:4px">Le salarié</div><div style="font-size:11px;color:#5a8a7a">Lu et approuvé — Je reconnais avoir reçu un exemplaire</div><div class="sig-line"></div><div class="sig-label">Signature précédée de "Lu et approuvé"</div><div class="sig-nom">' + nom + '</div></div>';
+  html += '<div class="sig-box"><div style="font-size:12px;font-weight:800;color:#1a3329;margin-bottom:4px">Le responsable</div><div style="font-size:11px;color:#5a8a7a">La Table de Cana — Responsable logistique insertion</div><div class="sig-line"></div><div class="sig-label">Signature et cachet de l\'entreprise</div><div class="sig-nom">La Table de Cana</div></div>';
+  html += '</div></div>';
+
+  html += '<div class="footer"><span>La Table de Cana · Marseille · Structure d\'Insertion par l\'Activité Économique</span><span>Document confidentiel · ' + today2 + '</span></div>';
+  html += '</body></html>';
+
+  win.document.write(html);
+  win.document.close();
+}
+
+/* ── ÉTAT DES LIEUX VÉHICULE ── */
+function genEtatLieuxVehicule(s) {
+  var win = window.open('', '_blank');
+  if (!win) return;
+  var nom = s ? (s.prenom + (s.nom ? ' ' + s.nom : '')) : '______________________';
+  var vehicule = s ? (s.vehicule || '______') : '______';
+  var today2 = new Date().toLocaleDateString('fr-FR');
+
+  var css = 'body{font-family:Arial,sans-serif;padding:28px;color:#1a2435;max-width:820px;margin:0 auto;font-size:12px}h1{font-size:18px;color:#1a3329;border-bottom:3px solid #4a9eba;padding-bottom:10px;margin-bottom:16px}h2{font-size:12px;font-weight:900;color:#fff;background:#4a9eba;padding:7px 12px;border-radius:7px;margin:14px 0 8px}.info{background:#e8f4f0;border:1px solid #a8d5c7;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap}.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e8f4f0;font-size:11px}.box{width:16px;height:16px;border:2px solid #a8d5c7;border-radius:3px;flex-shrink:0}.obs{border:1px dashed #a8d5c7;border-radius:6px;min-height:50px;margin:8px 0;padding:8px;font-size:11px;color:#a8d5c7}.sig-row{display:flex;justify-content:space-between;margin-top:24px;gap:20px}.sig-box{flex:1;border:1px solid #a8d5c7;border-radius:8px;padding:14px;text-align:center}.sig-line{height:40px;border-bottom:1px solid #1a3329;margin:20px 10px 4px}@media print{button{display:none}}';
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' + css + '</style></head><body>';
+  html += '<button onclick="window.print()" style="float:right;padding:8px 18px;background:#4a9eba;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">🖨️ Imprimer</button>';
+  html += '<div style="font-size:10px;color:#5a8a7a;font-weight:700;text-transform:uppercase">La Table de Cana · Marseille</div>';
+  html += '<h1>🚐 État des lieux du véhicule — Remise des clés</h1>';
+  html += '<div class="info"><span><b>Salarié :</b> ' + nom + '</span><span><b>Véhicule :</b> ' + vehicule + '</span><span><b>Date :</b> ' + today2 + '</span><span><b>Km au compteur :</b> ______</span></div>';
+  html += '<h2>Carrosserie — État visuel</h2>';
+  ['Aucune rayure visible','Aucun choc ou enfoncement','Vitres intactes','Rétroviseurs en bon état','Feux et clignotants fonctionnels','Pneus en bon état (usure normale)'].forEach(function(i){html+='<div class="chk"><div class="box"></div><span>'+i+'</span></div>';});
+  html += '<div class="obs">Observations carrosserie : _______________________________________________</div>';
+  html += '<h2>Intérieur — État</h2>';
+  ['Habitacle propre','Sièges sans dégradation','Tableau de bord sans voyant allumé','Coffre / zone de chargement propre et vide','Documents de bord présents (carte grise, assurance)','Kit de premiers secours présent','Gilet de sécurité présent'].forEach(function(i){html+='<div class="chk"><div class="box"></div><span>'+i+'</span></div>';});
+  html += '<div class="obs">Observations intérieur : _______________________________________________</div>';
+  html += '<h2>Remise des clés et équipements</h2>';
+  ['Clé principale remise','Double de clé conservé par l\'entreprise','Badge carburant remis (si applicable)','Téléphone professionnel remis (si applicable)','Carte de péage remise (si applicable)'].forEach(function(i){html+='<div class="chk"><div class="box"></div><span>'+i+'</span></div>';});
+  html += '<div style="background:#fff5f5;border:1px solid #e05a5a;border-radius:8px;padding:12px;margin:14px 0;font-size:11px"><strong style="color:#e05a5a">Important :</strong> Tout dommage non signalé à la remise des clés sera considéré comme survenu pendant la période d\'utilisation du salarié et pourra engager sa responsabilité.</div>';
+  html += '<div class="sig-row"><div class="sig-box"><div style="font-weight:800">Le salarié</div><div class="sig-line"></div><div style="font-size:10px;color:#5a8a7a">Signature · ' + nom + '</div></div><div class="sig-box"><div style="font-weight:800">Le responsable</div><div class="sig-line"></div><div style="font-size:10px;color:#5a8a7a">Signature · La Table de Cana</div></div></div>';
+  html += '</body></html>';
+  win.document.write(html);
+  win.document.close();
+}
+
+/* ── PAGE LOGISTIQUE COMPLÈTE ── */
+function renderLogistique(c2){
+  var h = '<div class="page-title">🚛 Module Logistique</div>';
+  h += '<div class="page-sub" style="margin-bottom:20px">Documents d\'embauche, check-lists véhicules, suivi des chauffeurs</div>';
+
+  // Sélecteur salarié
+  h += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:20px">';
+  h += '<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">Sélectionner un chauffeur</div>';
+  h += '<select id="log-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:13px;width:100%;max-width:350px;outline:none">';
+  h += '<option value="">Choisir un chauffeur...</option>';
+  DB.salaries.forEach(function(s){
+    h += '<option value="'+s.id+'">'+s.prenom+(s.nom?' '+s.nom:'')+' — '+s.poste+'</option>';
+  });
+  h += '</select></div>';
+
+  // Documents d'embauche
+  h += '<div class="card" style="margin-bottom:16px;border-color:rgba(61,170,122,.3)">';
+  h += '<div class="card-title" style="color:var(--green)">📋 Documents d\'embauche — À imprimer et faire signer</div>';
+  h += '<div class="grid-2">';
+
+  h += '<div style="background:linear-gradient(135deg,rgba(61,170,122,.1),rgba(61,170,122,.05));border:2px solid rgba(61,170,122,.4);border-radius:14px;padding:20px">';
+  h += '<div style="font-size:32px;margin-bottom:10px">📋</div>';
+  h += '<div style="font-size:15px;font-weight:900;color:var(--text);margin-bottom:6px">Charte complète du chauffeur</div>';
+  h += '<div style="font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6">Document unique complet :<br>✓ Code de la route &amp; infractions<br>✓ Téléphone interdit au volant<br>✓ Alcool &amp; stupéfiants : zéro tolérance<br>✓ EPI obligatoires<br>✓ Amendes à la charge du chauffeur<br>✓ Véhicule &amp; matériel<br>✓ Comportement professionnel<br>✓ Signatures des deux parties</div>';
+  h += '<div style="display:inline-block;background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:6px;margin-bottom:12px">DOCUMENT ESSENTIEL</div>';
+  h += '<button class="btn btn-green" style="width:100%" onclick="var sel=document.getElementById(\'log-sal\');var sid=parseInt(sel.value)||0;var sal=DB.salaries.find(function(s){return s.id==sid;})||null;genCharteComplete(sal)">🖨️ Générer et imprimer</button>';
+  h += '</div>';
+
+  h += '<div style="background:linear-gradient(135deg,rgba(74,158,186,.1),rgba(74,158,186,.05));border:2px solid rgba(74,158,186,.4);border-radius:14px;padding:20px">';
+  h += '<div style="font-size:32px;margin-bottom:10px">🚐</div>';
+  h += '<div style="font-size:15px;font-weight:900;color:var(--text);margin-bottom:6px">État des lieux du véhicule</div>';
+  h += '<div style="font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6">À remplir à chaque remise de véhicule :<br>✓ État carrosserie<br>✓ État intérieur<br>✓ Remise des clés et équipements<br>✓ Km au compteur<br>✓ Signatures</div>';
+  h += '<button class="btn btn-cyan" style="width:100%;margin-top:40px" onclick="var sel=document.getElementById(\'log-sal\');var sid=parseInt(sel.value)||0;var sal=DB.salaries.find(function(s){return s.id==sid;})||null;genEtatLieuxVehicule(sal)">🖨️ Générer et imprimer</button>';
+  h += '</div>';
+
+  h += '</div></div>';
+
+  // Check-lists opérationnelles
+  h += '<div class="card" style="margin-bottom:16px">';
+  h += '<div class="card-title">✅ Check-lists opérationnelles</div>';
+  h += '<div class="grid-2">';
+  [
+    {icon:'🦺',titre:'Fiche sécurité quotidienne',desc:'Check-list avant départ véhicule',key:'securite'},
+    {icon:'🚐',titre:'Check-list départ',desc:'Vérification complète avant mission',key:'checklist_depart'},
+    {icon:'📅',titre:'Bilan hebdomadaire',desc:'Suivi progression du salarié',key:'bilan_mensuel'},
+    {icon:'🎯',titre:'Entretien de recrutement',desc:'Grille complète à cocher',key:'recrutement'},
+  ].forEach(function(item){
+    h += '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px">';
+    h += '<span style="font-size:30px">'+item.icon+'</span>';
+    h += '<div style="flex:1"><div style="font-weight:800;color:var(--text);margin-bottom:3px">'+item.titre+'</div><div style="font-size:11px;color:var(--sub)">'+item.desc+'</div></div>';
+    h += '<button class="btn btn-primary btn-sm" onclick="var sel=document.getElementById(\'log-sal\');var sid=parseInt(sel.value)||0;if(!sid){toast(\'Choisissez un chauffeur\',\'err\');return;}ouvrirFicheCocher(sid,\''+item.key+'\')">Ouvrir</button>';
+    h += '</div>';
+  });
+  h += '</div></div>';
+
+  // Suivi chauffeurs
+  h += '<div class="card"><div class="card-title">👷 Vue rapide — Tous les chauffeurs</div>';
+  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    var score = scoreGlobal(s.id);
+    var j = jours(s.dateFin);
+    h += '<div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)">';
+    h += avt(s);
+    h += '<div style="flex:1"><strong style="color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</strong><div style="font-size:11px;color:var(--sub)">'+s.vehicule+' · '+s.horaires+'</div></div>';
+    if(score>0) h += '<div style="text-align:center;min-width:60px"><div style="font-size:15px;font-weight:900;color:'+scColor(score)+'">'+score.toFixed(1)+'</div><div style="font-size:9px;color:var(--sub)">score</div></div>';
+    if(j!==null) h += '<div style="text-align:center;min-width:80px"><div style="font-size:12px;font-weight:800;color:'+(j<=30?'var(--red)':'var(--sub)')+'">'+j+'j</div><div style="font-size:9px;color:var(--sub)">fin contrat</div></div>';
+    h += '<div style="display:flex;gap:6px">';
+    h += '<button class="btn btn-xs btn-primary" onclick="ouvrirDossier('+s.id+')">Dossier</button>';
+    h += '<button class="btn btn-xs btn-green" onclick="var sel=document.getElementById(\'log-sal\');sel.value=\''+s.id+'\';genCharteComplete(DB.salaries.find(function(x){return x.id=='+s.id+';}))">📋 Charte</button>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+
+  c2.innerHTML = h;
+}
 
 </script>
 </body>
