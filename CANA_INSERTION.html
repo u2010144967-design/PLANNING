@@ -7,14 +7,13 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f0f7f4;--panel:#ffffff;--panel2:#e8f4f0;--border:#c8e6dd;--border2:#a8d5c7;
-  --text:#1a3329;--sub:#5a8a7a;--orange:#e8814a;--blue:#4a9eba;
-  --green:#3daa7a;--red:#e05a5a;--yellow:#d4952a;--purple:#8a6ab5;--cyan:#3a9db5;
+  --bg:#e8eef2;--panel:#f5f8fa;--panel2:#dce5ea;--border:#b0c8d4;--border2:#8ab0c0;
+  --text:#1a2d38;--sub:#4a7080;--orange:#d4703a;--blue:#3a8aaa;
+  --green:#2d9a6a;--red:#c04848;--yellow:#b87820;--purple:#7058a8;--cyan:#2a8da8;
 }
-/* Scrollbar pastel */
 ::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:#e8f4f0}
-::-webkit-scrollbar-thumb{background:#a8d5c7;border-radius:4px}
+::-webkit-scrollbar-track{background:#dce5ea}
+::-webkit-scrollbar-thumb{background:#8ab0c0;border-radius:4px}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;min-height:100vh}
 /* LOGIN */
 .login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#e0f2eb 0%,#d0eae8 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
@@ -37,11 +36,11 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 /* LAYOUT */
 .layout{display:flex;min-height:calc(100vh - 58px)}
 /* SIDEBAR */
-.sb{width:230px;background:#d8efe8;border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.sb{width:230px;background:#cddce4;border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
 .sb-sec{font-size:9px;font-weight:800;color:#5a8a7a;text-transform:uppercase;letter-spacing:.1em;padding:16px 16px 5px}
 .sb-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;border-left:3px solid transparent;transition:.12s;user-select:none}
 .sb-item:hover{background:rgba(249,115,22,.06);color:#cbd5e1}
-.sb-item.on{background:rgba(61,170,122,.15);color:#1a3329;border-left-color:var(--green);font-weight:800}
+.sb-item.on{background:rgba(42,141,168,.2);color:#1a2d38;border-left-color:var(--blue);font-weight:800}
 .sb-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
 .sb-badge{background:var(--red);color:#1a3329;border-radius:8px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:auto}
 /* CONTENU */
@@ -266,6 +265,7 @@ var DB={salaries:[],entretiens:[],evaluations:[],plans:[],fiches_remplies:[],bad
 
 /* ═══ 5 SALARIÉS PRÉ-CHARGÉS ═══ */
 var SALARIES_DEFAULT=[
+  {id:0,prenom:'Responsable',nom:'',dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDI',poste:'Responsable Logistique',vehicule:'Tous véhicules',horaires:'05:00-18:00',dateEntree:'',dateFin:'',heures:35,salaire:'',projetPro:'Encadrement équipe insertion',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:'Accès complet — Responsable structure',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'👑',couleur:'#d4703a',createdAt:new Date().toISOString()},
   {id:1,prenom:'Otmane',nom:'',dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'JUMPY',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🏋',couleur:'#3b82f6',createdAt:new Date().toISOString()},
   {id:2,prenom:'Anthony',nom:'',dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'🚀',couleur:'#22c55e',createdAt:new Date().toISOString()},
   {id:3,prenom:'Mickaël',nom:'',dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'VIVARO 1',horaires:'06:00-15:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:'⚡',couleur:'#a855f7',createdAt:new Date().toISOString()},
@@ -1058,25 +1058,44 @@ function renderStats(c){
 }
 
 /* ═══ FICHES PAGE ═══ */
-function renderFiches(c){
-  var h='<div class="page-title">Fiches à cocher</div><div class="page-sub" style="margin-bottom:20px">Sélectionnez un salarié puis la fiche à réaliser</div>';
-  h+='<div style="margin-bottom:20px"><select id="fiche-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:#1a3329;padding:10px 14px;font-size:13px;width:300px"><option value="">Choisir un salarié...</option>';
-  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){h+='<option value="'+s.id+'">'+s.prenom+(s.nom?' '+s.nom:'')+'</option>';});
-  h+='</select></div>';
-  h+='<div class="grid-2">';
+function renderFiches(c2){
+  var h='<div class="page-title">Fiches a cocher</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Cliquez sur un salarié puis ouvrez la fiche</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="fsal-list">';
+  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h+='<div class="fsal-btn" data-sid="'+s.id+'" onclick="selFicheSal('+s.id+',this)" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">'+
+    '<span style="font-size:18px">'+s.avatar+'</span>'+
+    '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h+='</div><div class="grid-2">';
   Object.keys(FICHES_TYPES).forEach(function(key){
     var f=FICHES_TYPES[key];
-    h+='<div class="card" style="cursor:pointer" onclick="var sel=document.getElementById(\'fiche-sal\');if(!sel.value){toast(\'Choisissez un salarié\',\'err\');return;}ouvrirFicheCocher(parseInt(sel.value),\''+key+'\')">';
-    h+='<div style="font-size:34px;margin-bottom:10px">'+f.icon+'</div>';
-    h+='<div style="font-size:15px;font-weight:800;color:#1a3329;margin-bottom:6px">'+f.titre+'</div>';
-    h+='<div style="font-size:11px;color:var(--sub);margin-bottom:12px">'+f.sections.length+' section(s) · '+(f.sections.reduce(function(n,s){return n+(s.items||[]).length;},0))+' points à vérifier</div>';
-    h+='<button class="btn btn-primary btn-sm">Ouvrir la fiche</button></div>';
+    var nb=f.sections.reduce(function(n,s){return n+(s.items||[]).length;},0);
+    h+='<div class="card" style="cursor:pointer" data-fkey="'+key+'" onclick="ouvrirFicheAvecSal(this.getAttribute(\"data-fkey\"))">';
+    h+='<div style="font-size:32px;margin-bottom:8px">'+f.icon+'</div>';
+    h+='<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">'+f.titre+'</div>';
+    h+='<div style="font-size:11px;color:var(--sub);margin-bottom:10px">'+nb+' points a cocher</div>';
+    h+='<button class="btn btn-primary btn-sm" style="width:100%">Ouvrir</button></div>';
   });
   h+='</div>';
-  c.innerHTML=h;
+  c2.innerHTML=h;
+  var first=DB.salaries.filter(function(s){return s.statut==='actif';})[0];
+  if(first){
+    window.fichesSalActif=first.id;
+    setTimeout(function(){
+      var btn=c2.querySelector('[data-sid="'+first.id+'"]');
+      if(btn){btn.style.borderColor='var(--blue)';btn.style.background='var(--panel2)';}
+    },50);
+  }
 }
+window.selFicheSal=function(id,el){
+  window.fichesSalActif=id;
+  document.querySelectorAll('.fsal-btn').forEach(function(b){
+    b.style.borderColor='var(--border)';b.style.background='var(--panel)';
+  });
+  el.style.borderColor='var(--blue)';el.style.background='var(--panel2)';
+};
 
-/* ═══ PLANS D'ACTION ═══ */
 function renderPlans(c){
   var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
   h+='<div class="page-title">Plans d\'action</div><button class="btn btn-primary" onclick="modalPlan(0)">+ Nouveau plan</button></div>';
@@ -1231,7 +1250,7 @@ window.sendIA=async function(msg){
   chat.scrollTop=chat.scrollHeight;
   AI_H.push({role:'user',content:q});
   try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:AI_H.slice(1)})});
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:AI_H.slice(1)})});
     var d=await r.json();
     var rep=d.content&&d.content[0]?d.content[0].text:'Désolé, impossible de répondre.';
     AI_H.push({role:'assistant',content:rep});
@@ -2315,6 +2334,236 @@ function renderLogistique(c2){
   c2.innerHTML = h;
 }
 
+</script>
+<script>
+/* ═══════════════════════════════════════════════
+   ANALYSE TRANSACTIONNELLE APPROFONDIE — PLUS DE FICHES
+   ═══════════════════════════════════════════════ */
+
+// Ajouter plus de fiches AT dans PSYCHO_MODULES
+if(typeof PSYCHO_MODULES !== 'undefined'){
+
+  // Ajouter dans la cat AT
+  var catAT = PSYCHO_MODULES.find(function(m){return m.cat==='Analyse Transactionnelle';});
+  if(catAT){
+    catAT.fiches.push({
+      titre:'Les Transactions — Comprendre les échanges',
+      theorie:'Une transaction = un stimulus + une réponse entre deux états du Moi. Les transactions parallèles sont fluides. Les transactions croisées créent des conflits. Les transactions cachées ont un message apparent et un message réel.',
+      signes:[
+        'Transaction parallèle OK : "Tu peux m\'aider ?" (Adulte) → "Bien sûr, comment ?" (Adulte) = échange fluide',
+        'Transaction croisée = conflit : "Tu peux m\'aider ?" (Adulte) → "T\'as qu\'à te débrouiller" (Parent) = rupture',
+        'Transaction cachée = manipulation : "C\'est compliqué..." (apparent) mais sous-entendu : "Fais-le à ma place"',
+        'Identifier les transactions cachées chez le salarié manipulateur ou en difficulté',
+      ],
+      actions:[
+        'Toujours répondre au niveau explicite de la transaction, pas au niveau caché',
+        'Si transaction croisée : nommer ce qui se passe → "Je te parle de façon factuelle, j\'aimerais qu\'on reste sur les faits"',
+        'Éviter de rentrer dans le jeu des transactions cachées',
+        'Encourager les échanges Adulte-Adulte systématiquement',
+      ],
+      exemple:'"Je n\'y arrive vraiment pas, c\'est trop dur pour moi..." (transaction cachée = demande de sauvetage). Mauvaise réponse : "Ne t\'inquiète pas, je vais le faire pour toi." Bonne réponse : "Qu\'est-ce qui est difficile précisément ? Montrons ensemble quelle partie tu peux faire."'
+    });
+
+    catAT.fiches.push({
+      titre:'Les Jeux Psychologiques — Les reconnaître et en sortir',
+      theorie:'Un jeu psychologique = une série de transactions prévisibles qui se terminent toujours par un sentiment désagréable. Les jeux se répètent et enfoncent les personnes dans leurs schémas. En insertion, le plus fréquent est "Oui mais..." ou "Pourquoi ça n\'arrive qu\'à moi ?"',
+      signes:[
+        '"Oui mais..." : à chaque solution proposée, le salarié trouve une raison que ça ne marchera pas',
+        '"Pourquoi ça n\'arrive qu\'à moi" : victimisation systématique, aucune prise de responsabilité',
+        '"Battez-vous pour moi" : pousse deux personnes de l\'encadrement à se disputer sur son cas',
+        '"Je vous avais dit que ça ne marcherait pas" : provoque l\'échec pour avoir raison après',
+        '"Blemish" (défaut) : trouve toujours quelque chose à critiquer dans la solution proposée',
+      ],
+      actions:[
+        'Sortir du jeu : refuser de jouer le rôle attendu (Sauveur / Persécuteur)',
+        'Pour "Oui mais..." : arrêter de proposer des solutions → "Qu\'est-ce que TOI tu vois comme solution ?"',
+        'Nommer le jeu avec bienveillance : "J\'ai l\'impression qu\'on tourne en rond. Qu\'est-ce qui se passe vraiment ?"',
+        'Rester ancré dans les faits : "Voilà ce que j\'observe concrètement"',
+        'Proposer un contrat clair : objectif précis, délai défini, responsabilité partagée',
+      ],
+      exemple:'"Vous pourriez m\'aider pour le CV ?" → on passe 1h → "Oui mais je sais pas écrire" → on reformule → "Oui mais les employeurs regardent même pas" → on cherche des offres → "Oui mais c\'est trop loin". Sortir : "On a essayé plusieurs pistes. Qu\'est-ce que TOI tu es prêt à faire cette semaine ?"'
+    });
+
+    catAT.fiches.push({
+      titre:'Le Contrat en AT — Outil d\'accompagnement',
+      theorie:'Le contrat AT = un accord bilatéral, explicite, entre adultes, avec un objectif précis, atteignable et mesurable. C\'est le cœur de l\'accompagnement en insertion. Sans contrat clair, l\'accompagnement dérive.',
+      signes:[
+        'Un bon contrat répond à : Qu\'est-ce que tu veux changer ? Comment le saurons-nous ? Que vas-tu faire concrètement ?',
+        'Contrat social (visible) : accord sur les comportements observables',
+        'Contrat psychologique (profond) : accord sur les croyances à changer ("Je ne suis pas capable" → "Je peux apprendre")',
+        'Le contrat doit être voulu par LES DEUX PARTIES, pas imposé',
+      ],
+      actions:[
+        'Formuler le contrat en termes positifs : "Je vais arriver à l\'heure" et non "Je vais arrêter d\'être en retard"',
+        'Vérifier que le salarié comprend et adhère vraiment : "Est-ce que tu te sens capable de t\'y engager ?"',
+        'Mettre le contrat par écrit et faire signer les deux parties',
+        'Réviser le contrat si la situation change — il n\'est pas figé',
+        'Célébrer l\'atteinte du contrat : renforcement positif essentiel',
+      ],
+      exemple:'"Contrat du 15 juillet : Otmane s\'engage à arriver avant 5h55 chaque matin pendant 4 semaines. En cas de retard, il prévient avant 5h30. Le responsable s\'engage à noter les présences et faire un bilan le 15 août. Les deux signent." — Simple, clair, bilatéral.'
+    });
+
+    catAT.fiches.push({
+      titre:'Les Positions de Vie — La vision de soi et des autres',
+      theorie:'Les 4 positions de vie fondamentales déterminent comment une personne se perçoit et perçoit les autres. En insertion, identifier la position de vie d\'un salarié permet d\'adapter l\'accompagnement.',
+      signes:[
+        'Je+ Tu+ (position saine) : "Je suis capable et les autres aussi." → Autonome, coopératif, confiant',
+        'Je- Tu+ (position dépressive) : "Je ne vaux rien, les autres sont meilleurs." → Honte, abandon, soumission',
+        'Je+ Tu- (position arrogante) : "Je suis meilleur que les autres." → Conflits, refus d\'autorité',
+        'Je- Tu- (position désespérée) : "Ni moi ni les autres ne valons rien." → Apathie, abandon, à-quoi-bon',
+      ],
+      actions:[
+        'Je- Tu+ : renforcer l\'estime de soi, valoriser les compétences, créer des succès accessibles',
+        'Je+ Tu- : travailler le respect de l\'autorité, rappeler les règles, recadrer avec fermeté ET bienveillance',
+        'Je- Tu- : chercher la cause profonde, orienter vers soutien psychologique si nécessaire',
+        'Objectif : amener le salarié vers Je+ Tu+ — la seule position durable et épanouissante',
+        'Ne jamais juger la position — elle s\'est construite dans l\'histoire de vie de la personne',
+      ],
+      exemple:'"Nicolas ne répond pas quand on lui parle, reste dans son coin, dit souvent \'de toute façon ça marchera jamais\'" → Position Je- Tu- probable. Action : chercher un levier de motivation positif, valoriser la moindre réussite, créer du lien humain avant de parler performance.'
+    });
+  }
+
+  // Ajouter une nouvelle catégorie : Outils pratiques d'entretien
+  PSYCHO_MODULES.push({
+    cat:'Outils d\'entretien',
+    color:'#2d9a6a',
+    icon:'🎤',
+    fiches:[
+      {
+        titre:'Préparer et conduire un entretien individuel efficace',
+        theorie:'Un entretien bien préparé dure moins longtemps et est bien plus utile. La structure PRAEP (Préparer, Rappeler, Analyser, Engager, Planifier) garantit un entretien productif quel que soit le sujet.',
+        signes:[
+          'P — Préparer : relire le dossier, définir l\'objectif de l\'entretien, préparer 3 questions ouvertes',
+          'R — Rappeler : rappeler le contexte, ce qui a été dit lors du dernier entretien',
+          'A — Analyser : écouter, questionner, reformuler — laisser le salarié parler 70% du temps',
+          'E — Engager : co-construire les actions, formaliser les engagements',
+          'P — Planifier : fixer la prochaine rencontre, noter le compte-rendu',
+        ],
+        actions:[
+          'Durée idéale : 20 à 40 minutes — au-delà, la concentration baisse',
+          'Lieu : toujours en privé, assis face à face ou en angle (pas de bureau entre vous)',
+          'Commencer par quelque chose de positif — même une petite chose',
+          'Une seule question à la fois — laisser le silence travailler',
+          'Terminer par : "Qu\'est-ce que tu retiens de cet entretien ?"',
+        ],
+        exemple:'"Avant chaque entretien, j\'ouvre le dossier 5 minutes. Je note 1 point positif à souligner, 1 point à travailler, 1 question ouverte. En 5 minutes de préparation, l\'entretien est 3 fois plus efficace."'
+      },
+      {
+        titre:'Les questions puissantes en accompagnement',
+        theorie:'Une bonne question fait réfléchir, ouvre des perspectives et responsabilise. Une mauvaise question ferme, juge ou oriente vers la réponse que l\'encadrant veut entendre. Maîtriser les questions puissantes = maîtriser l\'entretien.',
+        signes:[
+          'Questions ouvertes (à privilégier) : "Comment tu vis ça ?", "Qu\'est-ce qui t\'a aidé ?", "Que veux-tu faire différemment ?"',
+          'Questions de clarification : "Peux-tu me donner un exemple ?", "Qu\'est-ce que tu entends par là ?"',
+          'Questions de ressources : "Qu\'est-ce que tu as déjà réussi de similaire ?", "Qui pourrait t\'aider ?"',
+          'Questions d\'avenir : "Dans 3 mois, si ça s\'est amélioré, qu\'est-ce qui sera différent ?"',
+          'À éviter : questions fermées (oui/non), questions doubles, questions qui contiennent la réponse',
+        ],
+        actions:[
+          'Préparer 3 questions ouvertes avant chaque entretien',
+          'Après la question : silence de 5 secondes minimum — résister à l\'envie de reformuler',
+          'Si le salarié dit "je sais pas" : "Si tu savais, tu dirais quoi ?"',
+          'Éviter "Pourquoi tu n\'as pas..." → remplacer par "Qu\'est-ce qui t\'a empêché de..."',
+        ],
+        exemple:'"Pourquoi t\'es encore en retard ?" (fermé, accusateur) → "Qu\'est-ce qui se passe le matin pour toi en ce moment ?" (ouvert, bienveillant). Même sujet, résultat radicalement différent.'
+      },
+      {
+        titre:'Gérer ses propres émotions en entretien',
+        theorie:'L\'encadrant est humain. Face à un salarié en difficulté, agressif ou manipulateur, des émotions surgissent : frustration, pitié, colère, impuissance. Savoir les reconnaître et les gérer est une compétence professionnelle essentielle.',
+        signes:[
+          'Signal d\'alarme : vous vous sentez responsable du problème du salarié',
+          'Signal d\'alarme : vous avez envie de régler le problème à sa place',
+          'Signal d\'alarme : vous sentez de l\'agacement ou de la colère monter',
+          'Signal d\'alarme : vous culpabilisez de ne pas avoir de solution',
+          'Signal d\'alarme : vous évitez d\'aborder un sujet difficile avec un salarié',
+        ],
+        actions:[
+          'Respiration : 3 inspirations profondes si une émotion forte surgit en entretien',
+          'Nommer l\'émotion pour vous-même : "Je sens de la frustration" — ça suffit souvent à la calmer',
+          'Autorisez-vous à ne pas avoir de réponse : "Je vais y réfléchir et on en reprendra"',
+          'Débriefer après un entretien difficile avec un collègue ou superviseur',
+          'Rappel fondamental : vous accompagnez, vous n\'êtes pas responsable des choix du salarié',
+        ],
+        exemple:'"Mickaël m\'a dit que c\'était de ma faute s\'il n\'avait pas progressé. J\'ai senti la colère monter. J\'ai respiré. J\'ai dit : \'Ce que tu ressens est important. Parlons de ce qui n\'a pas marché et ce qu\'on peut faire différemment.\' La colère est passée. L\'entretien a repris."'
+      },
+      {
+        titre:'Le feedback positif — Pourquoi et comment féliciter',
+        theorie:'Le feedback positif n\'est pas de la flatterie. C\'est un outil professionnel puissant qui renforce les comportements souhaitables, reconstruit l\'estime de soi et crée une relation de confiance. En insertion, beaucoup de salariés n\'ont jamais été vraiment félicités.',
+        signes:[
+          'Spécifique : "Tu as bien géré le client difficile chez Scolarest ce matin" — pas "t\'es bien aujourd\'hui"',
+          'Immédiat : donner le feedback dans les 24h maximum après l\'action',
+          'Sincère : ne jamais féliciter pour rien — ça perd toute valeur',
+          'Public quand approprié : féliciter devant l\'équipe décuple l\'effet',
+          'Suivi d\'une question : "Comment tu as fait ça ? Qu\'est-ce qui t\'a aidé ?"',
+        ],
+        actions:[
+          'Objectif : 3 feedbacks positifs pour 1 feedback correctif',
+          'Tenir un journal des petites réussites de chaque salarié',
+          'Le dire en face, avec contact visuel — pas en passant',
+          'Attribuer un badge après 3 félicitations sur le même comportement',
+          'Impliquer le salarié : "Tu te rends compte que c\'est la 3ème semaine consécutive sans retard ?"',
+        ],
+        exemple:'"Karim, je t\'ai observé ce matin avec le responsable du centre aéré. Tu as été souriant, professionnel, tu as attendu que tout soit signé avant de partir. C\'est exactement ce qu\'on attend d\'un chauffeur de la Table de Cana. Je suis fier de toi."'
+      }
+    ]
+  });
+
+  // Ajouter catégorie Droit et Procédures
+  PSYCHO_MODULES.push({
+    cat:'Droit et Procédures',
+    color:'#7058a8',
+    icon:'⚖️',
+    fiches:[
+      {
+        titre:'Les étapes d\'une procédure disciplinaire',
+        theorie:'La procédure disciplinaire en France suit des étapes précises. Les sauter expose l\'employeur à un contentieux. En insertion, la procédure doit être accompagnée d\'une logique pédagogique : punir sans accompagner ne sert à rien.',
+        signes:[
+          'Étape 1 : Entretien informel (avertissement verbal) — pour les faits mineurs',
+          'Étape 2 : Avertissement écrit — dossier constitué, salarié informé par écrit',
+          'Étape 3 : Mise à pied conservatoire (si faute grave) — arrêt immédiat du travail',
+          'Étape 4 : Convocation à entretien préalable (lettre recommandée + délai légal)',
+          'Étape 5 : Entretien préalable — le salarié peut se faire accompagner',
+          'Étape 6 : Notification de sanction (minimum 2 jours après l\'entretien)',
+        ],
+        actions:[
+          'TOUJOURS consulter le service RH avant toute procédure formelle',
+          'Garder une trace écrite de tout : dates, faits, témoins',
+          'Distinguer faute simple (avertissement) / faute grave (licenciement possible) / faute lourde',
+          'Ne jamais sanctionner dans l\'émotion — toujours prendre 24h',
+          'Parallèlement à la procédure : continuer l\'accompagnement humain',
+        ],
+        exemple:'"Nicolas est arrivé 3 fois en retard ce mois-ci. Étape 1 : entretien informel documenté dans le dossier. Si récidive dans le mois : avertissement écrit avec objectif précis. Si persistance : mise en place plan de recadrage formel. La procédure protège tout le monde."'
+      },
+      {
+        titre:'Les droits du salarié en CDDI — Ce qu\'il faut savoir',
+        theorie:'Le CDDI (Contrat à Durée Déterminée d\'Insertion) est un contrat spécifique aux structures d\'insertion. Le salarié a des droits spécifiques que l\'encadrant doit connaître pour l\'accompagner efficacement.',
+        signes:[
+          'Durée : 4 mois minimum, 24 mois maximum (renouvellements inclus)',
+          'Temps partiel possible : entre 20h et 35h selon l\'agrément',
+          'Période d\'essai : 1 semaine par tranche de 4 mois prévue (max 2 semaines)',
+          'Congés payés : acquis comme tout salarié (2,5 jours par mois travaillé)',
+          'Rupture anticipée possible : accord commun, faute grave, embauche CDI/CDD+6mois, formation',
+          'À la fin du parcours : attestation d\'expérience professionnelle obligatoire',
+        ],
+        actions:[
+          'Informer le salarié de ses droits dès l\'embauche — ça crée la confiance',
+          'Anticiper les fins de contrat 2 mois avant : orienter, préparer, accompagner',
+          'Proposer le renouvellement assez tôt si justifié par la progression',
+          'Préparer l\'attestation de compétences dès le 3ème mois',
+          'Orienter vers Pôle Emploi ou Mission Locale 1 mois avant la fin',
+        ],
+        exemple:'"Otmane a son contrat jusqu\'au 31 mars. Le 1er février, j\'ouvre son dossier : on fait le bilan, on prépare son CV, on contacte des employeurs. Le 31 mars, il part avec une attestation de compétences et des contacts. C\'est ça une sortie positive."'
+      }
+    ]
+  });
+}
+
+</script>
+<script>
+window.ouvrirFicheAvecSal=function(key){
+  var sid=window.fichesSalActif;
+  if(!sid){toast('Selectionnez un salarie','err');return;}
+  ouvrirFicheCocher(sid,key);
+};
 </script>
 </body>
 </html>
