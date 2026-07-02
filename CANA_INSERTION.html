@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07111f;--panel:#0d1829;--panel2:#0a1628;--border:#1e293b;--border2:#1e3a5f;
+  --bg:#111e2e;--panel:#162033;--panel2:#0e1a2d;--border:#1e293b;--border2:#1e3a5f;
   --text:#e2e8f0;--sub:#64748b;--orange:#f97316;--blue:#3b82f6;
   --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;--cyan:#0ea5e9;
 }
@@ -225,6 +225,8 @@ select option{background:#0a1628}
   <div class="sb-sec">Outils</div>
   <div class="sb-item" data-p="documents" onclick="nav('documents')"><span class="sb-ico">📁</span>Documents</div>
   <div class="sb-item" data-p="management" onclick="nav('management')"><span class="sb-ico">🎓</span>Management & Psycho</div>
+  <div class="sb-item" data-p="psychologie" onclick="nav('psychologie')"><span class="sb-ico">🧠</span>Psychologie & AT</div>
+  <div class="sb-item" data-p="recrutement" onclick="nav('recrutement')"><span class="sb-ico">🎯</span>Recrutement</div>
   <div class="sb-item" data-p="ia" onclick="nav('ia')"><span class="sb-ico">🤖</span>IA Coach</div>
   <div class="sb-item" data-p="logistique" onclick="nav('logistique')"><span class="sb-ico">🚛</span>Module Logistique</div>
 </div>
@@ -497,7 +499,7 @@ function nav(page){
 }
 function render(page){
   var c=document.getElementById('content');if(!c)return;
-  var pages={dashboard:renderDash,salaries:renderSalaries,entretiens:renderEntretiens,evaluations:renderEvaluations,alertes:renderAlertes,stats:renderStats,fiches:renderFiches,plans:renderPlans,formations:renderFormations,bibliotheque:renderBibliotheque,documents:renderDocuments,management:renderManagement,ia:renderIA,logistique:renderLogistique};
+  var pages={dashboard:renderDash,salaries:renderSalaries,entretiens:renderEntretiens,evaluations:renderEvaluations,alertes:renderAlertes,stats:renderStats,fiches:renderFiches,plans:renderPlans,formations:renderFormations,bibliotheque:renderBibliotheque,documents:renderDocuments,management:renderManagement,ia:renderIA,logistique:renderLogistique,psychologie:renderPsychologie,recrutement:renderRecrutement};
   if(pages[page])pages[page](c);
 }
 
@@ -1304,6 +1306,662 @@ window.imprimerDossier=function(id){genDoc(id,'dossier');};
 /* ═══ MODAL ═══ */
 function ouvrirModal(html){var b=document.getElementById('modal-box');if(b)b.innerHTML=html;document.getElementById('modal-bg').classList.add('on');}
 window.fermerModal=function(){document.getElementById('modal-bg').classList.remove('on');};
+
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   PATCH 1 — NOUVELLES FICHES + RECRUTEMENT + PSYCHOLOGIE
+   ════════════════════════════════════════════════════════ */
+
+/* ── FICHE PROGRESSION / SUIVI ── */
+FICHES_TYPES.progression_suivi = {
+  titre:'Fiche de progression et suivi',icon:'📈',
+  sections:[
+    {titre:'Présence et ponctualité',items:[
+      'Est arrivé(e) à l\'heure toute la semaine',
+      'A prévenu en cas d\'absence ou retard',
+      'A respecté les horaires de fin de mission',
+      'N\'a pas quitté le poste sans autorisation',
+      'A été présent(e) sur tous les créneaux prévus'
+    ]},
+    {titre:'Comportement et attitude au travail',items:[
+      'Attitude positive et motivée',
+      'Respectueux(se) avec l\'encadrant',
+      'Respectueux(se) avec les collègues',
+      'Respectueux(se) avec les clients',
+      'A gardé son calme face aux imprévus',
+      'A accepté les remarques sans se braquer',
+      'A montré de la bonne volonté',
+      'Tenue de travail correcte et propre',
+      'A porté ses EPI sans qu\'on le rappelle'
+    ]},
+    {titre:'Compétences professionnelles observées',items:[
+      'Comprend et applique les consignes du premier coup',
+      'A progressé par rapport à la semaine précédente',
+      'Est capable de travailler seul(e) sur sa tournée',
+      'Gère bien les imprévus sur la route',
+      'Véhicule conduit avec soin et sécurité',
+      'Chargement et déchargement maîtrisés',
+      'Livraisons effectuées dans les temps',
+      'Relations clients professionnelles',
+      'Retours dépôt dans les règles',
+      'Documents (BL, feuille de route) correctement remplis'
+    ]},
+    {titre:'Points forts de la période — cochez ce qui s\'applique',items:[
+      'Ponctualité exemplaire',
+      'Grande motivation visible',
+      'Prise d\'initiative positive',
+      'Excellent esprit d\'équipe',
+      'Progrès spectaculaire sur une compétence',
+      'Très bon retour client',
+      'Autonomie renforcée',
+      'Leadership naturel avec les collègues',
+      'Qualité du travail en hausse constante',
+      'Gestion du stress remarquable'
+    ]},
+    {titre:'Points à améliorer — cochez ce qui concerne ce salarié',items:[
+      'Ponctualité encore insuffisante',
+      'Autonomie à renforcer (trop de questions non nécessaires)',
+      'Communication à améliorer avec l\'équipe',
+      'Soin du matériel insuffisant',
+      'Gestion du temps à travailler',
+      'Relation client à professionnaliser',
+      'Motivation fluctuante selon les jours',
+      'Résistance aux changements de planning',
+      'Gestion du stress à améliorer',
+      'Port des EPI à rappeler régulièrement',
+      'Qualité de conduite à surveiller',
+      'Organisation personnelle insuffisante'
+    ]},
+    {titre:'Objectifs de la prochaine période',items:[
+      'Objectif ponctualité : zéro retard',
+      'Objectif autonomie : gérer sa tournée sans aide',
+      'Objectif qualité : zéro réclamation client',
+      'Objectif sécurité : respect total du code de la route',
+      'Objectif matériel : véhicule rendu propre chaque soir',
+      'Objectif communication : signaler proactivement les problèmes',
+      'Objectif projet pro : avancer sur CV / recherche emploi',
+      'Objectif formation : préparer le permis / FIMO / autre'
+    ]},
+    {titre:'Décision de suivi — encadrant',items:[
+      'Suivi normal — poursuite du parcours',
+      'Suivi renforcé — entretien hebdomadaire',
+      'Plan d\'action à mettre en place',
+      'Entretien de recadrage nécessaire',
+      'Proposition de renouvellement à envisager',
+      'Signalement RH / CIP nécessaire',
+      'Salarié prêt pour une sortie positive vers l\'emploi'
+    ]}
+  ]
+};
+
+/* ── FICHE RECRUTEMENT ── */
+FICHES_TYPES.recrutement = {
+  titre:'Entretien de recrutement — Logistique & Collectivités',icon:'🎯',
+  sections:[
+    {titre:'Accueil et présentation du poste',items:[
+      'Candidat accueilli et mis à l\'aise',
+      'La Table de Cana présentée (SIAE, mission insertion)',
+      'Le poste de chauffeur livreur expliqué clairement',
+      'Les différentes missions expliquées : livraisons, collectivités, centres aérés, traiteur',
+      'Le contrat CDDI expliqué (durée, renouvellement, objectif insertion)',
+      'La rémunération et les horaires présentés',
+      'Le candidat a posé des questions sur le poste'
+    ]},
+    {titre:'Disponibilités et mobilité',items:[
+      'Disponible dès maintenant',
+      'Disponible dans moins de 15 jours',
+      'Permis B valide (vérifié)',
+      'Permis B en cours de validité — points restants OK',
+      'Véhicule personnel disponible',
+      'Transports en commun suffisants pour venir à 5h30',
+      'Pas de contrainte de mobilité sur le secteur Marseille',
+      'Peut se déplacer sur tout le 13'
+    ]},
+    {titre:'Horaires modulables 6h-18h — réaction du candidat',items:[
+      'Comprend que les horaires changent selon les missions',
+      'Accepte de démarrer à 6h00 le matin',
+      'Accepte des fins de mission jusqu\'à 18h selon les besoins',
+      'N\'a pas de contrainte personnelle bloquante sur les horaires',
+      'Comprend qu\'il n\'y a pas d\'horaire fixe garanti',
+      'A déjà travaillé sur des horaires décalés — à l\'aise',
+      'Garde d\'enfants organisée — pas de frein',
+      'Réaction positive et flexible face aux horaires'
+    ]},
+    {titre:'Condition physique et port de charge',items:[
+      'Aucun problème de santé déclaré limitant le poste',
+      'Peut porter des charges jusqu\'à 25 kg',
+      'Pas de contre-indication médicale à la conduite',
+      'Visite médicale du travail à prévoir',
+      'Pas de problème de dos déclaré',
+      'Capable de rester debout plusieurs heures',
+      'Pas d\'allergie ou intolérance alimentaire problématique pour les missions traiteur',
+      'Forme physique générale correcte et adaptée au poste'
+    ]},
+    {titre:'Conduite et sécurité routière',items:[
+      'Conduite régulière — habitude du volant',
+      'Connaissance de Marseille et alentours',
+      'Expérience de conduite de véhicule utilitaire (fourgon)',
+      'Respect du code de la route affiché comme priorité',
+      'Pas d\'accident récent déclaré',
+      'Pas d\'alcool au volant / stupéfiants déclaré',
+      'Téléphone rangé en conduisant — engagement verbal',
+      'Réaction calme et prudente face aux bouchons Marseille',
+      'A compris les règles : ceinture, vitesse, priorités'
+    ]},
+    {titre:'Missions logistique — réaction et compréhension',items:[
+      'Comprend ce qu\'est une tournée de livraison',
+      'À l\'aise avec l\'idée de charger/décharger seul',
+      'Comprend l\'importance du rangement et de l\'organisation',
+      'Hall logistique : comprend le tri, rangement, préparation commandes',
+      'Lavage et entretien des camions : accepté sans réticence',
+      'Vérification véhicule avant départ : compris et accepté',
+      'Feuille de route et documents : compris le principe',
+      'Gestion des BL et signatures clients : compris'
+    ]},
+    {titre:'Missions collectivités et centres aérés',items:[
+      'Comprend ce qu\'est une livraison en collectivité (école, mairie, cantine)',
+      'À l\'aise avec un environnement enfants (centres aérés)',
+      'Capacité à s\'adapter à des lieux différents chaque jour',
+      'Compréhension des horaires stricts des collectivités',
+      'Capacité à décharger seul dans des espaces parfois réduits',
+      'Compréhension de l\'importance de la ponctualité pour ces clients',
+      'Attitude professionnelle avec le personnel d\'accueil des structures'
+    ]},
+    {titre:'Missions traiteur',items:[
+      'Comprend ce qu\'est une livraison traiteur (événements, mariages, séminaires)',
+      'Capable de transporter du matériel fragile avec soin',
+      'Compréhension de l\'importance de la présentation lors des livraisons',
+      'Comprend le principe de la chambre froide et des températures',
+      'Accepte les livraisons du soir ou du week-end occasionnellement',
+      'Capable de porter du mobilier (tables, chaises) si nécessaire',
+      'Contact client soigné dans ces contextes à fort enjeu'
+    ]},
+    {titre:'Ponctualité et fiabilité',items:[
+      'Arrive à l\'heure à l\'entretien — bon signe',
+      'Justifie d\'une expérience sans absence injustifiée',
+      'Comprend que la ponctualité est non-négociable sur ce poste',
+      'A déjà travaillé tôt le matin — habitué',
+      'Pas d\'addiction ou de problème pouvant nuire à la présence',
+      'A un réveil fiable et une organisation matinale',
+      'S\'engage verbalement sur la ponctualité'
+    ]},
+    {titre:'Esprit d\'équipe et communication',items:[
+      'Parle positivement de ses anciens collègues',
+      'A donné des exemples d\'entraide au travail',
+      'Communique clairement et sans agressivité',
+      'N\'a pas de conflit professionnel récent déclaré',
+      'Comprend l\'importance de signaler les problèmes à son encadrant',
+      'Communication avec les autres services : traiteur, cuisine, commercial',
+      'Pas de comportement isolé ou renfermé observé pendant l\'entretien',
+      'Capable de demander de l\'aide sans fierté mal placée'
+    ]},
+    {titre:'Relation client et image de l\'entreprise',items:[
+      'Comprend que le chauffeur représente la Table de Cana',
+      'Tenue correcte et image soignée lors de l\'entretien',
+      'Souriant(e) et poli(e) lors des échanges',
+      'Capable de gérer un client mécontent avec calme',
+      'Comprend l\'importance du sourire et du bonjour à chaque livraison',
+      'Pas de langage familier ou agressif pendant l\'entretien',
+      'Capacité à s\'exprimer clairement face à un interlocuteur client'
+    ]},
+    {titre:'Gestion de la timidité et aisance sociale',items:[
+      'Aisance verbale suffisante pour le poste',
+      'Timidité naturelle mais pas handicapante',
+      'Capable de se présenter à un inconnu (client, responsable)',
+      'Pas de blocage sur le contact humain lors des livraisons',
+      'À l\'aise pour téléphoner si problème sur la route',
+      'Accepte de travailler seul ET en équipe',
+      'Pas de phobie sociale identifiée'
+    ]},
+    {titre:'Planning non fixe — flexibilité',items:[
+      'A bien compris que le planning change selon les missions',
+      'Pas de second emploi incompatible',
+      'Pas de formation en cours incompatible avec les horaires',
+      'Famille informée des contraintes d\'horaires',
+      'Accepte les missions de dernière minute si besoin',
+      'Capable de gérer le stress lié à l\'incertitude du planning',
+      'Réaction positive et mature face à ce point clé'
+    ]},
+    {titre:'Projet professionnel et motivation insertion',items:[
+      'A un projet professionnel clairement défini',
+      'Motivé(e) pour acquérir des compétences en logistique',
+      'Intéressé(e) par le permis C ou FIMO à terme',
+      'Comprend l\'objectif de l\'insertion : sortie vers l\'emploi',
+      'A parlé positivement de son envie de travailler',
+      'Prêt(e) à suivre des formations proposées par la structure',
+      'Projet réaliste et cohérent avec le secteur logistique'
+    ]},
+    {titre:'Décision finale de recrutement',items:[
+      '✅ FAVORABLE — candidat retenu',
+      '✅ FAVORABLE avec réserves — point à surveiller',
+      '⏳ EN ATTENTE — dossier à compléter avant décision',
+      '❌ DÉFAVORABLE — profil ne correspond pas au poste',
+      '📞 Convocation pour un essai professionnel à prévoir',
+      '📋 Dossier transmis à Pôle Emploi / Mission Locale',
+      '📅 Date de prise de poste envisagée notée ci-dessous'
+    ]}
+  ]
+};
+
+/* ── PAGE PSYCHOLOGIE / AT / MANAGEMENT ── */
+var PSYCHO_MODULES = [
+  {
+    cat:'Analyse Transactionnelle',color:'#a855f7',icon:'🧠',
+    fiches:[
+      {
+        titre:'Les 3 États du Moi',
+        theorie:'Chaque personne communique depuis 3 états : Parent (normes, autorité), Adulte (logique, faits), Enfant (émotions, spontanéité). En insertion, rester en état Adulte = clé des échanges constructifs.',
+        signes:['Salarié en Enfant rebelle : "J\'ai pas envie", "c\'est nul"','Salarié en Enfant soumis : baisse la tête, dit oui à tout sans comprendre','Encadrant en Parent autoritaire : "Tu dois", "il faut", ton dur','Encadrant en Adulte : calme, factuel, questionne, propose'],
+        actions:['Si salarié en Enfant rebelle → ne pas répondre en Parent autoritaire → rester Adulte : "Qu\'est-ce qui se passe pour toi ?"','Si salarié en Enfant soumis → encourager l\'expression : "Tu as le droit de ne pas être d\'accord"','Toujours privilégier les échanges Adulte-Adulte : faits, solutions, respect mutuel'],
+        exemple:'"Tu es encore en retard !" (Parent) → Résultat : défense, conflit. "Je remarque que tu es arrivé à 6h20 aujourd\'hui. Qu\'est-ce qui s\'est passé ?" (Adulte) → Résultat : dialogue, solution.'
+      },
+      {
+        titre:'Triangle de Karpman — Victime / Sauveur / Persécuteur',
+        theorie:'Piège relationnel très fréquent en insertion. Le salarié peut se placer en Victime, vous pousser à être Sauveur ou Persécuteur. Ce triangle nuit à l\'autonomie et à l\'accompagnement.',
+        signes:['Victime : "Je n\'y arrive jamais", "tout le monde m\'en veut", "je suis nul"','Sauveur : faire à la place de, protéger excessivement, éviter les confrontations nécessaires','Persécuteur : punir, humilier, critiquer sans solution'],
+        actions:['Identifier dans quel rôle vous êtes','Refuser le rôle de Sauveur : "Je vous aide à trouver la solution, je ne la trouve pas à votre place"','Sortir la Victime de son rôle : "Qu\'est-ce que TU peux faire ?" plutôt que "qu\'est-ce qu\'on peut faire pour toi ?"','Ne jamais devenir Persécuteur : toujours rester dans les faits'],
+        exemple:'"Je suis nul, j\'y arrive pas" → mauvaise réponse : "Ne t\'inquiète pas, je vais t\'aider" (Sauveur). Bonne réponse : "Tu dis que tu n\'y arrives pas — sur quelle partie précisément tu butes ?"'
+      },
+      {
+        titre:'Les Drivers (Injonctions)',
+        theorie:'6 drivers inconscients qui poussent les gens à se comporter d\'une certaine façon. En insertion, les reconnaître permet d\'adapter l\'accompagnement.',
+        signes:['"Sois fort" : ne montre jamais ses émotions, refuse l\'aide','"Sois parfait" : se décourage vite si le résultat n\'est pas parfait','"Fais plaisir" : dit oui à tout, ne sait pas refuser','"Dépêche-toi" : travaille vite mais fait des erreurs','"Fais des efforts" : valorise l\'effort mais pas le résultat'],
+        actions:['Identifier le driver dominant du salarié','Adapter le feedback selon le driver','Pour "Sois fort" : ouvrir la porte aux émotions sans forcer','Pour "Sois parfait" : valoriser les petites réussites, dédramatiser l\'erreur','Pour "Fais plaisir" : apprendre à dire non de façon professionnelle'],
+        exemple:'Salarié "Fais plaisir" qui dit oui à tout mais n\'exécute pas → ce n\'est pas de la mauvaise volonté, c\'est une incapacité à refuser. Lui apprendre : "Je ne peux pas faire ça maintenant parce que..."'
+      }
+    ]
+  },
+  {
+    cat:'Communication & Management',color:'#3b82f6',icon:'💬',
+    fiches:[
+      {
+        titre:'Méthode DESC — Feedback constructif',
+        theorie:'La méthode la plus efficace pour aborder un problème sans déclencher de défensive. Décrire — Exprimer — Spécifier — Conséquences.',
+        signes:['D = Décrire les faits objectivement (pas de jugement)','E = Exprimer ce que ça produit en vous','S = Spécifier ce que vous attendez concrètement','C = Conséquences positives si changement'],
+        actions:['Toujours en privé, jamais devant l\'équipe','Ton calme, posture ouverte','Laisser le salarié répondre après chaque étape','Terminer par un engagement concret et daté'],
+        exemple:'D : "Lundi et mardi tu es arrivé à 6h20 au lieu de 6h." E : "Ça me met en difficulté pour organiser la tournée." S : "J\'ai besoin que tu sois là à 5h55 à partir de lundi." C : "Comme ça on part à l\'heure et ta journée se passe mieux."'
+      },
+      {
+        titre:'Écoute active — La base de tout entretien',
+        theorie:'L\'écoute active ne signifie pas juste entendre. C\'est reformuler, questionner, valider. Elle crée la confiance et fait parler les salariés qui n\'osent pas.',
+        signes:['Silence après la question — laisser le temps','Reformulation : "Si je comprends bien, tu dis que..."','Question ouverte : "Comment tu vis ça ?"','Validation : "C\'est normal de ressentir ça"','Pas de conseil avant d\'avoir tout entendu'],
+        actions:['Ne pas couper la parole','Ne pas préparer votre réponse pendant qu\'il parle','Poser une seule question à la fois','Tolérer les silences — ils sont productifs','Observer le non-verbal autant que les mots'],
+        exemple:'"Comment tu te sens depuis la semaine dernière ?" → silence de 5 secondes → ne pas remplir le silence → laisser venir. Ce que dit le salarié après ce silence est souvent le vrai sujet.'
+      },
+      {
+        titre:'Management situationnel — 4 styles selon le niveau',
+        theorie:'Il n\'y a pas un style de management idéal. Le bon style dépend du niveau de compétence ET de motivation du salarié sur la tâche précise.',
+        signes:['Style 1 — Directif : salarié débutant + motivé → expliquer, montrer, cadrer','Style 2 — Persuasif : salarié en progression + motivation variable → expliquer pourquoi, impliquer','Style 3 — Participatif : salarié compétent + confiance fragile → écouter, soutenir, encourager','Style 4 — Délégatif : salarié expert + motivé → confier, responsabiliser, faire confiance'],
+        actions:['Évaluer pour chaque tâche le niveau réel du salarié','Ne pas rester toujours en mode Directif — ça écrase l\'autonomie','Ne pas déléguer trop tôt — ça crée des échecs décourageants','Progresser dans les styles au fil du temps'],
+        exemple:'Otmane sur la tournée habituelle → Style 4 (déléguer). Otmane sur une nouvelle mission traiteur → Style 1 ou 2 (expliquer et accompagner). Même salarié, styles différents selon la tâche.'
+      },
+      {
+        titre:'Objectifs SMART — Fixer pour que ça marche',
+        theorie:'Un objectif vague ne change rien. SMART = Spécifique, Mesurable, Atteignable, Réaliste, Temporel.',
+        signes:['Spécifique : "être ponctuel" vs "arriver avant 5h55"','Mesurable : on peut vérifier si c\'est atteint ou non','Atteignable : ni trop facile ni impossible','Réaliste : adapté à la situation réelle du salarié','Temporel : une date butoir claire'],
+        actions:['Toujours co-construire l\'objectif avec le salarié','L\'écrire noir sur blanc et faire signer','Faire un point à mi-chemin','Célébrer la réussite — même petite'],
+        exemple:'Mauvais : "Fais des efforts sur la ponctualité." Bon : "À partir de lundi 7 juillet, tu arrives au dépôt avant 5h55 chaque matin. On fait le bilan le 7 août ensemble."'
+      }
+    ]
+  },
+  {
+    cat:'Situations difficiles terrain',color:'#f97316',icon:'🔧',
+    fiches:[
+      {
+        titre:'Détecter les signaux d\'alerte précoces',
+        theorie:'Les problèmes s\'annoncent toujours avant d\'exploser. Apprendre à lire les signaux faibles permet d\'intervenir tôt.',
+        signes:['Absences ou retards qui augmentent soudainement','Isolement de l\'équipe — plus de repas ensemble, plus de discussions','Irritabilité inhabituelle ou au contraire apathie soudaine','Baisse de qualité du travail sans raison apparente','Regard fuyant, moins de contact oculaire','Commentaires négatifs sur tout et tout le monde','Désinvestissement : "J\'m\'en fous", "comme vous voulez"'],
+        actions:['Créer un moment seul à seul informal : "T\'as une minute ?"','Ouvrir sans accuser : "Je te sens différent ces derniers temps. Tout va bien ?"','Ne pas forcer — planter la graine et laisser la porte ouverte','Si problème personnel détecté : orienter vers l\'assistante sociale ou le CIP','Si problème professionnel : agir vite avant que ça s\'aggrave'],
+        exemple:'"Nicolas n\'a rien dit ce matin en arrivant. Pas de bonjour, regard dans le vide. Je note. Si ça recommence demain, je lui parle seul à seul."'
+      },
+      {
+        titre:'Gérer un conflit entre deux salariés',
+        theorie:'Les conflits sont normaux. Mal gérés, ils pourrissent l\'ambiance et peuvent pousser l\'un ou l\'autre à l\'abandon.',
+        signes:['Entretien séparé d\'abord avec chaque personne','Ne pas prendre parti avant d\'avoir les deux versions','Identifier si c\'est un conflit de besoins (organisation, place) ou de valeurs (respect, fairness)','Les faits uniquement — pas les interprétations'],
+        actions:['Entretien séparé : écouter sans juger','Entretien commun si les deux sont d\'accord','Rappel des règles de vie commune','Co-construction d\'un accord concret','Suivi à J+7 et J+30','Si impossible : séparation des équipes ou missions'],
+        exemple:'"Karim dit que Mickaël lui parle mal. Mickaël dit que Karim ne fait pas sa part au déchargement. Je vois les deux séparément. Je ne tranche pas avant d\'avoir les deux sons de cloche."'
+      },
+      {
+        titre:'Remotiver un salarié qui décroche',
+        theorie:'La perte de motivation n\'est jamais "sans raison". Il y a toujours une cause : problème personnel, sentiment d\'injustice, ennui, peur de l\'échec, projet pro flou.',
+        signes:['Identifier d\'abord la vraie cause — poser la question directement','Problème personnel → orienter vers les bons partenaires','Sentiment d\'injustice → écouter, reconnaître si légitime, expliquer si non','Ennui → confier des missions plus valorisantes','Peur de l\'échec → rassurer, donner des succès accessibles','Projet pro flou → retravailler ensemble la projection'],
+        actions:['Entretien de remotivation : "Qu\'est-ce qui te donnait envie au début ?"','Retravailler le sens : pourquoi ce travail compte','Confier une petite responsabilité : parrain d\'un nouveau salarié','Proposer une formation qui l\'intéresse','Valoriser publiquement devant l\'équipe','Fixer un nouvel objectif stimulant'],
+        exemple:'"Nicolas ne parle plus de son projet permis C. Je reprends ça avec lui. Si la flamme revient sur ce sujet, la motivation au quotidien revient avec."'
+      },
+      {
+        titre:'Prévenir et gérer l\'épuisement professionnel (encadrant)',
+        theorie:'L\'encadrant en insertion porte beaucoup. Les problèmes des salariés peuvent déborder sur lui. Prendre soin de soi est une condition de l\'accompagnement de qualité.',
+        signes:['Sentiment de "tout repose sur moi"','Difficulté à déconnecter le soir','Irritabilité avec les salariés qui augmente','Sentiment d\'inutilité malgré les efforts','Fatigue chronique le matin'],
+        actions:['Identifier ce qui relève de vous ET ce qui ne relève pas de vous','Poser des limites claires sans culpabilité','Partager avec un collègue ou superviseur — ne pas rester seul','Utiliser les ressources : OPCO, supervision, formation encadrants','Rappel : vous accompagnez, vous ne sauvez pas'],
+        exemple:'"Je ne peux pas résoudre les problèmes de logement de mes salariés. Je peux les orienter. C\'est déjà énorme. Mon rôle s\'arrête là — et c\'est légitime."'
+      }
+    ]
+  }
+];
+
+/* ── NOUVELLE PAGE PSYCHOLOGIE ── */
+function renderPsychologie(c){
+  var cats=[...new Set(PSYCHO_MODULES.map(function(m){return m.cat;}))];
+  var h='<div class="page-title">🧠 Psychologie, AT & Management</div>';
+  h+='<div class="page-sub" style="margin-bottom:20px">Fiches pratiques pour encadrants en insertion — méthodes éprouvées</div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px" id="psycho-filtres">';
+  h+='<button class="btn btn-primary btn-sm" onclick="filtPsycho(\'\')">Toutes</button>';
+  cats.forEach(function(cat){
+    var mod=PSYCHO_MODULES.find(function(m){return m.cat===cat;});
+    h+='<button class="btn btn-sm" style="background:'+mod.color+'22;border:1px solid '+mod.color+'44;color:'+mod.color+'" onclick="filtPsycho(\''+cat+'\')">'+mod.icon+' '+cat+'</button>';
+  });
+  h+='</div><div id="psycho-list">'+buildPsychoHTML('')+'</div>';
+  c.innerHTML=h;
+}
+window.filtPsycho=function(cat){var el=document.getElementById('psycho-list');if(el)el.innerHTML=buildPsychoHTML(cat);};
+function buildPsychoHTML(cat){
+  var modules=cat?PSYCHO_MODULES.filter(function(m){return m.cat===cat;}):PSYCHO_MODULES;
+  var h='';
+  modules.forEach(function(mod){
+    mod.fiches.forEach(function(f){
+      h+='<div class="card" style="margin-bottom:16px;border-color:'+mod.color+'33">';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+      h+='<div style="font-size:28px">'+mod.icon+'</div>';
+      h+='<div><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:'+mod.color+';letter-spacing:.06em">'+mod.cat+'</div>';
+      h+='<div style="font-size:16px;font-weight:900;color:#fff">'+f.titre+'</div></div></div>';
+      h+='<div style="background:'+mod.color+'11;border-left:3px solid '+mod.color+';border-radius:6px;padding:12px;margin-bottom:14px;font-size:12px;line-height:1.7;color:#cbd5e1">'+f.theorie+'</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">';
+      h+='<div><div style="font-size:10px;font-weight:800;color:var(--yellow);text-transform:uppercase;margin-bottom:8px">Reconnaître</div>';
+      f.signes.forEach(function(s){h+='<div style="display:flex;gap:7px;margin-bottom:5px;font-size:11px;line-height:1.5"><span style="color:var(--yellow);flex-shrink:0">→</span>'+s+'</div>';});
+      h+='</div>';
+      h+='<div><div style="font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;margin-bottom:8px">Agir concrètement</div>';
+      f.actions.forEach(function(a){h+='<div style="display:flex;gap:7px;margin-bottom:5px;font-size:11px;line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>'+a+'</div>';});
+      h+='</div></div>';
+      h+='<div style="background:#071526;border-radius:8px;padding:12px;border-left:3px solid var(--orange)">';
+      h+='<div style="font-size:10px;font-weight:800;color:var(--orange);text-transform:uppercase;margin-bottom:6px">Exemple terrain</div>';
+      h+='<div style="font-size:12px;line-height:1.7;color:#94a3b8;font-style:italic">'+f.exemple+'</div></div></div>';
+    });
+  });
+  return h;
+}
+
+</script>
+<script>
+/* ════════════════════════════════════════════════════════
+   PATCH 2 — VUE SALARIÉS INTELLIGENTE + RECHERCHE + FOND
+   ════════════════════════════════════════════════════════ */
+
+/* ── VUE SALARIÉS REPENSÉE ── */
+var VUE_SAL = 'liste'; // liste | cartes | tableau
+
+function renderSalaries(c){
+  var actifs = DB.salaries.filter(function(s){return s.statut==='actif';}).length;
+  var fins = DB.salaries.filter(function(s){
+    if(s.statut!=='actif') return false;
+    var j=jours(s.dateFin); return j!==null&&j<=30&&j>=0;
+  }).length;
+  var sortis = DB.salaries.filter(function(s){return s.statut==='sorti';}).length;
+
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">';
+  h+='<div class="page-title">Salariés ('+DB.salaries.length+')</div>';
+  h+='<button class="btn btn-primary" onclick="ouvrirNouveauSalarie()">➕ Nouveau salarié</button></div>';
+
+  /* Barre de recherche universelle */
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h+='<input id="s-search" placeholder="🔍 Rechercher un nom, poste, véhicule, note..." oninput="majListeSalaries()" style="flex:1;min-width:250px;background:#0d1829;border:1px solid var(--border2);border-radius:9px;color:#fff;padding:10px 14px;font-size:13px;outline:none">';
+  h+='<select id="s-sort" onchange="majListeSalaries()" style="background:#0d1829;border:1px solid var(--border);border-radius:9px;color:#fff;padding:10px 12px;font-size:12px;outline:none">';
+  h+='<option value="nom">Trier : A-Z</option><option value="score">Trier : Score</option><option value="fin">Trier : Fin contrat</option><option value="entree">Trier : Entrée</option></select>';
+  h+='</div>';
+
+  /* Filtres rapides */
+  h+='<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap" id="s-filtres">';
+  h+='<button class="btn btn-sm s-filtre-btn on" data-f="tous" onclick="setFiltreS(this,\'tous\')">Tous ('+DB.salaries.length+')</button>';
+  h+='<button class="btn btn-sm s-filtre-btn" data-f="actif" onclick="setFiltreS(this,\'actif\')" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue)">🟢 Actifs ('+actifs+')</button>';
+  h+='<button class="btn btn-sm s-filtre-btn" data-f="findroit" onclick="setFiltreS(this,\'findroit\')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red)">⏰ Fin proche ('+fins+')</button>';
+  h+='<button class="btn btn-sm s-filtre-btn" data-f="sorti" onclick="setFiltreS(this,\'sorti\')" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green)">🎓 Sortis ('+sortis+')</button>';
+  h+='</div>';
+
+  /* Switcher vue */
+  h+='<div style="display:flex;gap:4px;background:#060d1a;border-radius:10px;padding:3px;width:fit-content;margin-bottom:16px">';
+  ['liste','cartes','tableau'].forEach(function(v){
+    var icons={liste:'☰',cartes:'⊞',tableau:'≡'};
+    h+='<button class="btn btn-sm vue-btn'+(VUE_SAL===v?' btn-primary':' btn-secondary')+'" onclick="setVueSal(\''+v+'\')" title="Vue '+v+'">'+icons[v]+' '+v.charAt(0).toUpperCase()+v.slice(1)+'</button>';
+  });
+  h+='</div>';
+
+  h+='<div id="sal-container">'+buildSalView(DB.salaries, VUE_SAL)+'</div>';
+  c.innerHTML=h;
+
+  /* CSS boutons filtres */
+  var style=document.createElement('style');
+  style.textContent='.s-filtre-btn{background:var(--panel2);border:1px solid var(--border);color:var(--sub)}.s-filtre-btn.on{background:var(--orange);border-color:var(--orange);color:#fff}';
+  document.head.appendChild(style);
+}
+
+window.setVueSal=function(v){
+  VUE_SAL=v;
+  document.querySelectorAll('.vue-btn').forEach(function(b){
+    b.classList.toggle('btn-primary', b.textContent.toLowerCase().indexOf(v)>=0);
+    b.classList.toggle('btn-secondary', b.textContent.toLowerCase().indexOf(v)<0);
+  });
+  majListeSalaries();
+};
+
+var _filtreS='tous';
+window.setFiltreS=function(btn,f){
+  _filtreS=f;
+  document.querySelectorAll('.s-filtre-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  majListeSalaries();
+};
+
+window.majListeSalaries=function(){
+  var q=(document.getElementById('s-search')||{}).value||'';
+  var sort=(document.getElementById('s-sort')||{}).value||'nom';
+  q=q.toLowerCase();
+
+  var list=DB.salaries.filter(function(s){
+    /* filtre statut */
+    if(_filtreS==='actif') return s.statut==='actif';
+    if(_filtreS==='sorti') return s.statut==='sorti';
+    if(_filtreS==='findroit'){if(s.statut!=='actif')return false;var j=jours(s.dateFin);return j!==null&&j<=30&&j>=0;}
+    return true;
+  }).filter(function(s){
+    if(!q)return true;
+    /* recherche universelle */
+    var hay=[s.prenom,s.nom,s.poste,s.vehicule,s.typeContrat,s.notesCIP,s.notesRH,s.projetPro,s.objectifs,s.formations].join(' ').toLowerCase();
+    /* chercher aussi dans entretiens */
+    var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
+    ents.forEach(function(e){hay+=' '+(e.pointsPositifs||'')+' '+(e.pointsAmeliorer||'')+' '+(e.axePro||'');});
+    return hay.indexOf(q)>=0;
+  });
+
+  /* tri */
+  list.sort(function(a,b){
+    if(sort==='nom')return (a.prenom||'').localeCompare(b.prenom||'');
+    if(sort==='score')return scoreGlobal(b.id)-scoreGlobal(a.id);
+    if(sort==='fin'){var ja=jours(a.dateFin)||9999,jb=jours(b.dateFin)||9999;return ja-jb;}
+    if(sort==='entree')return (b.dateEntree||'').localeCompare(a.dateEntree||'');
+    return 0;
+  });
+
+  var el=document.getElementById('sal-container');
+  if(el)el.innerHTML=buildSalView(list,VUE_SAL);
+};
+
+function buildSalView(list,vue){
+  if(!list.length)return '<div style="text-align:center;color:var(--sub);padding:50px;font-size:13px">Aucun salarié trouvé.</div>';
+  if(vue==='cartes')return buildVueCartes(list);
+  if(vue==='tableau')return buildVueTableau(list);
+  return buildVueListe(list);
+}
+
+/* VUE LISTE COMPACTE — par défaut, parfaite pour 100 salariés */
+function buildVueListe(list){
+  var h='<div style="display:flex;flex-direction:column;gap:6px">';
+  list.forEach(function(s){
+    var score=scoreGlobal(s.id);
+    var j=jours(s.dateFin);
+    var urgent=j!==null&&j<=14&&j>=0;
+    var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
+    var badges=DB.badges_attribues.filter(function(b){return b.salId==s.id;}).length;
+    var complet=calculCompletionDossier(s);
+    h+='<div style="background:var(--panel);border:1px solid '+(urgent?'rgba(239,68,68,.4)':'var(--border)')+';border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.15s" onclick="ouvrirDossier('+s.id+')" onmouseover="this.style.borderColor=\'var(--orange)\'" onmouseout="this.style.borderColor=\''+(urgent?'rgba(239,68,68,.4)':'var(--border)')+'\'">'+avt(s);
+    /* Nom + poste */
+    h+='<div style="min-width:170px"><div style="font-weight:900;color:#fff;font-size:14px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div style="font-size:11px;color:var(--sub)">'+s.poste+' · '+s.vehicule+'</div></div>';
+    /* Score */
+    h+='<div style="min-width:90px">'+(score>0?'<div style="font-size:12px;font-weight:900;color:'+scColor(score)+'">'+score.toFixed(1)+'/4</div><div class="score-bar" style="height:5px;width:80px;margin-top:3px"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scColor(score)+'"></div></div>':'<span style="color:var(--sub);font-size:11px">—</span>')+'</div>';
+    /* Contrat + fin */
+    h+='<div style="min-width:130px"><span class="badge badge-orange" style="font-size:10px">'+s.typeContrat+'</span>';
+    if(s.dateFin)h+='<div style="font-size:11px;color:'+(urgent?'var(--red)':'var(--sub)')+';margin-top:4px">'+(urgent?'⏰ ':'')+'Fin : '+fmt(s.dateFin)+(j!==null?' ('+j+'j)':'')+'</div>';
+    h+='</div>';
+    /* Entretiens + badges */
+    h+='<div style="min-width:80px;text-align:center"><div style="font-size:11px;color:var(--sub)">'+ents.length+' entr.</div>';
+    if(badges)h+='<div style="font-size:11px;color:var(--yellow)">'+badges+' 🏅</div>';
+    h+='</div>';
+    /* Complétion dossier */
+    h+='<div style="min-width:70px;text-align:center"><div style="font-size:10px;color:var(--sub);margin-bottom:3px">Dossier</div><div class="score-bar" style="width:60px;height:5px"><div class="score-fill" style="width:'+complet+'%;background:'+(complet>=80?'var(--green)':complet>=50?'var(--yellow)':'var(--red)')+'"></div></div><div style="font-size:10px;color:var(--sub);margin-top:2px">'+complet+'%</div></div>';
+    /* Statut */
+    var cls={actif:'badge-green',sorti:'badge-blue',suspendu:'badge-red'}[s.statut]||'badge-gray';
+    h+='<span class="badge '+cls+'" style="font-size:10px">'+s.statut+'</span>';
+    /* Actions */
+    h+='<div style="display:flex;gap:4px;margin-left:auto">';
+    h+='<button class="btn btn-xs btn-primary" onclick="event.stopPropagation();ouvrirDossier('+s.id+')">Dossier</button>';
+    h+='<button class="btn btn-xs btn-blue" onclick="event.stopPropagation();modalEntretien('+s.id+',0)">💬</button>';
+    h+='<button class="btn btn-xs btn-green" onclick="event.stopPropagation();modalEvaluation('+s.id+',0)">⭐</button>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* VUE CARTES — jusqu'à 15 salariés */
+function buildVueCartes(list){
+  if(list.length>15){
+    return '<div class="alert alert-warn" style="margin-bottom:12px">'+list.length+' salariés — la vue liste ou tableau est plus adaptée. <button class="btn btn-sm btn-secondary" onclick="setVueSal(\'liste\')" style="margin-left:10px">Passer en liste</button></div>'+buildVueCartes15(list);
+  }
+  return buildVueCartes15(list);
+}
+function buildVueCartes15(list){
+  var h='<div class="grid-2">';
+  list.forEach(function(s){
+    var score=scoreGlobal(s.id);var j=jours(s.dateFin);
+    var ents=DB.entretiens.filter(function(e){return e.salId==s.id;});
+    var badges=DB.badges_attribues.filter(function(b){return b.salId==s.id;}).length;
+    h+='<div class="sal-card" onclick="ouvrirDossier('+s.id+')">';
+    h+='<div class="sal-hdr">'+avt(s)+'<div style="flex:1"><div class="sal-name">'+s.prenom+(s.nom?' '+s.nom:'')+'</div><div class="sal-poste">'+s.poste+' · '+s.vehicule+'</div>';
+    if(score>0)h+='<div style="margin-top:6px"><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:'+(score/4*100)+'%;background:'+scColor(score)+'"></div></div><span style="font-size:11px;font-weight:800;color:'+scColor(score)+'">'+score.toFixed(1)+' — '+scLbl(score)+'</span></div></div>';
+    h+='</div></div>';
+    h+='<div class="sal-body"><div class="sal-row"><span class="sal-row-lbl">Contrat</span><span><span class="badge badge-orange">'+s.typeContrat+'</span></span></div>';
+    h+='<div class="sal-row"><span class="sal-row-lbl">Fin contrat</span><span style="color:'+(j!==null&&j<=30?'var(--red)':'inherit')+'">'+fmt(s.dateFin)+(j!==null?' ('+j+'j)':'')+'</span></div>';
+    h+='<div class="sal-row"><span class="sal-row-lbl">Entretiens</span><span>'+ents.length+'</span></div>';
+    h+='<div class="sal-row"><span class="sal-row-lbl">Badges</span><span>'+badges+' 🏅</span></div></div>';
+    h+='<div class="sal-actions"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();ouvrirDossier('+s.id+')">📂 Dossier</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();modalEntretien('+s.id+',0)">💬</button><button class="btn btn-green btn-sm" onclick="event.stopPropagation();modalEvaluation('+s.id+',0)">⭐</button></div></div>';
+  });
+  return h+'</div>';
+}
+
+/* VUE TABLEAU — 50-100 salariés */
+function buildVueTableau(list){
+  var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  h+='<thead><tr style="background:#060d1a">';
+  ['Salarié','Poste','Contrat','Entrée','Fin','Score','Dossier','Statut','Actions'].forEach(function(t){
+    h+='<th style="font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">'+t+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  list.forEach(function(s,i){
+    var score=scoreGlobal(s.id);var j=jours(s.dateFin);var complet=calculCompletionDossier(s);
+    h+='<tr style="cursor:pointer;background:'+(i%2===0?'transparent':'rgba(255,255,255,.02)')+'" onclick="ouvrirDossier('+s.id+')" onmouseover="this.style.background=\'rgba(249,115,22,.05)\'" onmouseout="this.style.background=\''+(i%2===0?'transparent':'rgba(255,255,255,.02)')+'\'">'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a"><div style="display:flex;align-items:center;gap:8px">'+avt(s).replace('width:40px;height:40px','width:30px;height:30px').replace('font-size:20px','font-size:15px')+'<span style="font-weight:800;color:#fff">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div></td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a;color:var(--sub)">'+s.poste+'</td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a"><span class="badge badge-orange" style="font-size:9px">'+s.typeContrat+'</span></td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a;color:var(--sub);white-space:nowrap">'+fmt(s.dateEntree)+'</td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a;color:'+(j!==null&&j<=30?'var(--red)':'var(--sub)')+';white-space:nowrap">'+fmt(s.dateFin)+(j!==null?' <span style="font-size:10px">('+j+'j)</span>':'')+'</td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a">'+(score>0?'<span style="font-weight:900;color:'+scColor(score)+'">'+score.toFixed(1)+'</span>':'—')+'</td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a"><div style="display:flex;align-items:center;gap:6px"><div class="score-bar" style="width:50px;height:5px"><div class="score-fill" style="width:'+complet+'%;background:'+(complet>=80?'var(--green)':complet>=50?'var(--yellow)':'var(--red)')+'"></div></div><span style="font-size:10px;color:var(--sub)">'+complet+'%</span></div></td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a"><span class="badge '+({actif:'badge-green',sorti:'badge-blue',suspendu:'badge-red'}[s.statut]||'badge-gray')+'" style="font-size:9px">'+s.statut+'</span></td>'+
+    '<td style="padding:9px 12px;border-bottom:1px solid #060d1a"><div style="display:flex;gap:4px"><button class="btn btn-xs btn-primary" onclick="event.stopPropagation();ouvrirDossier('+s.id+')">Dossier</button><button class="btn btn-xs btn-red" onclick="event.stopPropagation();supprimerSal('+s.id+')">✕</button></div></td>'+
+    '</tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* Indicateur de complétion du dossier */
+function calculCompletionDossier(s){
+  var pts=0,max=10;
+  if(s.prenom)pts++;
+  if(s.tel||s.email)pts++;
+  if(s.adresse)pts++;
+  if(s.dateEntree)pts++;
+  if(s.dateFin)pts++;
+  if(s.projetPro)pts++;
+  if(DB.entretiens.some(function(e){return e.salId==s.id;}))pts++;
+  if(DB.evaluations.some(function(e){return e.salId==s.id;}))pts++;
+  if(s.notesCIP)pts++;
+  if(DB.fiches_remplies.some(function(f){return f.salId==s.id;}))pts++;
+  return Math.round(pts/max*100);
+}
+
+</script>
+
+<script>
+
+function renderRecrutement(c2){
+  var h='<div class="page-title">Entretien de recrutement</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Conduisez l\'entretien en cochant les cases — tout est déjà rédigé</div>';
+  h+='<div style="background:var(--panel);border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:20px;margin-bottom:16px">';
+  h+='<div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:14px">Candidat</div>';
+  h+='<div class="fg">';
+  h+=F('Prénom','rec-prenom','')+F('Nom','rec-nom','')+F('Date','rec-date',today(),'date')+F('Prescripteur','rec-presc','');
+  h+='</div></div>';
+  var fiche=FICHES_TYPES.recrutement;
+  fiche.sections.forEach(function(sec,si){
+    h+='<div class="form-section" style="margin-bottom:10px"><div class="fs-title">'+sec.titre+'</div>';
+    sec.items.forEach(function(item,ii){
+      h+='<label class="check-item" id="rci-'+si+'-'+ii+'"><input type="checkbox" id="rcb-'+si+'-'+ii+'" onchange="majCheckItem(this,\'rci-'+si+'-'+ii+'\')" style="accent-color:var(--orange);width:18px;height:18px;cursor:pointer"><span>'+item+'</span></label>';
+    });
+    h+='</div>';
+  });
+  h+='<div class="form-section"><div class="fs-title">Notes libres</div>';
+  h+='<div class="field"><textarea id="rec-notes" style="min-height:90px" placeholder="Impression générale, doutes, points forts surprenants..."></textarea></div></div>';
+  h+='<div class="btn-row"><button class="btn btn-primary" onclick="imprimerRecrutement()">Imprimer</button><button class="btn btn-green" onclick="creerSalarieRecrutement()">Créer le dossier salarié</button></div>';
+  c2.innerHTML=h;
+}
+
+window.imprimerRecrutement=function(){
+  var win=window.open('','_blank');if(!win)return;
+  var prenom=(document.getElementById('rec-prenom')||{}).value||'Candidat';
+  var nom=(document.getElementById('rec-nom')||{}).value||'';
+  var date=(document.getElementById('rec-date')||{}).value||today();
+  var presc=(document.getElementById('rec-presc')||{}).value||'';
+  var notes=(document.getElementById('rec-notes')||{}).value||'';
+  var fiche=FICHES_TYPES.recrutement;
+  var css='body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:18px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}h2{font-size:12px;color:#f97316;margin:14px 0 8px;text-transform:uppercase}.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:11px}.box{width:16px;height:16px;border:2px solid #94a3b8;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center}.info{display:flex;gap:20px;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:14px;font-size:11px}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:7px 14px;background:#f97316;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">La Table de Cana - Entretien de recrutement</div>';
+  html+='<h1>Grille entretien - Chauffeur Livreur / Logistique</h1>';
+  html+='<div class="info"><span><b>Candidat :</b> '+prenom+' '+nom+'</span><span><b>Date :</b> '+new Date(date).toLocaleDateString('fr-FR')+'</span><span><b>Prescripteur :</b> '+presc+'</span></div>';
+  fiche.sections.forEach(function(sec,si){
+    html+='<h2>'+sec.titre+'</h2>';
+    sec.items.forEach(function(item,ii){
+      var cb=document.getElementById('rcb-'+si+'-'+ii);
+      var checked=cb&&cb.checked;
+      html+='<div class="chk"><div class="box" style="'+(checked?'background:#22c55e;border-color:#22c55e':'')+'">'+( checked?'<span style="color:#fff;font-size:10px;font-weight:900">v</span>':'')+'</div><span style="'+(checked?'font-weight:700;color:#15803d':'')+'">'+item+'</span></div>';
+    });
+  });
+  if(notes)html+='<div style="margin-top:14px;padding:12px;border:1px dashed #cbd5e1;border-radius:6px"><b>Notes :</b><br>'+notes+'</div>';
+  html+='</body></html>';
+  win.document.write(html);win.document.close();
+};
+
+window.creerSalarieRecrutement=function(){
+  var prenom=(document.getElementById('rec-prenom')||{}).value||'Nouveau';
+  var nom=(document.getElementById('rec-nom')||{}).value||'';
+  if(!confirm('Créer le dossier pour '+prenom+' '+nom+' ?'))return;
+  var avatars=['🌟','⚡','🎯','🚀','🦁','🔥','💪'];
+  var couleurs=['#3b82f6','#22c55e','#f97316','#a855f7','#0ea5e9'];
+  var ns={id:Date.now(),prenom:prenom,nom:nom,dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:(document.getElementById('rec-presc')||{}).value||'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:(document.getElementById('rec-notes')||{}).value||'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:avatars[Math.floor(Math.random()*avatars.length)],couleur:couleurs[Math.floor(Math.random()*couleurs.length)],createdAt:new Date().toISOString()};
+  DB.salaries.push(ns);sauver();toast('Dossier créé pour '+prenom+' '+nom,'ok');ouvrirDossier(ns.id);
+};
 
 </script>
 </body>
