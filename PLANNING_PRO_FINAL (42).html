@@ -949,7 +949,7 @@ input[type="time"]{
     <button class="nd" onclick="chDay(1)">&#8594;</button>
     <button class="nd" onclick="chDay(7)" title="Semaine suivante">&#187;&#187;</button>
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
-    <button onclick="ouvrirHorsCarte()" style="position:relative;padding:6px 14px;background:#1a0a00;border:2px solid #f97316;border-radius:7px;color:#f97316;font-size:12px;font-weight:900;cursor:pointer">
+    <button id="btn-hors-carte" style="position:relative;padding:6px 14px;background:#1a0a00;border:2px solid #f97316;border-radius:7px;color:#f97316;font-size:12px;font-weight:900;cursor:pointer">
       🛒 Hors Carte
       <span id="hc-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border-radius:50%;width:20px;height:20px;font-size:10px;font-weight:900;align-items:center;justify-content:center;border:2px solid #07111f">0</span>
     </button>
@@ -1697,6 +1697,7 @@ function rGrid(){
       +'<button data-di="'+i+'" data-action="sel-restoco" title="Resto-Co" style="background:#f0f9ff;border:1px solid #0ea5e9;border-radius:5px;padding:2px 6px;font-size:9px;color:#0369a1;cursor:pointer;font-weight:800">🏛 RC</button>'
       +'<button data-di="'+i+'" data-action="sel-traiteur" title="Traiteur" style="background:#fff7ed;border:1px solid #f97316;border-radius:5px;padding:2px 6px;font-size:9px;color:#9a3412;cursor:pointer;font-weight:800">🍽 TR</button>'
       +'<button data-di="'+i+'" data-action="sel-tache" title="Tâches" style="background:#faf5ff;border:1px solid #a855f7;border-radius:5px;padding:2px 6px;font-size:9px;color:#6b21a8;cursor:pointer;font-weight:800">📋 TK</button>'
+      +'<button onclick="ouvrirHorsCarte()" title="Hors Carte" style="background:#1a0a00;border:1px solid #f97316;border-radius:5px;padding:2px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:800;position:relative">🛒 HC<span id="hc-badge-col" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:12px;height:12px;font-size:7px;display:none;align-items:center;justify-content:center"></span></button>'
       +'</div>'
       +'<div class="gh-name" data-di="'+i+'" data-action="fiche" style="cursor:pointer">'+dr.name+'</div>'      +'<button data-di="'+i+'" data-action="camion" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:3px 6px;font-size:9px;color:#f97316;cursor:pointer;font-weight:700">'+dr.truck+'</button>'+'<button data-di="'+i+'" data-action="tournee" style="background:rgba(100,116,139,.1);border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:9px;color:#94a3b8;cursor:pointer;font-weight:700">🗺</button>'      +'</div>'      +'<div style="display:flex;align-items:center;gap:3px;margin-top:2px">'+'<input type="time" data-di="'+i+'" data-field="start" value="'+dr.start+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'<span style="color:#64748b;font-size:11px;font-weight:700">→</span>'+'<input type="time" data-di="'+i+'" data-field="end" value="'+(dr.end||'')+'" style="background:#1e293b;border:1px solid #3b82f6;border-radius:5px;color:#93c5fd;font-size:12px;font-weight:700;padding:3px 5px;width:78px" onclick="event.stopPropagation()">'+'</div>'      +(stLabel?'<div style="font-size:9px;font-weight:700;color:'+stColor+';background:'+stBg+';border-radius:6px;padding:2px 6px">'+stLabel+'</div>':'')      +(cpills?'<div class="gh-cnt">'+cpills+'</div>':'')      +'</div>';
   });
@@ -12385,6 +12386,7 @@ function chargerDepuisSupabase(forceToday){
     try{localStorage.setItem('plprov2',JSON.stringify(ST));}catch(e){}
     if(typeof render==='function')render();if(typeof rStats==='function')rStats();
     if(typeof rPlaquesBar==='function')rPlaquesBar();
+    if(typeof majBadgeHC==='function')majBadgeHC();
     var upd=rows[0].updated_at?new Date(rows[0].updated_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'?';
     if(l)l.style.background='#22c55e';if(t)t.textContent='Sync '+upd;
     showT('Planning a jour '+upd,'#16a34a');
@@ -26338,18 +26340,24 @@ window.formulaireHC = function(id){
   document.head.appendChild(style);
 })();
 
-/* Démarrage : popup hors carte après chargement */
+/* Démarrage : init bouton nav + popup hors carte */
 window.addEventListener('load', function(){
+  /* Bouton nav Hors Carte */
+  setTimeout(function(){
+    var btn = document.getElementById('btn-hors-carte');
+    if(btn) btn.addEventListener('click', function(){ ouvrirHorsCarte(); });
+  }, 500);
+
+  /* Popup après chargement des données */
   setTimeout(function(){
     if(typeof ST==='undefined') return;
     if(!ST.horsCarte) ST.horsCarte=[];
     majBadgeHC();
-    // Afficher popup seulement si articles à traiter
     var aTraiter = ST.horsCarte.filter(function(h){return h.statut==='atraiter';});
     if(aTraiter.length > 0){
       alerteHorsCarteDemarrage();
     }
-  }, 3000);
+  }, 4000);
 });
 
 </script>
