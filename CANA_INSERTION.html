@@ -3430,5 +3430,621 @@ window.genDoc=function(salId,key){
 };
 
 </script>
+<script>
+/* ═══════════════════════════════════════════════════
+   FICHES PLEIN ÉCRAN INTERACTIVES — TOUT PRÉ-COCHÉ
+   ═══════════════════════════════════════════════════ */
+
+/* Remplacer ouvrirFicheCocher par version plein écran */
+window.ouvrirFicheCocher = function(salId, type){
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s) return;
+
+  if(!type){
+    /* Choix de la fiche en plein écran */
+    var old = document.getElementById('fiche-overlay');
+    if(old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'fiche-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;overflow-y:auto;padding:20px';
+    var h = '<div style="max-width:800px;margin:0 auto">';
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+    h += '<div style="font-size:18px;font-weight:900;color:var(--text)">✅ Choisir une fiche — '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">✕ Fermer</button></div>';
+    h += '<div class="grid-2">';
+    Object.keys(FICHES_TYPES).forEach(function(key){
+      var f = FICHES_TYPES[key];
+      var nb = f.sections.reduce(function(n,sec){return n+(sec.items||[]).length;},0);
+      h += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer" onclick="document.getElementById(\'fiche-overlay\').remove();ouvrirFicheCocher('+salId+',\''+key+'\')">';
+      h += '<div style="font-size:30px;margin-bottom:8px">'+f.icon+'</div>';
+      h += '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">'+f.titre+'</div>';
+      h += '<div style="font-size:11px;color:var(--sub);margin-bottom:12px">'+nb+' points à cocher</div>';
+      h += '<button class="btn btn-primary btn-sm" style="width:100%">Ouvrir</button></div>';
+    });
+    h += '</div></div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+    return;
+  }
+
+  var fiche = FICHES_TYPES[type];
+  if(!fiche) return;
+
+  /* Suggestions pré-cochées par type de fiche */
+  var PRECOCHES = {
+    arrivee: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-2-0','cb-2-1','cb-2-2','cb-4-0','cb-4-1','cb-4-2'],
+    premiere_journee: ['cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4'],
+    premiere_semaine: ['cb-0-0','cb-0-2','cb-0-6'],
+    bilan_mensuel: ['cb-0-6','cb-1-0'],
+    securite: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-2-0','cb-2-1','cb-2-2','cb-2-3','cb-2-4'],
+    checklist_depart: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-6','cb-0-7'],
+    entretien_recadrage: [],
+    fin_contrat: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6'],
+    progression_suivi: ['cb-0-0','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-1-6','cb-1-7','cb-1-8','cb-2-0','cb-2-2'],
+    recrutement: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6']
+  };
+
+  var old2 = document.getElementById('fiche-overlay');
+  if(old2) old2.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'fiche-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;overflow-y:auto;padding:20px';
+
+  var nom = s.prenom+(s.nom?' '+s.nom:'');
+  var dateStr = new Date().toLocaleDateString('fr-FR');
+
+  var html = '<div style="max-width:750px;margin:0 auto">';
+  /* Header */
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:sticky;top:0;background:#0f1923;padding:12px 0;z-index:10">';
+  html += '<div><div style="font-size:18px;font-weight:900;color:var(--text)">'+fiche.icon+' '+fiche.titre+'</div>';
+  html += '<div style="font-size:11px;color:var(--sub)">'+nom+' · '+s.poste+' · '+dateStr+'</div></div>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<button class="btn btn-primary" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">🖨️ Imprimer</button>';
+  html += '<button class="btn btn-green btn-sm" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">💾 Sauvegarder</button>';
+  html += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">✕ Fermer</button></div></div>';
+
+  /* Info salarié */
+  html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:20px;flex-wrap:wrap">';
+  html += '<span style="font-size:11px"><strong>Salarié :</strong> '+nom+'</span>';
+  html += '<span style="font-size:11px"><strong>Poste :</strong> '+s.poste+'</span>';
+  html += '<span style="font-size:11px"><strong>Véhicule :</strong> '+(s.vehicule||'—')+'</span>';
+  html += '<span style="font-size:11px"><strong>Contrat :</strong> '+s.typeContrat+'</span>';
+  html += '<span style="font-size:11px"><strong>Date :</strong> '+dateStr+'</span>';
+  html += '</div>';
+
+  /* Sections */
+  fiche.sections.forEach(function(sec, si){
+    html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
+    html += '<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);letter-spacing:.06em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">'+sec.titre+'</div>';
+
+    if(sec.radio){
+      html += '<div style="font-size:12px;color:var(--text);margin-bottom:8px;font-weight:700">'+sec.radio+'</div>';
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      (sec.options||[]).forEach(function(opt, oi){
+        html += '<div class="ropt'+(oi===0?' on':'')+'" id="ro-'+si+'-'+oi+'" onclick="ficheSelRadio(this,'+si+')" data-val="'+opt+'">'+opt+'</div>';
+      });
+      html += '</div>';
+    }
+
+    (sec.items||[]).forEach(function(item, ii){
+      var cbId = 'cb-'+si+'-'+ii;
+      var ciId = 'ci-'+si+'-'+ii;
+      var prec = (PRECOCHES[type]||[]).indexOf(cbId) >= 0;
+      html += '<label class="check-item'+(prec?' checked':'')+'" id="'+ciId+'" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid '+(prec?'rgba(61,186,122,.3)':'var(--border)')+';background:'+(prec?'rgba(61,186,122,.06)':'transparent')+';cursor:pointer;margin-bottom:5px;transition:.12s">';
+      html += '<input type="checkbox" id="'+cbId+'"'+(prec?' checked':'')+' onchange="ficheToggle(this,\''+ciId+'\')" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
+      html += '<span style="font-size:12px;line-height:1.6;color:'+(prec?'var(--green)':'var(--text)')+'">'+item+'</span></label>';
+    });
+
+    html += '</div>';
+  });
+
+  /* Espace observations */
+  html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">';
+  html += '<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);letter-spacing:.06em;margin-bottom:10px">📝 Observations libres</div>';
+  html += '<textarea id="fiche-obs-'+type+'" style="width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px;font-size:13px;min-height:100px;outline:none;font-family:inherit;resize:vertical;line-height:1.6;box-sizing:border-box" placeholder="Vos observations, remarques particulières, points à surveiller..."></textarea>';
+  html += '</div>';
+
+  /* Boutons bas */
+  html += '<div style="display:flex;gap:10px;margin-bottom:30px">';
+  html += '<button class="btn btn-primary" style="flex:1" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">🖨️ Imprimer cette fiche</button>';
+  html += '<button class="btn btn-green" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">💾 Sauvegarder</button>';
+  html += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">Fermer</button>';
+  html += '</div>';
+
+  html += '</div>';
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+};
+
+window.ficheToggle = function(cb, ciId){
+  var ci = document.getElementById(ciId);
+  if(!ci) return;
+  ci.style.background = cb.checked ? 'rgba(61,186,122,.06)' : 'transparent';
+  ci.style.borderColor = cb.checked ? 'rgba(61,186,122,.3)' : 'var(--border)';
+  var span = ci.querySelector('span');
+  if(span) span.style.color = cb.checked ? 'var(--green)' : 'var(--text)';
+};
+
+window.ficheSelRadio = function(el, si){
+  document.querySelectorAll('[id^="ro-'+si+'-"]').forEach(function(e){e.classList.remove('on');});
+  el.classList.add('on');
+};
+
+window.sauverFicheInteractive = function(salId, type){
+  var checks = {};
+  document.querySelectorAll('[id^="cb-"]').forEach(function(cb){checks[cb.id]=cb.checked;});
+  var radios = {};
+  document.querySelectorAll('.ropt.on').forEach(function(r){radios[r.id]=r.getAttribute('data-val');});
+  var obsEl = document.getElementById('fiche-obs-'+type);
+  var obs = obsEl ? obsEl.value : '';
+  DB.fiches_remplies.push({id:Date.now(),salId:salId,type:type,date:new Date().toISOString().slice(0,10),checks:checks,radios:radios,obs:obs});
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Fiche sauvegardée ✅','ok');
+};
+
+window.imprimerFicheInteractive = function(type, salId){
+  var s = salId ? DB.salaries.find(function(x){return x.id==salId;}) : null;
+  var fiche = FICHES_TYPES[type];
+  if(!fiche) return;
+  var nom = s ? (s.prenom+(s.nom?' '+s.nom:'')) : '';
+  var win = window.open('','_blank');
+  if(!win) return;
+
+  var css = [
+    'body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}',
+    'h1{font-size:17px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:14px}',
+    '.info{background:#f8fafc;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:flex;gap:20px;flex-wrap:wrap;font-size:11px}',
+    'h2{font-size:11px;font-weight:900;text-transform:uppercase;color:#f97316;margin:14px 0 8px;letter-spacing:.04em}',
+    '.item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f4f8;font-size:11px}',
+    '.box{width:15px;height:15px;border-radius:3px;flex-shrink:0}',
+    '.box.on{background:#22c55e}',
+    '.box.off{border:2px solid #94a3b8}',
+    '.radio-val{background:#fff7ed;border:1px solid #f97316;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;color:#d4703a;display:inline-block;margin-bottom:8px}',
+    '.obs{border:1px dashed #cbd5e1;border-radius:6px;min-height:70px;padding:8px;margin-top:6px;font-size:11px;color:#64748b;white-space:pre-wrap}',
+    '.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}',
+    '.sig-box{text-align:center}',
+    '.sig-line{height:40px;border-bottom:1px solid #1a2435;width:160px;margin:18px auto 4px}',
+    'footer{margin-top:16px;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #f0f4f8}',
+    '@media print{.no-print{display:none}}'
+  ].join('\n');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html += '<div class="no-print" style="text-align:center;margin-bottom:16px"><button onclick="window.print()" style="padding:9px 20px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer;font-size:13px">🖨️ Imprimer</button></div>';
+  html += '<div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase">La Table de Cana · Marseille</div>';
+  html += '<h1>'+fiche.icon+' '+fiche.titre+'</h1>';
+  html += '<div class="info">';
+  if(s){
+    html += '<span><b>Salarié :</b> '+nom+'</span>';
+    html += '<span><b>Poste :</b> '+(s.poste||'—')+'</span>';
+    html += '<span><b>Véhicule :</b> '+(s.vehicule||'—')+'</span>';
+  }
+  html += '<span><b>Date :</b> '+new Date().toLocaleDateString('fr-FR')+'</span>';
+  html += '</div>';
+
+  /* Sections depuis le DOM */
+  var overlay = document.getElementById('fiche-overlay');
+  if(overlay){
+    overlay.querySelectorAll('[style*="border-radius:12px"][style*="padding:16px"]').forEach(function(sec){
+      var titleEl = sec.querySelector('[style*="text-transform:uppercase"]');
+      if(!titleEl || titleEl.textContent.indexOf('Observations')<0 && titleEl.textContent.indexOf('observations')<0){
+        if(titleEl) html += '<h2>'+titleEl.textContent.replace('📝 ','')+'</h2>';
+
+        /* Radio */
+        var rOn = sec.querySelector('.ropt.on');
+        if(rOn) html += '<div class="radio-val">→ '+rOn.getAttribute('data-val')+'</div>';
+
+        /* Checkboxes */
+        sec.querySelectorAll('label[id^="ci-"]').forEach(function(ci){
+          var cb = ci.querySelector('input[type=checkbox]');
+          var span = ci.querySelector('span');
+          if(cb && span){
+            html += '<div class="item"><div class="box '+(cb.checked?'on':'off')+'"></div>';
+            html += '<span'+(cb.checked?' style="font-weight:700;color:#15803d"':'')+'>'+(cb.checked?'✓ ':'')+span.textContent+'</span></div>';
+          }
+        });
+      } else if(titleEl){
+        /* Observations */
+        var ta = sec.querySelector('textarea');
+        if(ta && ta.value.trim()){
+          html += '<h2>Observations</h2><div class="obs">'+ta.value+'</div>';
+        }
+      }
+    });
+  }
+
+  /* Signatures */
+  html += '<div class="sig">';
+  html += '<div class="sig-box"><div style="font-weight:800;font-size:12px">Le salarié</div><div style="font-size:10px;color:#64748b">Lu et approuvé</div><div class="sig-line"></div><div style="font-size:11px">'+nom+'</div></div>';
+  html += '<div style="font-size:10px;color:#64748b;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html += '<div class="sig-box"><div style="font-weight:800;font-size:12px">L\'encadrant</div><div style="font-size:10px;color:#64748b">Signature</div><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div>';
+  html += '</div>';
+  html += '<footer><span>La Table de Cana · Structure Insertion · Marseille</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html += '</body></html>';
+  win.document.write(html);
+  win.document.close();
+};
+
+</script>
+<script>
+/* ═══════════════════════════════════════════════════
+   IA COACH — SYSTÈME COMPLET AVEC FALLBACK INTELLIGENT
+   ═══════════════════════════════════════════════════ */
+
+/* Base de connaissances IA locale — répond à tout */
+var IA_KB = {
+  conflit: {
+    titre: 'Gérer un conflit entre deux salariés',
+    rep: function(ctx){return [
+      '**Étape 1 — Entretiens séparés (dans les 24h)**',
+      'Voir chaque personne individuellement. Écouter sans juger. Question : "Raconte-moi ce qui s\'est passé, dans tes propres mots."',
+      '',
+      '**Étape 2 — Analyser le type de conflit**',
+      '• Conflit de besoins (espace, organisation, charge de travail) → résolution pratique',
+      '• Conflit de valeurs (respect, équité) → médiation nécessaire',
+      '• Conflit de personnalités → séparation des missions si besoin',
+      '',
+      '**Étape 3 — Entretien commun si les deux acceptent**',
+      'Poser les règles : "Ici on parle de faits, pas de reproches. Chacun parle, personne n\'interrompt."',
+      'Co-construire un accord concret, écrit, signé.',
+      '',
+      '**Étape 4 — Suivi obligatoire**',
+      'Point à J+7 et J+30. Si persistance : séparation des équipes ou des tournées.',
+      '',
+      '**En AT (Analyse Transactionnelle)**',
+      'Vérifiez que vous n\'êtes pas dans le Triangle de Karpman (Sauveur/Victime/Persécuteur). Restez en position Adulte-Adulte. Ne prenez pas parti.'
+    ].join('\n');}
+  },
+  retard: {
+    titre: 'Gérer les retards répétés',
+    rep: function(ctx){return [
+      '**Comprendre avant d\'agir**',
+      'Entretien individuel : "Qu\'est-ce qui se passe le matin pour toi ?" Causes fréquentes : transport, réveil, motivation, situation familiale.',
+      '',
+      '**Plan d\'action ponctualité — 30 jours**',
+      '• Objectif SMART : "Arriver avant '+(ctx&&ctx.horaires?ctx.horaires.split('-')[0]:'6h00')+' chaque matin pendant 4 semaines"',
+      '• Action transport : covoiturage avec un collègue ponctuel',
+      '• Action réveil : alarme téléphone + rappel la veille',
+      '• Suivi : note quotidienne, feedback immédiat positif ou correctif',
+      '',
+      '**Escalade si pas d\'amélioration**',
+      '• J+15 : entretien de point intermédiaire',
+      '• J+30 : si pas d\'amélioration → entretien de recadrage formel',
+      '• J+45 : si récidive → avertissement écrit',
+      '',
+      '**En AT** : vérifier si le retard est un "jeu psychologique" (attirer l\'attention, tester les limites) ou une vraie contrainte externe. La réponse n\'est pas la même.'
+    ].join('\n');}
+  },
+  motivation: {
+    titre: 'Remotiver un salarié qui décroche',
+    rep: function(ctx){return [
+      '**Identifier la vraie cause — toujours**',
+      'Poser la question directement : "Je te sens différent ces derniers temps. Qu\'est-ce qui se passe ?"',
+      '• Problème personnel → orienter vers CIP / assistante sociale',
+      '• Sentiment d\'injustice → écouter, reconnaître si légitime',
+      '• Ennui → confier une mission plus valorisante',
+      '• Peur de l\'échec → créer des succès accessibles',
+      '• Projet pro flou → retravailler ensemble la projection',
+      '',
+      '**5 actions concrètes**',
+      '1. Confier une petite responsabilité : "Tu vas former le nouveau sur la tournée centre aéré"',
+      '2. Question puissante : "Qu\'est-ce qui te donnait envie quand tu as commencé ici ?"',
+      '3. Valoriser publiquement devant l\'équipe une réussite récente',
+      '4. Proposer une formation qui l\'intéresse vraiment',
+      '5. Fixer un objectif stimulant avec une récompense symbolique (badge, lettre de félicitations)',
+      '',
+      '**En AT** : un salarié démotivé est souvent en position "Je-Tu+" (je ne vaux rien, les autres vont mieux). Action : le remettre en "Je+Tu+" par des succès progressifs.'
+    ].join('\n');}
+  },
+  at: {
+    titre: 'Analyse Transactionnelle appliquée à l\'insertion',
+    rep: function(){return [
+      '**Les 3 États du Moi**',
+      '• Parent : autorité, normes ("Il faut", "Tu dois")',
+      '• Adulte : logique, faits ("J\'observe que", "Comment on résout ça ?")',
+      '• Enfant : émotions, réactions ("Je m\'en fous", "C\'est pas juste")',
+      '',
+      '**En pratique terrain**',
+      'Salarié en "Enfant rebelle" qui dit "j\'ai pas envie" :',
+      '→ NE PAS répondre en "Parent autoritaire" ("Tu n\'as pas le choix !")',
+      '→ Rester "Adulte" : "Qu\'est-ce qui se passe pour toi en ce moment ?"',
+      '',
+      '**Triangle de Karpman**',
+      'Piège très fréquent en insertion :',
+      '• Victime : "Je n\'y arrive jamais, c\'est de la faute de tout le monde"',
+      '• Sauveur : faire à la place de, protéger trop, éviter les confrontations',
+      '• Persécuteur : critiquer, punir sans solution',
+      'Sortir du triangle : "Je vous aide à trouver la solution, je ne la trouve pas à votre place."',
+      '',
+      '**Les 4 positions de vie**',
+      '• Je+Tu+ : position saine → autonome, coopératif',
+      '• Je-Tu+ : se dévalorise → estime de soi à reconstruire',
+      '• Je+Tu- : arrogant → recadrage avec fermeté',
+      '• Je-Tu- : désespéré → soutien psychologique à orienter'
+    ].join('\n');}
+  },
+  bilan: {
+    titre: 'Rédiger un bilan de parcours',
+    rep: function(ctx){return [
+      '**Structure d\'un bon bilan en 5 parties**',
+      '',
+      '1. **Rappel du contexte d\'entrée**',
+      'Situation avant contrat, objectifs fixés à l\'entrée, durée du parcours.',
+      '',
+      '2. **Compétences acquises** (liste précise)',
+      'Conduite, livraison, relation client, ponctualité, BL, etc.',
+      '',
+      '3. **Difficultés rencontrées et actions mises en place**',
+      'Honnêteté sur les obstacles + ce qui a été fait pour les surmonter.',
+      '',
+      '4. **Bilan de la progression**',
+      'Score d\'évaluation initial vs final. Comportement. Engagement.',
+      '',
+      '5. **Perspectives de sortie**',
+      'Type de sortie, projet professionnel, recommandations.',
+      '',
+      '**Conseil**',
+      'Utilisez l\'onglet Documents du dossier salarié pour générer le bilan interactif : tout est pré-rempli, vous cochez seulement ce qui s\'applique.'
+    ].join('\n');}
+  },
+  document: {
+    titre: 'Documents disponibles dans le CRM',
+    rep: function(){return [
+      '**Tous les documents sont accessibles depuis le dossier salarié → onglet Documents**',
+      '',
+      'Chaque document s\'ouvre en mode interactif avec des cases pré-cochées. Vous cochez, vous ajoutez vos observations, vous imprimez.',
+      '',
+      '• 📋 Bilan mi-parcours',
+      '• 🏁 Bilan fin de parcours',
+      '• 💬 Compte-rendu d\'entretien',
+      '• 🎯 Plan d\'action',
+      '• 📨 Convocation entretien',
+      '• ⚠️ Avertissement',
+      '• 🌟 Félicitations',
+      '• 💼 Recommandation',
+      '• ⭐ Évaluation mensuelle',
+      '• 📌 Objectifs du mois',
+      '',
+      'Pour les fiches à cocher (arrivée, sécurité, recrutement...) : Fiches à cocher dans le menu gauche.'
+    ].join('\n');}
+  },
+  evaluation: {
+    titre: 'Conduire une évaluation mensuelle',
+    rep: function(ctx){return [
+      '**Avant l\'entretien — 10 minutes de préparation**',
+      '• Relire le dossier : absences, incidents, points soulevés le mois dernier',
+      '• Identifier 2 points positifs concrets à souligner',
+      '• Identifier 1 point d\'amélioration prioritaire',
+      '• Préparer 1 question ouverte : "Comment tu te sens dans ta progression ?"',
+      '',
+      '**Pendant l\'évaluation**',
+      '• Commencer par les points positifs (TOUJOURS)',
+      '• 1 point d\'amélioration à la fois, avec exemple concret',
+      '• Laisser le salarié s\'exprimer : 50% du temps minimum',
+      '• Co-construire l\'objectif du mois suivant ensemble',
+      '• Terminer par un engagement daté et signé',
+      '',
+      '**La grille d\'évaluation dans le CRM**',
+      'Onglet Évaluations → Nouvelle évaluation → 14 critères notés de 1 à 4.',
+      'Après l\'évaluation, cliquer sur "Analyse IA" pour recevoir des conseils personnalisés.',
+      '',
+      '**En AT** : l\'évaluation doit être un échange Adulte-Adulte. Si le salarié se met sur la défensive (Enfant), ne pas répondre en Parent autoritaire. Rester sur les faits.'
+    ].join('\n');}
+  },
+  recrutement: {
+    titre: 'Mener un entretien de recrutement',
+    rep: function(){return [
+      '**La grille de recrutement dans le CRM**',
+      'Menu gauche → Recrutement → Grille complète avec 15 thèmes pré-remplis à cocher.',
+      'Tout est déjà rédigé : horaires, port de charge, conduite, collectivités, centres aérés, etc.',
+      '',
+      '**Structure de l\'entretien**',
+      '1. Accueil et présentation de la Table de Cana (5 min)',
+      '2. Parcours du candidat — questions ouvertes (10 min)',
+      '3. Thèmes clés du poste — utiliser la grille (20 min)',
+      '4. Questions du candidat (5 min)',
+      '5. Décision ou délai de réponse (2 min)',
+      '',
+      '**Questions puissantes à poser**',
+      '• "Qu\'est-ce qui vous a amené à postuler chez nous ?"',
+      '• "Comment vous organisez-vous le matin pour être ponctuel ?"',
+      '• "Donnez-moi un exemple d\'une situation difficile que vous avez gérée"',
+      '• "Où vous voyez-vous dans 2 ans ?"',
+      '',
+      '**Signaux d\'alerte**',
+      '• Parle mal de ses anciens employeurs',
+      '• Ne peut pas expliquer ses trous dans le CV',
+      '• Hésite sur les horaires ou la ponctualité',
+      '• Pas de projet professionnel réel'
+    ].join('\n');}
+  },
+  cddi: {
+    titre: 'Le CDDI — droits et règles',
+    rep: function(){return [
+      '**Le Contrat à Durée Déterminée d\'Insertion (CDDI)**',
+      '',
+      '**Durée** : 4 mois minimum, 24 mois maximum (renouvellements inclus)',
+      '**Temps de travail** : entre 20h et 35h selon l\'agrément',
+      '**Période d\'essai** : 1 semaine par tranche de 4 mois (max 2 semaines)',
+      '',
+      '**Rupture anticipée possible**',
+      '• Accord commun',
+      '• Faute grave',
+      '• Embauche en CDI ou CDD 6+ mois',
+      '• Entrée en formation',
+      '',
+      '**À la fin du parcours — obligatoire**',
+      '• Attestation d\'expérience professionnelle',
+      '• Certificat de travail',
+      '• Attestation Pôle Emploi',
+      '',
+      '**Bonnes pratiques**',
+      '• Anticiper la fin de contrat 2 mois avant',
+      '• Préparer le CV dès le 3ème mois',
+      '• Contacter Pôle Emploi / Mission Locale 1 mois avant la fin',
+      '• Proposer une lettre de recommandation systématiquement'
+    ].join('\n');}
+  }
+};
+
+/* Analyser la question et trouver la meilleure réponse */
+function iaAnalyseQuestion(q){
+  var ql = q.toLowerCase();
+  var sal = null;
+
+  /* Chercher si un salarié est mentionné */
+  DB.salaries.forEach(function(s){
+    if(ql.indexOf(s.prenom.toLowerCase()) >= 0) sal = s;
+  });
+
+  var ctx = sal ? {
+    nom: sal.prenom+(sal.nom?' '+sal.nom:''),
+    poste: sal.poste,
+    vehicule: sal.vehicule,
+    horaires: sal.horaires,
+    typeContrat: sal.typeContrat,
+    score: scoreGlobal(sal.id)
+  } : null;
+
+  /* Trouver le sujet */
+  var topic = null;
+  if(/conflit|dispute|bagarre|s.entendent pas|tension/.test(ql)) topic = 'conflit';
+  else if(/retard|ponctual|arrive tard|en retard/.test(ql)) topic = 'retard';
+  else if(/motiv|decroch|plus envie|baisse|decourag/.test(ql)) topic = 'motivation';
+  else if(/at\b|analyse trans|karpman|etats du moi|position de vie|triangle|driver/.test(ql)) topic = 'at';
+  else if(/bilan|parcours|fin de contrat|mi.parcours/.test(ql)) topic = 'bilan';
+  else if(/document|generer|imprimer|cr |compte.rendu|convocation|avertissement|felicitat|recommand/.test(ql)) topic = 'document';
+  else if(/evaluat|noter|grille|score|crit.re/.test(ql)) topic = 'evaluation';
+  else if(/recrut|entretien d.embauche|candidat/.test(ql)) topic = 'recrutement';
+  else if(/cddi|contrat insertion|droits|renouvellement|rupture/.test(ql)) topic = 'cddi';
+
+  if(!topic && ctx){
+    /* Question sur un salarié spécifique sans topic clair */
+    return iaReponseSalarie(ctx, q);
+  }
+
+  if(!topic) return iaReponseGenerale(q);
+
+  var kb = IA_KB[topic];
+  if(!kb) return iaReponseGenerale(q);
+
+  var rep = '## ' + kb.titre + '\n\n';
+  if(ctx) rep = '## ' + kb.titre + '\n**Pour ' + ctx.nom + ' (' + ctx.typeContrat + ', ' + ctx.poste + ')**\n\n';
+  rep += kb.rep(ctx);
+  return rep;
+}
+
+function iaReponseSalarie(ctx, q){
+  var score = ctx.score || 0;
+  var niv = score >= 3.5 ? 'Excellent' : score >= 2.5 ? 'Bien' : score >= 1.5 ? 'En progrès' : 'À accompagner';
+  return [
+    '## Analyse de la situation — ' + ctx.nom,
+    '**Profil :** ' + ctx.typeContrat + ' · ' + ctx.poste + ' · ' + ctx.vehicule,
+    (score > 0 ? '**Score actuel :** ' + score.toFixed(1) + '/4 — ' + niv : '**Aucune évaluation enregistrée**'),
+    '',
+    '**Plan d\'accompagnement recommandé**',
+    '',
+    '**Court terme (ce mois)**',
+    '• Entretien individuel pour faire le point sur sa situation',
+    '• Évaluation mensuelle si pas encore faite ce mois',
+    '• Identifier les 2 points forts à valoriser et 1 axe d\'amélioration',
+    '',
+    '**Moyen terme (2-3 mois)**',
+    '• Plan d\'action personnalisé avec objectifs SMART',
+    '• Formation proposée si projet professionnel identifié',
+    '• Badge de reconnaissance si progression notable',
+    '',
+    '**Outils à utiliser**',
+    '• Dossier salarié → onglet Entretiens → Nouvel entretien',
+    '• Dossier salarié → onglet Évaluations → Nouvelle évaluation',
+    '• Menu → Fiches à cocher → Fiche de progression et suivi',
+    '',
+    '**Posez-moi une question plus précise sur sa situation (retards, motivation, conflit, projet pro...) pour une réponse plus ciblée.**'
+  ].join('\n');
+}
+
+function iaReponseGenerale(q){
+  return [
+    '## Je suis votre assistant CIP',
+    '',
+    'Je peux vous aider sur ces sujets — posez votre question de façon précise :',
+    '',
+    '**Situations terrain**',
+    '• "Comment gérer un conflit entre Karim et Nicolas ?"',
+    '• "Otmane est souvent en retard, que faire ?"',
+    '• "Mickaël n\'est plus motivé, comment le remotiver ?"',
+    '',
+    '**Accompagnement**',
+    '• "Analyse la situation d\'Anthony et propose un plan"',
+    '• "Comment conduire l\'évaluation de Nicolas ?"',
+    '• "Rédige un bilan mi-parcours pour Karim"',
+    '',
+    '**Psychologie & Management**',
+    '• "Explique-moi l\'Analyse Transactionnelle"',
+    '• "Comment gérer un salarié en position Je-Tu+ ?"',
+    '• "Qu\'est-ce que le Triangle de Karpman ?"',
+    '',
+    '**Administratif**',
+    '• "Quels sont les droits d\'un salarié en CDDI ?"',
+    '• "Comment mener un entretien de recrutement ?"',
+    '• "Quelles étapes pour un avertissement ?"'
+  ].join('\n');
+}
+
+/* Réécrire sendIA pour utiliser ce système */
+window.sendIA = async function(msg){
+  var inp = document.getElementById('ia-inp');
+  var q = msg||(inp?inp.value.trim():'');
+  if(!q) return;
+  if(inp) inp.value = '';
+
+  var chat = document.getElementById('ia-chat');
+  if(!chat) return;
+
+  chat.innerHTML += '<div class="ia-msg-user"><div>'+q+'</div></div>';
+  chat.innerHTML += '<div class="ia-msg-ai" id="ia-load"><div style="color:var(--sub)">Analyse en cours...</div></div>';
+  chat.scrollTop = chat.scrollHeight;
+
+  /* D'abord essayer l'API */
+  var rep = '';
+  try{
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1200,
+        system:'Tu es un expert CIP spécialisé en insertion professionnelle logistique (chauffeurs livreurs CDDI, La Table de Cana, Marseille). Expert en AT, management insertion, droit du travail. Réponds en français, concis et pratique. Utilise **gras** pour les titres.',
+        messages:[{role:'user',content:q}]
+      })
+    });
+    var data = await resp.json();
+    if(data.content && data.content[0] && data.content[0].text){
+      rep = data.content[0].text;
+    } else {
+      rep = iaAnalyseQuestion(q);
+    }
+  } catch(e){
+    rep = iaAnalyseQuestion(q);
+  }
+
+  var ld = document.getElementById('ia-load');
+  if(ld) ld.remove();
+
+  var fmt = rep
+    .replace(/\n\n/g,'</p><p style="margin:6px 0">')
+    .replace(/\n/g,'<br>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text)">$1</strong>')
+    .replace(/^## (.*)/,'<div style="font-size:15px;font-weight:900;color:var(--orange);margin-bottom:8px">$1</div>');
+
+  chat.innerHTML += '<div class="ia-msg-ai"><div><p style="margin:0">'+fmt+'</p></div></div>';
+  chat.scrollTop = chat.scrollHeight;
+};
+
+</script>
 </body>
 </html>
