@@ -5998,6 +5998,18 @@ function rCalendrier(){
     +'</div>';
 
   grid.innerHTML = html;
+  /* Branchement boutons HC apres render */
+  setTimeout(function(){
+    for(var bi=0;bi<10;bi++){
+      (function(idx){
+        var btn = document.getElementById('hc-btn-'+idx);
+        if(btn) btn.onclick = function(e){
+          e.stopPropagation();
+          if(typeof ouvrirHorsCarte==='function') ouvrirHorsCarte();
+        };
+      })(bi);
+    }
+  },50);
 }
 
 function calSelJour(ds){
@@ -26038,6 +26050,7 @@ window.ouvrirFeuillesRoute = function(){
 
 /* Initialiser le tableau hors carte dans ST */
 function initHorsCarte(){
+  if(typeof ST==='undefined')return;
   if(!ST.horsCarte)ST.horsCarte=[];
 }
 
@@ -26154,6 +26167,7 @@ window.supprimerHC = function(id){
 
 /* Ouvrir la fenêtre Hors Carte complète */
 window.ouvrirHorsCarte = function(){
+  if(typeof ST==='undefined'){alert('Données non chargées, attendez quelques secondes');return;}
   initHorsCarte();
   var old = document.getElementById('hc-modal');
   if(old) old.remove();
