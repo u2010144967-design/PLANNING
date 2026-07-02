@@ -26068,12 +26068,12 @@ window.ouvrirHorsCarte = function(){
       +'<div style="font-size:18px;font-weight:900;color:#fff">🛒 Hors Carte</div>'
       +'<button id="hc-close" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ Fermer</button>'
     +'</div>'
-    +'<button id="hc-add" style="padding:10px;background:rgba(249,115,22,.12);border:2px dashed rgba(249,115,22,.4);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer">+ Ajouter un article hors carte</button>'
+    +'<button onclick="hcFormulaire()" style="padding:10px;background:rgba(249,115,22,.12);border:2px dashed rgba(249,115,22,.4);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer;width:100%">+ Ajouter un article hors carte</button>'
     +'<div id="hc-liste" style="overflow-y:auto;flex:1;min-height:100px"></div>'
     +'</div>';
   document.body.appendChild(ov);
   document.getElementById('hc-close').onclick = function(){ ov.style.display='none'; };
-  document.getElementById('hc-add').onclick = function(){ hcFormulaire(); };
+  /* onclick direct dans le HTML */
   hcRenderListe();
 };
 
@@ -26130,7 +26130,7 @@ window.hcSupprimer = function(i){
   hcRenderListe();
 };
 
-function hcFormulaire(){
+window.hcFormulaire = function(){
   var old = document.getElementById('hc-form');
   if(old) old.remove();
 
