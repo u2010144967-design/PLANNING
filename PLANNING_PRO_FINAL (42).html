@@ -951,7 +951,7 @@ input[type="time"]{
     <button class="nd" onclick="goToday()">Aujourd'hui</button>
 
     <button onclick="sauverDansSupabase();setTimeout(chargerDepuisSupabase,1500)" style="padding:6px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:7px;color:#15803d;font-size:12px;font-weight:700;cursor:pointer">&#9729; Sync</button>
-    <button id="btn-hc-unique" style="padding:6px 16px;background:#7c2d00;border:2px solid #f97316;border-radius:7px;color:#f97316;font-size:13px;font-weight:900;cursor:pointer">🛒 Hors Carte</button>
+    <button onclick="ouvrirHorsCarte()" style="padding:6px 16px;background:#7c2d00;border:2px solid #f97316;border-radius:7px;color:#f97316;font-size:13px;font-weight:900;cursor:pointer">🛒 Hors Carte</button>
     <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:0 4px"><span id="sync-led" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span><span id="sync-txt">OK</span></span>
     <button onclick="ouvrirPlaquesImmat()" style="padding:6px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer">&#128662; Plaques</button>
     <button onclick="window.print()" style="padding:6px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:7px;color:#92400e;font-size:12px;font-weight:700;cursor:pointer">&#128424; Imprimer</button>
@@ -26183,17 +26183,7 @@ function hcFormulaire(){
   };
 }
 
-/* Bouton Hors Carte unique */
-window.addEventListener('load', function(){
-  setTimeout(function(){
-    var btn = document.getElementById('btn-hc-unique');
-    if(btn){
-      btn.addEventListener('click', function(){
-        if(typeof ouvrirHorsCarte === 'function') ouvrirHorsCarte();
-      });
-    }
-  }, 500);
-});
+/* bouton HC branché directement via onclick */
 
 </script>
 </body>
