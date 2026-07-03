@@ -24403,7 +24403,12 @@ function afficherHub(){
 
   var poles=[
     {id:'logistique',nom:'\uD83D\uDE9A LOGISTIQUE',color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'#3b82f6',items:[
-      {id:'horscarte',icon:'\uD83D\uDED2',label:'Hors Carte',sub:'Articles à commander',fn:function(){ouvrirHorsCarte();}},
+      {id:'horscarte',icon:'\uD83D\uDED2',label:'Hors Carte',sub:'Articles à commander',fn:function(){
+  /* Fermer le hub puis ouvrir HC */
+  var hub=document.getElementById('cana-hub');
+  if(hub)hub.remove();
+  setTimeout(function(){ouvrirHorsCarte();},100);
+}},
       {id:'planning',icon:'\uD83D\uDCC5',label:'Planning du jour',sub:'Livraisons rapides',fn:'ouvrirPlanningSimplifie'},
       {id:'planningfull',icon:'\uD83D\uDDD3',label:'Planning complet',sub:'Grille horaire',fn:function(){fermerHub();}},
       {id:'sync',icon:'\uD83C\uDF0D',label:'Envoyer chauffeurs',sub:'Synchroniser',fn:'syncVersGoogle'},
