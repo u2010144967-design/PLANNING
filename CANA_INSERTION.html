@@ -1128,22 +1128,23 @@ function renderStats(c){
 /* ═══ FICHES PAGE ═══ */
 function renderFiches(c2){
   var h='<div class="page-title">Fiches a cocher</div>';
-  h+='<div class="page-sub" style="margin-bottom:16px">Cliquez sur un salarié puis ouvrez la fiche</div>';
-  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="fsal-list">';
+  h+='<div class="page-sub" style="margin-bottom:16px">Cliquez sur un salarie puis ouvrez la fiche</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">';
   DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
-    h+='<div class="fsal-btn" data-sid="'+s.id+'" onclick="selFicheSal('+s.id+',this)" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">'+
-    '<span style="font-size:18px">'+s.avatar+'</span>'+
-    '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+    h+='<div class="fsal-btn" data-sid="'+s.id+'" onclick="selFicheSal('+s.id+',this)" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span>';
+    h+='<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
   });
   h+='</div><div class="grid-2">';
   Object.keys(FICHES_TYPES).forEach(function(key){
     var f=FICHES_TYPES[key];
     var nb=f.sections.reduce(function(n,s){return n+(s.items||[]).length;},0);
-    h+='<div class="card" style="cursor:pointer" data-fkey="'+key+'" onclick="ouvrirFicheAvecSal(this.getAttribute(\"data-fkey\"))">';
+    h+='<div class="card">';
     h+='<div style="font-size:32px;margin-bottom:8px">'+f.icon+'</div>';
     h+='<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">'+f.titre+'</div>';
     h+='<div style="font-size:11px;color:var(--sub);margin-bottom:10px">'+nb+' points a cocher</div>';
-    h+='<button class="btn btn-primary btn-sm" style="width:100%">Ouvrir</button></div>';
+    h+='<button class="btn btn-primary btn-sm" style="width:100%" data-fkey="'+key+'" onclick="lancerFiche(this)">Ouvrir</button>';
+    h+='</div>';
   });
   h+='</div>';
   c2.innerHTML=h;
@@ -1156,6 +1157,7 @@ function renderFiches(c2){
     },50);
   }
 }
+
 window.selFicheSal=function(id,el){
   window.fichesSalActif=id;
   document.querySelectorAll('.fsal-btn').forEach(function(b){
@@ -4805,6 +4807,12 @@ function copilotFallback(q,actifs){
   }catch(e){}
 })();
 
+</script>
+<script>
+window.lancerFiche=function(btn){
+  var key=btn.getAttribute('data-fkey');
+  ouvrirFicheAvecSal(key);
+};
 </script>
 </body>
 </html>
