@@ -26059,51 +26059,173 @@ window.ouvrirHorsCarte = function(){
   if(typeof ST==='undefined') window.ST={};
   if(!ST.horsCarte) ST.horsCarte=[];
 
-  var existing=document.getElementById('m-hors-carte');
-  if(existing)existing.remove();
+  /* Supprimer si déjà ouvert */
+  var ex=document.getElementById('hc-win');
+  if(ex){ ex.remove(); return; }
 
-  var modal=document.createElement('div');
-  modal.id='m-hors-carte';
-  modal.className='mbg on';
+  /* Fenêtre simple - div directe sans mbg */
+  var win=document.createElement('div');
+  win.id='hc-win';
+  win.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px';
 
-  function buildListe(){
-    var items=ST.horsCarte;
-    if(!items||!items.length) return '<div style="text-align:center;color:#64748b;padding:24px;font-size:12px">Aucun article. Cliquez sur + pour en ajouter un.</div>';
-    var html='';
-    var cols={atraiter:'#ef4444',encours:'#f59e0b',traite:'#22c55e'};
-    var lbls={atraiter:'A traiter',encours:'En cours',traite:'Traite'};
-    for(var i=0;i<items.length;i++){
-      var h=items[i];
-      var col=cols[h.statut]||'#64748b';
-      var lbl=lbls[h.statut]||h.statut;
-      var d=h.dateEvenement?new Date(h.dateEvenement).toLocaleDateString('fr-FR'):'';
-      html+='<div style="background:#071526;border-left:4px solid '+col+';border:1px solid '+col+'33;border-radius:8px;padding:12px;margin-bottom:8px">';
-      html+='<div style="display:flex;justify-content:space-between;gap:8px"><div style="flex:1">';
-      html+='<div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:2px">'+(h.client||'')+'</div>';
-      html+='<div style="font-size:12px;color:#e2e8f0;margin-bottom:4px">'+h.article+'</div>';
-      if(h.quantite) html+='<div style="font-size:11px;color:#64748b">Qte: '+h.quantite+'</div>';
-      if(d) html+='<div style="font-size:11px;color:'+col+';font-weight:700">Evenement: '+d+'</div>';
-      if(h.note) html+='<div style="font-size:11px;color:#64748b">'+h.note+'</div>';
-      html+='<div style="font-size:10px;color:#334155;margin-top:4px">Par '+(h.saisiepar||'?')+'</div>';
-      html+='</div>';
-      html+='<div style="display:flex;flex-direction:column;gap:4px">';
-      html+='<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+lbl+'</span>';
-      if(h.statut!=='traite') html+='<button onclick="hcOK('+i+')" style="padding:3px 8px;border-radius:5px;border:1px solid #22c55e44;background:#22c55e22;color:#22c55e;font-size:9px;font-weight:700;cursor:pointer">Traite</button>';
-      if(h.statut==='atraiter') html+='<button onclick="hcEnCours('+i+')" style="padding:3px 8px;border-radius:5px;border:1px solid #f59e0b44;background:#f59e0b22;color:#f59e0b;font-size:9px;font-weight:700;cursor:pointer">En cours</button>';
-      html+='<button onclick="hcDel('+i+')" style="padding:3px 8px;border-radius:5px;border:1px solid #ef444444;background:transparent;color:#ef4444;font-size:9px;font-weight:700;cursor:pointer">X</button>';
-      html+='</div></div></div>';
-    }
-    return html;
+  var box=document.createElement('div');
+  box.style.cssText='background:#0a1628;border:2px solid #f97316;border-radius:16px;padding:22px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+
+  /* Titre */
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between';
+  var titre=document.createElement('div');
+  titre.style.cssText='font-size:18px;font-weight:900;color:#fff';
+  titre.textContent='Hors Carte';
+  var btnX=document.createElement('button');
+  btnX.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer';
+  btnX.textContent='X Fermer';
+  btnX.onclick=function(){ win.remove(); };
+  hdr.appendChild(titre);
+  hdr.appendChild(btnX);
+
+  /* Bouton ajouter */
+  var btnAdd=document.createElement('button');
+  btnAdd.style.cssText='padding:11px;background:rgba(249,115,22,.15);border:2px dashed rgba(249,115,22,.5);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer';
+  btnAdd.textContent='+ Ajouter un article hors carte';
+  btnAdd.onclick=function(){ hcOuvrirFormulaire(); };
+
+  /* Liste */
+  var liste=document.createElement('div');
+  liste.id='hc-liste';
+  liste.style.cssText='overflow-y:auto;flex:1';
+
+  box.appendChild(hdr);
+  box.appendChild(btnAdd);
+  box.appendChild(liste);
+  win.appendChild(box);
+  document.body.appendChild(win);
+
+  hcRefreshListe();
+};
+
+function hcRefreshListe(){
+  var el=document.getElementById('hc-liste');
+  if(!el)return;
+  if(!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML='<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article. Cliquez sur + pour en ajouter un.</div>';
+    return;
+  }
+  var cols={atraiter:'#ef4444',encours:'#f59e0b',traite:'#22c55e'};
+  var lbls={atraiter:'A traiter',encours:'En cours',traite:'Traite'};
+  var h='';
+  ST.horsCarte.forEach(function(item,i){
+    var col=cols[item.statut]||'#64748b';
+    var d=item.dateEvenement?new Date(item.dateEvenement).toLocaleDateString('fr-FR'):'';
+    h+='<div style="background:#071526;border-left:4px solid '+col+';border:1px solid '+col+'33;border-radius:8px;padding:12px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;gap:8px">';
+    h+='<div style="flex:1">';
+    h+='<div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:2px">'+(item.client||'')+'</div>';
+    h+='<div style="font-size:12px;color:#e2e8f0;margin-bottom:4px">'+item.article+'</div>';
+    if(item.quantite) h+='<div style="font-size:11px;color:#64748b">Qte: '+item.quantite+'</div>';
+    if(d) h+='<div style="font-size:11px;color:'+col+';font-weight:700">Evenement: '+d+'</div>';
+    if(item.note) h+='<div style="font-size:11px;color:#64748b">'+item.note+'</div>';
+    h+='<div style="font-size:10px;color:#334155;margin-top:4px">Par '+(item.saisiepar||'?')+'</div>';
+    h+='</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:4px">';
+    h+='<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(lbls[item.statut]||item.statut)+'</span>';
+    if(item.statut!=='traite') h+='<button onclick="hcSetStatut('+i+','traite')" style="padding:3px 8px;border-radius:5px;border:1px solid #22c55e44;background:#22c55e22;color:#22c55e;font-size:9px;font-weight:700;cursor:pointer">Traite</button>';
+    if(item.statut==='atraiter') h+='<button onclick="hcSetStatut('+i+','encours')" style="padding:3px 8px;border-radius:5px;border:1px solid #f59e0b44;background:#f59e0b22;color:#f59e0b;font-size:9px;font-weight:700;cursor:pointer">En cours</button>';
+    h+='<button onclick="hcEffacer('+i+')" style="padding:3px 8px;border-radius:5px;border:1px solid #ef444444;background:transparent;color:#ef4444;font-size:9px;font-weight:700;cursor:pointer">X</button>';
+    h+='</div></div></div>';
+  });
+  el.innerHTML=h;
+}
+
+window.hcSetStatut=function(i,s){
+  if(!ST.horsCarte[i])return;
+  ST.horsCarte[i].statut=s;
+  if(typeof save==='function')save();
+  hcRefreshListe();
+};
+window.hcEffacer=function(i){
+  if(!confirm('Supprimer ?'))return;
+  ST.horsCarte.splice(i,1);
+  if(typeof save==='function')save();
+  hcRefreshListe();
+};
+
+function hcOuvrirFormulaire(){
+  var ex=document.getElementById('hc-form-win');
+  if(ex)ex.remove();
+
+  var fw=document.createElement('div');
+  fw.id='hc-form-win';
+  fw.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  var fb=document.createElement('div');
+  fb.style.cssText='background:#0a1628;border:2px solid #f97316;border-radius:14px;padding:24px;width:100%;max-width:420px';
+
+  function champ(lbl,id,type){
+    var d=document.createElement('div');
+    var l=document.createElement('div');
+    l.style.cssText='font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px;text-transform:uppercase';
+    l.textContent=lbl;
+    var inp=document.createElement('input');
+    inp.id=id;
+    inp.type=type||'text';
+    inp.style.cssText='width:100%;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box';
+    d.appendChild(l);d.appendChild(inp);
+    return d;
   }
 
-  modal.innerHTML='<div class="mbox" style="max-width:640px;max-height:90vh;overflow-y:auto">'
-    +'<h3>🛒 Hors Carte <button class="mclose" onclick="document.getElementById(\'m-hors-carte\').remove()">✕</button></h3>'
-    +'<button onclick="hcAjouter()" style="width:100%;padding:11px;background:rgba(249,115,22,.15);border:2px dashed rgba(249,115,22,.5);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:12px">+ Ajouter un article hors carte</button>'
-    +'<div id="hc-liste">'+buildListe()+'</div>'
-    +'</div>';
+  var titre=document.createElement('div');
+  titre.style.cssText='font-size:16px;font-weight:900;color:#fff;margin-bottom:16px';
+  titre.textContent='Nouvel article hors carte';
 
-  document.body.appendChild(modal);
-};
+  var form=document.createElement('div');
+  form.style.cssText='display:flex;flex-direction:column;gap:10px';
+  form.appendChild(champ('Client *','hf-cli','text'));
+  form.appendChild(champ('Article *','hf-art','text'));
+  form.appendChild(champ('Quantite','hf-qte','text'));
+  form.appendChild(champ('Date evenement','hf-dat','date'));
+  form.appendChild(champ('Note','hf-not','text'));
+  form.appendChild(champ('Votre prenom','hf-sai','text'));
+
+  var btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:8px;margin-top:16px';
+
+  var ok=document.createElement('button');
+  ok.style.cssText='flex:1;padding:12px;background:#f97316;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:900;cursor:pointer';
+  ok.textContent='Enregistrer';
+  ok.onclick=function(){
+    var cli=document.getElementById('hf-cli').value.trim();
+    var art=document.getElementById('hf-art').value.trim();
+    if(!cli){alert('Client requis');return;}
+    if(!art){alert('Article requis');return;}
+    ST.horsCarte.push({
+      id:Date.now(),client:cli,article:art,
+      quantite:document.getElementById('hf-qte').value.trim(),
+      dateEvenement:document.getElementById('hf-dat').value,
+      note:document.getElementById('hf-not').value.trim(),
+      saisiepar:document.getElementById('hf-sai').value.trim(),
+      statut:'atraiter',createdAt:new Date().toISOString()
+    });
+    if(typeof save==='function')save();
+    if(typeof sauverDansSupabase==='function')setTimeout(sauverDansSupabase,500);
+    fw.remove();
+    hcRefreshListe();
+    if(typeof showT==='function')showT('Article enregistre','#22c55e');
+  };
+
+  var cancel=document.createElement('button');
+  cancel.style.cssText='padding:12px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer';
+  cancel.textContent='Annuler';
+  cancel.onclick=function(){ fw.remove(); };
+
+  btns.appendChild(ok);btns.appendChild(cancel);
+  fb.appendChild(titre);fb.appendChild(form);fb.appendChild(btns);
+  fw.appendChild(fb);
+  document.body.appendChild(fw);
+
+  setTimeout(function(){var f=document.getElementById('hf-cli');if(f)f.focus();},50);
+}
+;
 
 window.hcOK=function(i){
   if(!ST.horsCarte[i])return;
