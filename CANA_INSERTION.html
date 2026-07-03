@@ -489,6 +489,7 @@ function login(){
 }
 function deconnecter(){if(!confirm('Se déconnecter ?'))return;SESSION=null;document.getElementById('app').style.display='none';document.getElementById('login-wrap').style.display='flex';document.getElementById('login-code').value='';}
 async function init(){
+  window.fichesSalActif = 0; /* init global */
   var local=localStorage.getItem('crm_cana4');
   if(local){try{var d=JSON.parse(local);if(d.salaries&&d.salaries.length)DB=d;}catch(e){}}
   if(!DB.salaries.length)DB.salaries=JSON.parse(JSON.stringify(SALARIES_DEFAULT));
@@ -797,43 +798,110 @@ function grilleEvalView(ev){
 
 /* ═══ FICHES À COCHER ═══ */
 window.ouvrirFicheCocher=function(salId,type){
-  var s=DB.salaries.find(function(x){return x.id==salId;});if(!s)return;
+  var s=DB.salaries.find(function(x){return x.id==salId;});
+  if(!s) return;
+
+  /* Sans type = choix de la fiche */
   if(!type){
-    // Choix de la fiche
-    var html='<div class="modal-title">✅ Choisir une fiche — '+s.prenom+(s.nom?' '+s.nom:'')+' <button class="btn btn-xs btn-secondary" onclick="fermerModal()">✕</button></div>';
-    html+='<div class="grid-2">';
+    var old=document.getElementById('fiche-overlay');
+    if(old)old.remove();
+    var ov=document.createElement('div');
+    ov.id='fiche-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:20px';
+    var h='<div style="max-width:800px;margin:0 auto">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
+    h+='<div style="font-size:18px;font-weight:900;color:var(--text)">Choisir une fiche — '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h+='<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">Fermer</button></div>';
+    h+='<div class="grid-2">';
     Object.keys(FICHES_TYPES).forEach(function(key){
       var f=FICHES_TYPES[key];
-      html+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer" onclick="fermerModal();ouvrirFicheCocher('+salId+',\''+key+'\')">';
-      html+='<div style="font-size:30px;margin-bottom:8px">'+f.icon+'</div>';
-      html+='<div style="font-weight:800;color:var(--text);margin-bottom:4px">'+f.titre+'</div>';
-      html+='<button class="btn btn-primary btn-sm" style="margin-top:8px">Ouvrir</button></div>';
+      var nb=f.sections.reduce(function(n,sec){return n+(sec.items||[]).length;},0);
+      h+='<div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;text-align:center" onclick="document.getElementById(\'fiche-overlay\').remove();ouvrirFicheCocher('+salId+',\''+key+'\')">';
+      h+='<div style="font-size:30px;margin-bottom:8px">'+f.icon+'</div>';
+      h+='<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">'+f.titre+'</div>';
+      h+='<div style="font-size:11px;color:var(--sub);margin-bottom:10px">'+nb+' points a cocher</div>';
+      h+='<button class="btn btn-primary btn-sm" style="width:100%">Ouvrir</button></div>';
     });
-    html+='</div>';
-    ouvrirModal(html);return;
+    h+='</div></div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    return;
   }
-  var fiche=FICHES_TYPES[type];if(!fiche)return;
-  var html='<div class="modal-title">'+fiche.icon+' '+fiche.titre+' — '+s.prenom+(s.nom?' '+s.nom:'');
-  html+='<button class="btn btn-xs btn-secondary" onclick="fermerModal()">✕</button></div>';
-  html+='<div style="font-size:11px;color:var(--sub);margin-bottom:16px">Date : <strong>'+today()+'</strong> · '+s.poste+'</div>';
+
+  var fiche=FICHES_TYPES[type];
+  if(!fiche)return;
+
+  /* Pré-cochés par défaut selon type */
+  var PRECOCHES={
+    arrivee:['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-2-0','cb-2-1','cb-2-2','cb-4-0','cb-4-1','cb-4-2'],
+    securite:['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-2-0','cb-2-1','cb-2-2','cb-2-3','cb-2-4'],
+    checklist_depart:['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-6','cb-0-7'],
+    fin_contrat:['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6'],
+    premiere_journee:['cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4'],
+    progression_suivi:['cb-0-0','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-1-6','cb-1-7','cb-1-8']
+  };
+  var prec=PRECOCHES[type]||[];
+
+  var old2=document.getElementById('fiche-overlay');
+  if(old2)old2.remove();
+  var overlay=document.createElement('div');
+  overlay.id='fiche-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:20px';
+
+  var nom=s.prenom+(s.nom?' '+s.nom:'');
+  var dateStr=new Date().toLocaleDateString('fr-FR');
+  var html='<div style="max-width:750px;margin:0 auto">';
+  /* Header sticky */
+  html+='<div style="position:sticky;top:0;background:#0f1923;padding:12px 0;z-index:10;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  html+='<div><div style="font-size:17px;font-weight:900;color:var(--text)">'+fiche.icon+' '+fiche.titre+'</div>';
+  html+='<div style="font-size:11px;color:var(--sub)">'+nom+' · '+dateStr+'</div></div>';
+  html+='<div style="display:flex;gap:8px">';
+  html+='<button class="btn btn-primary btn-sm" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">Imprimer</button>';
+  html+='<button class="btn btn-green btn-sm" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">Sauver</button>';
+  html+='<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'fiche-overlay\').remove()">Fermer</button>';
+  html+='</div></div>';
+
+  /* Info salarié */
+  html+='<div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
+  html+='<span><strong>'+nom+'</strong></span><span>'+s.poste+'</span><span>'+s.vehicule+'</span><span>'+s.typeContrat+'</span>';
+  html+='</div>';
+
+  /* Sections */
   fiche.sections.forEach(function(sec,si){
-    html+='<div style="margin-bottom:18px"><div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:10px">'+sec.titre+'</div>';
+    html+='<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px">';
+    html+='<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">'+sec.titre+'</div>';
     if(sec.radio){
-      html+='<div style="font-size:12px;margin-bottom:8px">'+sec.radio+'</div>';
-      html+='<div class="radio-group">';
-      sec.options.forEach(function(opt,oi){
-        html+='<div class="radio-opt" id="ro-'+si+'-'+oi+'" onclick="selectRadio(this,\'ro-'+si+'\')" data-val="'+opt+'">'+opt+'</div>';
+      html+='<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">'+sec.radio+'</div>';
+      html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      (sec.options||[]).forEach(function(opt,oi){
+        html+='<div class="ropt'+(oi===0?' on':'')+'" onclick="this.closest(\'div\').querySelectorAll(\'.ropt\').forEach(function(e){e.classList.remove(\'on\')});this.classList.add(\'on\')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700">'+opt+'</div>';
       });
       html+='</div>';
     }
     (sec.items||[]).forEach(function(item,ii){
-      html+='<label class="check-item" id="ci-'+si+'-'+ii+'"><input type="checkbox" id="cb-'+si+'-'+ii+'" onchange="majCheckItem(this,\'ci-'+si+'-'+ii+'\')" style="accent-color:var(--green);width:18px;height:18px;cursor:pointer"><span>'+item+'</span></label>';
+      var cbId='cb-'+si+'-'+ii;
+      var checked=prec.indexOf(cbId)>=0;
+      html+='<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid '+(checked?'rgba(61,186,122,.3)':'var(--border)')+';background:'+(checked?'rgba(61,186,122,.06)':'transparent')+';cursor:pointer;margin-bottom:5px">';
+      html+='<input type="checkbox" id="'+cbId+'"'+(checked?' checked':'')+' onchange="var ci=this.closest(\'label\');ci.style.background=this.checked?\'rgba(61,186,122,.06)\":\'transparent\';ci.style.borderColor=this.checked?\'rgba(61,186,122,.3)\":\'var(--border)\';" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
+      html+='<span style="font-size:12px;line-height:1.6">'+item+'</span></label>';
     });
     html+='</div>';
   });
-  html+='<div style="margin-top:14px"><label style="font-size:10px;font-weight:800;color:var(--sub);display:block;margin-bottom:4px">OBSERVATIONS</label><textarea id="fiche-obs" style="width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:9px;font-size:13px;min-height:80px;font-family:inherit;outline:none"></textarea></div>';
-  html+='<div class="btn-row"><button class="btn btn-primary" onclick="sauverFicheCocher('+salId+',\''+type+'\')">💾 Enregistrer cette fiche</button><button class="btn btn-secondary" onclick="fermerModal()">Fermer</button><button class="btn btn-blue" onclick="imprimerFicheCocher('+salId+',\''+type+'\')">🖨️ Imprimer</button></div>';
-  ouvrirModal(html);
+
+  /* Observations */
+  html+='<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">';
+  html+='<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);margin-bottom:10px">Observations libres</div>';
+  html+='<textarea id="fiche-obs-'+type+'" style="width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px;font-size:13px;min-height:100px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box" placeholder="Vos observations..."></textarea>';
+  html+='</div>';
+
+  html+='<div style="display:flex;gap:10px;margin-bottom:30px">';
+  html+='<button class="btn btn-primary" style="flex:1" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">Imprimer</button>';
+  html+='<button class="btn btn-green" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">Sauvegarder</button>';
+  html+='<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">Fermer</button>';
+  html+='</div></div>';
+
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
 };
 window.selectRadio=function(el,group){document.querySelectorAll('[id^="'+group+'"]').forEach(function(e){e.classList.remove('on');});el.classList.add('on');};
 window.majCheckItem=function(cb,id){var item=document.getElementById(id);if(item)item.classList.toggle('checked',cb.checked);};
@@ -2591,7 +2659,13 @@ if(typeof PSYCHO_MODULES !== 'undefined'){
 <script>
 window.ouvrirFicheAvecSal=function(key){
   var sid=window.fichesSalActif;
-  if(!sid){toast('Selectionnez un salarie','err');return;}
+  /* Si pas de salarié sélectionné, prendre le premier actif */
+  if(!sid){
+    var premiers=DB.salaries.filter(function(s){return s.statut==='actif';});
+    if(premiers.length) sid=premiers[0].id;
+  }
+  if(!sid){toast('Aucun salarié disponible','err');return;}
+  window.fichesSalActif=sid;
   ouvrirFicheCocher(sid,key);
 };
 </script>
@@ -3436,126 +3510,7 @@ window.genDoc=function(salId,key){
    ═══════════════════════════════════════════════════ */
 
 /* Remplacer ouvrirFicheCocher par version plein écran */
-window.ouvrirFicheCocher = function(salId, type){
-  var s = DB.salaries.find(function(x){return x.id==salId;});
-  if(!s) return;
-
-  if(!type){
-    /* Choix de la fiche en plein écran */
-    var old = document.getElementById('fiche-overlay');
-    if(old) old.remove();
-    var ov = document.createElement('div');
-    ov.id = 'fiche-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;overflow-y:auto;padding:20px';
-    var h = '<div style="max-width:800px;margin:0 auto">';
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
-    h += '<div style="font-size:18px;font-weight:900;color:var(--text)">✅ Choisir une fiche — '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
-    h += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">✕ Fermer</button></div>';
-    h += '<div class="grid-2">';
-    Object.keys(FICHES_TYPES).forEach(function(key){
-      var f = FICHES_TYPES[key];
-      var nb = f.sections.reduce(function(n,sec){return n+(sec.items||[]).length;},0);
-      h += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer" onclick="document.getElementById(\'fiche-overlay\').remove();ouvrirFicheCocher('+salId+',\''+key+'\')">';
-      h += '<div style="font-size:30px;margin-bottom:8px">'+f.icon+'</div>';
-      h += '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">'+f.titre+'</div>';
-      h += '<div style="font-size:11px;color:var(--sub);margin-bottom:12px">'+nb+' points à cocher</div>';
-      h += '<button class="btn btn-primary btn-sm" style="width:100%">Ouvrir</button></div>';
-    });
-    h += '</div></div>';
-    ov.innerHTML = h;
-    document.body.appendChild(ov);
-    return;
-  }
-
-  var fiche = FICHES_TYPES[type];
-  if(!fiche) return;
-
-  /* Suggestions pré-cochées par type de fiche */
-  var PRECOCHES = {
-    arrivee: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-2-0','cb-2-1','cb-2-2','cb-4-0','cb-4-1','cb-4-2'],
-    premiere_journee: ['cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4'],
-    premiere_semaine: ['cb-0-0','cb-0-2','cb-0-6'],
-    bilan_mensuel: ['cb-0-6','cb-1-0'],
-    securite: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-2-0','cb-2-1','cb-2-2','cb-2-3','cb-2-4'],
-    checklist_depart: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-6','cb-0-7'],
-    entretien_recadrage: [],
-    fin_contrat: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6'],
-    progression_suivi: ['cb-0-0','cb-1-0','cb-1-1','cb-1-2','cb-1-3','cb-1-4','cb-1-5','cb-1-6','cb-1-7','cb-1-8','cb-2-0','cb-2-2'],
-    recrutement: ['cb-0-0','cb-0-1','cb-0-2','cb-0-3','cb-0-4','cb-0-5','cb-0-6']
-  };
-
-  var old2 = document.getElementById('fiche-overlay');
-  if(old2) old2.remove();
-
-  var overlay = document.createElement('div');
-  overlay.id = 'fiche-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;overflow-y:auto;padding:20px';
-
-  var nom = s.prenom+(s.nom?' '+s.nom:'');
-  var dateStr = new Date().toLocaleDateString('fr-FR');
-
-  var html = '<div style="max-width:750px;margin:0 auto">';
-  /* Header */
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:sticky;top:0;background:#0f1923;padding:12px 0;z-index:10">';
-  html += '<div><div style="font-size:18px;font-weight:900;color:var(--text)">'+fiche.icon+' '+fiche.titre+'</div>';
-  html += '<div style="font-size:11px;color:var(--sub)">'+nom+' · '+s.poste+' · '+dateStr+'</div></div>';
-  html += '<div style="display:flex;gap:8px">';
-  html += '<button class="btn btn-primary" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">🖨️ Imprimer</button>';
-  html += '<button class="btn btn-green btn-sm" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">💾 Sauvegarder</button>';
-  html += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">✕ Fermer</button></div></div>';
-
-  /* Info salarié */
-  html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:20px;flex-wrap:wrap">';
-  html += '<span style="font-size:11px"><strong>Salarié :</strong> '+nom+'</span>';
-  html += '<span style="font-size:11px"><strong>Poste :</strong> '+s.poste+'</span>';
-  html += '<span style="font-size:11px"><strong>Véhicule :</strong> '+(s.vehicule||'—')+'</span>';
-  html += '<span style="font-size:11px"><strong>Contrat :</strong> '+s.typeContrat+'</span>';
-  html += '<span style="font-size:11px"><strong>Date :</strong> '+dateStr+'</span>';
-  html += '</div>';
-
-  /* Sections */
-  fiche.sections.forEach(function(sec, si){
-    html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
-    html += '<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);letter-spacing:.06em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">'+sec.titre+'</div>';
-
-    if(sec.radio){
-      html += '<div style="font-size:12px;color:var(--text);margin-bottom:8px;font-weight:700">'+sec.radio+'</div>';
-      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-      (sec.options||[]).forEach(function(opt, oi){
-        html += '<div class="ropt'+(oi===0?' on':'')+'" id="ro-'+si+'-'+oi+'" onclick="ficheSelRadio(this,'+si+')" data-val="'+opt+'">'+opt+'</div>';
-      });
-      html += '</div>';
-    }
-
-    (sec.items||[]).forEach(function(item, ii){
-      var cbId = 'cb-'+si+'-'+ii;
-      var ciId = 'ci-'+si+'-'+ii;
-      var prec = (PRECOCHES[type]||[]).indexOf(cbId) >= 0;
-      html += '<label class="check-item'+(prec?' checked':'')+'" id="'+ciId+'" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid '+(prec?'rgba(61,186,122,.3)':'var(--border)')+';background:'+(prec?'rgba(61,186,122,.06)':'transparent')+';cursor:pointer;margin-bottom:5px;transition:.12s">';
-      html += '<input type="checkbox" id="'+cbId+'"'+(prec?' checked':'')+' onchange="ficheToggle(this,\''+ciId+'\')" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
-      html += '<span style="font-size:12px;line-height:1.6;color:'+(prec?'var(--green)':'var(--text)')+'">'+item+'</span></label>';
-    });
-
-    html += '</div>';
-  });
-
-  /* Espace observations */
-  html += '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">';
-  html += '<div style="font-size:11px;font-weight:900;text-transform:uppercase;color:var(--orange);letter-spacing:.06em;margin-bottom:10px">📝 Observations libres</div>';
-  html += '<textarea id="fiche-obs-'+type+'" style="width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px;font-size:13px;min-height:100px;outline:none;font-family:inherit;resize:vertical;line-height:1.6;box-sizing:border-box" placeholder="Vos observations, remarques particulières, points à surveiller..."></textarea>';
-  html += '</div>';
-
-  /* Boutons bas */
-  html += '<div style="display:flex;gap:10px;margin-bottom:30px">';
-  html += '<button class="btn btn-primary" style="flex:1" onclick="imprimerFicheInteractive(\''+type+'\','+salId+')">🖨️ Imprimer cette fiche</button>';
-  html += '<button class="btn btn-green" onclick="sauverFicheInteractive('+salId+',\''+type+'\')">💾 Sauvegarder</button>';
-  html += '<button class="btn btn-secondary" onclick="document.getElementById(\'fiche-overlay\').remove()">Fermer</button>';
-  html += '</div>';
-
-  html += '</div>';
-  overlay.innerHTML = html;
-  document.body.appendChild(overlay);
-};
+;
 
 window.ficheToggle = function(cb, ciId){
   var ci = document.getElementById(ciId);
