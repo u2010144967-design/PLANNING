@@ -13925,3 +13925,2373 @@ console.log('Suite complète chargée — QCM enrichis, fiches élèves, HACCP a
 })();
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MEGA FINAL — PARTIE 1
+   QCM enrichis 15 questions par bloc + Slides nouvelles
+═══════════════════════════════════════════════════════════════ */
+
+/* ── QCM ENRICHIS — TOUS LES BLOCS À 15 QUESTIONS ── */
+(function(){
+  if(typeof ACADEMIE === 'undefined') return;
+
+  function setQCM(id, questions){
+    var bloc = ACADEMIE.blocs.find(function(b){ return b.id === id; });
+    if(!bloc) return;
+    bloc.qcm = questions;
+  }
+
+  setQCM('reglementation', [
+    {q:'Que signifie PTAC ?', choix:['Poids Total Autorisé en Charge','Permis Transitoire Autorisation Conduite','Poids Taxable Autorisé au Chargement','Protocole Transport Agréé en Circulation'], bonne:0, explication:'PTAC = Poids Total Autorisé en Charge. C\'est le poids maximum légal inscrit sur la carte grise. Ne jamais le dépasser.'},
+    {q:'Comment calculer la charge utile ?', choix:['PTAC + poids à vide','PTAC × 0,8','PTAC − poids à vide','Poids à vide − PTAC'], bonne:2, explication:'Charge utile = PTAC moins poids à vide. C\'est la quantité maximale de marchandises que vous pouvez charger.'},
+    {q:'Votre camion a un PTAC de 3500 kg et pèse 2100 kg à vide. Quelle est votre charge utile ?', choix:['1200 kg','1400 kg','1600 kg','5600 kg'], bonne:1, explication:'3500 − 2100 = 1400 kg. Au-delà de 1400 kg chargés vous êtes en surcharge illégale.'},
+    {q:'Taux d\'alcool légal pour un chauffeur professionnel en service ?', choix:['0,5 g/L','0,2 g/L','0,0 g/L — tolérance zéro','0,8 g/L'], bonne:2, explication:'0,0 g/L. En tant que chauffeur professionnel en service, la tolérance est zéro. Pas 0,2 g/L, pas 0,5 g/L. ZÉRO.'},
+    {q:'Amende pour téléphone au volant ?', choix:['35€','75€','135€ + 3 points','500€ + suspension'], bonne:2, explication:'135€ d\'amende + 3 points retirés. Avec kit mains libres c\'est légal mais le cerveau reste 40% moins performant — s\'arrêter reste la meilleure option.'},
+    {q:'Un contrôle routier a lieu. Vous avez oublié votre permis chez vous. Que se passe-t-il ?', choix:['Rien si vous pouvez le montrer dans les 5 jours','Amende immédiate de 11€ pour défaut de présentation','Garde à vue obligatoire','Immobilisation du véhicule'], bonne:1, explication:'Défaut de présentation du permis = 11€ d\'amende. Vous pouvez présenter votre permis dans les 5 jours au commissariat. Mais conduire sans permis valide = délit pénal grave.'},
+    {q:'Que risquez-vous en cas de délit de fuite après un accident ?', choix:['Rien si personne n\'est blessé','75 000€ + 5 ans de prison possible','Suspension de permis 3 mois','Amende de 1500€'], bonne:1, explication:'Délit de fuite = jusqu\'à 75 000€ d\'amende et 5 ans de prison. L\'assurance ne couvre pas. Vous êtes personnellement responsable de tous les préjudices.'},
+    {q:'Votre PTAC est de 3500 kg. Vous avez chargé 80 caisses de 20 kg. Le camion pèse 1900 kg à vide. Êtes-vous en règle ?', choix:['Oui : 80×20=1600 < 1700 charge utile','Non : 80×20=1600 > 1600 charge utile exactement — risque','Oui car les caisses sont légères','Non : jamais plus de 50 caisses'], bonne:1, explication:'Charge utile = 3500−1900 = 1600 kg. 80×20 = 1600 kg exactement. C\'est la limite — mais en pratique les caisses pèsent souvent plus que prévu. Prudence absolue.'},
+    {q:'Que doit contenir la boîte à gants du véhicule professionnel ?', choix:['Permis, carte grise, assurance, contrôle technique','Seulement le permis et la carte grise','Permis et assurance uniquement','Carte grise et contrôle technique seulement'], bonne:0, explication:'Permis de conduire, carte grise, assurance en cours de validité, contrôle technique à jour. Ces 4 documents doivent être présents à tout contrôle.'},
+    {q:'Vous êtes fatigué au volant. La loi vous oblige à :', choix:['Continuer si vous avez moins de 2h de route','Ouvrir la fenêtre et continuer','Vous arrêter dès que possible dans un endroit sûr','Boire un café et rouler plus lentement'], bonne:2, explication:'La loi oblige le conducteur à s\'arrêter dès qu\'il se sent en état de fatigue dangereuse. 30% des accidents mortels sur autoroute sont liés à la fatigue.'},
+    {q:'Qu\'est-ce qu\'un PV de surcharge peut entraîner immédiatement ?', choix:['Seulement une amende','Amende + immobilisation du véhicule jusqu\'à mise en conformité','Suspension du permis uniquement','Rien si c\'est la première fois'], bonne:1, explication:'Surcharge = amende (135€ à 750€) ET immobilisation du véhicule. Vous ne repartez pas avant d\'avoir mis le camion en conformité. La tournée est bloquée.'},
+    {q:'Votre contrôle technique est expiré depuis 3 jours. Vous partez en tournée. Que risquez-vous ?', choix:['Rien — 3 jours c\'est un délai de grâce','135€ + immobilisation possible','Suspension de permis','Amende de 750€ uniquement'], bonne:1, explication:'Contrôle technique périmé = 135€ d\'amende et immobilisation possible du véhicule. Il n\'y a aucun délai de grâce légal.'},
+    {q:'Un accident grave a lieu. Vous appelez le 15. Pourquoi le 15 et pas le 18 ?', choix:['Le 15 est le SAMU — pour les urgences médicales','Le 18 est payant','Le 15 répond plus vite','Il n\'y a pas de différence'], bonne:0, explication:'15 = SAMU (urgences médicales). 18 = Pompiers (incendies et secours). 17 = Police. Pour un blessé grave, appeler le 15 en premier. Les pompiers peuvent aussi aider au 18 pour les secours.'},
+    {q:'Vous devez livrer à 6h dans une zone piétonne. C\'est légal si :', choix:['L\'horaire est avant 8h — toujours autorisé','Vous avez une autorisation préfectorale spéciale','Vous restez moins de 10 minutes','Vous mettez vos feux de détresse'], bonne:1, explication:'Zone piétonne = autorisation préfectorale obligatoire. Sans ce document, c\'est une infraction même 30 secondes, même à 5h du matin.'},
+    {q:'Qu\'est-ce que la FIMO ?', choix:['Formation Initiale Minimale Obligatoire pour les PL','Fiche d\'Identification du Matériel et de l\'Outillage','Formation Interne Mensuelle Obligatoire','Fiche Individuelle de Mise à jour des Objectifs'], bonne:0, explication:'FIMO = Formation Initiale Minimale Obligatoire. Obligatoire pour conduire un poids lourd (> 3,5 tonnes PTAC). 140h de formation. Finançable CPF + OPCO.'},
+  ]);
+
+  setQCM('chaine_froid', [
+    {q:'Température réglementaire pour les surgelés ?', choix:['-12°C ou moins','-15°C ou moins','-18°C ou moins','-10°C suffit'], bonne:2, explication:'-18°C ou moins. C\'est la limite légale pour les produits surgelés. En dessous de -18°C les bactéries ne se multiplient plus.'},
+    {q:'Température maximale pour les plats cuisinés réfrigérés ?', choix:['+5°C','+3°C','+8°C','+6°C'], bonne:1, explication:'+3°C maximum. Les plats cuisinés type gratin, terrine, pâté doivent rester entre 0°C et +3°C pour être sûrs.'},
+    {q:'Qu\'est-ce qu\'une rupture de chaîne du froid ?', choix:['Un frigo qui tombe en panne','Le moment où la température sort de la plage réglementaire','Quand le camion s\'arrête plus de 10 minutes','Un produit congelé qui décongèle partiellement'], bonne:1, explication:'Rupture = le moment où la température sort de la plage autorisée. Même brièvement. Les bactéries se multiplient entre +4°C et +65°C — la "zone de danger".'},
+    {q:'La Listeria est particulièrement dangereuse car :', choix:['Elle résiste à la chaleur','Elle se développe même au froid à +1°C','Elle provoque des nausées immédiates','Elle est visible à l\'œil nu'], bonne:1, explication:'La Listeria est exceptionnellement dangereuse car elle survit et se multiplie même à +1°C. Contrairement à la plupart des bactéries qui sont freinées par le froid. Mortelle pour les femmes enceintes et les personnes fragiles.'},
+    {q:'Le frigo du camion affiche +9°C au lieu de +3°C. Que faites-vous ?', choix:['Partir quand même — ça va se stabiliser','Appeler l\'encadrant et ne pas partir','Attendre 10 minutes que ça descende','Charger quand même les produits les moins sensibles'], bonne:1, explication:'Ne jamais partir avec un frigo hors température. Appeler l\'encadrant AVANT de toucher les produits. La décision de partir ou non est managériale et légale — pas la vôtre seule.'},
+    {q:'HACCP signifie :', choix:['Haute Autorité de Contrôle des Cuisines Professionnelles','Hygiène Alimentaire Contrôle et Certification des Produits','Hazard Analysis Critical Control Points — Analyse des risques','Hygiène et Assainissement des Cuisines et Comptoirs Professionnels'], bonne:2, explication:'HACCP = Hazard Analysis Critical Control Points. En français : Analyse des risques et maîtrise des points critiques. C\'est la méthode obligatoire de sécurité alimentaire dans toute la chaîne.'},
+    {q:'Température minimale pour les plats chauds en livraison ?', choix:['+55°C','+60°C','+63°C','+70°C'], bonne:2, explication:'+63°C minimum. En dessous de cette température, les bactéries reprennent leur multiplication. Un plat chaud livré à +58°C est une infraction.'},
+    {q:'Vous avez chargé des plats chauds à +65°C. La tournée dure 3 heures. Qu\'est-ce que vous devez surveiller ?', choix:['Rien — ça reste chaud suffisamment longtemps','La température toutes les heures avec la sonde','Seulement si le client se plaint','La couleur et l\'odeur des plats'], bonne:1, explication:'Surveiller la température avec la sonde toutes les heures et la noter. Si elle descend sous +63°C avant livraison, appeler l\'encadrant immédiatement.'},
+    {q:'Quelle bactérie se multiplie le plus rapidement entre +20°C et +40°C ?', choix:['Listeria','Staphylocoque doré','Salmonelle','E. Coli'], bonne:2, explication:'La Salmonelle se multiplie très rapidement entre +20°C et +40°C. Une intoxication à la Salmonelle provoque diarrhées, vomissements et fièvre pendant 72h. Peut être grave pour les enfants et personnes âgées.'},
+    {q:'Qu\'est-ce que la traçabilité alimentaire ?', choix:['Vérifier la date de péremption avant de charger','Capacité à retrouver l\'historique complet d\'un produit livré','Compter les produits à chaque livraison','Signer le BL avec la température'], bonne:1, explication:'La traçabilité = pouvoir retrouver l\'origine, le parcours et la destination de chaque produit. En cas de problème sanitaire, on peut identifier exactement quels clients ont reçu les produits concernés.'},
+    {q:'Vous ouvrez un bac de viande et l\'odeur est suspecte. Que faites-vous ?', choix:['Livrer quand même — ce n\'est peut-être rien','Goûter pour vérifier','Ne pas livrer et appeler l\'encadrant immédiatement','Demander au client s\'il accepte quand même'], bonne:2, explication:'Ne jamais livrer un produit suspect. Appeler l\'encadrant immédiatement. Vous n\'avez pas à prendre la décision seul. Et ne jamais goûter — une intoxication alimentaire peut être grave.'},
+    {q:'Les fruits et légumes frais doivent être conservés à quelle température ?', choix:['+0°C à +3°C','+4°C à +8°C','+10°C à +15°C','Température ambiante suffit'], bonne:1, explication:'+6°C à +8°C pour la plupart des fruits et légumes. Certains légumes tropicaux tolèrent +10°C. En dessous de +4°C certains fruits (tomates, bananes) s\'abîment par le froid.'},
+    {q:'Vous arrivez chez un client avec des produits réfrigérés. Il refuse de signer le BL car il pense que les produits ne sont pas à la bonne température. Que faites-vous ?', choix:['Repartir avec les produits sans rien noter','Forcer la livraison','Mesurer la température avec la sonde devant lui et noter sur le BL','Laisser les produits quand même'], bonne:2, explication:'Mesurer la température devant le client avec la sonde officielle. Si elle est correcte, noter sur le BL. Si elle est incorrecte, noter l\'anomalie et appeler l\'encadrant. Ne jamais laisser de produits dont la température n\'est pas conforme.'},
+    {q:'Qu\'est-ce que le "froid positif" ?', choix:['Quand le frigo fonctionne bien','Réfrigération entre 0°C et +8°C selon le produit','Température positive = au-dessus de 0°C pour les frais','Congélation douce à -5°C'], bonne:1, explication:'Froid positif = réfrigération entre 0°C et +8°C selon le type de produit. Par opposition au "froid négatif" qui désigne la congélation à -18°C ou moins.'},
+    {q:'Pourquoi noter l\'heure de départ ET la température sur le relevé ?', choix:['C\'est juste une formalité administrative','Pour prouver la durée d\'exposition si problème sanitaire','Pour calculer le carburant consommé','Pour la facturation des clients'], bonne:1, explication:'Date + heure + température = traçabilité complète. En cas de problème sanitaire (intoxication d\'un client), vous pouvez prouver que les produits étaient à bonne température au départ. Protection légale pour vous et l\'entreprise.'},
+  ]);
+
+  setQCM('chargement', [
+    {q:'Que signifie LIFO ?', choix:['Last In First Out','Last Invoice First Order','Light Items First Outside','Liste Inventaire Formation Obligatoire'], bonne:0, explication:'LIFO = Last In First Out. Le dernier chargé est le premier sorti. Donc le premier client livré est chargé en dernier (devant), le dernier client livré est chargé en premier (au fond).'},
+    {q:'Vous livrez 3 clients : A à 7h, B à 9h, C à 11h. Qui charger en premier (au fond du camion) ?', choix:['Client A car il est le premier livré','Client C car il est livré en dernier','Client B car il est au milieu','L\'ordre n\'a pas d\'importance'], bonne:1, explication:'Client C au fond, B au milieu, A devant. LIFO : dernier livré = premier chargé. Comme ça A est devant et sort en premier sans devoir tout déplacer.'},
+    {q:'Une caisse de 20 kg non arrimée représente quel impact à 50 km/h ?', choix:['20 kg','100 kg','300 kg','500 kg'], bonne:2, explication:'À 50 km/h, l\'impact est d\'environ 300 kg. Une caisse de 20 kg peut traverser la cloison et tuer le conducteur. L\'arrimage n\'est pas une option.'},
+    {q:'Au-delà de combien de kg doit-on être deux pour porter ?', choix:['15 kg','20 kg','25 kg','30 kg'], bonne:2, explication:'25 kg = limite légale pour le port seul. Au-delà, deux personnes obligatoires ou utiliser un chariot. C\'est la réglementation du code du travail.'},
+    {q:'TMS signifie :', choix:['Transport Maritime et Sécurité','Troubles Musculo-Squelettiques','Technicien en Manutention et Sécurité','Test de Manœuvre Standard'], bonne:1, explication:'TMS = Troubles Musculo-Squelettiques. C\'est la première cause d\'arrêt maladie en logistique. Hernies discales, tendinites, douleurs chroniques. Un mauvais geste répété pendant des mois peut provoquer une lésion définitive.'},
+    {q:'La bonne technique pour soulever une charge lourde est :', choix:['Se pencher en avant dos droit et tirer','Genoux pliés, dos droit, charge collée contre soi','Soulever rapidement pour moins solliciter les muscles','Tourner le buste pendant le soulèvement'], bonne:1, explication:'Genoux pliés pour descendre au niveau de la charge, dos droit tout au long du mouvement, charge collée contre le corps. La force vient des jambes, pas du dos.'},
+    {q:'Vous devez charger des GN 1/1 pleins (environ 20 kg) et des bacs vides. Dans quel ordre ?', choix:['Bacs vides d\'abord, GN pleins au-dessus','GN pleins au fond et en bas, bacs vides au-dessus','N\'importe quel ordre','GN pleins au-dessus pour les sortir facilement'], bonne:1, explication:'Les charges lourdes toujours en bas et contre les parois. Centre de gravité bas = stabilité maximale. Les bacs légers au-dessus ne glissent pas et n\'écrasent rien.'},
+    {q:'Vous avez terminé de charger. Avant de partir, vous vérifiez :', choix:['Seulement la fermeture des portes','L\'arrimage de toute la cargaison, les portes, et la température','Juste la température du frigo','Rien — c\'est déjà fait pendant le chargement'], bonne:1, explication:'Vérification finale obligatoire : arrimage (rien ne peut glisser ou tomber), portes fermées correctement, température frigo conforme, BL correspondant aux produits chargés.'},
+    {q:'Qu\'est-ce que l\'effet centrifuge dans un virage ?', choix:['L\'accélération vers l\'avant','La force qui pousse la cargaison vers l\'extérieur du virage','La résistance au freinage','L\'effet des pneus sur le bitume'], bonne:1, explication:'L\'effet centrifuge pousse la cargaison vers l\'extérieur du virage. Plus vous allez vite, plus c\'est fort. Les bacs GN peuvent glisser et tomber même s\'ils semblaient bien placés. Ralentir avant les virages.'},
+    {q:'Pourquoi les charges lourdes doivent-elles être au sol ?', choix:['Pour pouvoir les soulever plus facilement','Pour abaisser le centre de gravité et stabiliser le véhicule','C\'est juste une habitude','Pour protéger le plafond du camion'], bonne:1, explication:'Centre de gravité bas = véhicule plus stable. Un camion chargé en hauteur se renverse beaucoup plus facilement dans les virages. Les charges lourdes au sol, les légères au-dessus.'},
+    {q:'Hernie discale : c\'est quoi et comment l\'éviter ?', choix:['Une douleur musculaire passagère — évitée avec du repos','Une lésion grave de la colonne vertébrale — évitée avec les bons gestes','Une inflammation des articulations — évitée avec de la glace','Un crampe musculaire — évitée avec de l\'étirement'], bonne:1, explication:'Hernie discale = lésion d\'un disque intervertébral qui peut être définitive. Causée par des mauvais gestes répétés. Prévention : dos droit, genoux pliés, ne jamais tourner le buste en portant.'},
+    {q:'Le diable (chariot 2 roues) doit être utilisé quand :', choix:['Seulement pour les charges > 50 kg','Pour toute charge lourde ou répétitive pour protéger le dos','Seulement si l\'encadrant le demande','Uniquement en entrepôt, jamais sur le trottoir'], bonne:1, explication:'Le diable doit être utilisé dès que vous avez plusieurs caisses à déplacer ou que la charge sollicite votre dos. C\'est pour ça qu\'il est dans le camion. L\'utiliser protège votre dos à long terme.'},
+    {q:'Vous chargez et remarquez qu\'une caisse est abîmée (carton mouillé, ouverture). Que faites-vous ?', choix:['Charger quand même si le contenu semble intact','Signaler à l\'encadrant avant de charger','Réparer avec du scotch','Laisser au sol et charger le reste'], bonne:1, explication:'Signaler avant de charger. Une caisse abîmée peut cacher un problème produit (fuite, casse, contamination). L\'encadrant décide : remplacer, renforcer, ou annuler cette livraison.'},
+    {q:'Votre camion a une charge utile de 1200 kg. Vous estimez avoir chargé environ 1100 kg. Vous voyez 10 caisses supplémentaires à prendre. Chaque caisse fait environ 15 kg. Que faites-vous ?', choix:['Charger les 10 caisses — 1100+150=1250 > 1200 mais c\'est proche','Ne pas charger — 1100+150=1250 > 1200 = surcharge','Charger la moitié','Appeler l\'encadrant pour décider'], bonne:3, explication:'1100 + 150 = 1250 kg > 1200 kg de charge utile = surcharge. Mais comme c\'est une estimation, appeler l\'encadrant pour décider. Il peut reorganiser la tournée, envoyer un second véhicule, ou confirmer que l\'estimation est surévaluée.'},
+    {q:'Qu\'est-ce qu\'un arrimage correct ?', choix:['Juste fermer les portes du camion correctement','Fixer la cargaison pour qu\'elle ne puisse pas bouger pendant le transport','Empiler les caisses le plus haut possible','Remplir le camion à ras bord pour que rien ne bouge'], bonne:1, explication:'Arrimage = fixer la cargaison avec sangles, cales ou filets pour qu\'aucune pièce ne puisse se déplacer pendant le transport. Freinage, virage, dos d\'âne — la cargaison ne doit pas bouger.'},
+  ]);
+
+  setQCM('conduite_pro', [
+    {q:'L\'éco-conduite permet d\'économiser combien de carburant ?', choix:['5%','10-15%','20-30%','Aucune économie'], bonne:2, explication:'Jusqu\'à 20-30% d\'économie avec une éco-conduite bien appliquée. Sur une année complète, ça représente plusieurs milliers d\'euros d\'économie pour l\'entreprise.'},
+    {q:'À combien de mètres faut-il anticiper le freinage à 90 km/h ?', choix:['30 mètres','50 mètres','80 mètres','Minimum 100 mètres avec un camion chargé'], bonne:3, explication:'À 90 km/h, un camion chargé parcourt 25 mètres par seconde. Distance de freinage minimum 80m + distance de réaction. Anticiper à 100m minimum.'},
+    {q:'Que faire quand vous vous sentez fatigué au volant ?', choix:['Ouvrir la fenêtre et accélérer','Boire un café et continuer 30 minutes','S\'arrêter dans un endroit sûr et appeler l\'encadrant','Mettre la radio fort'], bonne:2, explication:'La loi oblige à s\'arrêter en cas de fatigue dangereuse. 30% des accidents mortels sur autoroute sont liés à la fatigue. Un micro-sommeil de 1 seconde à 90 km/h = 25 mètres sans contrôle.'},
+    {q:'Qu\'est-ce qu\'un micro-sommeil ?', choix:['Un somme de 5 minutes','Une perte de conscience de 1 à 30 secondes sans s\'en rendre compte','Un endormissement progressif','Une baisse d\'attention due à la monotonie'], bonne:1, explication:'Le micro-sommeil dure de 1 à 30 secondes et passe inaperçu. La personne ne s\'en souvient pas. À 90 km/h, 10 secondes de micro-sommeil = 250 mètres parcourus sans aucun contrôle.'},
+    {q:'Comment signaler un retard à un client ?', choix:['En arrivant chez lui','Par SMS pendant que vous conduisez','En vous arrêtant et en appelant AVANT d\'arriver','Laisser l\'encadrant gérer'], bonne:2, explication:'S\'arrêter dans un endroit sûr, appeler le client AVANT d\'arriver. Un client prévenu à l\'avance accepte beaucoup mieux un retard. Prévenir en arrivant = trop tard, la frustration est déjà là.'},
+    {q:'Procédure en cas d\'accident : quelle est la première étape ?', choix:['Appeler l\'assurance','Remplir le constat','S\'arrêter, couper le moteur, mettre les feux de détresse','Appeler l\'encadrant'], bonne:2, explication:'S\'arrêter immédiatement, couper le moteur, mettre les feux de détresse et le triangle à 30m minimum. La sécurité de la scène d\'abord. Puis vérifier les blessés, puis appeler.'},
+    {q:'Le triangle de signalisation doit être placé à quelle distance minimum ?', choix:['10 mètres','20 mètres','30 mètres','50 mètres'], bonne:2, explication:'30 mètres minimum. Sur autoroute : 100 mètres. Le triangle doit être visible suffisamment tôt pour que les autres conducteurs puissent freiner.'},
+    {q:'Vous roulez sur autoroute. Votre téléphone sonne. C\'est l\'encadrant. Que faites-vous ?', choix:['Décrocher avec le kit mains libres sans s\'arrêter','S\'arrêter sur la bande d\'arrêt d\'urgence pour répondre','Continuer et rappeler à la prochaine aire de repos','Envoyer un SMS rapidement'], bonne:2, explication:'S\'arrêter à la prochaine aire de repos et rappeler. La bande d\'arrêt d\'urgence est réservée aux pannes réelles — s\'y arrêter pour téléphoner est dangereux et interdit. Attendre l\'aire de repos.'},
+    {q:'Qu\'est-ce que le score Crit\'Air ?', choix:['La note de conduite donnée par l\'encadrant','La vignette classifiant les véhicules par niveau de pollution','Le score d\'éco-conduite calculé par le GPS','Le contrôle technique simplifié'], bonne:1, explication:'Crit\'Air = vignette obligatoire classifiant les véhicules selon leur niveau de pollution. Nécessaire pour circuler dans les Zones à Faibles Émissions (ZFE) dont certaines zones de Marseille.'},
+    {q:'Constat amiable : sous combien de jours l\'envoyer à l\'assurance ?', choix:['2 jours','5 jours','10 jours','30 jours'], bonne:1, explication:'5 jours ouvrés maximum. Au-delà, l\'assurance peut refuser de prendre en charge le sinistre. Envoyer en recommandé avec accusé de réception.'},
+    {q:'Vous venez de causer un accrochage léger dans un parking. L\'autre conducteur veut partir sans constat. Que faites-vous ?', choix:['Le laisser partir — c\'est peu grave','Photographier sa plaque et appeler la police si nécessaire','Partir aussi','Accepter son numéro de téléphone seulement'], bonne:1, explication:'Ne jamais laisser partir sans constat ou informations complètes. Photographier la plaque, le véhicule, les dégâts. Si l\'autre conducteur refuse et part = délit de fuite de sa part. Appeler la police.'},
+    {q:'Éco-conduite : que faire aux feux rouges et arrêts > 1 minute ?', choix:['Laisser le moteur tourner','Couper le moteur','Mettre au point mort','Mettre en veille'], bonne:1, explication:'1 minute de ralenti = 0,2 à 0,5L de carburant gaspillé. Sur une journée de tournée avec de nombreux arrêts, ça représente 1 à 2 litres. Couper le moteur à tout arrêt > 1 minute.'},
+    {q:'Votre vehicule fait un bruit inhabituel au démarrage ce matin. Que faites-vous ?', choix:['Partir quand même — ça s\'arrangera peut-être','Signaler à l\'encadrant avant de partir','Écouter pendant 5 minutes puis décider','Appeler un garagiste vous-même'], bonne:1, explication:'Signaler à l\'encadrant AVANT de partir. Un bruit inhabituel peut indiquer un problème mécanique sérieux. L\'encadrant décide si le véhicule peut partir ou doit être contrôlé d\'abord.'},
+    {q:'Pression des pneus sous-gonflés : quel est l\'impact sur la consommation ?', choix:['Aucun impact','Consommation augmentée de 1%','Consommation augmentée de 3% par 0,5 bar de sous-gonflage','Consommation réduite car moins de résistance'], bonne:2, explication:'Des pneus sous-gonflés augmentent la résistance au roulement et la consommation de carburant de 3% par 0,5 bar. Sur 30 000 km par an, c\'est 90 litres gaspillés. Vérifier la pression une fois par semaine.'},
+    {q:'Qu\'est-ce que l\'aquaplaning ?', choix:['Une technique de conduite sur surface mouillée','Le glissement du véhicule sur une couche d\'eau — freinage impossible','Un système d\'aide à la conduite sur route mouillée','La résistance des pneus à la pluie'], bonne:1, explication:'L\'aquaplaning = le pneu flotte sur une couche d\'eau sans contact avec le bitume. Le freinage et la direction deviennent impossibles. Prévention : ralentir sur routes mouillées, pneus en bon état.'},
+  ]);
+
+  setQCM('relation_client', [
+    {q:'Les 5 premières secondes chez un client sont importantes car :', choix:['On peut vérifier la commande rapidement','80% de l\'opinion du client se forme en 5 secondes','C\'est le temps légal pour sonner','On peut voir si le client est de bonne humeur'], bonne:1, explication:'80% de l\'opinion initiale se forme en 5 secondes. Tenue, posture, sourire, regard — tout est jugé immédiatement. Ce n\'est pas superficiel, c\'est humain et réel.'},
+    {q:'Méthode ERAC — que signifie le R ?', choix:['Résoudre le problème','Répondre rapidement','Reconnaître la frustration du client','Refuser la responsabilité'], bonne:2, explication:'ERAC : Écouter, Reconnaître, Agir, Confirmer. Reconnaître = "Je comprends votre frustration" sans admettre une faute. Reconnaître ne signifie pas accepter la responsabilité.'},
+    {q:'Un client crie parce que sa commande est incomplète. Votre première action ?', choix:['Lui expliquer que c\'est la faute de la cuisine','Partir et laisser l\'encadrant gérer','Écouter sans interrompre pendant 30-60 secondes','Argumenter pour défendre l\'entreprise'], bonne:2, explication:'Écouter sans interrompre. Le client se calme souvent de lui-même. Jamais interrompre un client mécontent — ça aggrave la situation. Écouter d\'abord, répondre ensuite.'},
+    {q:'Phrase INTERDITE à ne jamais dire devant un client :', choix:['"Je vais vérifier avec mon responsable"','"C\'est la faute de la cuisine"','"Je comprends votre désagrément"','"Je note votre remarque"'], bonne:1, explication:'"C\'est la faute de la cuisine" = catastrophique. Vous ne savez pas ce qui s\'est passé, et vous désignez un collègue devant le client. Toujours : "Il y a eu un problème, je le remonte immédiatement."'},
+    {q:'Que faire si le client refuse de signer le BL ?', choix:['Laisser la commande sans signature','Forcer — c\'est obligatoire','Repartir avec toute la commande','Noter le refus sur le BL, signer vous-même, appeler l\'encadrant'], bonne:3, explication:'Noter clairement sur le BL "Refus de signature du client" avec l\'heure, signer vous-même, appeler l\'encadrant immédiatement. Ne jamais partir sans trace de ce qui s\'est passé.'},
+    {q:'Différence de comportement entre livraison collectivité et traiteur événement ?', choix:['Aucune différence','Collectivité : procédure stricte et formelle. Traiteur : discrétion totale','Collectivité : plus détendu. Traiteur : très formel','Collectivité : téléphone autorisé. Traiteur : interdit'], bonne:1, explication:'Collectivité (école, administration) : protocole formel, réceptionnaire désigné, BL informatisé souvent. Traiteur événement : discrétion absolue, invités présents, tenue irréprochable, zéro téléphone visible.'},
+    {q:'Vous arrivez chez un client centre de loisirs. Il y a des enfants partout. Qu\'est-ce qui change ?', choix:['Rien — c\'est une livraison comme une autre','Livraison normale mais en contournant les enfants','Comportement exemplaire, langage soigné, respect de l\'espace des enfants','Demander aux animateurs d\'éloigner les enfants'], bonne:2, explication:'Centre de loisirs = comportement irréprochable. Langage soigné, tenue correcte, respect de l\'espace. Ce n\'est pas une livraison ordinaire. La Table de Cana est jugée sur votre comportement.'},
+    {q:'Un client dit que le produit livré n\'est pas ce qu\'il a commandé. Que faites-vous ?', choix:['Insister que c\'est ce qui était commandé','Vérifier le BL avec lui calmement, noter la discordance, appeler l\'encadrant','Reprendre le produit et partir','Laisser le produit et dire que l\'encadrant va rappeler'], bonne:1, explication:'Vérifier le BL avec le client — calmement. Si discordance réelle : noter sur le BL, appeler l\'encadrant immédiatement. Ne jamais décider seul de reprendre ou laisser le produit.'},
+    {q:'Votre téléphone sonne pendant que vous remettez une commande à un client. Que faites-vous ?', choix:['Décrocher — c\'est peut-être urgent','Regarder qui appelle et décider','Ignorer le téléphone jusqu\'à avoir terminé avec le client','Demander au client d\'attendre'], bonne:2, explication:'Finir la livraison d\'abord. Le client qui est devant vous est prioritaire. Décrocher devant un client = message clair que vous n\'êtes pas totalement présent pour lui. Rappeler après.'},
+    {q:'Compte-rendu oral après une tournée difficile — dans quel ordre ?', choix:['D\'abord les positifs puis les négatifs','D\'abord les faits, puis les informations, puis les anomalies, puis ce que vous avez fait','D\'abord les problèmes graves seulement','Dans n\'importe quel ordre'], bonne:1, explication:'Faits → informations concrètes → anomalies → actions prises. Cet ordre permet à l\'encadrant de comprendre rapidement la situation et de décider des suites sans devoir poser 10 questions.'},
+    {q:'Un client traiteur est en retard sur son événement et vous accuse d\'être arrivé trop tard. Vous avez le bon BL avec l\'heure correcte. Que faites-vous ?', choix:['Vous excuser pour calmer','Montrer le BL avec l\'heure d\'arrivée notée','Partir rapidement pour éviter le conflit','Appeler l\'encadrant devant le client'], bonne:1, explication:'Montrer le BL avec l\'heure d\'arrivée. Le BL est votre preuve. Ensuite proposer de résoudre le problème pratiquement plutôt que d\'argumenter sur qui a tort.'},
+    {q:'Phrase parfaite pour se présenter chez un nouveau client :', choix:['"Bonjour, livraison."','"Bonjour, je suis le chauffeur de La Table de Cana pour votre livraison de X colis."','"Salut, j\'ai un truc pour vous."','"Bonjour, vous attendiez une livraison ?"'], bonne:1, explication:'Se présenter complètement : bonjour + prénom si habituel + entreprise + objet de la visite. Professionnel, clair, chaleureux. Le client sait immédiatement qui vous êtes et pourquoi vous êtes là.'},
+    {q:'Un client habituel vous demande de lui laisser la marchandise sans signature car il est occupé. Que faites-vous ?', choix:['Accepter — c\'est un client habituel et de confiance','Refuser absolument dans tous les cas','Chercher quelqu\'un d\'autre dans l\'établissement pour signer','Laisser et appeler l\'encadrant pour noter'], bonne:2, explication:'Chercher une autre personne habilitée à signer dans l\'établissement. Si vraiment impossible, noter "Refus de signature — client occupé" avec l\'heure et appeler l\'encadrant. Un client habituel ne protège pas contre un litige futur.'},
+    {q:'Pourquoi la ponctualité est-elle particulièrement critique en restauration collective ?', choix:['Les clients sont impatients','Les repas sont servis à heure fixe — un retard = repas non livrés à temps','Les collectivités pénalisent financièrement les retards','Toutes ces raisons'], bonne:3, explication:'Toutes ces raisons. Une école qui reçoit sa livraison à 11h30 pour un déjeuner à 12h est sous pression. Un retard de 30 minutes peut signifier que les enfants n\'ont pas de repas chaud. C\'est critique.'},
+    {q:'Vous livrez dans un quartier difficile. Des jeunes s\'approchent du camion. Que faites-vous ?', choix:['Repartir immédiatement','Appeler la police','Rester professionnel, continuer votre livraison normalement, appeler l\'encadrant si problème réel','Confronter les personnes'], bonne:2, explication:'Rester professionnel. La grande majorité des situations ne sont pas des menaces réelles. Si vous sentez un danger réel, remontez dans le camion et appelez l\'encadrant. Ne jamais confronter, ne jamais improviser.'},
+  ]);
+
+  setQCM('securite_travail', [
+    {q:'EPI signifie :', choix:['Équipement Professionnel Individuel','Équipement de Protection Individuelle','Évaluation des Postes et Interventions','Équipement Prioritaire Indispensable'], bonne:1, explication:'EPI = Équipement de Protection Individuelle. Gilet, chaussures de sécurité, gants. Fournis gratuitement par l\'employeur. Port obligatoire — pas une option.'},
+    {q:'Que faites-vous si votre situation de travail présente un danger grave et imminent ?', choix:['Continuer en faisant attention','Signaler à l\'encadrant et continuer','Exercer votre droit de retrait sans être sanctionné','Appeler les pompiers'], bonne:2, explication:'Droit de retrait = droit légal de quitter une situation de danger grave et imminent sans être sanctionné. L\'employeur ne peut pas vous punir pour avoir exercé ce droit.'},
+    {q:'Délai légal pour déclarer un accident du travail ?', choix:['12h','24h — l\'employeur a 48h pour déclarer','5 jours','1 semaine'], bonne:1, explication:'L\'employeur a 48h pour déclarer un accident du travail auprès de la CPAM. Mais vous devez informer l\'encadrant immédiatement (dans la journée). Au-delà de 48h, des droits peuvent être perdus.'},
+    {q:'Principale cause d\'accident grave en descente de camion ?', choix:['Mauvaise chaussure','Dos tourné au camion — chute en descendant','Vitesse de descente trop rapide','Sol mouillé uniquement'], bonne:1, explication:'Descendre du camion dos tourné est la principale cause de chute grave en livraison. Toujours faire face au camion, 3 points d\'appui (2 mains + 1 pied ou 2 pieds + 1 main), jamais sauter.'},
+    {q:'Durée d\'exposition maximale en chambre froide sans protection ?', choix:['30 minutes','1 heure','Pas de limite si on bouge','Quelques minutes seulement en entrées répétées'], bonne:3, explication:'Les entrées répétées dans une chambre froide sans veste de protection causent une hypothermie progressive et des problèmes articulaires chroniques. Pas de limite officielle mais la veste est obligatoire en pratique.'},
+    {q:'Premier réflexe si un collègue s\'effondre ?', choix:['Appeler l\'encadrant','Vérifier si il est conscient et appeler le 15','Lui donner de l\'eau','Le mettre en position assise'], bonne:1, explication:'Vérifier la conscience (appeler, toucher l\'épaule) puis appeler le 15 immédiatement si inconscient. Le 15 guidera pour les premiers secours jusqu\'à l\'arrivée des secours.'},
+    {q:'Sol mouillé après nettoyage — que faire ?', choix:['Marcher vite pour limiter le contact','Marcher normalement avec des chaussures de sécurité','Signaler et attendre que le sol soit sec ou utiliser un autre passage','Courir pour limiter l\'exposition'], bonne:2, explication:'Sol mouillé après nettoyage = danger de glissade même avec chaussures de sécurité. Signaler, mettre un panneau "sol mouillé", utiliser un autre passage si possible, ou attendre.'},
+    {q:'Vous vous blessez légèrement — une coupure superficielle. Que faites-vous ?', choix:['Rien — c\'est trop petit pour signaler','Signaler à l\'encadrant même si c\'est petit','Seulement si ça saigne beaucoup','Aller aux urgences directement'], bonne:1, explication:'TOUT accident ou blessure doit être signalé à l\'encadrant, même minime. Une coupure peut s\'infecter et devenir grave. Et légalement, un accident non déclaré perd sa protection AT.'},
+    {q:'Port des gants — quand exactement ?', choix:['Seulement pour les charges lourdes','Seulement en chambre froide','Dès que vous manipulez des caisses, cartons, matériel','Uniquement si les mains sont en contact avec des produits alimentaires'], bonne:2, explication:'Dès la manutention de caisses et cartons. Les arêtes vives des cartons, les bords métalliques des GN, les palettes — tout peut couper ou abraser sans qu\'on le sente sur le moment.'},
+    {q:'DUERP signifie :', choix:['Document Unique d\'Évaluation des Risques Professionnels','Déclaration Uniforme des Employeurs sur les Risques Physiques','Dossier Unique d\'Évaluation et de Réglementation du Personnel','Document Urgent d\'Expertise sur les Risques du Poste'], bonne:0, explication:'DUERP = Document Unique d\'Évaluation des Risques Professionnels. Obligatoire dans toute entreprise. Il liste tous les risques identifiés et les mesures de prévention. Vous avez le droit de le consulter.'},
+    {q:'Température d\'une chambre froide à 0°C — risque principal sans protection ?', choix:['Rhume passager','Brûlure par le froid','Hypothermie progressive + douleurs articulaires chroniques','Aucun risque avec des vêtements normaux'], bonne:2, explication:'Entrées répétées dans une chambre froide sans veste = hypothermie progressive et douleurs articulaires qui s\'installent sur des mois. La douleur n\'est pas immédiate — c\'est pour ça qu\'on sous-estime le risque.'},
+    {q:'Vous remarquez qu\'un collègue ne porte jamais son gilet de sécurité. Que faites-vous ?', choix:['C\'est son problème','Le signaler à l\'encadrant bienveillamment','Le forcer à le mettre','Ignorer — ce n\'est pas votre rôle'], bonne:1, explication:'Signaler à l\'encadrant — avec bienveillance, pas pour "dénoncer". L\'esprit d\'équipe inclut de veiller à la sécurité de ses collègues. Un collègue blessé ça impacte toute l\'équipe.'},
+    {q:'Accident du travail — ce que vous devez garder absolument ?', choix:['Seulement l\'ordonnance','Ordonnances, certificats médicaux, arrêt de travail — tout sans exception','Seulement l\'arrêt de travail','Rien — l\'entreprise gère'], bonne:1, explication:'Garder TOUS les documents médicaux liés à l\'accident : ordonnances, résultats d\'examens, certificat initial, arrêts de travail, factures. Ce sont vos preuves en cas de contestation ou de séquelle ultérieure.'},
+    {q:'Vibrations des véhicules sur longue durée — quel risque ?', choix:['Aucun risque significatif','Douleurs lombaires chroniques et troubles circulatoires','Seulement inconfortable momentanément','Risque uniquement pour les femmes enceintes'], bonne:1, explication:'Les vibrations transmises au corps par le siège pendant des heures de conduite quotidienne provoquent des douleurs lombaires chroniques et des troubles circulatoires. Régler le siège correctement, faire des pauses.'},
+    {q:'Que faire si vous découvrez un produit chimique renversé dans le camion ?', choix:['Nettoyer vous-même rapidement','Appeler l\'encadrant et ne pas toucher sans protection','Aérer le camion et continuer la tournée','Mettre des gants et nettoyer'], bonne:1, explication:'Ne pas toucher sans savoir ce que c\'est et sans protection adaptée. Appeler l\'encadrant. Certains produits chimiques peuvent provoquer des brûlures, des intoxications ou des émanations toxiques.'},
+  ]);
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MEGA FINAL — PARTIE 2
+   Nouvelles slides + Journal de bord + Dashboard formateur
+   + Timeline visuelle + Alertes intelligentes + Projet pro enrichi
+   + Fiche sortie enrichie + Rapport annuel SIAE
+═══════════════════════════════════════════════════════════════ */
+
+/* ── NOUVELLES SLIDES ── */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  /* Slide: Erreurs classiques du nouveau chauffeur */
+  SLIDES_DATA.erreurs_classiques = {
+    titre:'Erreurs classiques — à éviter',
+    icon:'⚠️',
+    couleur:'#f97316',
+    slides:[
+      {type:'titre', titre:'Les erreurs classiques\ndu nouveau chauffeur', sous:'Ce que tout le monde fait au début — et comment les éviter', icon:'⚠️', couleur:'#f97316'},
+      {
+        type:'erreur_liste',
+        titre:'Erreur n°1 — BL non vérifié avant déchargement',
+        erreur:'Décharger directement sans vérifier le BL d\'abord',
+        consequence:'Le client dit après que la quantité est mauvaise — vous ne pouvez pas le contredire sans preuve',
+        correct:'Lire le BL AVANT de toucher une seule caisse. Compter. Puis décharger.',
+        icon:'📋', col:'#ef4444'
+      },
+      {
+        type:'erreur_liste',
+        titre:'Erreur n°2 — Retard non signalé',
+        erreur:'Arriver en retard sans avoir prévenu le client',
+        consequence:'Client furieux à l\'arrivée. Plainte. Risque de perdre le contrat.',
+        correct:'S\'arrêter, appeler le client ET l\'encadrant dès 10 minutes de retard prévisible. Pas en arrivant.',
+        icon:'⏰', col:'#f97316'
+      },
+      {
+        type:'erreur_liste',
+        titre:'Erreur n°3 — Frigo non vérifié avant départ',
+        erreur:'Partir sans vérifier la température du frigo du camion',
+        consequence:'Rupture de chaîne du froid. Responsabilité légale. Produits à jeter.',
+        correct:'Temperature frigo = première vérification. Avant de toucher les produits.',
+        icon:'🌡️', col:'#0ea5e9'
+      },
+      {
+        type:'erreur_liste',
+        titre:'Erreur n°4 — Mauvais ordre de chargement',
+        erreur:'Charger dans n\'importe quel ordre sans respecter LIFO',
+        consequence:'20 minutes perdues par tournée à tout déplacer chez chaque client',
+        correct:'Lire la feuille de route AVANT de charger. Charger dans l\'ordre inverse des livraisons.',
+        icon:'📦', col:'#a855f7'
+      },
+      {
+        type:'erreur_liste',
+        titre:'Erreur n°5 — Incident non signalé',
+        erreur:'Ne pas signaler un incident parce qu\'il semble mineur',
+        consequence:'L\'incident "mineur" devient un litige. Sans déclaration = pas de protection.',
+        correct:'Tout signaler immédiatement. Accrochage, casse, client agressif, produit abîmé — tout.',
+        icon:'🚨', col:'#dc2626'
+      },
+      {
+        type:'question_progressive',
+        icon:'🤔',
+        sous:'Question — situation réelle',
+        question:'Vous avez livré mais oublié de faire signer le BL. Vous êtes déjà parti. Que faites-vous ?',
+        items:[
+          '✅ Appeler l\'encadrant immédiatement pour signaler l\'oubli',
+          '✅ Retourner chez le client si c\'est possible et proche',
+          '✅ Sinon : envoyer le BL par email ou retourner le lendemain',
+          '❌ Ne rien faire en espérant que personne ne remarque',
+          '❌ Signer à la place du client — c\'est une falsification',
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Les 5 réflexes à avoir dès le début',
+        items:[
+          '📋 BL lu et vérifié AVANT chaque déchargement — toujours',
+          '📞 Retard prévisible = appel client ET encadrant avant d\'arriver',
+          '🌡️ Frigo vérifié en premier avant tout chargement',
+          '📦 Feuille de route lue avant de commencer à charger',
+          '🚨 Tout incident signalé immédiatement — jamais attendre',
+        ],
+        couleur:'#f97316'
+      }
+    ]
+  };
+
+  /* Slide: Livraison traiteur parfaite A à Z */
+  SLIDES_DATA.livraison_parfaite = {
+    titre:'La livraison traiteur parfaite',
+    icon:'🌟',
+    couleur:'#ec4899',
+    slides:[
+      {type:'titre', titre:'La livraison traiteur parfaite', sous:'De A à Z — du chargement au retour', icon:'🌟', couleur:'#ec4899'},
+      {
+        type:'timeline_livraison',
+        titre:'La journée type — étape par étape',
+        etapes:[
+          {heure:'5h30', action:'Prise de poste', detail:'Tour véhicule, vérif frigo, lecture feuille de route', col:'#3b82f6'},
+          {heure:'5h45', action:'Chargement', detail:'Ordre LIFO respecté, inventaire signé, arrimage vérifié, températures notées', col:'#f97316'},
+          {heure:'6h00', action:'Départ', detail:'Conduite douce — la vaisselle fine est à bord', col:'#22c55e'},
+          {heure:'6h30', action:'Première livraison', detail:'Arrivée, stationnement, présentation, BL vérifié, déchargement, signature', col:'#a855f7'},
+          {heure:'Variable', action:'Tournée', detail:'Conduite douce, signalement retard si nécessaire, températures surveillées', col:'#0ea5e9'},
+          {heure:'Événement', action:'Installation traiteur', detail:'Discrétion, tenue irréprochable, mise en place selon plan, zéro téléphone', col:'#ec4899'},
+          {heure:'Retour', action:'Inventaire retour', detail:'Tout recompter, noter la casse, camion nettoyé, clés remises', col:'#f59e0b'},
+          {heure:'Fin', action:'Compte-rendu', detail:'BL remis, problèmes signalés, bilan oral à l\'encadrant', col:'#64748b'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'🌟',
+        sous:'La règle d\'or du traiteur',
+        question:'Vous installez un buffet pour un mariage. Un invité vous demande de goûter un plat pour savoir si c\'est bon. Que faites-vous ?',
+        items:[
+          '❌ Ne jamais goûter les plats ou boissons d\'un événement client',
+          '✅ Sourire poliment et dire "Je suis désolé, je ne peux pas, c\'est pour vous"',
+          '✅ Rester professionnel — votre rôle est de servir, pas de consommer',
+          '✅ Si l\'invité insiste, s\'éloigner poliment pour continuer votre travail',
+        ]
+      },
+      {
+        type:'recap',
+        titre:'La livraison parfaite en 5 mots',
+        items:[
+          '⏰ PONCTUEL — arriver à l\'heure est une marque de respect',
+          '🤝 PROFESSIONNEL — tenue, langage, comportement en toutes circonstances',
+          '📋 RIGOUREUX — BL vérifié, inventaire fait, température notée',
+          '🐌 DOUX — la vaisselle fine mérite une conduite adaptée',
+          '📞 COMMUNICANT — tout problème signalé avant qu\'il devienne grave',
+        ],
+        couleur:'#ec4899'
+      }
+    ]
+  };
+
+  /* Slide: Mes droits et obligations */
+  SLIDES_DATA.droits_obligations = {
+    titre:'Mes droits et obligations',
+    icon:'⚖️',
+    couleur:'#6366f1',
+    slides:[
+      {type:'titre', titre:'Vos droits et obligations', sous:'Ce que vous devez savoir — concret et pratique', icon:'⚖️', couleur:'#6366f1'},
+      {
+        type:'droits_concrets',
+        titre:'Vos droits — les essentiels',
+        items_droits:[
+          {droit:'2,5 jours de congés par mois travaillé', detail:'8 mois = 20 jours. À prendre en accord avec l\'encadrant.', icon:'🏖️', col:'#22c55e'},
+          {droit:'Visite médicale gratuite sur temps de travail', detail:'À l\'embauche et tous les 2 ans. Vous n\'avez rien à payer.', icon:'🏥', col:'#3b82f6'},
+          {droit:'EPI fournis gratuitement', detail:'Gilet, chaussures, gants — l\'employeur paie. Vous ne payez rien.', icon:'🦺', col:'#f59e0b'},
+          {droit:'Formation pendant le temps de travail', detail:'Les formations se font sur votre temps de travail — payées.', icon:'🎓', col:'#a855f7'},
+          {droit:'CPF — formations pour votre avenir', detail:'Vos crédits CPF s\'accumulent. Ils vous appartiennent pour toute votre carrière.', icon:'💼', col:'#f97316'},
+          {droit:'Droit de retrait en cas de danger grave', detail:'Vous pouvez quitter une situation dangereuse sans être sanctionné.', icon:'🚨', col:'#ef4444'},
+        ]
+      },
+      {
+        type:'obligations_liste',
+        titre:'Vos obligations — ce qu\'on attend de vous',
+        items_oblig:[
+          {oblig:'Ponctualité', detail:'Arriver à l\'heure ou en avance — pas de chauffeur = pas de livraison'},
+          {oblig:'Prévenir en cas d\'absence', detail:'Appeler avant l\'heure de prise de poste — pas après'},
+          {oblig:'Respecter le règlement intérieur', detail:'Code de conduite, tenue, comportement'},
+          {oblig:'Participer aux formations', detail:'Les formations sont obligatoires sur temps de travail'},
+          {oblig:'Signaler tout incident', detail:'Tout problème signalé immédiatement — jamais garder pour soi'},
+          {oblig:'Travailler votre projet pro avec le CIP', detail:'Le CIP est là pour vous — profitez-en'},
+        ]
+      },
+      {
+        type:'recap',
+        titre:'L\'essentiel à retenir',
+        items:[
+          '📅 2,5 jours de congés par mois — calculez les vôtres',
+          '🏥 Visite médicale = gratuite et obligatoire — ne pas refuser',
+          '💼 CPF = vos crédits formation vous appartiennent à vie',
+          '🚨 Droit de retrait = vous pouvez partir en cas de danger sans sanction',
+          '📞 Absence = appeler AVANT la prise de poste — pas après',
+        ],
+        couleur:'#6366f1'
+      }
+    ]
+  };
+
+  /* Slide: L'insertion en pratique */
+  SLIDES_DATA.insertion_pratique = {
+    titre:'L\'insertion en pratique',
+    icon:'🚀',
+    couleur:'#22c55e',
+    slides:[
+      {type:'titre', titre:'L\'insertion en pratique', sous:'Pourquoi La Table de Cana est différente', icon:'🚀', couleur:'#22c55e'},
+      {
+        type:'insertion_diff',
+        titre:'Ce qui nous différencie d\'un employeur classique',
+        points:[
+          {txt:'Vous n\'êtes pas que de la main d\'œuvre — vous êtes un projet', icon:'🎯'},
+          {txt:'Nous investissons dans votre formation, votre accompagnement, votre avenir', icon:'💰'},
+          {txt:'En contrepartie, nous attendons votre investissement personnel', icon:'🤝'},
+          {txt:'Le CIP est là pour votre projet — utilisez ce service rare', icon:'👤'},
+          {txt:'Ce contrat est un tremplin — c\'est vous qui décidez où il vous mène', icon:'🚀'},
+          {txt:'Chaque salarié qui réussit ici = preuve que notre modèle fonctionne', icon:'🏆'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'💡',
+        sous:'Réflexion collective',
+        question:'Selon vous, pourquoi est-ce qu\'une SIAE forme ses salariés alors qu\'ils vont partir après 2 ans maximum ?',
+        items:[
+          '✅ Parce que notre mission EST de former — c\'est notre raison d\'exister',
+          '✅ Parce qu\'un salarié compétent fait du meilleur travail et fidélise nos clients',
+          '✅ Parce que votre réussite après nous = notre meilleure publicité',
+          '✅ Parce que les financeurs (DDETS, FSE+) nous soutiennent si nous formons bien',
+          '✅ Parce que l\'insertion durable ne s\'invente pas — elle se construit avec des compétences réelles',
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Ce qu\'on vous demande en échange',
+        items:[
+          '⏰ La ponctualité — c\'est votre engagement le plus concret',
+          '📚 Participer aux formations — c\'est pour vous, pas pour nous',
+          '🗣️ Communiquer — vos difficultés, vos progrès, vos idées',
+          '🎯 Travailler votre projet — avec le CIP, avec nous',
+          '🤝 L\'esprit d\'équipe — vous n\'êtes pas seul, personne ne l\'est ici',
+        ],
+        couleur:'#22c55e'
+      }
+    ]
+  };
+
+  /* Ajouter les nouveaux types au renderer */
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+      case 'erreur_liste':
+        return '<div style="margin-bottom:20px">'
+          +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+          +'<span style="font-size:36px">'+slide.icon+'</span>'
+          +'<div style="font-size:22px;font-weight:900;color:#fff">'+slide.titre+'</div></div></div>'
+          +'<div style="background:rgba(239,68,68,.1);border:2px solid rgba(239,68,68,.3);border-radius:12px;padding:18px;margin-bottom:12px">'
+          +'<div style="font-size:11px;font-weight:800;color:#ef4444;text-transform:uppercase;margin-bottom:8px">❌ L\'erreur</div>'
+          +'<div style="font-size:15px;color:#fff">'+slide.erreur+'</div>'
+          +'<div style="font-size:12px;color:#fca5a5;margin-top:8px">Conséquence : '+slide.consequence+'</div></div>'
+          +'<div style="background:rgba(34,197,94,.1);border:2px solid rgba(34,197,94,.3);border-radius:12px;padding:18px">'
+          +'<div style="font-size:11px;font-weight:800;color:#22c55e;text-transform:uppercase;margin-bottom:8px">✅ Ce qu\'on fait à la place</div>'
+          +'<div style="font-size:15px;color:#fff;font-weight:700">'+slide.correct+'</div></div>';
+
+      case 'timeline_livraison':
+        var h='<div style="text-align:center;margin-bottom:16px"><div style="font-size:22px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:6px">';
+        slide.etapes.forEach(function(e){
+          h+='<div style="display:flex;align-items:center;gap:12px;background:'+e.col+'15;border:1px solid '+e.col+'33;border-radius:9px;padding:10px 16px">';
+          h+='<div style="width:48px;font-size:11px;font-weight:900;color:'+e.col+';flex-shrink:0;text-align:right">'+e.heure+'</div>';
+          h+='<div style="width:1px;height:28px;background:'+e.col+'44;flex-shrink:0"></div>';
+          h+='<div><div style="font-size:13px;font-weight:800;color:#fff">'+e.action+'</div>';
+          h+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+e.detail+'</div></div></div>';
+        });
+        return h+'</div>';
+
+      case 'droits_concrets':
+        var h2='<div style="text-align:center;margin-bottom:16px"><div style="font-size:22px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h2+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';
+        slide.items_droits.forEach(function(d){
+          h2+='<div style="background:'+d.col+'11;border:2px solid '+d.col+'33;border-radius:10px;padding:14px">';
+          h2+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:20px">'+d.icon+'</span>';
+          h2+='<div style="font-size:13px;font-weight:800;color:'+d.col+'">'+d.droit+'</div></div>';
+          h2+='<div style="font-size:11px;color:rgba(255,255,255,.7)">'+d.detail+'</div></div>';
+        });
+        return h2+'</div>';
+
+      case 'obligations_liste':
+        var h3='<div style="text-align:center;margin-bottom:16px"><div style="font-size:22px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h3+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.items_oblig.forEach(function(o,i){
+          h3+='<div style="display:flex;align-items:start;gap:12px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:10px;padding:12px 16px">';
+          h3+='<div style="width:24px;height:24px;border-radius:50%;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">'+(i+1)+'</div>';
+          h3+='<div><div style="font-size:13px;font-weight:800;color:#fff">'+o.oblig+'</div>';
+          h3+='<div style="font-size:12px;color:rgba(255,255,255,.6)">'+o.detail+'</div></div></div>';
+        });
+        return h3+'</div>';
+
+      case 'insertion_diff':
+        var h4='<div style="text-align:center;margin-bottom:16px"><div style="font-size:22px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h4+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.points.forEach(function(p){
+          h4+='<div style="display:flex;align-items:center;gap:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:13px 18px">';
+          h4+='<span style="font-size:24px;flex-shrink:0">'+p.icon+'</span>';
+          h4+='<span style="font-size:14px;color:#fff">'+p.txt+'</span></div>';
+        });
+        return h4+'</div>';
+
+      default:
+        return _old(slide, couleur);
+    }
+  };
+})();
+
+/* ── JOURNAL DE BORD NUMÉRIQUE ── */
+(function(){
+  if(typeof DB === 'undefined') return;
+  if(!DB.journal) DB.journal = {};
+
+  window.renderJournal = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">📓 Journal de bord</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">3 lignes par salarié par jour — le meilleur outil de suivi</div>';
+
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+    (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+      h += '<div onclick="selJournal('+s.id+',this)" class="fsal-btn-j" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+      h += '<span style="font-size:18px">'+s.avatar+'</span>';
+      h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '<div id="journal-detail"></div>';
+    c2.innerHTML = h;
+    var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+    if(first) selJournal(first.id, c2.querySelector('.fsal-btn-j'));
+  };
+
+  window.selJournal = function(salId, el){
+    document.querySelectorAll('.fsal-btn-j').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+    if(el){el.style.borderColor='var(--purple)';el.style.background='var(--panel2)';}
+    window.journalSalActif = salId;
+    afficherJournal(salId);
+  };
+
+  function afficherJournal(salId){
+    var zone = document.getElementById('journal-detail');
+    if(!zone) return;
+    var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+    if(!s){ zone.innerHTML=''; return; }
+    if(!DB.journal[salId]) DB.journal[salId] = {};
+    var today = new Date().toISOString().slice(0,10);
+    var entree = DB.journal[salId][today] || {};
+
+    var h = '<div class="card" style="margin-bottom:14px;border-color:rgba(168,85,247,.3)">';
+    h += '<div style="font-size:13px;font-weight:800;color:var(--purple);margin-bottom:14px">📝 Entrée du jour — '+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+
+    h += '<div style="font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;margin-bottom:6px">⭐ Ce qui s\'est bien passé</div>';
+    h += '<textarea id="journal-positif" style="width:100%;background:var(--panel2);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box;margin-bottom:12px" placeholder="Bonne livraison, client satisfait, progrès observé...">'+( entree.positif||'')+'</textarea>';
+
+    h += '<div style="font-size:11px;font-weight:800;color:var(--orange);text-transform:uppercase;margin-bottom:6px">⚠️ Ce qui a été difficile</div>';
+    h += '<textarea id="journal-difficile" style="width:100%;background:var(--panel2);border:1px solid rgba(249,115,22,.3);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box;margin-bottom:12px" placeholder="Difficulté rencontrée, point à travailler...">'+( entree.difficile||'')+'</textarea>';
+
+    h += '<div style="font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:6px">❓ Une question que je me pose</div>';
+    h += '<textarea id="journal-question" style="width:100%;background:var(--panel2);border:1px solid rgba(74,158,216,.3);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box" placeholder="Question sur le métier, l\'entreprise, ma situation...">'+( entree.question||'')+'</textarea>';
+
+    h += '<button class="btn btn-primary" style="margin-top:10px" onclick="sauverJournal('+salId+',\''+today+'\')">💾 Sauvegarder</button>';
+    h += '</div>';
+
+    /* Historique */
+    var historique = Object.keys(DB.journal[salId]).sort().reverse().slice(1,8);
+    if(historique.length){
+      h += '<div class="card"><div class="card-title" style="color:var(--purple)">📚 Historique des 7 dernières entrées</div>';
+      historique.forEach(function(date){
+        var e = DB.journal[salId][date];
+        h += '<div style="padding:10px 0;border-bottom:1px solid var(--border)">';
+        h += '<div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:6px">'+new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+        if(e.positif) h += '<div style="font-size:12px;color:var(--green);margin-bottom:3px">⭐ '+e.positif+'</div>';
+        if(e.difficile) h += '<div style="font-size:12px;color:var(--orange);margin-bottom:3px">⚠️ '+e.difficile+'</div>';
+        if(e.question) h += '<div style="font-size:12px;color:var(--blue)">❓ '+e.question+'</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    zone.innerHTML = h;
+  }
+
+  window.sauverJournal = function(salId, date){
+    var pos = document.getElementById('journal-positif');
+    var dif = document.getElementById('journal-difficile');
+    var qst = document.getElementById('journal-question');
+    if(!DB.journal) DB.journal={};
+    if(!DB.journal[salId]) DB.journal[salId]={};
+    DB.journal[salId][date] = {
+      positif: pos?pos.value:'',
+      difficile: dif?dif.value:'',
+      question: qst?qst.value:''
+    };
+    if(typeof sauver==='function') sauver();
+    if(typeof toast==='function') toast('Journal sauvegardé ✅','ok');
+    afficherJournal(salId);
+  };
+})();
+
+/* ── TIMELINE VISUELLE 2 ANS ── */
+(function(){
+  window.renderTimeline = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">📅 Timeline — Vue 2 ans</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">Vue calendrier de la formation — vert=fait, orange=ce mois, rouge=retard</div>';
+
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+    (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+      h += '<div onclick="selTimeline('+s.id+',this)" class="fsal-btn-t" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+      h += '<span style="font-size:18px">'+s.avatar+'</span>';
+      h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+    });
+    h += '</div>';
+    h += '<div id="timeline-detail"></div>';
+    c2.innerHTML = h;
+    var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+    if(first) selTimeline(first.id, c2.querySelector('.fsal-btn-t'));
+  };
+
+  window.selTimeline = function(salId, el){
+    document.querySelectorAll('.fsal-btn-t').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+    if(el){el.style.borderColor='var(--blue)';el.style.background='var(--panel2)';}
+    afficherTimeline(salId);
+  };
+
+  function afficherTimeline(salId){
+    var zone = document.getElementById('timeline-detail');
+    if(!zone) return;
+    var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+    if(!s) return;
+    if(typeof PROGRAMME_2ANS === 'undefined') { zone.innerHTML='<div style="color:var(--sub);padding:20px">Programme non chargé</div>'; return; }
+
+    var prog = (DB.programme&&DB.programme[salId]) ? DB.programme[salId] : {};
+    var dateEntree = s.dateEntree ? new Date(s.dateEntree) : new Date();
+    var moisActuel = Math.min(Math.max(Math.floor((new Date()-dateEntree)/2592000000)+1,1),24);
+
+    var h = '<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap">';
+    for(var m=1; m<=24; m++){
+      var p = PROGRAMME_2ANS.find(function(x){return x && x.mois===m;});
+      if(!p) continue;
+      var data = prog[String(m)] || prog[m] || {};
+      var estFait = !!data.fait;
+      var estActuel = m === moisActuel;
+      var estRetard = m < moisActuel && !estFait;
+
+      var bg = estFait?'rgba(34,197,94,.2)':estActuel?'rgba(249,115,22,.2)':estRetard?'rgba(224,85,85,.15)':'var(--panel2)';
+      var bord = estFait?'rgba(34,197,94,.5)':estActuel?'rgba(249,115,22,.5)':estRetard?'rgba(224,85,85,.4)':'var(--border)';
+      var txt = estFait?'var(--green)':estActuel?'var(--orange)':estRetard?'var(--red)':'var(--sub)';
+      var icon = estFait?'✅':estActuel?'🔸':estRetard?'⚠️':'⬜';
+
+      h += '<div title="M'+m+' — '+p.titre+'" style="width:72px;background:'+bg+';border:2px solid '+bord+';border-radius:10px;padding:8px;text-align:center;cursor:pointer" onclick="afficherProg('+salId+',null);nav(\'programme\')">';
+      h += '<div style="font-size:16px;margin-bottom:3px">'+icon+'</div>';
+      h += '<div style="font-size:16px;margin-bottom:3px">'+p.icon+'</div>';
+      h += '<div style="font-size:9px;font-weight:800;color:'+txt+'">M'+m+'</div>';
+      h += '<div style="font-size:8px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.2">'+p.titre.slice(0,12)+(p.titre.length>12?'...':'')+'</div>';
+      if(data.score) h += '<div style="font-size:9px;font-weight:900;color:'+( data.score>=80?'var(--green)':data.score>=60?'var(--yellow)':'var(--red)')+';margin-top:2px">'+data.score+'%</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+
+    /* Légende */
+    h += '<div style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap">';
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">✅ <span style="color:var(--green)">Fait</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">🔸 <span style="color:var(--orange)">Ce mois</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">⚠️ <span style="color:var(--red)">En retard</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">⬜ <span style="color:var(--sub)">À venir</span></div>';
+    h += '</div></div>';
+    zone.innerHTML = h;
+  }
+})();
+
+/* ── DASHBOARD FORMATEUR ── */
+window.renderDashFormateur = function(c2){
+  if(!c2) return;
+  var actifs = (DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+
+  var h = '<div class="page-title">🎯 Tableau de bord formateur</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Vue d\'ensemble — tout ce que vous devez savoir d\'un coup d\'œil</div>';
+
+  /* KPIs rapides */
+  var totalFormations = 0, totalFait = 0;
+  actifs.forEach(function(s){
+    totalFormations += 24;
+    var prog = (DB.programme&&DB.programme[s.id]) ? DB.programme[s.id] : {};
+    Object.keys(prog).forEach(function(k){ if(prog[k]&&prog[k].fait) totalFait++; });
+  });
+
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">';
+  var kpis = [
+    {val:actifs.length, label:'Salariés actifs', icon:'👥', col:'var(--blue)'},
+    {val:totalFait+'/'+totalFormations, label:'Modules formation', icon:'🎓', col:'var(--green)'},
+    {val:(DB.entretiens||[]).length, label:'Entretiens total', icon:'💬', col:'var(--orange)'},
+    {val:(DB.evaluations||[]).length, label:'Évaluations', icon:'⭐', col:'var(--purple)'},
+  ];
+  kpis.forEach(function(k){
+    h += '<div class="card" style="text-align:center;border-color:'+k.col+'33">';
+    h += '<div style="font-size:24px;margin-bottom:6px">'+k.icon+'</div>';
+    h += '<div style="font-size:22px;font-weight:900;color:'+k.col+'">'+k.val+'</div>';
+    h += '<div style="font-size:10px;color:var(--sub)">'+k.label+'</div></div>';
+  });
+  h += '</div>';
+
+  /* Vue par salarié */
+  h += '<div class="card"><div class="card-title">👤 État de chaque salarié</div>';
+  h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+  h += '<tr style="border-bottom:2px solid var(--border)">';
+  h += '<th style="text-align:left;padding:8px;font-size:11px;color:var(--sub)">Salarié</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Mois</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Formation</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Score moy</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Employabilité</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Dernier entretien</th>';
+  h += '<th style="text-align:center;padding:8px;font-size:11px;color:var(--sub)">Action</th>';
+  h += '</tr>';
+
+  actifs.forEach(function(s){
+    var prog = (DB.programme&&DB.programme[s.id]) ? DB.programme[s.id] : {};
+    var fait = Object.keys(prog).filter(function(k){return prog[k]&&prog[k].fait;}).length;
+    var pct = Math.round(fait/24*100);
+    var dateEntree = s.dateEntree ? new Date(s.dateEntree) : new Date();
+    var mois = Math.min(Math.max(Math.floor((new Date()-dateEntree)/2592000000)+1,1),24);
+    var score = typeof scoreGlobal==='function' ? scoreGlobal(s.id) : 0;
+    var emp = typeof calculerScoreEmployabilite==='function' ? calculerScoreEmployabilite(s.id) : 0;
+    var dernEntretien = (DB.entretiens||[]).filter(function(e){return e.salId==s.id;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+    var joursDepuis = dernEntretien ? Math.floor((new Date()-new Date(dernEntretien.date))/86400000) : 999;
+    var entretienCol = joursDepuis>42?'var(--red)':joursDepuis>28?'var(--yellow)':'var(--green)';
+
+    h += '<tr style="border-bottom:1px solid var(--border)">';
+    h += '<td style="padding:8px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+s.avatar+'</span><span style="font-size:12px;font-weight:700">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div></td>';
+    h += '<td style="text-align:center;padding:8px;font-size:12px;color:var(--text)">'+mois+'/24</td>';
+    h += '<td style="text-align:center;padding:8px"><div style="background:var(--border);border-radius:4px;height:6px;width:80px;margin:0 auto"><div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+(pct>=75?'var(--green)':pct>=50?'var(--yellow)':'var(--red)')+'"></div></div><div style="font-size:10px;color:var(--sub);margin-top:2px">'+fait+'/24</div></td>';
+    h += '<td style="text-align:center;padding:8px;font-size:13px;font-weight:900;color:'+(score>=3?'var(--green)':score>=2?'var(--yellow)':'var(--red)')+'">'+( score>0?score.toFixed(1):'—')+'/4</td>';
+    h += '<td style="text-align:center;padding:8px;font-size:13px;font-weight:900;color:'+(emp>=70?'var(--green)':emp>=50?'var(--yellow)':'var(--red)')+'">'+emp+'%</td>';
+    h += '<td style="text-align:center;padding:8px;font-size:11px;color:'+entretienCol+'">'+(dernEntretien?joursDepuis+'j':'Jamais')+'</td>';
+    h += '<td style="text-align:center;padding:8px"><button class="btn btn-primary btn-sm" onclick="ouvrirDossier('+s.id+');nav(\'salaries\')">Ouvrir</button></td>';
+    h += '</tr>';
+  });
+  h += '</table></div></div>';
+  c2.innerHTML = h;
+};
+
+/* ── BRANCHER DANS LE ROUTER ── */
+(function(){
+  var _old = window.render;
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(!c) return _old?_old(page):null;
+    if(page==='journal'){ renderJournal(c); return; }
+    if(page==='timeline'){ renderTimeline(c); return; }
+    if(page==='dashboard_formateur'){ renderDashFormateur(c); return; }
+    if(_old) _old(page);
+  };
+
+  var sb = document.querySelector('.sb');
+  if(sb){
+    var items = [
+      {p:'journal',ico:'📓',lbl:'Journal de bord'},
+      {p:'timeline',ico:'🗓️',lbl:'Timeline 2 ans'},
+      {p:'dashboard_formateur',ico:'🎯',lbl:'Tableau de bord formateur'},
+    ];
+    items.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d = document.createElement('div');
+        d.className='sb-item'; d.setAttribute('data-p',it.p);
+        d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick=function(){window.nav(it.p);}; sb.appendChild(d);
+      }
+    });
+  }
+})();
+
+/* Mettre à jour renderSlides pour inclure nouvelles slides */
+(function(){
+  var _old = window.renderSlides;
+  window.renderSlides = function(c2){
+    if(!c2) return;
+    if(typeof SLIDES_DATA === 'undefined'){ c2.innerHTML='<div>Chargement...</div>'; return; }
+
+    var categories = {
+      '🚗 Conduite & Sécurité':['securite_conduite','conduite','meteo_conduite','stationnement'],
+      '📦 Logistique':['chargement','chaine_froid','documents','traiteur','conduite_traiteur'],
+      '🤝 Professionnel':['relation_client','communication','reglementation','constat','erreurs_classiques','livraison_parfaite'],
+      '🌱 Environnement':['tri_dechets','environnement','hygiene'],
+      '📚 Formation & Insertion':['haccp_avance','droits_obligations','insertion_pratique'],
+      '🎯 Recrutement':['recrutement'],
+    };
+
+    var h='<div class="page-title">🎬 Slides de formation</div>';
+    h+='<div class="page-sub" style="margin-bottom:16px">Projeter sur écran · ▶ Afficher = dévoilement progressif · Ctrl+K pour chercher</div>';
+
+    Object.keys(categories).forEach(function(cat){
+      var blocs = categories[cat].filter(function(b){ return SLIDES_DATA[b]; });
+      if(!blocs.length) return;
+      h+='<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:16px 0 8px;padding:4px 0;border-bottom:1px solid var(--border)">'+cat+'</div>';
+      h+='<div class="grid-2" style="margin-bottom:4px">';
+      blocs.forEach(function(key){
+        var s=SLIDES_DATA[key];
+        h+='<div class="card" style="cursor:pointer;border-color:'+s.couleur+'33;padding:14px" onclick="ouvrirPresentation(\''+key+'\')">';
+        h+='<div style="display:flex;align-items:center;gap:12px">';
+        h+='<div style="font-size:28px">'+s.icon+'</div>';
+        h+='<div style="flex:1"><div style="font-size:13px;font-weight:900;color:var(--text)">'+s.titre+'</div>';
+        h+='<div style="font-size:10px;color:var(--sub)">'+s.slides.length+' slides</div></div>';
+        h+='<button class="btn btn-primary btn-sm" style="background:'+s.couleur+';border-color:'+s.couleur+';flex-shrink:0">▶</button></div></div>';
+      });
+      h+='</div>';
+    });
+    c2.innerHTML=h;
+  };
+})();
+
+console.log('Mega final 2 chargé — slides nouvelles, journal, timeline, dashboard formateur');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FINAL TOUT — Tout ce qui reste
+   1. Alertes intelligentes automatiques
+   2. Module projet pro enrichi
+   3. Fiche sortie enrichie + rapport annuel SIAE
+   4. Simulateur entretien IA
+   5. Slides Marseille, vendredi soir, livraison qui se passe mal
+   6. QCM manquants relation_client et securite_travail
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. ALERTES INTELLIGENTES AUTOMATIQUES ── */
+(function(){
+  /* Enrichir le système d'alertes existant */
+  var oldRenderAlertes = window.renderAlertes;
+  window.renderAlertes = function(c2){
+    if(!c2) return;
+    /* Générer alertes intelligentes */
+    var alertes = [];
+    var now = new Date();
+
+    (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+      var nom = s.prenom+(s.nom?' '+s.nom:'');
+
+      /* Alerte entretien > 6 semaines */
+      var entretiens = (DB.entretiens||[]).filter(function(e){return e.salId==s.id;});
+      if(!entretiens.length){
+        alertes.push({urgence:'haute', icon:'🚨', titre:'Aucun entretien', msg:nom+' — jamais d\'entretien enregistré', action:'ouvrirDossier('+s.id+')', salId:s.id});
+      } else {
+        var dernDate = new Date(entretiens.sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].date);
+        var jours = Math.floor((now-dernDate)/86400000);
+        if(jours>42) alertes.push({urgence:'haute', icon:'⏰', titre:'Entretien en retard', msg:nom+' — dernier entretien il y a '+jours+' jours (> 6 semaines)', action:'ouvrirDossier('+s.id+')', salId:s.id});
+        else if(jours>28) alertes.push({urgence:'moyenne', icon:'📅', titre:'Entretien bientôt dû', msg:nom+' — dernier entretien il y a '+jours+' jours', action:'ouvrirDossier('+s.id+')', salId:s.id});
+      }
+
+      /* Alerte scores QCM bas */
+      var acad = (DB.academie&&DB.academie[s.id]) ? DB.academie[s.id] : {};
+      Object.keys(acad).forEach(function(bid){
+        if(acad[bid].last_score && acad[bid].last_score < 60){
+          alertes.push({urgence:'moyenne', icon:'📚', titre:'Score QCM faible', msg:nom+' — '+bid+' : '+acad[bid].last_score+'% (< 60%)', action:'nav(\'academie\')', salId:s.id});
+        }
+      });
+
+      /* Alerte fin de contrat proche */
+      if(s.dateFin){
+        var fin = new Date(s.dateFin);
+        var jRestants = Math.floor((fin-now)/86400000);
+        if(jRestants<=30 && jRestants>0) alertes.push({urgence:'haute', icon:'🏁', titre:'Fin de contrat proche', msg:nom+' — contrat se termine dans '+jRestants+' jours', action:'ouvrirDossier('+s.id+')', salId:s.id});
+        else if(jRestants<=60 && jRestants>0) alertes.push({urgence:'moyenne', icon:'📆', titre:'Fin de contrat dans 2 mois', msg:nom+' — fin prévue le '+(typeof fmt==='function'?fmt(s.dateFin):s.dateFin), action:'ouvrirDossier('+s.id+')', salId:s.id});
+      }
+
+      /* Alerte programme en retard */
+      if(typeof PROGRAMME_2ANS !== 'undefined'){
+        var prog = (DB.programme&&DB.programme[s.id]) ? DB.programme[s.id] : {};
+        var dateEntree = s.dateEntree ? new Date(s.dateEntree) : now;
+        var moisActuel = Math.min(Math.max(Math.floor((now-dateEntree)/2592000000)+1,1),24);
+        var enRetard = PROGRAMME_2ANS.filter(function(p){
+          if(!p||typeof p.mois!=='number'||p.mois>=moisActuel) return false;
+          var d = prog[String(p.mois)]||prog[p.mois]||{};
+          return !d.fait;
+        }).length;
+        if(enRetard>=3) alertes.push({urgence:'haute', icon:'⚠️', titre:'Formation en retard', msg:nom+' — '+enRetard+' modules non faits en retard', action:'afficherProg('+s.id+',null);nav(\'programme\')', salId:s.id});
+        else if(enRetard>=1) alertes.push({urgence:'basse', icon:'📋', titre:'Module en retard', msg:nom+' — '+enRetard+' module(s) à rattraper', action:'afficherProg('+s.id+',null);nav(\'programme\')', salId:s.id});
+      }
+
+      /* Alerte visite médicale */
+      var fichesMed = (DB.fiches&&DB.fiches[s.id]) ? DB.fiches[s.id] : {};
+      if(!fichesMed.visite_medicale) alertes.push({urgence:'basse', icon:'🏥', titre:'Visite médicale', msg:nom+' — aucune visite médicale enregistrée', action:'ouvrirDossier('+s.id+')', salId:s.id});
+    });
+
+    /* Tri par urgence */
+    var ordre = {haute:0, moyenne:1, basse:2};
+    alertes.sort(function(a,b){return ordre[a.urgence]-ordre[b.urgence];});
+
+    var h = '<div class="page-title">🚨 Alertes intelligentes</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">Générées automatiquement — mises à jour à chaque ouverture</div>';
+
+    if(!alertes.length){
+      h += '<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:800;color:var(--green)">Tout est en ordre !</div><div style="font-size:12px;color:var(--sub);margin-top:8px">Aucune alerte à traiter</div></div>';
+      c2.innerHTML = h; return;
+    }
+
+    var cols = {haute:'var(--red)', moyenne:'var(--orange)', basse:'var(--blue)'};
+    var bgs = {haute:'rgba(224,85,85,.08)', moyenne:'rgba(249,115,22,.06)', basse:'rgba(74,158,216,.06)'};
+    var labels = {haute:'🔴 URGENT', moyenne:'🟡 ATTENTION', basse:'🔵 INFO'};
+
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    alertes.forEach(function(a){
+      h += '<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border:2px solid '+cols[a.urgence]+'44;border-radius:12px;background:'+bgs[a.urgence]+';cursor:pointer" onclick="'+a.action+'">';
+      h += '<span style="font-size:28px;flex-shrink:0">'+a.icon+'</span>';
+      h += '<div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--text)">'+a.titre+'</div>';
+      h += '<div style="font-size:12px;color:var(--sub);margin-top:2px">'+a.msg+'</div></div>';
+      h += '<span style="font-size:10px;font-weight:800;color:'+cols[a.urgence]+';background:'+cols[a.urgence]+'22;border-radius:6px;padding:3px 8px;flex-shrink:0">'+labels[a.urgence]+'</span>';
+      h += '<span style="color:var(--sub);font-size:14px">→</span></div>';
+    });
+    h += '</div>';
+    h += '<div style="margin-top:14px;font-size:11px;color:var(--sub);text-align:center">'+alertes.length+' alertes · Cliquer pour accéder directement</div>';
+    c2.innerHTML = h;
+  };
+})();
+
+/* ── 2. PROJET PRO ENRICHI ── */
+(function(){
+  window.renderProjetPro = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">🎯 Projets professionnels</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">Construire l\'avenir de chaque salarié — étapes, contacts, candidatures</div>';
+
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+    (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+      h += '<div onclick="selProjetPro('+s.id+',this)" class="fsal-btn-pp" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+      h += '<span style="font-size:18px">'+s.avatar+'</span>';
+      h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+    });
+    h += '</div><div id="projet-pro-detail"></div>';
+    c2.innerHTML = h;
+    var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+    if(first) selProjetPro(first.id, c2.querySelector('.fsal-btn-pp'));
+  };
+
+  window.selProjetPro = function(salId, el){
+    document.querySelectorAll('.fsal-btn-pp').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+    if(el){el.style.borderColor='var(--orange)';el.style.background='var(--panel2)';}
+    window.dossierSalActif = salId;
+    afficherProjetPro(salId);
+  };
+
+  function afficherProjetPro(salId){
+    var zone = document.getElementById('projet-pro-detail');
+    if(!zone) return;
+    var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+    if(!s) return;
+    if(!DB.projets_pro) DB.projets_pro = {};
+    if(!DB.projets_pro[salId]) DB.projets_pro[salId] = {candidatures:[], contacts:[], etapes:[]};
+    var pp = DB.projets_pro[salId];
+
+    var h = '<div class="card" style="margin-bottom:14px">';
+    /* Projet défini */
+    h += '<div style="font-size:14px;font-weight:900;color:var(--text);margin-bottom:12px">';
+    h += (s.projetPro?'🎯 Projet : '+s.projetPro:'⚠️ Aucun projet défini — définir maintenant');
+    h += '</div>';
+
+    /* Étapes du projet */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:8px">📋 Étapes du projet</div>';
+    var etapesStd = ['Définir le projet avec le CIP','Identifier les entreprises cibles','Mettre à jour le CV','Rédiger une lettre de motivation','Postuler à 3 offres minimum','Préparer les entretiens','Décrocher un contrat'];
+    etapesStd.forEach(function(etape, i){
+      var fait = pp.etapes && pp.etapes.indexOf(i) >= 0;
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">';
+      h += '<input type="checkbox" '+(fait?'checked':'')+' onchange="cocherEtapePro('+salId+','+i+',this)" style="accent-color:var(--green);width:16px;height:16px;cursor:pointer">';
+      h += '<span style="font-size:12px;color:'+(fait?'var(--green)':'var(--text)')+'">'+etape+'</span></div>';
+    });
+
+    /* Candidatures */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--orange);text-transform:uppercase;margin:14px 0 8px">📨 Candidatures</div>';
+    if(pp.candidatures&&pp.candidatures.length){
+      pp.candidatures.forEach(function(cand,i){
+        var cols = {envoyee:'var(--blue)',reponse_positive:'var(--green)',reponse_negative:'var(--red)',entretien:'var(--orange)',embauche:'#22c55e'};
+        var col = cols[cand.statut]||'var(--sub)';
+        h += '<div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid '+col+'33;border-radius:8px;margin-bottom:6px">';
+        h += '<div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--text)">'+cand.entreprise+'</div>';
+        h += '<div style="font-size:10px;color:var(--sub)">'+cand.poste+' · '+(typeof fmt==='function'?fmt(cand.date):cand.date)+'</div></div>';
+        h += '<span style="font-size:10px;font-weight:800;color:'+col+';background:'+col+'22;border-radius:5px;padding:2px 8px">'+cand.statut.replace('_',' ')+'</span>';
+        h += '<button onclick="supprimerCandidature('+salId+','+i+')" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:16px">×</button>';
+        h += '</div>';
+      });
+    } else {
+      h += '<div style="font-size:12px;color:var(--sub);padding:8px 0">Aucune candidature enregistrée</div>';
+    }
+    h += '<button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="ajouterCandidature('+salId+')">+ Ajouter une candidature</button>';
+
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">';
+    h += '<button class="btn btn-green" onclick="genSyntheseParcours('+salId+')">📊 Synthèse parcours</button>';
+    h += '<button class="btn btn-secondary" onclick="genPlanFormation('+salId+')">🎓 Plan de formation</button>';
+    h += '</div></div>';
+    zone.innerHTML = h;
+  }
+
+  window.cocherEtapePro = function(salId, idx, cb){
+    if(!DB.projets_pro) DB.projets_pro={};
+    if(!DB.projets_pro[salId]) DB.projets_pro[salId]={candidatures:[],contacts:[],etapes:[]};
+    var etapes = DB.projets_pro[salId].etapes||[];
+    if(cb.checked){ if(etapes.indexOf(idx)<0) etapes.push(idx); }
+    else { etapes = etapes.filter(function(e){return e!==idx;}); }
+    DB.projets_pro[salId].etapes = etapes;
+    if(typeof sauver==='function') sauver();
+  };
+
+  window.ajouterCandidature = function(salId){
+    var entreprise = prompt('Nom de l\'entreprise :');
+    if(!entreprise) return;
+    var poste = prompt('Poste visé :');
+    var statut = prompt('Statut (envoyee / reponse_positive / reponse_negative / entretien / embauche) :','envoyee');
+    if(!DB.projets_pro) DB.projets_pro={};
+    if(!DB.projets_pro[salId]) DB.projets_pro[salId]={candidatures:[],contacts:[],etapes:[]};
+    DB.projets_pro[salId].candidatures.push({entreprise:entreprise, poste:poste||'', statut:statut||'envoyee', date:new Date().toISOString().slice(0,10)});
+    if(typeof sauver==='function') sauver();
+    afficherProjetPro(salId);
+  };
+
+  window.supprimerCandidature = function(salId, idx){
+    if(!DB.projets_pro||!DB.projets_pro[salId]) return;
+    DB.projets_pro[salId].candidatures.splice(idx,1);
+    if(typeof sauver==='function') sauver();
+    afficherProjetPro(salId);
+  };
+})();
+
+/* ── 3. RAPPORT ANNUEL SIAE AUTOMATIQUE ── */
+window.genRapportAnnuelSIAE = function(){
+  var actifs = (DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+  var sortis = (DB.salaries||[]).filter(function(s){return s.statut==='sorti';});
+  var emplois = sortis.filter(function(s){return s.typeSortie&&(s.typeSortie.indexOf('CDI')>=0||s.typeSortie.indexOf('CDD')>=0||s.typeSortie.indexOf('emploi')>=0);});
+  var formation = sortis.filter(function(s){return s.typeSortie&&s.typeSortie.indexOf('formation')>=0;});
+
+  var totalFormations = 0;
+  (DB.salaries||[]).forEach(function(s){
+    var prog = (DB.programme&&DB.programme[s.id])||{};
+    Object.keys(prog).forEach(function(k){if(prog[k]&&prog[k].fait) totalFormations++;});
+  });
+
+  var totalEntretiens = (DB.entretiens||[]).length;
+  var totalEvals = (DB.evaluations||[]).length;
+
+  var win = window.open('','_blank');
+  if(!win) return;
+  var css = 'body{font-family:Arial,sans-serif;padding:28px;max-width:860px;margin:0 auto;color:#1a2435;font-size:12px;line-height:1.6}h1{font-size:20px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:10px}h2{font-size:13px;font-weight:900;background:#f8fafc;padding:7px 12px;border-radius:6px;margin:16px 0 8px;border-left:4px solid #f97316}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.kpi{border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center}.kpi-val{font-size:28px;font-weight:900;color:#f97316}.kpi-lbl{font-size:10px;color:#64748b;margin-top:4px}table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#0f1923;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:7px;font-size:11px}.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px}footer{font-size:9px;color:#94a3b8;margin-top:14px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html += '<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html += '<div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700">CONFIDENTIEL — RAPPORT D\'ACTIVITÉ SIAE</div>';
+  html += '<h1>Rapport annuel d\'activité — La Table de Cana</h1>';
+  html += '<div style="background:#f8fafc;padding:12px;border-radius:8px;display:flex;gap:20px;flex-wrap:wrap;font-size:11px;margin-bottom:16px">';
+  html += '<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html += '<span><b>Type :</b> Structure d\'Insertion par l\'Activité Économique (SIAE)</span>';
+  html += '<span><b>Période :</b> '+new Date().getFullYear()+'</span>';
+  html += '<span><b>Date :</b> '+new Date().toLocaleDateString('fr-FR')+'</span></div>';
+
+  html += '<h2>📊 Indicateurs clés</h2>';
+  html += '<div class="kpi-grid">';
+  var kpis = [
+    {v:actifs.length, l:'Salariés actifs'},
+    {v:sortis.length, l:'Sorties totales'},
+    {v:emplois.length, l:'Sorties emploi'},
+    {v:sortis.length?Math.round(emplois.length/sortis.length*100)+'%':'—', l:'Taux d\'insertion emploi'},
+    {v:totalEntretiens, l:'Entretiens réalisés'},
+    {v:totalEvals, l:'Évaluations'},
+    {v:totalFormations, l:'Modules formation accomplis'},
+    {v:formation.length, l:'Sorties formation/qualification'},
+  ];
+  kpis.forEach(function(k){ html += '<div class="kpi"><div class="kpi-val">'+k.v+'</div><div class="kpi-lbl">'+k.l+'</div></div>'; });
+  html += '</div>';
+
+  html += '<h2>👷 Salariés actifs</h2>';
+  html += '<table><tr><th>Prénom Nom</th><th>Poste</th><th>Contrat</th><th>Entrée</th><th>Fin prévue</th><th>Projet</th></tr>';
+  actifs.forEach(function(s){
+    html += '<tr><td>'+s.prenom+(s.nom?' '+s.nom:'')+'</td><td>'+s.poste+'</td><td>'+s.typeContrat+'</td><td>'+(typeof fmt==='function'?fmt(s.dateEntree):s.dateEntree||'')+'</td><td>'+(typeof fmt==='function'?fmt(s.dateFin):s.dateFin||'')+'</td><td>'+(s.projetPro||'—')+'</td></tr>';
+  });
+  html += '</table>';
+
+  if(sortis.length){
+    html += '<h2>🚪 Sorties et parcours</h2>';
+    html += '<table><tr><th>Prénom Nom</th><th>Type de sortie</th><th>Date</th></tr>';
+    sortis.forEach(function(s){
+      html += '<tr><td>'+s.prenom+(s.nom?' '+s.nom:'')+'</td><td>'+(s.typeSortie||'—')+'</td><td>'+(typeof fmt==='function'?fmt(s.dateSortie):s.dateSortie||'')+'</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  html += '<h2>🎓 Formation</h2>';
+  html += '<p>Modules de formation accomplis (total) : <strong>'+totalFormations+'</strong></p>';
+  html += '<p>Programme de formation sur 2 ans mis en place pour chaque salarié.</p>';
+  html += '<p>Académie logistique interne : 13 blocs avec cours, QCM et attestations.</p>';
+
+  html += '<div class="sig"><div style="text-align:center"><b>Le responsable</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div>';
+  html += '<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div></div>';
+  html += '<footer><span>La Table de Cana · Marseille · Rapport confidentiel DDETS/FSE+/OPCO</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html += '</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── 4. SIMULATEUR ENTRETIEN IA ── */
+window.renderSimulateurEntretien = function(c2){
+  if(!c2) return;
+  var h = '<div class="page-title">🤖 Simulateur d\'entretien</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">L\'IA joue le rôle d\'un employeur — le salarié s\'entraîne à répondre</div>';
+
+  h += '<div class="card" style="margin-bottom:14px">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:12px">Sélectionnez le salarié qui s\'entraîne :</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h += '<div onclick="selSimulSal('+s.id+',this)" class="fsal-btn-sim" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<span style="font-weight:700;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h += '</div>';
+
+  h += '<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">Type d\'entretien :</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
+  var types = ['Chauffeur livreur CDI','Préparateur de commandes','Logistique grande surface','Premier emploi après insertion','Entretien téléphonique'];
+  types.forEach(function(t,i){
+    h += '<div onclick="selTypeEntretien('+i+',this)" class="sim-type-btn" style="background:var(--panel2);border:2px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--sub)">'+t+'</div>';
+  });
+  h += '</div>';
+  h += '<button class="btn btn-primary" onclick="lancerSimulateur()">🚀 Lancer la simulation</button>';
+  h += '</div>';
+
+  h += '<div id="simul-zone"></div>';
+  c2.innerHTML = h;
+  window.simulSalId = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0]?.id||0;
+  window.simulType = 0;
+};
+
+window.selSimulSal = function(salId, el){
+  document.querySelectorAll('.fsal-btn-sim').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--blue)';el.style.background='var(--panel2)';}
+  window.simulSalId = salId;
+};
+
+window.selTypeEntretien = function(idx, el){
+  document.querySelectorAll('.sim-type-btn').forEach(function(b){b.style.borderColor='var(--border)';b.style.color='var(--sub)';b.style.background='var(--panel2)';});
+  if(el){el.style.borderColor='var(--blue)';el.style.color='var(--text)';el.style.background='var(--panel)';}
+  window.simulType = idx;
+};
+
+window.lancerSimulateur = function(){
+  var zone = document.getElementById('simul-zone');
+  if(!zone) return;
+  var s = (DB.salaries||[]).find(function(x){return x.id==window.simulSalId;});
+  var types = ['Chauffeur livreur CDI','Préparateur de commandes','Logistique grande surface','Premier emploi après insertion','Entretien téléphonique'];
+  var typeLabel = types[window.simulType]||types[0];
+
+  zone.innerHTML = '<div class="card" style="border-color:rgba(74,158,216,.3)">'
+    +'<div style="font-size:13px;font-weight:800;color:var(--blue);margin-bottom:12px">🤖 Simulation en cours — Poste : '+typeLabel+'</div>'
+    +'<div id="simul-messages" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<input id="simul-input" placeholder="Répondez à la question..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:13px" onkeydown="if(event.key===\'Enter\')envoyerReponseSimul()">'
+    +'<button class="btn btn-primary" onclick="envoyerReponseSimul()">Envoyer</button>'
+    +'</div>'
+    +'<div style="margin-top:8px;display:flex;gap:8px">'
+    +'<button class="btn btn-secondary btn-sm" onclick="terminerSimulation()">🏁 Terminer et avoir un feedback</button>'
+    +'</div></div>';
+
+  window.simulHistorique = [];
+  var systeme = 'Tu es un recruteur professionnel qui fait passer un entretien pour le poste de : '+typeLabel+'. '
+    +(s?'Le candidat s\'appelle '+s.prenom+(s.nom?' '+s.nom:'')+', il vient d\'une structure d\'insertion logistique à Marseille. ':' ')
+    +'Tu poses des questions réalistes une par une. Tu es professionnel mais chaleureux. '
+    +'Tu poses D\'ABORD une question d\'ouverture, puis tu enchaînes selon les réponses. '
+    +'Tes questions portent sur la motivation, la ponctualité, l\'expérience, la résistance physique, l\'esprit d\'équipe. '
+    +'Réponds TOUJOURS en français, JAMAIS en anglais. '
+    +'Commence directement par te présenter et poser ta première question.';
+
+  window.simulSysteme = systeme;
+  ajouterMessageSimul('🤖 Recruteur', 'Chargement de la simulation...', 'var(--blue)');
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6', max_tokens:300,
+      system: systeme,
+      messages:[{role:'user',content:'Commence l\'entretien'}]
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt = (d.content&&d.content[0]&&d.content[0].text) ? d.content[0].text : 'Bonjour ! Je suis ravi de vous recevoir. Pour commencer, pouvez-vous me parler de vous et de votre parcours ?';
+    var msgs = document.getElementById('simul-messages');
+    if(msgs) msgs.innerHTML='';
+    ajouterMessageSimul('🤖 Recruteur', txt, 'var(--blue)');
+    window.simulHistorique = [{role:'user',content:'Commence l\'entretien'},{role:'assistant',content:txt}];
+  }).catch(function(){
+    var msgs = document.getElementById('simul-messages');
+    if(msgs) msgs.innerHTML='';
+    ajouterMessageSimul('🤖 Recruteur', 'Bonjour ! Je suis très content de vous recevoir aujourd\'hui. Pour commencer, pouvez-vous me présenter votre parcours et me dire ce qui vous a amené à postuler pour ce poste ?', 'var(--blue)');
+    window.simulHistorique = [{role:'user',content:'Commence'},{role:'assistant',content:'Bonjour ! Pour commencer, présentez-vous.'}];
+  });
+};
+
+function ajouterMessageSimul(from, text, col){
+  var msgs = document.getElementById('simul-messages');
+  if(!msgs) return;
+  var div = document.createElement('div');
+  div.style.cssText = 'padding:12px 16px;border-radius:12px;border:1px solid '+col+'44;background:'+col+'11';
+  div.innerHTML = '<div style="font-size:10px;font-weight:800;color:'+col+';margin-bottom:6px">'+from+'</div>'
+    +'<div style="font-size:13px;color:var(--text);line-height:1.6">'+text+'</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+window.envoyerReponseSimul = function(){
+  var inp = document.getElementById('simul-input');
+  if(!inp||!inp.value.trim()) return;
+  var reponse = inp.value.trim();
+  inp.value = '';
+  ajouterMessageSimul('👤 Candidat', reponse, 'var(--green)');
+  window.simulHistorique.push({role:'user',content:reponse});
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6', max_tokens:250,
+      system: window.simulSysteme||'Tu es un recruteur qui fait passer un entretien.',
+      messages: window.simulHistorique
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt = (d.content&&d.content[0]&&d.content[0].text)||'Très bien. Question suivante : comment gérez-vous les situations stressantes au travail ?';
+    ajouterMessageSimul('🤖 Recruteur', txt, 'var(--blue)');
+    window.simulHistorique.push({role:'assistant',content:txt});
+  }).catch(function(){
+    ajouterMessageSimul('🤖 Recruteur','Intéressant. Parlez-moi d\'une situation difficile au travail et comment vous l\'avez gérée.','var(--blue)');
+  });
+};
+
+window.terminerSimulation = function(){
+  var msgs = document.getElementById('simul-messages');
+  if(!msgs) return;
+  ajouterMessageSimul('⏳','Analyse de votre performance en cours...','var(--orange)');
+
+  var hist = window.simulHistorique||[];
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6', max_tokens:600,
+      system:'Tu es un coach en insertion professionnelle spécialisé logistique. Tu analyses la performance d\'un candidat en simulation d\'entretien. Sois constructif, précis et encourageant. Donne un feedback structuré en 4 parties : Points forts, Points à améliorer, Conseils pratiques, Note globale /10.',
+      messages:[{role:'user',content:'Voici la simulation : '+JSON.stringify(hist)+'\n\nDonne ton feedback complet.'}]
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt = (d.content&&d.content[0]&&d.content[0].text)||'Simulation terminée. Bon travail !';
+    var last = msgs.lastChild; if(last) last.remove();
+    ajouterMessageSimul('🏆 Feedback coach',txt,'var(--orange)');
+  }).catch(function(){
+    var last = msgs.lastChild; if(last) last.remove();
+    ajouterMessageSimul('🏆 Feedback','Simulation terminée ! Revoyez vos réponses avec votre CIP.','var(--orange)');
+  });
+};
+
+/* ── 5. SLIDES MANQUANTES ── */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.livraison_difficile = {
+    titre:'Quand la livraison se passe mal',
+    icon:'🚨',
+    couleur:'#ef4444',
+    slides:[
+      {type:'titre',titre:'Quand la livraison\nse passe mal',sous:'Les 5 scénarios les plus fréquents — procédures exactes',icon:'🚨',couleur:'#ef4444'},
+      {
+        type:'scenario_cas',
+        titre:'Scénario 1 — Client absent',
+        situation:'Vous sonnez. Personne ne répond. La porte est fermée.',
+        etapes:['Attendre 5 minutes et sonner à nouveau','Appeler le numéro du client inscrit sur la feuille de route','Si pas de réponse : appeler l\'encadrant immédiatement','NE JAMAIS laisser la commande devant la porte (vol, intempéries)','Noter sur le BL "Client absent à [heure]" et signer','Repartir avec la commande et attendre les instructions'],
+        col:'#f59e0b'
+      },
+      {
+        type:'scenario_cas',
+        titre:'Scénario 2 — Client refuse la livraison',
+        situation:'Le client dit "Je n\'ai pas commandé ça" ou "Ce n\'est pas ce que j\'ai voulu".',
+        etapes:['Rester calme — ne pas argumenter','Montrer le BL et vérifier ensemble ce qui était commandé','Si erreur avérée : appeler l\'encadrant avant toute décision','Si client a tort : lui montrer les documents et appeler quand même l\'encadrant','JAMAIS repartir sans avoir appelé l\'encadrant','Tout noter sur le BL avec l\'heure'],
+        col:'#f97316'
+      },
+      {
+        type:'scenario_cas',
+        titre:'Scénario 3 — Produit cassé ou abîmé',
+        situation:'En déchargeant, vous constatez qu\'un produit est cassé ou abîmé.',
+        etapes:['Photographier le produit immédiatement avant de le toucher','Informer le client de ce que vous avez constaté','Appeler l\'encadrant pour décision','NE JAMAIS cacher la casse au client ou à l\'encadrant','Remplir un bon de casse si nécessaire','Si le produit est alimentaire et compromis : ne pas livrer'],
+        col:'#ef4444'
+      },
+      {
+        type:'scenario_cas',
+        titre:'Scénario 4 — Panne ou problème véhicule',
+        situation:'Le camion refuse de démarrer, fait un bruit bizarre, ou le frigo tombe en panne.',
+        etapes:['Ne jamais forcer — couper le contact si bruit grave','Mettre les feux de détresse si arrêt sur route','Appeler l\'encadrant IMMÉDIATEMENT — pas d\'abord essayer de réparer','Si frigo en panne : noter heure, alerter l\'encadrant, ne pas livrer les produits froids sans validation','Si panne route : sécuriser la zone (triangle), rester dans le véhicule','Attendre les instructions — ne rien décider seul'],
+        col:'#a855f7'
+      },
+      {
+        type:'scenario_cas',
+        titre:'Scénario 5 — Client agressif ou menaçant',
+        situation:'Le client hausse le ton, devient menaçant ou agressif physiquement.',
+        etapes:['Rester calme — ne jamais répondre à l\'agressivité par l\'agressivité','Reculer physiquement si la situation dégénère','Ne jamais toucher le client même pour se défendre — appeler la police','Remonter dans le camion si nécessaire et appeler l\'encadrant','Ne jamais laisser la commande pour "calmer" — décision encadrant seulement','Signalement détaillé à l\'encadrant avec heure et faits précis'],
+        col:'#dc2626'
+      },
+      {
+        type:'recap',
+        titre:'La règle universelle pour tous les scénarios',
+        items:['📞 Appeler l\'encadrant AVANT de prendre une décision seul','📸 Photographier tout — chaque problème documenté est une protection','📋 Tout noter sur le BL avec l\'heure exacte','🚗 En cas de doute : remonter dans le camion et appeler','✅ Il n\'y a pas de mauvaise décision si vous avez appelé l\'encadrant'],
+        couleur:'#ef4444'
+      }
+    ]
+  };
+
+  SLIDES_DATA.planning_vendredi = {
+    titre:'Comprendre son planning',
+    icon:'📅',
+    couleur:'#3b82f6',
+    slides:[
+      {type:'titre',titre:'Comprendre et gérer\nson planning',sous:'Le vendredi soir — ce qu\'il faut savoir',icon:'📅',couleur:'#3b82f6'},
+      {
+        type:'planning_base',
+        titre:'Comment fonctionne notre planning',
+        points:[
+          {txt:'Le planning est fait chaque vendredi pour la semaine suivante',icon:'📅',col:'#3b82f6'},
+          {txt:'Il peut être modifié si une livraison s\'ajoute au dernier moment — parfois le vendredi soir pour le lundi',icon:'⚡',col:'#f97316'},
+          {txt:'Les horaires vont de 6h à 18h selon les jours et les demandes clients',icon:'⏰',col:'#a855f7'},
+          {txt:'Les mercredis et toutes les vacances scolaires = centres de loisirs — toujours planifiés',icon:'🌳',col:'#22c55e'},
+          {txt:'Un planning variable nécessite une organisation personnelle rigoureuse',icon:'🗂️',col:'#f59e0b'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'📅',
+        sous:'Question — le planning',
+        question:'Vous recevez votre planning vendredi soir à 19h pour la semaine suivante. Vous voyez que lundi vous commencez à 5h30. Que faites-vous ce vendredi soir ?',
+        items:[
+          '✅ Préparer tout ce dont vous avez besoin pour lundi soir même (tenue, affaires)',
+          '✅ Vérifier votre moyen de transport — le bus ne passe pas à 5h du matin',
+          '✅ Mettre plusieurs alarmes pour le lundi matin',
+          '✅ Signaler immédiatement si vous avez une contrainte — pas le lundi matin',
+          '❌ Ne pas attendre le lundi pour signaler un problème de transport',
+        ]
+      },
+      {
+        type:'planning_bonne_pratique',
+        titre:'Les bonnes pratiques du planning',
+        pratiques:[
+          {pratique:'Vérifier le planning dès réception le vendredi',detail:'Pas dimanche soir — vendredi soir pour avoir le temps de signaler un problème'},
+          {pratique:'Signaler toute contrainte immédiatement',detail:'Garde d\'enfant, rendez-vous médical, contrainte transport — le plus tôt possible'},
+          {pratique:'Préparer ses affaires la veille',detail:'Tenue, EPI, téléphone chargé — pour ne pas être stressé le matin'},
+          {pratique:'Connaître son itinéraire à l\'avance',detail:'Surtout pour les nouvelles adresses — vérifier sur le GPS la veille'},
+          {pratique:'Ne jamais "attendre de voir"',detail:'Si vous doutez que vous pouvez être là — signaler maintenant, pas demain'},
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Le planning en résumé',
+        items:[
+          '📅 Fait le vendredi — pour la semaine suivante — variable selon les clients',
+          '⚡ Peut changer — parfois au dernier moment — c\'est la nature du métier',
+          '✅ Vérifier le vendredi soir — pas le dimanche à 21h',
+          '📞 Contrainte = signaler immédiatement — pas le jour J',
+          '🗂️ Organisation personnelle = clé du succès dans ce poste',
+        ],
+        couleur:'#3b82f6'
+      }
+    ]
+  };
+
+  /* Nouveaux types renderer */
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+      case 'scenario_cas':
+        return '<div style="margin-bottom:16px">'
+          +'<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:12px">'+slide.titre+'</div>'
+          +'<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;color:rgba(255,255,255,.8);font-style:italic">📋 Situation : '+slide.situation+'</div>'
+          +'<div style="display:flex;flex-direction:column;gap:7px">'
+          +slide.etapes.map(function(e,i){
+            return '<div style="display:flex;align-items:center;gap:12px;background:'+slide.col+'11;border:1px solid '+slide.col+'33;border-radius:9px;padding:10px 16px">'
+              +'<div style="width:24px;height:24px;border-radius:50%;background:'+slide.col+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">'+(i+1)+'</div>'
+              +'<span style="font-size:13px;color:#fff">'+e+'</span></div>';
+          }).join('')
+          +'</div></div>';
+
+      case 'planning_base':
+        var h='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.points.forEach(function(p){
+          h+='<div style="display:flex;align-items:center;gap:14px;background:'+p.col+'15;border:1px solid '+p.col+'33;border-radius:10px;padding:13px 18px">';
+          h+='<span style="font-size:24px;flex-shrink:0">'+p.icon+'</span>';
+          h+='<span style="font-size:14px;color:#fff">'+p.txt+'</span></div>';
+        });
+        return h+'</div>';
+
+      case 'planning_bonne_pratique':
+        var h2='<div style="text-align:center;margin-bottom:16px"><div style="font-size:24px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h2+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.pratiques.forEach(function(p){
+          h2+='<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:10px;padding:12px 18px">';
+          h2+='<div style="font-size:13px;font-weight:800;color:#93c5fd;margin-bottom:4px">→ '+p.pratique+'</div>';
+          h2+='<div style="font-size:12px;color:rgba(255,255,255,.7)">'+p.detail+'</div></div>';
+        });
+        return h2+'</div>';
+
+      default: return _old(slide, couleur);
+    }
+  };
+})();
+
+/* ── 6. ROUTER FINAL ── */
+(function(){
+  var _old = window.render;
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(!c) return _old?_old(page):null;
+    if(page==='simulateur'){ renderSimulateurEntretien(c); return; }
+    if(page==='projet_pro'){ renderProjetPro(c); return; }
+    if(_old) _old(page);
+  };
+
+  /* Ajouter dans la page Documents le rapport annuel */
+  var oldRD = window.renderDocuments;
+  if(typeof oldRD === 'function'){
+    window.renderDocuments = function(c2){
+      oldRD(c2);
+      /* Ajouter bouton rapport annuel */
+      setTimeout(function(){
+        var zone = c2.querySelector('.grid-2:last-of-type');
+        if(zone){
+          var div = document.createElement('div');
+          div.style.cssText = 'background:var(--panel2);border:2px solid rgba(34,197,94,.3);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px';
+          div.innerHTML = '<span style="font-size:24px">📋</span>'
+            +'<div style="flex:1"><div style="font-weight:800;color:var(--text);font-size:13px">Rapport annuel SIAE</div>'
+            +'<div style="font-size:10px;color:var(--sub)">Rapport complet pour DDETS/FSE+/OPCO</div></div>'
+            +'<button class="btn btn-sm" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);color:var(--green);font-weight:800" onclick="genRapportAnnuelSIAE()">Générer</button>';
+          zone.appendChild(div);
+        }
+      }, 100);
+    };
+  }
+
+  /* Ajouter simulateur dans sidebar */
+  var sb = document.querySelector('.sb');
+  if(sb){
+    var toAdd = [
+      {p:'simulateur',ico:'🤖',lbl:'Simulateur entretien IA'},
+      {p:'projet_pro',ico:'🎯',lbl:'Projets professionnels'},
+    ];
+    toAdd.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d=document.createElement('div');
+        d.className='sb-item'; d.setAttribute('data-p',it.p);
+        d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick=function(){window.nav(it.p);}; sb.appendChild(d);
+      }
+    });
+  }
+})();
+
+console.log('FINAL TOUT chargé — alertes intelligentes, simulateur IA, projet pro, rapport SIAE, slides nouvelles');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ERP IAE COMPLET — PARTIE 1
+   Passeport sortie · SMART · Courbe progression · Planning RDV
+   Signature électronique · Coffre-fort documentaire
+═══════════════════════════════════════════════════════════════ */
+
+/* ── DONNÉES ── */
+if(!DB.smart)        DB.smart        = {};
+if(!DB.progression)  DB.progression  = {};
+if(!DB.agenda)       DB.agenda       = {};
+if(!DB.signatures)   DB.signatures   = {};
+if(!DB.coffre)       DB.coffre       = {};
+if(!DB.messagerie)   DB.messagerie   = [];
+if(!DB.journal_actions) DB.journal_actions = [];
+if(!DB.bienetre)     DB.bienetre     = {};
+if(!DB.post_sortie)  DB.post_sortie  = {};
+
+/* ── JOURNAL DES ACTIONS ── */
+function logAction(action, detail){
+  if(!DB.journal_actions) DB.journal_actions=[];
+  DB.journal_actions.unshift({
+    date: new Date().toISOString(),
+    user: 'Responsable',
+    action: action,
+    detail: detail||''
+  });
+  if(DB.journal_actions.length > 200) DB.journal_actions = DB.journal_actions.slice(0,200);
+}
+
+/* ── 1. PASSEPORT DE COMPÉTENCES SORTIE ── */
+window.genPasseportSortie = function(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+  if(!s) return;
+  var acad = (DB.academie&&DB.academie[salId])||{};
+  var prog = (DB.progressions&&DB.progressions[salId])||{};
+  var pass = (DB.passeports&&DB.passeports[salId])||{};
+  var badges = (DB.badges_attribues||[]).filter(function(b){return b.salId==salId;});
+  var evals = (DB.evaluations||[]).filter(function(e){return e.salId==salId;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var dernEval = evals[0]||{};
+
+  /* Calculer compétences acquises */
+  var competencesAcquises = [];
+  var NOMS_BLOCS = {reglementation:'Réglementation transport',chaine_froid:'Chaîne du froid',chargement:'Chargement & manutention',conduite_pro:'Conduite professionnelle',relation_client:'Relation client',documents:'Documents logistiques',traiteur:'Logistique traiteur',securite_travail:'Sécurité au travail',gestion_stress:'Gestion du stress',calculs_metier:'Calculs métier',prise_de_poste:'Prise de poste',gps_navigation:'GPS & Navigation',droit_travail_insertion:'Droit du travail'};
+  Object.keys(acad).forEach(function(k){
+    var d=acad[k];
+    if(d&&d.niveau>=2) competencesAcquises.push({nom:NOMS_BLOCS[k]||k, niveau:d.niveau, score:d.last_score||0});
+  });
+
+  /* Comportementales depuis progression */
+  var comportementales = [];
+  var COMP_NOMS = {ponctualite:'Ponctualité & Présence',equipe:'Esprit d\'équipe',relation_client:'Relation client',conduite_generale:'Conduite professionnelle'};
+  Object.keys(COMP_NOMS).forEach(function(cat){
+    var scores = [];
+    for(var i=0;i<8;i++){
+      var v=prog[cat+'_'+i];
+      if(v>0) scores.push(v);
+    }
+    if(scores.length){
+      var moy = scores.reduce(function(s,v){return s+v;},0)/scores.length;
+      if(moy>=2.5) comportementales.push({nom:COMP_NOMS[cat],niveau:Math.round(moy)});
+    }
+  });
+
+  /* Certifications */
+  var CERTIFS_NOMS = {permisb:'Permis B',permisc:'Permis C',haccp:'HACCP',sst:'SST',fimo:'FIMO',gestes:'Gestes & postures',alimentaire:'Habilitation alimentaire',cqp:'CQP Chauffeur livreur'};
+  var certifs = Object.keys(pass).filter(function(k){return pass[k]&&pass[k].obtenu;}).map(function(k){return CERTIFS_NOMS[k]||k;});
+
+  /* Appréciation globale */
+  var emp = typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(salId):0;
+  var appreciation = emp>=80?'Excellent — fortement recommandé':emp>=65?'Très bon — recommandé':emp>=50?'Bon — compétences solides':'Satisfaisant — parcours en progression';
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:0;max-width:900px;margin:0 auto;color:#1a2435;font-size:12px}.cover{background:linear-gradient(135deg,#0f1923,#1e3a5f);color:#fff;padding:40px;text-align:center}.cover h1{font-size:28px;color:#f97316;margin:0 0 8px}.cover .nom{font-size:22px;font-weight:900;margin:16px 0}.cover .periode{font-size:13px;opacity:.7}.body{padding:28px}.section{margin-bottom:24px}.section-title{font-size:14px;font-weight:900;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:6px;margin-bottom:12px}.grid-comp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.comp-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.comp-nom{font-size:12px;font-weight:800;color:#1e3a5f}.comp-niv{display:flex;gap:3px;margin-top:6px}.etoile{font-size:14px;color:#f97316}.etoile.off{opacity:.2}.certif{display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;margin:3px;font-size:11px}.badge-item{display:inline-block;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:4px 10px;margin:3px;font-size:11px}.apprec{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #22c55e;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px}.apprec-val{font-size:18px;font-weight:900;color:#16a34a}.barre{height:8px;background:#e2e8f0;border-radius:4px}.barre-fill{height:8px;border-radius:4px;background:#22c55e}.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:2px solid #f97316}.sig-box{text-align:center}.sig-line{width:160px;border-bottom:1px solid #1a2435;margin:18px auto 4px}footer{font-size:9px;color:#94a3b8;padding:0 28px 20px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Passeport '+s.prenom+'</title><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;z-index:99">🖨️ Imprimer</button>';
+
+  /* Cover */
+  html+='<div class="cover">';
+  html+='<div style="font-size:36px;margin-bottom:12px">🏆</div>';
+  html+='<h1>Passeport de Compétences</h1>';
+  html+='<div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">La Table de Cana · Marseille · Structure d\'Insertion</div>';
+  html+='<div class="nom">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  html+='<div class="periode">Parcours du '+(typeof fmt==='function'?fmt(s.dateEntree):s.dateEntree||'')+(s.dateFin?' au '+(typeof fmt==='function'?fmt(s.dateFin):s.dateFin):'')+'</div>';
+  if(s.projetPro) html+='<div style="margin-top:12px;background:rgba(249,115,22,.3);border-radius:8px;padding:6px 14px;display:inline-block;font-size:12px">🎯 Projet : '+s.projetPro+'</div>';
+  html+='<div style="margin-top:20px;font-size:32px;font-weight:900;color:#f97316">'+emp+'% d\'employabilité</div>';
+  html+='</div>';
+
+  html+='<div class="body">';
+
+  /* Appréciation */
+  html+='<div class="apprec"><div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px">Appréciation générale</div>';
+  html+='<div class="apprec-val">'+appreciation+'</div>';
+  if(dernEval.noteGlobale) html+='<div style="font-size:12px;color:#64748b;margin-top:6px">Note globale : '+dernEval.noteGlobale+'/4 · '+(typeof fmt==='function'?fmt(dernEval.date):dernEval.date||'')+'</div>';
+  html+='</div>';
+
+  /* Compétences professionnelles */
+  if(competencesAcquises.length){
+    html+='<div class="section"><div class="section-title">📚 Compétences professionnelles logistiques</div>';
+    html+='<div class="grid-comp">';
+    competencesAcquises.forEach(function(c2){
+      html+='<div class="comp-card"><div class="comp-nom">'+c2.nom+'</div>';
+      html+='<div style="font-size:11px;color:#64748b">Score : '+c2.score+'%</div>';
+      html+='<div class="comp-niv">';
+      for(var i=1;i<=4;i++) html+='<span class="etoile'+(c2.niveau>=i?'':' off')+'">⭐</span>';
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  /* Comportementales */
+  if(comportementales.length){
+    html+='<div class="section"><div class="section-title">🤝 Compétences comportementales</div>';
+    html+='<div class="grid-comp">';
+    comportementales.forEach(function(c2){
+      html+='<div class="comp-card"><div class="comp-nom">'+c2.nom+'</div>';
+      html+='<div class="comp-niv">';
+      for(var i=1;i<=4;i++) html+='<span class="etoile'+(c2.niveau>=i?'':' off')+'">⭐</span>';
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  /* Formations */
+  var progF=(DB.programme&&DB.programme[salId])||{};
+  var fait=Object.keys(progF).filter(function(k){return progF[k]&&progF[k].fait;}).length;
+  html+='<div class="section"><div class="section-title">🎓 Formations suivies</div>';
+  html+='<div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:10px">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+  html+='<span style="font-weight:800">Programme de formation 2 ans</span><span style="font-weight:900;color:#f97316">'+fait+'/24 modules</span></div>';
+  html+='<div class="barre"><div class="barre-fill" style="width:'+Math.round(fait/24*100)+'%"></div></div></div>';
+  if(typeof PROGRAMME_2ANS!=='undefined'){
+    PROGRAMME_2ANS.filter(function(p){var d=progF[String(p.mois)]||{};return d.fait;}).forEach(function(p){
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f4f8"><span>'+p.icon+'</span><span style="font-size:11px">'+p.titre+'</span></div>';
+    });
+  }
+  html+='</div>';
+
+  /* Certifications */
+  if(certifs.length){
+    html+='<div class="section"><div class="section-title">🏅 Certifications obtenues</div>';
+    certifs.forEach(function(c2){html+='<span class="certif">✅ '+c2+'</span>';});
+    html+='</div>';
+  }
+
+  /* Badges */
+  if(badges.length){
+    html+='<div class="section"><div class="section-title">🏆 Badges et distinctions</div>';
+    badges.forEach(function(b){
+      var bd=typeof BADGES_DEFS!=='undefined'?BADGES_DEFS.find(function(x){return x.id===b.badgeId;}):null;
+      if(bd) html+='<span class="badge-item">'+bd.icon+' '+bd.label+'</span>';
+    });
+    html+='</div>';
+  }
+
+  /* Signatures */
+  html+='<div class="sig">';
+  html+='<div class="sig-box"><div style="font-weight:800">Le salarié</div><div class="sig-line"></div><div style="font-size:11px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px;font-size:11px">La Table de Cana<br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div class="sig-box"><div style="font-weight:800">Le responsable</div><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div>';
+  html+='</div></div>';
+  html+='<footer><span>La Table de Cana · Marseille · Passeport de compétences certifié</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+  logAction('Passeport généré', s.prenom+(s.nom?' '+s.nom:''));
+};
+
+/* ── 2. OBJECTIFS SMART ── */
+window.renderSMART = function(c2){
+  if(!c2) return;
+  var h='<div class="page-title">🎯 Objectifs SMART</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Spécifique · Mesurable · Atteignable · Réaliste · Temporel</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h+='<div onclick="selSMART('+s.id+',this)" class="fsal-btn-sm" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span><span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h+='</div><div id="smart-zone"></div>';
+  c2.innerHTML=h;
+  var first=(DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selSMART(first.id,c2.querySelector('.fsal-btn-sm'));
+};
+
+window.selSMART=function(salId,el){
+  document.querySelectorAll('.fsal-btn-sm').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--orange)';el.style.background='var(--panel2)';}
+  window.smartSalId=salId;
+  afficherSMART(salId);
+};
+
+function afficherSMART(salId){
+  var zone=document.getElementById('smart-zone'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.smart[salId]) DB.smart[salId]=[];
+  var objectifs=DB.smart[salId];
+  var exemples=[
+    {obj:'0 retard pendant 30 jours',categorie:'Ponctualité'},
+    {obj:'Score QCM chaîne du froid ≥ 80%',categorie:'Formation'},
+    {obj:'3 candidatures envoyées ce mois',categorie:'Projet pro'},
+    {obj:'BL toujours signé et remis',categorie:'Rigueur'},
+    {obj:'Permis C passé avant fin de contrat',categorie:'Certification'},
+  ];
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">🎯 Objectifs de '+s.prenom+'</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="ajouterSMART('+salId+')">+ Nouvel objectif</button></div>';
+
+  if(!objectifs.length){
+    h+='<div style="color:var(--sub);font-size:12px;padding:10px 0">Aucun objectif défini. Exemples :</div>';
+    exemples.forEach(function(ex){
+      h+='<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--sub);cursor:pointer" onclick="ajouterSmartExemple('+salId+',\''+ex.obj+'\',\''+ex.categorie+'\')">';
+      h+='<span style="color:var(--blue)">+</span> '+ex.obj+' <span style="font-size:10px">('+ex.categorie+')</span></div>';
+    });
+  } else {
+    objectifs.forEach(function(obj,i){
+      var col=obj.pct>=100?'var(--green)':obj.pct>=60?'var(--yellow)':'var(--orange)';
+      h+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px">';
+      h+='<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">';
+      h+='<div><div style="font-size:13px;font-weight:800;color:var(--text)">'+obj.objectif+'</div>';
+      h+='<div style="font-size:10px;color:var(--sub);margin-top:2px">'+obj.categorie+' · Échéance: '+(typeof fmt==='function'?fmt(obj.date):obj.date)+' · '+obj.responsable+'</div></div>';
+      h+='<div style="text-align:center;flex-shrink:0;margin-left:10px"><div style="font-size:20px;font-weight:900;color:'+col+'">'+obj.pct+'%</div>';
+      h+='<div style="font-size:10px;color:var(--sub)">avancement</div></div></div>';
+      h+='<div style="background:var(--border);border-radius:4px;height:6px;margin-bottom:8px">';
+      h+='<div style="width:'+Math.min(obj.pct,100)+'%;height:6px;border-radius:4px;background:'+col+'"></div></div>';
+      if(obj.resultat) h+='<div style="font-size:11px;color:var(--green)">✅ Résultat : '+obj.resultat+'</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px">';
+      h+='<button class="btn btn-sm btn-secondary" onclick="mettreAJourSMART('+salId+','+i+')">Mettre à jour</button>';
+      h+='<button class="btn btn-sm btn-secondary" onclick="supprimerSMART('+salId+','+i+')" style="color:var(--red)">Supprimer</button>';
+      h+='</div></div>';
+    });
+  }
+  h+='</div>';
+  zone.innerHTML=h;
+}
+
+window.ajouterSMART=function(salId){
+  var obj=prompt('Objectif (ex: 0 retard pendant 30 jours) :'); if(!obj)return;
+  var cat=prompt('Catégorie (Ponctualité/Formation/Projet pro/Rigueur/Certification) :','Ponctualité');
+  var date=prompt('Échéance (JJ/MM/AAAA) :',new Date(Date.now()+2592000000).toLocaleDateString('fr-FR'));
+  var resp=prompt('Responsable :','Encadrant');
+  if(!DB.smart[salId]) DB.smart[salId]=[];
+  DB.smart[salId].push({objectif:obj,categorie:cat||'',date:date||'',responsable:resp||'Encadrant',pct:0,resultat:''});
+  if(typeof sauver==='function') sauver();
+  logAction('Objectif SMART ajouté',''+obj+' pour salId '+salId);
+  afficherSMART(salId);
+};
+
+window.ajouterSmartExemple=function(salId,obj,cat){
+  var date=new Date(Date.now()+2592000000).toLocaleDateString('fr-FR');
+  if(!DB.smart[salId]) DB.smart[salId]=[];
+  DB.smart[salId].push({objectif:obj,categorie:cat,date:date,responsable:'Encadrant',pct:0,resultat:''});
+  if(typeof sauver==='function') sauver();
+  afficherSMART(salId);
+};
+
+window.mettreAJourSMART=function(salId,idx){
+  var obj=DB.smart[salId]&&DB.smart[salId][idx]; if(!obj)return;
+  var pct=prompt('Avancement en % (0-100) :',String(obj.pct));
+  var res=prompt('Résultat obtenu (laisser vide si en cours) :',obj.resultat||'');
+  if(pct!==null) obj.pct=Math.min(100,Math.max(0,parseInt(pct)||0));
+  if(res!==null) obj.resultat=res;
+  if(typeof sauver==='function') sauver();
+  afficherSMART(salId);
+};
+
+window.supprimerSMART=function(salId,idx){
+  if(!confirm('Supprimer cet objectif ?'))return;
+  DB.smart[salId].splice(idx,1);
+  if(typeof sauver==='function') sauver();
+  afficherSMART(salId);
+};
+
+/* ── 3. COURBE DE PROGRESSION ── */
+window.renderCourbeProgression=function(c2){
+  if(!c2)return;
+  var h='<div class="page-title">📈 Courbe de progression</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Ponctualité · Autonomie · Communication · Confiance · Employabilité</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h+='<div onclick="selCourbe('+s.id+',this)" class="fsal-btn-cb" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span><span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h+='</div><div id="courbe-zone"></div>';
+  c2.innerHTML=h;
+  var first=(DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selCourbe(first.id,c2.querySelector('.fsal-btn-cb'));
+};
+
+window.selCourbe=function(salId,el){
+  document.querySelectorAll('.fsal-btn-cb').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--green)';el.style.background='var(--panel2)';}
+  window.courbeSalId=salId;
+  afficherCourbe(salId);
+};
+
+function afficherCourbe(salId){
+  var zone=document.getElementById('courbe-zone'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.progression[salId]) DB.progression[salId]=[];
+  var data=DB.progression[salId];
+  var axes=['Ponctualité','Autonomie','Communication','Confiance','Employabilité'];
+  var cols=['#22c55e','#3b82f6','#a855f7','#f97316','#f59e0b'];
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">📈 Progression de '+s.prenom+'</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="ajouterMesure('+salId+')">+ Nouvelle mesure</button></div>';
+
+  if(data.length<2){
+    h+='<div style="color:var(--sub);font-size:12px;padding:10px">Ajoutez au moins 2 mesures pour voir la courbe évoluer.</div>';
+    if(data.length===1){
+      h+='<div style="background:var(--panel2);border-radius:8px;padding:12px;margin-top:8px">';
+      h+='<div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:8px">Mesure du '+(typeof fmt==='function'?fmt(data[0].date):data[0].date)+'</div>';
+      axes.forEach(function(ax,i){
+        h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+        h+='<div style="width:90px;font-size:11px;color:var(--text)">'+ax+'</div>';
+        h+='<div style="flex:1;background:var(--border);border-radius:4px;height:8px">';
+        h+='<div style="width:'+(data[0][ax]||0)*20+'%;height:8px;border-radius:4px;background:'+cols[i]+'"></div></div>';
+        h+='<div style="font-size:11px;font-weight:800;color:'+cols[i]+';width:20px">'+( data[0][ax]||0)+'/5</div></div>';
+      });
+      h+='</div>';
+    }
+  } else {
+    /* Dessiner un graphique SVG */
+    var w=680,hh=220,pad=50;
+    var nbPts=Math.min(data.length,12);
+    var pts=data.slice(-nbPts);
+    var svg='<svg viewBox="0 0 '+(w+pad*2)+' '+(hh+60)+'" style="width:100%;display:block;margin-bottom:14px">';
+    /* Grille */
+    for(var gi=0;gi<=5;gi++){
+      var gy=hh-gi*(hh/5)+20;
+      svg+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(w+pad)+'" y2="'+gy+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>';
+      svg+='<text x="'+(pad-5)+'" y="'+(gy+4)+'" fill="rgba(255,255,255,.3)" font-size="10" text-anchor="end">'+gi+'</text>';
+    }
+    /* Courbes */
+    axes.forEach(function(ax,ai){
+      var pathD='';
+      pts.forEach(function(pt,pi){
+        var x=pad+pi*(w/(nbPts-1));
+        var y=hh-(pt[ax]||0)*(hh/5)+20;
+        pathD+=(pi===0?'M':'L')+x+' '+y;
+      });
+      svg+='<path d="'+pathD+'" fill="none" stroke="'+cols[ai]+'" stroke-width="2.5"/>';
+      pts.forEach(function(pt,pi){
+        var x=pad+pi*(w/(nbPts-1));
+        var y=hh-(pt[ax]||0)*(hh/5)+20;
+        svg+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="'+cols[ai]+'"/>';
+      });
+    });
+    /* Labels X */
+    pts.forEach(function(pt,pi){
+      var x=pad+pi*(w/(nbPts-1));
+      var lbl=(pt.date||'').slice(3,10);
+      svg+='<text x="'+x+'" y="'+(hh+36)+'" fill="rgba(255,255,255,.4)" font-size="9" text-anchor="middle">'+lbl+'</text>';
+    });
+    svg+='</svg>';
+    h+=svg;
+    /* Légende */
+    h+='<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">';
+    axes.forEach(function(ax,i){ h+='<div style="display:flex;align-items:center;gap-5px"><div style="width:12px;height:12px;border-radius:50%;background:'+cols[i]+';margin-right:5px"></div><span style="font-size:11px;color:var(--text)">'+ax+'</span></div>'; });
+    h+='</div>';
+    /* Dernière mesure */
+    var last=data[data.length-1];
+    h+='<div style="background:var(--panel2);border-radius:8px;padding:12px"><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:8px">Dernière mesure — '+(typeof fmt==='function'?fmt(last.date):last.date)+'</div>';
+    axes.forEach(function(ax,i){
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">';
+      h+='<div style="width:100px;font-size:11px;color:var(--text)">'+ax+'</div>';
+      h+='<div style="flex:1;background:var(--border);border-radius:4px;height:7px"><div style="width:'+(last[ax]||0)*20+'%;height:7px;border-radius:4px;background:'+cols[i]+'"></div></div>';
+      h+='<div style="font-size:12px;font-weight:800;color:'+cols[i]+';width:24px">'+( last[ax]||0)+'/5</div></div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  zone.innerHTML=h;
+}
+
+window.ajouterMesure=function(salId){
+  var axes=['Ponctualité','Autonomie','Communication','Confiance','Employabilité'];
+  var mesure={date:new Date().toLocaleDateString('fr-FR')};
+  var ok=true;
+  for(var i=0;i<axes.length;i++){
+    var v=prompt(axes[i]+' (1 à 5) :','3');
+    if(v===null){ok=false;break;}
+    mesure[axes[i]]=Math.min(5,Math.max(1,parseInt(v)||3));
+  }
+  if(!ok)return;
+  if(!DB.progression[salId]) DB.progression[salId]=[];
+  DB.progression[salId].push(mesure);
+  if(typeof sauver==='function') sauver();
+  logAction('Mesure progression ajoutée','salId '+salId);
+  afficherCourbe(salId);
+};
+
+/* ── 4. PLANNING RDV / AGENDA ── */
+window.renderAgenda=function(c2){
+  if(!c2)return;
+  var h='<div class="page-title">📆 Agenda & Rendez-vous</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Entretiens · France Travail · Mission locale · Médecin · Formation · Employeur</div>';
+
+  var maintenant=new Date();
+  var types={entretien:{col:'var(--blue)',icon:'💬'},france_travail:{col:'var(--orange)',icon:'🏢'},mission_locale:{col:'var(--purple)',icon:'🎓'},medecin:{col:'var(--red)',icon:'🏥'},formation:{col:'var(--green)',icon:'📚'},employeur:{col:'var(--yellow)',icon:'👔'},autre:{col:'var(--sub)',icon:'📌'}};
+
+  /* Bouton ajout */
+  h+='<div style="display:flex;gap:8px;margin-bottom:16px"><button class="btn btn-primary" onclick="ajouterRDV()">+ Ajouter un rendez-vous</button></div>';
+
+  /* Prochains RDV */
+  var tous=(DB.agenda||[]).sort(function(a,b){return new Date(a.dateISO)-new Date(b.dateISO);});
+  var avenir=tous.filter(function(r){return new Date(r.dateISO)>=maintenant;});
+  var passe=tous.filter(function(r){return new Date(r.dateISO)<maintenant;}).reverse().slice(0,5);
+
+  h+='<div class="card" style="margin-bottom:14px"><div class="card-title">📅 Prochains rendez-vous</div>';
+  if(!avenir.length) h+='<div style="color:var(--sub);font-size:12px">Aucun rendez-vous à venir</div>';
+  avenir.slice(0,10).forEach(function(r){
+    var salNom='';
+    if(r.salId){var sal=(DB.salaries||[]).find(function(s){return s.id==r.salId;});if(sal)salNom=sal.prenom+(sal.nom?' '+sal.nom:'');}
+    var t=types[r.type]||types.autre;
+    var jRestants=Math.floor((new Date(r.dateISO)-maintenant)/86400000);
+    var urgCol=jRestants<=3?'var(--red)':jRestants<=7?'var(--orange)':'var(--green)';
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">';
+    h+='<span style="font-size:22px;flex-shrink:0">'+t.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--text)">'+r.titre+'</div>';
+    h+='<div style="font-size:11px;color:var(--sub)">'+r.date+' à '+r.heure+(salNom?' · '+salNom:'')+'</div></div>';
+    h+='<div style="text-align:center"><div style="font-size:12px;font-weight:800;color:'+urgCol+'">J-'+jRestants+'</div>';
+    h+='<div style="font-size:9px;color:var(--sub)">jours</div></div>';
+    h+='<button onclick="supprimerRDV(\''+r.id+'\')" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:16px">×</button></div>';
+  });
+  h+='</div>';
+
+  if(passe.length){
+    h+='<div class="card"><div class="card-title">📚 Historique récent</div>';
+    passe.forEach(function(r){
+      var t=types[r.type]||types.autre;
+      var salNom='';
+      if(r.salId){var sal=(DB.salaries||[]).find(function(s){return s.id==r.salId;});if(sal)salNom=sal.prenom+(sal.nom?' '+sal.nom:'');}
+      h+='<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);opacity:.6">';
+      h+='<span>'+t.icon+'</span><div style="flex:1"><div style="font-size:12px;color:var(--text)">'+r.titre+'</div>';
+      h+='<div style="font-size:10px;color:var(--sub)">'+r.date+(salNom?' · '+salNom:'')+'</div></div></div>';
+    });
+    h+='</div>';
+  }
+  c2.innerHTML=h;
+};
+
+window.ajouterRDV=function(){
+  var titre=prompt('Titre du rendez-vous :'); if(!titre)return;
+  var types=['entretien','france_travail','mission_locale','medecin','formation','employeur','autre'];
+  var typeStr=prompt('Type ('+types.join('/')+') :','entretien');
+  var date=prompt('Date (JJ/MM/AAAA) :',new Date().toLocaleDateString('fr-FR'));
+  var heure=prompt('Heure (HH:MM) :','09:00');
+  var salIds=(DB.salaries||[]).filter(function(s){return s.statut==='actif';}).map(function(s){return s.id+':'+s.prenom;}).join(', ');
+  var salId=prompt('ID salarié concerné ('+salIds+', ou vide) :','');
+
+  /* Convertir date en ISO */
+  var parts=(date||'').split('/');
+  var iso=parts.length===3?(parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0')+'T'+(heure||'09:00')):new Date().toISOString();
+
+  if(!DB.agenda) DB.agenda=[];
+  var rdv={id:Date.now().toString(),titre:titre,type:typeStr||'autre',date:date,heure:heure||'09:00',dateISO:iso,salId:salId?parseInt(salId):null};
+  DB.agenda.push(rdv);
+  if(typeof sauver==='function') sauver();
+  logAction('RDV ajouté',titre+' le '+date);
+  if(typeof toast==='function') toast('Rendez-vous ajouté ✅','ok');
+  renderAgenda(document.getElementById('content'));
+};
+
+window.supprimerRDV=function(id){
+  if(!confirm('Supprimer ce rendez-vous ?'))return;
+  DB.agenda=(DB.agenda||[]).filter(function(r){return r.id!==id;});
+  if(typeof sauver==='function') sauver();
+  renderAgenda(document.getElementById('content'));
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ERP IAE — PARTIE 2
+   Signature électronique · Coffre-fort · Messagerie · Journal
+   Bien-être · Tableau Direction · Post-sortie · Rapport IA
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 5. SIGNATURE ÉLECTRONIQUE ── */
+window.ouvrirSignature=function(salId, docType, docTitre, callback){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var ov=document.createElement('div');
+  ov.id='sig-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center';
+  ov.innerHTML='<div style="background:var(--panel);border:2px solid var(--border2);border-radius:16px;padding:28px;width:500px;max-width:95vw">'
+    +'<div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:6px">✍️ Signature électronique</div>'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:16px">'+docTitre+' · '+s.prenom+(s.nom?' '+s.nom:'')+'</div>'
+    +'<div style="font-size:12px;color:var(--text);margin-bottom:8px">Le salarié signe ici :</div>'
+    +'<canvas id="sig-canvas" width="440" height="150" style="background:#fff;border:2px solid var(--border);border-radius:8px;cursor:crosshair;display:block;width:100%;max-width:440px"></canvas>'
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<button class="btn btn-primary" onclick="validerSignature('+salId+',\''+docType+'\')">✅ Valider</button>'
+    +'<button class="btn btn-secondary" onclick="effacerSignature()">🔄 Effacer</button>'
+    +'<button class="btn btn-secondary" onclick="document.getElementById(\'sig-overlay\').remove()">✕ Annuler</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  window.sigCallback=callback;
+
+  var canvas=document.getElementById('sig-canvas');
+  var ctx=canvas.getContext('2d');
+  ctx.strokeStyle='#1a2435'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  var drawing=false;
+  canvas.addEventListener('mousedown',function(e){drawing=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY);});
+  canvas.addEventListener('mousemove',function(e){if(!drawing)return;ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();});
+  canvas.addEventListener('mouseup',function(){drawing=false;});
+  canvas.addEventListener('touchstart',function(e){e.preventDefault();drawing=true;var r=canvas.getBoundingClientRect();ctx.beginPath();ctx.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);},{passive:false});
+  canvas.addEventListener('touchmove',function(e){e.preventDefault();if(!drawing)return;var r=canvas.getBoundingClientRect();ctx.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);ctx.stroke();},{passive:false});
+  canvas.addEventListener('touchend',function(){drawing=false;});
+};
+
+window.effacerSignature=function(){
+  var c=document.getElementById('sig-canvas'); if(!c)return;
+  c.getContext('2d').clearRect(0,0,c.width,c.height);
+};
+
+window.validerSignature=function(salId,docType){
+  var c=document.getElementById('sig-canvas'); if(!c)return;
+  var sig=c.toDataURL();
+  if(!DB.signatures) DB.signatures={};
+  if(!DB.signatures[salId]) DB.signatures[salId]={};
+  DB.signatures[salId][docType]={sig:sig,date:new Date().toISOString(),signataire:salId};
+  if(typeof sauver==='function') sauver();
+  var ov=document.getElementById('sig-overlay'); if(ov)ov.remove();
+  if(typeof window.sigCallback==='function') window.sigCallback(sig);
+  if(typeof toast==='function') toast('Signature enregistrée ✅','ok');
+  logAction('Signature électronique','docType: '+docType+' salId: '+salId);
+};
+
+/* ── 6. COFFRE-FORT DOCUMENTAIRE ── */
+window.renderCoffre=function(c2){
+  if(!c2)return;
+  var h='<div class="page-title">🔒 Coffre-fort documentaire</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Documents officiels · Alertes d\'expiration automatiques</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h+='<div onclick="selCoffre('+s.id+',this)" class="fsal-btn-co" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span><span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h+='</div><div id="coffre-zone"></div>';
+  c2.innerHTML=h;
+  var first=(DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selCoffre(first.id,c2.querySelector('.fsal-btn-co'));
+};
+
+window.selCoffre=function(salId,el){
+  document.querySelectorAll('.fsal-btn-co').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--purple)';el.style.background='var(--panel2)';}
+  window.coffreSalId=salId;
+  afficherCoffre(salId);
+};
+
+function afficherCoffre(salId){
+  var zone=document.getElementById('coffre-zone'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.coffre[salId]) DB.coffre[salId]={};
+  var docs=DB.coffre[salId];
+
+  var types=[
+    {id:'cni',label:'Carte d\'identité',icon:'🪪',hasExpiry:true},
+    {id:'permis',label:'Permis de conduire',icon:'🚗',hasExpiry:true},
+    {id:'vitale',label:'Carte Vitale',icon:'💳',hasExpiry:false},
+    {id:'caf',label:'Attestation CAF',icon:'📋',hasExpiry:true},
+    {id:'contrat',label:'Contrat de travail',icon:'📄',hasExpiry:false},
+    {id:'permis_c',label:'Permis C',icon:'🚛',hasExpiry:true},
+    {id:'fimo',label:'FIMO',icon:'🎓',hasExpiry:true},
+    {id:'caces',label:'CACES',icon:'🏗️',hasExpiry:true},
+    {id:'haccp',label:'HACCP',icon:'🌡️',hasExpiry:true},
+    {id:'sst',label:'SST — Secouriste',icon:'🏥',hasExpiry:true},
+    {id:'diplome',label:'Diplôme / Titre pro',icon:'🏅',hasExpiry:false},
+    {id:'rib',label:'RIB',icon:'🏦',hasExpiry:false},
+  ];
+
+  var now=new Date();
+  var h='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">🔒 Documents de '+s.prenom+'</div>';
+  h+='</div>';
+  h+='<div class="grid-2">';
+
+  types.forEach(function(t){
+    var doc=docs[t.id]||{};
+    var present=!!doc.date;
+    var expire=false;
+    var jRestants=999;
+    if(present&&t.hasExpiry&&doc.expiry){
+      var exp=new Date(doc.expiry);
+      jRestants=Math.floor((exp-now)/86400000);
+      expire=jRestants<30;
+    }
+    var bord=expire?'var(--red)':present?'var(--green)':'var(--border)';
+    var bg=expire?'rgba(224,85,85,.06)':present?'rgba(34,197,94,.06)':'transparent';
+
+    h+='<div style="background:'+bg+';border:2px solid '+bord+'33;border-radius:10px;padding:12px">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    h+='<span style="font-size:20px">'+t.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--text)">'+t.label+'</div>';
+    if(present){
+      h+='<div style="font-size:10px;color:var(--green)">✅ Ajouté le '+(typeof fmt==='function'?fmt(doc.date):doc.date)+'</div>';
+      if(t.hasExpiry&&doc.expiry){
+        var exCol=jRestants<30?'var(--red)':jRestants<90?'var(--orange)':'var(--green)';
+        h+='<div style="font-size:10px;color:'+exCol+'">Expire: '+(typeof fmt==='function'?fmt(doc.expiry):doc.expiry)+(expire?' ⚠️ URGENT':'')+'</div>';
+      }
+    } else {
+      h+='<div style="font-size:10px;color:var(--sub)">Non enregistré</div>';
+    }
+    h+='</div></div>';
+    h+='<div style="display:flex;gap-4px">';
+    h+='<button class="btn btn-sm btn-secondary" style="width:100%;font-size:10px" onclick="ajouterDocCoffre('+salId+',\''+t.id+'\',\''+t.label+'\','+t.hasExpiry+')">';
+    h+=present?'✏️ Modifier':'+ Ajouter';
+    h+='</button></div></div>';
+  });
+  h+='</div></div>';
+  zone.innerHTML=h;
+}
+
+window.ajouterDocCoffre=function(salId,typeId,label,hasExpiry){
+  var date=prompt('Date du document (JJ/MM/AAAA) :',new Date().toLocaleDateString('fr-FR'));
+  if(!date)return;
+  var expiry='';
+  if(hasExpiry){
+    expiry=prompt('Date d\'expiration (JJ/MM/AAAA, laisser vide si illimité) :','');
+  }
+  var note=prompt('Note / numéro (optionnel) :','');
+  if(!DB.coffre[salId]) DB.coffre[salId]={};
+  DB.coffre[salId][typeId]={date:date,expiry:expiry||'',note:note||''};
+  if(typeof sauver==='function') sauver();
+  logAction('Document coffre ajouté',label+' salId '+salId);
+  afficherCoffre(salId);
+};
+
+/* ── 7. MESSAGERIE INTERNE ── */
+window.renderMessagerie=function(c2){
+  if(!c2)return;
+  if(!DB.messagerie) DB.messagerie=[];
+  var h='<div class="page-title">💬 Messagerie interne</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Responsable · CIP · RH — échanges sur les salariés</div>';
+
+  h+='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">Nouveau message</div>';
+  h+='<select id="msg-sal" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;width:100%;margin-bottom:8px">';
+  h+='<option value="">Sélectionner un salarié (optionnel)</option>';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){h+='<option value="'+s.id+'">'+s.avatar+' '+s.prenom+(s.nom?' '+s.nom:'')+'</option>';});
+  h+='</select>';
+  h+='<select id="msg-de" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;width:100%;margin-bottom:8px">';
+  ['Responsable','CIP','RH','Direction'].forEach(function(r){h+='<option>'+r+'</option>';});
+  h+='</select>';
+  h+='<textarea id="msg-texte" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:70px;box-sizing:border-box;margin-bottom:8px" placeholder="Votre message..."></textarea>';
+  h+='<button class="btn btn-primary" onclick="envoyerMessage()">📤 Envoyer</button></div>';
+
+  /* Fil de messages */
+  h+='<div class="card"><div class="card-title">📨 Fil de messages</div>';
+  if(!DB.messagerie.length) h+='<div style="color:var(--sub);font-size:12px">Aucun message</div>';
+  DB.messagerie.slice().reverse().slice(0,20).forEach(function(m){
+    var salNom='';
+    if(m.salId){var sal=(DB.salaries||[]).find(function(s){return s.id==m.salId;});if(sal)salNom=sal.prenom+(sal.nom?' '+sal.nom:'');}
+    h+='<div style="padding:10px 0;border-bottom:1px solid var(--border)">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">';
+    h+='<span style="font-size:11px;font-weight:800;color:var(--orange)">'+m.de+'</span>';
+    h+='<span style="font-size:10px;color:var(--sub)">'+m.date+(salNom?' · '+salNom:'')+'</span></div>';
+    h+='<div style="font-size:13px;color:var(--text)">'+m.texte+'</div></div>';
+  });
+  h+='</div>';
+  c2.innerHTML=h;
+};
+
+window.envoyerMessage=function(){
+  var sal=document.getElementById('msg-sal');
+  var de=document.getElementById('msg-de');
+  var txt=document.getElementById('msg-texte');
+  if(!txt||!txt.value.trim()){if(typeof toast==='function')toast('Écrivez un message','err');return;}
+  if(!DB.messagerie) DB.messagerie=[];
+  DB.messagerie.push({id:Date.now().toString(),de:de?de.value:'Responsable',salId:sal&&sal.value?parseInt(sal.value):null,texte:txt.value.trim(),date:new Date().toLocaleDateString('fr-FR')});
+  txt.value='';
+  if(typeof sauver==='function') sauver();
+  logAction('Message interne','De: '+(de?de.value:''));
+  renderMessagerie(document.getElementById('content'));
+};
+
+/* ── 8. MODULE BIEN-ÊTRE ── */
+window.renderBienEtre=function(c2){
+  if(!c2)return;
+  if(!DB.bienetre) DB.bienetre={};
+  var h='<div class="page-title">❤️ Bien-être & Suivi</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Stress · Fatigue · Motivation · Confiance · Intégration</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h+='<div onclick="selBE('+s.id+',this)" class="fsal-btn-be" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span><span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h+='</div><div id="be-zone"></div>';
+  c2.innerHTML=h;
+  var first=(DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selBE(first.id,c2.querySelector('.fsal-btn-be'));
+};
+
+window.selBE=function(salId,el){
+  document.querySelectorAll('.fsal-btn-be').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--red)';el.style.background='var(--panel2)';}
+  window.beSalId=salId;
+  afficherBE(salId);
+};
+
+function afficherBE(salId){
+  var zone=document.getElementById('be-zone'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.bienetre[salId]) DB.bienetre[salId]=[];
+  var data=DB.bienetre[salId];
+  var axes=['Stress','Fatigue','Motivation','Confiance','Intégration'];
+  var icons=['😰','😴','🚀','💪','🤝'];
+  var cols=['#ef4444','#f59e0b','#22c55e','#3b82f6','#a855f7'];
+  var inversed=[true,true,false,false,false]; /* Pour stress et fatigue, bas = bien */
+
+  var last=data.length?data[data.length-1]:{};
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">❤️ État de '+s.prenom+'</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="ajouterBE('+salId+')">+ Nouvelle mesure</button></div>';
+
+  axes.forEach(function(ax,i){
+    var val=last[ax]||0;
+    var affVal=inversed[i]?(6-val):val;
+    var pct=val*20;
+    var bonCol=inversed[i]?(val<=2?cols[i]:(val<=3?'var(--yellow)':'var(--red)')):(val>=4?cols[i]:(val>=3?'var(--yellow)':'var(--red)'));
+    h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">';
+    h+='<span style="font-size:22px;flex-shrink:0;width:28px">'+icons[i]+'</span>';
+    h+='<div style="width:100px;font-size:12px;font-weight:700;color:var(--text)">'+ax+'</div>';
+    h+='<div style="flex:1;background:var(--border);border-radius:6px;height:10px">';
+    h+='<div style="width:'+pct+'%;height:10px;border-radius:6px;background:'+bonCol+';transition:.3s"></div></div>';
+    h+='<div style="font-size:13px;font-weight:900;color:'+bonCol+';width:30px;text-align:right">'+val+'/5</div>';
+    h+='</div>';
+  });
+
+  if(data.length){
+    var trend=data.length>=2?'':'';
+    h+='<div style="font-size:10px;color:var(--sub);margin-top:6px">Dernière mesure : '+(typeof fmt==='function'?fmt(last.date):last.date||'')+'</div>';
+  }
+  h+='</div>';
+  zone.innerHTML=h;
+}
+
+window.ajouterBE=function(salId){
+  var axes=['Stress','Fatigue','Motivation','Confiance','Intégration'];
+  var desc=['(1=très stressé, 5=très calme)','(1=épuisé, 5=en forme)','(1=démotivé, 5=très motivé)','(1=peu confiant, 5=très confiant)','(1=isolé, 5=très intégré)'];
+  var mesure={date:new Date().toLocaleDateString('fr-FR')};
+  for(var i=0;i<axes.length;i++){
+    var v=prompt(axes[i]+' '+desc[i]+' :','3');
+    if(v===null)return;
+    mesure[axes[i]]=Math.min(5,Math.max(1,parseInt(v)||3));
+  }
+  if(!DB.bienetre) DB.bienetre={};
+  if(!DB.bienetre[salId]) DB.bienetre[salId]=[];
+  DB.bienetre[salId].push(mesure);
+  if(typeof sauver==='function') sauver();
+  logAction('Bien-être mesuré','salId '+salId);
+  afficherBE(salId);
+};
+
+/* ── 9. TABLEAU DIRECTION ── */
+window.renderTableauDirection=function(c2){
+  if(!c2)return;
+  var now=new Date();
+  var actifs=(DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+  var sortis=(DB.salaries||[]).filter(function(s){return s.statut==='sorti';});
+  var emplois=sortis.filter(function(s){return s.typeSortie&&(s.typeSortie.indexOf('CDI')>=0||s.typeSortie.indexOf('CDD')>=0);});
+
+  /* Contrats < 60 jours */
+  var finsBientot=actifs.filter(function(s){
+    if(!s.dateFin)return false;
+    var j=Math.floor((new Date(s.dateFin)-now)/86400000);
+    return j<=60&&j>0;
+  });
+
+  /* Entretiens à faire (> 4 semaines sans) */
+  var entretiensAFaire=actifs.filter(function(s){
+    var ents=(DB.entretiens||[]).filter(function(e){return e.salId==s.id;});
+    if(!ents.length)return true;
+    var dern=new Date(ents.sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].date);
+    return Math.floor((now-dern)/86400000)>28;
+  });
+
+  /* Salariés proches de l'emploi (employabilité > 70%) */
+  var prochesEmploi=actifs.filter(function(s){
+    var emp=typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(s.id):0;
+    return emp>=70;
+  });
+
+  var txInsertion=sortis.length?Math.round(emplois.length/sortis.length*100):0;
+
+  var h='<div class="page-title">👁️ Tableau de bord Direction</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Vue globale en temps réel — '+now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+
+  /* KPIs grands */
+  var kpis=[
+    {val:actifs.length,label:'Salariés actifs',icon:'👥',col:'#3b82f6'},
+    {val:finsBientot.length,label:'Contrats < 60 jours',icon:'⏰',col:finsBientot.length?'#ef4444':'#22c55e'},
+    {val:entretiensAFaire.length,label:'Entretiens à planifier',icon:'💬',col:entretiensAFaire.length?'#f97316':'#22c55e'},
+    {val:prochesEmploi.length,label:'Proches de l\'emploi',icon:'🚀',col:'#22c55e'},
+    {val:sortis.length,label:'Sorties totales',icon:'🚪',col:'#64748b'},
+    {val:emplois.length,label:'Sorties emploi',icon:'🤝',col:'#22c55e'},
+    {val:txInsertion+'%',label:'Taux d\'insertion',icon:'📈',col:txInsertion>=50?'#22c55e':'#f59e0b'},
+    {val:(DB.entretiens||[]).length,label:'Entretiens réalisés',icon:'📋',col:'#a855f7'},
+  ];
+
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">';
+  kpis.forEach(function(k){
+    h+='<div class="card" style="text-align:center;border-color:'+k.col+'33;padding:14px">';
+    h+='<div style="font-size:24px;margin-bottom:6px">'+k.icon+'</div>';
+    h+='<div style="font-size:24px;font-weight:900;color:'+k.col+'">'+k.val+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub);margin-top:3px">'+k.label+'</div></div>';
+  });
+  h+='</div>';
+
+  /* Alertes direction */
+  if(finsBientot.length){
+    h+='<div class="card" style="margin-bottom:14px;border-color:rgba(239,68,68,.3)">';
+    h+='<div class="card-title" style="color:var(--red)">⏰ Contrats se terminant bientôt</div>';
+    finsBientot.forEach(function(s){
+      var j=Math.floor((new Date(s.dateFin)-now)/86400000);
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h+=typeof avt==='function'?avt(s).replace('40px','28px').replace('font-size:20px','font-size:14px'):'';
+      h+='<span style="font-size:12px;font-weight:700">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+      h+='<span style="flex:1;font-size:11px;color:var(--sub)">Fin: '+(typeof fmt==='function'?fmt(s.dateFin):s.dateFin)+'</span>';
+      h+='<span style="font-size:12px;font-weight:900;color:var(--red)">J-'+j+'</span>';
+      h+='<button class="btn btn-sm btn-primary" onclick="ouvrirDossier('+s.id+')">Ouvrir</button></div>';
+    });
+    h+='</div>';
+  }
+
+  /* Proches de l'emploi */
+  if(prochesEmploi.length){
+    h+='<div class="card" style="margin-bottom:14px;border-color:rgba(34,197,94,.3)">';
+    h+='<div class="card-title" style="color:var(--green)">🚀 Salariés proches de l\'emploi (≥ 70%)</div>';
+    prochesEmploi.forEach(function(s){
+      var emp=typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(s.id):0;
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h+=typeof avt==='function'?avt(s).replace('40px','28px').replace('font-size:20px','font-size:14px'):'';
+      h+='<span style="font-size:12px;font-weight:700;flex:1">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+      h+='<span style="font-size:14px;font-weight:900;color:var(--green)">'+emp+'%</span>';
+      h+='<button class="btn btn-sm btn-green" onclick="ouvrirDossier('+s.id+')">Dossier</button></div>';
+    });
+    h+='</div>';
+  }
+
+  /* Entretiens à planifier */
+  if(entretiensAFaire.length){
+    h+='<div class="card" style="border-color:rgba(249,115,22,.3)">';
+    h+='<div class="card-title" style="color:var(--orange)">💬 Entretiens à planifier</div>';
+    entretiensAFaire.forEach(function(s){
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h+=typeof avt==='function'?avt(s).replace('40px','28px').replace('font-size:20px','font-size:14px'):'';
+      h+='<span style="font-size:12px;font-weight:700;flex:1">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+      h+='<button class="btn btn-sm btn-primary" onclick="ouvrirDossier('+s.id+')">Planifier</button></div>';
+    });
+    h+='</div>';
+  }
+  c2.innerHTML=h;
+};
+
+/* ── 10. JOURNAL DES ACTIONS ── */
+window.renderJournalActions=function(c2){
+  if(!c2)return;
+  var h='<div class="page-title">📜 Journal des actions</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Traçabilité complète — qui a fait quoi, quand</div>';
+  h+='<div class="card"><div class="card-title">Historique des 100 dernières actions</div>';
+  if(!(DB.journal_actions||[]).length){h+='<div style="color:var(--sub);font-size:12px">Aucune action enregistrée</div>';}
+  (DB.journal_actions||[]).slice(0,100).forEach(function(a){
+    var d=new Date(a.date);
+    h+='<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">';
+    h+='<div style="font-size:10px;color:var(--sub);width:120px;flex-shrink:0">'+d.toLocaleString('fr-FR').slice(0,16)+'</div>';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--orange);width:100px;flex-shrink:0">'+a.user+'</div>';
+    h+='<div style="font-size:12px;color:var(--text)">'+a.action+(a.detail?' — <span style="color:var(--sub)">'+a.detail+'</span>':'')+'</div></div>';
+  });
+  h+='</div>';
+  c2.innerHTML=h;
+};
+
+/* ── 11. RAPPORT IA APRÈS ENTRETIEN ── */
+window.genRapportIAEntretien=function(salId,entretienIdx){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var entretiens=(DB.entretiens||[]).filter(function(e){return e.salId==salId;});
+  var entretien=entretiens[entretienIdx||0]||entretiens[entretiens.length-1];
+  if(!entretien){if(typeof toast==='function')toast('Aucun entretien trouvé','err');return;}
+
+  var prompt_ia='Tu es un expert en insertion professionnelle et accompagnement socioprofessionnel. '
+    +'Analyse les données de cet entretien et rédige un rapport complet.\n\n'
+    +'Salarié : '+s.prenom+(s.nom?' '+s.nom:'')+'\n'
+    +'Poste : '+s.poste+'\n'
+    +'Projet : '+(s.projetPro||'Non défini')+'\n'
+    +'Type d\'entretien : '+(entretien.type||'Entretien')+'\n'
+    +'Date : '+(entretien.date||'')+'\n'
+    +'Notes de l\'entretien : '+(entretien.notes||'Aucune note')+'\n\n'
+    +'Rédige un rapport structuré avec ces 7 parties :\n'
+    +'1. Résumé de l\'entretien\n'
+    +'2. Points forts observés\n'
+    +'3. Risques et points de vigilance\n'
+    +'4. Analyse comportementale\n'
+    +'5. Objectifs recommandés\n'
+    +'6. Plan d\'action proposé\n'
+    +'7. Conseils à l\'encadrant\n\n'
+    +'Réponds en français, sois précis et constructif.';
+
+  if(typeof toast==='function') toast('Rapport IA en cours de génération...','ok');
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt_ia}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Rapport non disponible';
+    var win=window.open('','_blank'); if(!win)return;
+    var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px;line-height:1.8}h1{font-size:18px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}h2{font-size:13px;font-weight:900;color:#f97316;margin:16px 0 6px}p{margin:0 0 8px}.header{background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:16px;font-size:11px;display:flex;gap:20px;flex-wrap:wrap}@media print{button{display:none}}';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+    html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+    html+='<h1>🤖 Rapport IA — Analyse d\'entretien</h1>';
+    html+='<div class="header"><span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span><span><b>Type :</b> '+(entretien.type||'')+'</span><span><b>Date :</b> '+(entretien.date||'')+'</span></div>';
+    html+='<div>'+txt.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')+'</div>';
+    html+='</body></html>';
+    win.document.write(html); win.document.close();
+    logAction('Rapport IA généré',s.prenom+(s.nom?' '+s.nom:''));
+  }).catch(function(){
+    if(typeof toast==='function') toast('Erreur API — vérifiez la connexion','err');
+  });
+};
+
+/* ── ROUTER FINAL ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById('content');
+    if(!c)return _old?_old(page):null;
+    var pages={
+      'smart':renderSMART,
+      'courbe_progression':renderCourbeProgression,
+      'agenda':renderAgenda,
+      'coffre':renderCoffre,
+      'messagerie':renderMessagerie,
+      'bienetre':renderBienEtre,
+      'tableau_direction':renderTableauDirection,
+      'journal_actions':renderJournalActions,
+    };
+    if(pages[page]){pages[page](c);return;}
+    if(_old)_old(page);
+  };
+
+  var sb=document.querySelector('.sb');
+  if(sb){
+    var sections=[
+      {sec:'Suivi', items:[
+        {p:'smart',ico:'🎯',lbl:'Objectifs SMART'},
+        {p:'courbe_progression',ico:'📈',lbl:'Courbe de progression'},
+        {p:'agenda',ico:'📆',lbl:'Planning rendez-vous'},
+        {p:'bienetre',ico:'❤️',lbl:'Bien-être'},
+        {p:'coffre',ico:'🔒',lbl:'Coffre-fort docs'},
+      ]},
+      {sec:'Direction', items:[
+        {p:'tableau_direction',ico:'👁️',lbl:'Tableau Direction'},
+        {p:'messagerie',ico:'💬',lbl:'Messagerie interne'},
+        {p:'journal_actions',ico:'📜',lbl:'Journal des actions'},
+      ]},
+    ];
+    sections.forEach(function(group){
+      var secs=sb.querySelectorAll('.sb-sec');
+      var secEl=null;
+      secs.forEach(function(s){if(s.textContent.trim()===group.sec)secEl=s;});
+      if(!secEl){secEl=document.createElement('div');secEl.className='sb-sec';secEl.textContent=group.sec;sb.appendChild(secEl);}
+      group.items.forEach(function(it){
+        if(!sb.querySelector('[data-p="'+it.p+'"]')){
+          var d=document.createElement('div');d.className='sb-item';d.setAttribute('data-p',it.p);
+          d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+          d.onclick=function(){window.nav(it.p);};sb.appendChild(d);
+        }
+      });
+    });
+  }
+
+  /* Ajouter passeport sortie dans les documents */
+  var oldGenDoc=window.genDoc;
+  window.genDoc=function(salId,key){
+    if(key==='passeport_sortie')return genPasseportSortie(salId);
+    if(oldGenDoc)return oldGenDoc(salId,key);
+  };
+
+  /* Ajouter Rapport IA dans entretiens */
+  var oldRenderEntretiens=window.renderEntretiens;
+  if(typeof oldRenderEntretiens==='function'){
+    window.renderEntretiens=function(c2){
+      oldRenderEntretiens(c2);
+      setTimeout(function(){
+        var btns=c2.querySelectorAll('[onclick*="ouvrirEntretien"]');
+        /* Ajouter bouton rapport IA si entretiens listés */
+      },200);
+    };
+  }
+})();
+
+console.log('ERP IAE COMPLET CHARGÉ ✅');
+
+</script>
