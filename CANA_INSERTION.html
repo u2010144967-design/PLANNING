@@ -12155,3 +12155,1773 @@ console.log('Fiche progression chauffeur chargée');
 console.log('Améliorations finales chargées');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   SCRIPTS FORMATEUR — BLOCS 3 À 9
+   + SLIDES MÉTÉO + STATIONNEMENT
+═══════════════════════════════════════════════════ */
+
+/* ── SCRIPTS FORMATEUR COMPLETS ── */
+(function(){
+  if(typeof COURS_FORMATEUR_2ANS === 'undefined') return;
+
+  var scripts = {
+    2: {
+      script_ouverture:'Aujourd\'hui on parle de réglementation et de conduite. Je commence par une question directe : si on vous arrête demain matin pour un contrôle, vous avez tous vos documents ? Permis, carte grise, assurance ? Prenez 30 secondes pour vérifier mentalement.',
+      questions_guidees:[
+        'Vous savez ce que signifie PTAC ? Pouvez-vous l\'expliquer avec vos mots ?',
+        'On a parfois 80, 100, 120 caisses dans le camion. Comment vous savez si vous êtes en surcharge ?',
+        'Si vous avez un accrochage léger au parking — juste une rayure — qu\'est-ce que vous faites ?',
+        'Quelle est la limite d\'alcool pour vous en tant que chauffeur professionnel ? (0,5 ? 0,2 ? 0 ?)',
+        'Si vous êtes fatigué au volant mais qu\'il reste 3 livraisons — qu\'est-ce que la loi vous oblige à faire ?',
+      ],
+      gestion_difficulte:'Si le salarié dit qu\'il peut continuer même fatigué : montrez les statistiques — 30% des accidents mortels sur autoroute liés à la fatigue. Pas négociable.'
+    },
+    3: {
+      script_ouverture:'On va parler aujourd\'hui de relation client et de communication. Je vais vous poser une situation réelle : un client vous crie dessus parce que sa commande est incomplète et c\'est pas votre faute. Quelle est votre première réaction naturelle ?',
+      questions_guidees:[
+        'Décrivez-moi comment vous vous présentez chez un client que vous n\'avez jamais vu. Du moment où vous sonnez jusqu\'au moment où vous partez.',
+        'Un client refuse de signer le BL parce qu\'il dit que la quantité est mauvaise. Qu\'est-ce que vous faites exactement ?',
+        'Quelle est la différence entre un client collectivité et un client traiteur événement pour vous ?',
+        'On livre des centres de loisirs le mercredi. C\'est un contexte particulier — pourquoi ?',
+        'Si vous avez un problème avec un client, vous appelez qui en premier et vous dites quoi ?',
+      ],
+      gestion_difficulte:'Les jeux de rôle font souvent rire au début. C\'est normal — utiliser ça. Dire : "Riez maintenant, mais on va refaire sérieusement dans 2 minutes." Le rire aide à mémoriser.'
+    },
+    4: {
+      script_ouverture:'Logistique traiteur aujourd\'hui. Je commence par vous montrer le matériel. (Sortir un bac GN, un chafing dish, un chariot isotherme.) Qui peut me dire le nom de chaque pièce ? Sans regarder de notes.',
+      questions_guidees:[
+        'Un chafing dish complet coûte combien selon vous ? (Laisser répondre — réponse : 80 à 200€)',
+        'Avant de partir pour un événement avec 50 personnes, vous faites quoi dans les 10 premières minutes au dépôt ?',
+        'Vous arrivez sur un événement de mariage. Les invités sont là. Qu\'est-ce qui change dans votre comportement par rapport à une livraison classique ?',
+        'Au retour d\'un événement, vous avez 2 bacs GN manquants. Qu\'est-ce qui se passe ?',
+        'Pourquoi la conduite douce est particulièrement importante quand on livre pour le traiteur ?',
+      ],
+      gestion_difficulte:'Si le salarié ne connaît pas les noms du matériel : c\'est normal au début. Faire un tour physique de l\'entrepôt et nommer chaque pièce ensemble. Ancrage concret.'
+    },
+    5: {
+      script_ouverture:'Aujourd\'hui on parle de documents — BL, feuille de route. Je sais que ça peut sembler administratif et ennuyeux. Alors je vais commencer par vous poser la question suivante : vous avez livré, le client dit qu\'il n\'a rien reçu. Comment vous prouvez que vous avez livré ?',
+      questions_guidees:[
+        'Qu\'est-ce qu\'un BL pour vous ? À quoi ça sert concrètement ?',
+        'Vous arrivez chez un client et vous remarquez que le BL indique 10 bacs mais il n\'y en a que 8 dans le camion. Que faites-vous AVANT de décharger ?',
+        'Un client dit "j\'ai pas le temps de signer, laissez là" — vous faites quoi ?',
+        'Vous perdez le BL d\'une livraison. Qu\'est-ce qui peut se passer pour l\'entreprise ?',
+        'La feuille de route — vous la lisez quand exactement dans votre journée ?',
+      ],
+      gestion_difficulte:'Si le salarié signe les BL sans lire : simuler un BL avec une erreur volontaire. Lui faire signer. Puis montrer l\'erreur. Impact immédiat et mémorable.'
+    },
+    6: {
+      script_ouverture:'Bilan de l\'année 1. On va commencer différemment — pas de cours aujourd\'hui. Je vais vous demander de me dire vous-même ce que vous avez appris en un an. Prenez 2 minutes. Qu\'est-ce qui a changé dans votre façon de travailler ?',
+      questions_guidees:[
+        'Sur une échelle de 1 à 10, où vous situez-vous sur la ponctualité ? Sur la conduite ? Sur la relation client ?',
+        'Quelle est la formation qui vous a le plus apporté cette année ? Pourquoi ?',
+        'Qu\'est-ce qui vous semble encore difficile ou pas totalement acquis ?',
+        'Dans 12 mois, qu\'est-ce que vous voulez avoir accompli professionnellement ?',
+        'Qu\'est-ce que je peux faire différemment comme formateur pour vous aider mieux ?',
+      ],
+      gestion_difficulte:'Ce bilan est aussi une évaluation de votre accompagnement. Si le salarié dit qu\'une formation n\'a pas été utile — écouter vraiment et prendre en compte pour l\'Année 2.'
+    },
+    7: {
+      script_ouverture:'Année 2 — on monte en niveau. Cette année on va aller beaucoup plus loin sur tout ce qu\'on a vu. Mais d\'abord, une question : qu\'est-ce que vous voulez approfondir vous-même ? Qu\'est-ce qui vous intéresse le plus ?',
+      questions_guidees:[
+        'On a parlé de HACCP en Année 1. Maintenant je veux que vous m\'expliquiez à moi ce que c\'est — comme si j\'étais un nouveau chauffeur.',
+        'Vous avez fait des dizaines de tournées maintenant. Quelle est la chose que vous auriez aimé savoir avant la première ?',
+        'Comment vous avez amélioré votre éco-conduite depuis le début ? Vous avez des exemples concrets ?',
+        'Si vous deviez former un nouveau chauffeur sur la chaîne du froid — comment vous commenceriez ?',
+      ],
+      gestion_difficulte:'En Année 2, les salariés sont plus à l\'aise. Certains peuvent devenir arrogants. Recadrer avec bienveillance : "Vous savez beaucoup — c\'est pour ça que vous allez maintenant former les autres."'
+    },
+    8: {
+      script_ouverture:'Aujourd\'hui c\'est votre tour de former. Vous allez me présenter en 15 minutes le bloc sur lequel vous avez 3 ou 4 étoiles à l\'Académie. Pas besoin d\'être parfait — c\'est votre expérience réelle qui compte.',
+      questions_guidees:[
+        'Comment vous vous êtes préparé pour cette présentation ?',
+        'Qu\'est-ce qui vous a le plus surpris quand vous avez dû expliquer aux autres ?',
+        'Quelle question vous a mis en difficulté ? Comment vous l\'avez gérée ?',
+        'Qu\'est-ce que vous avez appris en formant que vous n\'aviez pas vu avant ?',
+      ],
+      gestion_difficulte:'Si le salarié a peur de former : rappeler que tout le monde sait des choses que les autres ne savent pas encore. Leur demander ce qu\'ils font très bien dans leur quotidien — partir de là.'
+    },
+  };
+
+  COURS_FORMATEUR_2ANS.blocs.forEach(function(bloc, i){
+    if(scripts[i] && !bloc.script_ouverture){
+      bloc.script_ouverture = scripts[i].script_ouverture;
+      bloc.questions_guidees = scripts[i].questions_guidees;
+      bloc.gestion_difficulte = scripts[i].gestion_difficulte;
+    }
+  });
+  console.log('Scripts formateur blocs 3-9 chargés');
+})();
+
+/* ── SLIDES MÉTÉO ET STATIONNEMENT ── */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.meteo_conduite = {
+    titre:'Météo & Conduite — Marseille',
+    icon:'🌬️',
+    couleur:'#0ea5e9',
+    slides:[
+      {type:'titre', titre:'Météo et conduite à Marseille', sous:'Mistral · Pluie · Soleil · Conditions spéciales', icon:'🌬️', couleur:'#0ea5e9'},
+      {
+        type:'meteo_mistral',
+        titre:'Le Mistral — spécificité Marseille',
+        infos:[
+          {cond:'Mistral faible (< 50 km/h)', impact:'Tenu de route normale — attention aux objets sur la route', conseil:'Réduire la vitesse de 10 km/h en zone exposée', col:'#22c55e'},
+          {cond:'Mistral fort (50-80 km/h)', impact:'Camion déporté latéralement — danger réel', conseil:'Réduire de 20-30 km/h, tenir le volant à deux mains, éviter les zones exposées', col:'#f59e0b'},
+          {cond:'Mistral très fort (> 80 km/h)', impact:'Camion difficile à maîtriser — risque de renversement chargé', conseil:'S\'arrêter dans un endroit abrité, appeler l\'encadrant, attendre', col:'#ef4444'},
+          {cond:'Rafales soudaines', impact:'Effet surprise — perte de contrôle possible dans un tunnel ou à la sortie', conseil:'Réduire avant les zones exposées — ponts, cols, sortie de tunnels', col:'#dc2626'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'🌬️',
+        sous:'Question — le mistral',
+        question:'Le mistral souffle fort ce matin. Vous devez livrer sur les hauteurs de Marseille. L\'encadrant n\'est pas encore joignable. Que faites-vous ?',
+        items:[
+          '✅ Vous partez prudemment en réduisant votre vitesse et en restant vigilant',
+          '✅ Vous tenez le volant à deux mains dans les zones exposées',
+          '✅ Vous vous arrêtez si vous sentez le camion difficile à contrôler',
+          '✅ Vous appelez l\'encadrant dès que possible pour le tenir informé',
+          '❌ Vous ne continuez PAS comme d\'habitude — le mistral change tout',
+        ]
+      },
+      {
+        type:'meteo_pluie',
+        titre:'La pluie à Marseille — le piège',
+        points:[
+          {txt:'À Marseille il pleut peu mais fort. Les premières minutes de pluie sont les plus dangereuses — les huiles remontent à la surface.', col:'#3b82f6', icon:'🌧️'},
+          {txt:'Distance de freinage multipliée par 2 sous la pluie avec un camion chargé. Anticiper encore plus loin qu\'en temps normal.', col:'#ef4444', icon:'🛑'},
+          {txt:'Aquaplaning : à 80 km/h sur une flaque — le camion glisse sans freinage possible. Ralentir avant les zones inondables.', col:'#dc2626', icon:'💧'},
+          {txt:'Phares obligatoires dès que visibilité réduite — même en journée sous la pluie.', col:'#f59e0b', icon:'💡'},
+          {txt:'Après la pluie : chaussée glissante encore 30 minutes. Ne pas relâcher la vigilance dès que le soleil revient.', col:'#a855f7', icon:'☀️'},
+        ]
+      },
+      {
+        type:'meteo_soleil',
+        titre:'Le soleil — danger sous-estimé',
+        points:[
+          {txt:'Soleil rasant matin et soir : éblouissement soudain. Lunettes de soleil dans le camion — obligatoires en pratique.', col:'#f59e0b', icon:'😎'},
+          {txt:'Chaleur en été à Marseille : +40°C dans le camion. Hydratation obligatoire — 1,5L minimum par journée chaude.', col:'#ef4444', icon:'🌡️'},
+          {txt:'Fatigue accélérée par la chaleur. La vigilance baisse après 2h de conduite par forte chaleur.', col:'#f97316', icon:'😴'},
+          {txt:'Chambre froide après forte chaleur : choc thermique. Entrer progressivement — jamais torse nu.', col:'#0ea5e9', icon:'❄️'},
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Les 5 règles météo Marseille',
+        items:[
+          '🌬️ Mistral fort (> 50 km/h) = réduire la vitesse de 20 km/h minimum',
+          '🌧️ Premières minutes de pluie = plus dangereuses que la pluie continue',
+          '💧 Aquaplaning = on ne peut pas freiner — ralentir avant les flaques',
+          '😎 Soleil rasant = lunettes de soleil dans le camion, toujours',
+          '📞 Conditions extrêmes = appeler l\'encadrant AVANT de partir',
+        ],
+        couleur:'#0ea5e9'
+      }
+    ]
+  };
+
+  SLIDES_DATA.stationnement = {
+    titre:'Stationnement & Livraison',
+    icon:'🅿️',
+    couleur:'#8b5cf6',
+    slides:[
+      {type:'titre', titre:'Stationnement et zones de livraison', sous:'Règles · Solutions · Marseille spécifique', icon:'🅿️', couleur:'#8b5cf6'},
+      {
+        type:'stat_regles',
+        titre:'Les règles de stationnement en livraison',
+        regles_stat:[
+          {type:'Zone de livraison balisée', icon:'🟡', col:'#f59e0b', autorise:'Stationnement autorisé pendant la durée de la livraison', interdit:'Ne pas dépasser le temps nécessaire — autre livreur attend', dure:'Durée raisonnable — max 30 min'},
+          {type:'Double file', icon:'🔴', col:'#ef4444', autorise:'Autorisé uniquement si arrêt très bref (< 5 min) et feux de détresse', interdit:'Bloquer les bus, pompiers, ou urgences — infraction grave', dure:'Maximum 5 minutes'},
+          {type:'Trottoir (vl de livraison)', icon:'🟠', col:'#f97316', autorise:'Autorisé uniquement si largeur suffisante pour le passage piéton', interdit:'Bloquer complètement le trottoir — personnes à mobilité réduite', dure:'Durée livraison uniquement'},
+          {type:'Zone piétonne', icon:'⛔', col:'#dc2626', autorise:'Autorisé avec autorisation préfectorale spéciale uniquement', interdit:'Jamais sans autorisation — même 30 secondes', dure:'Jamais sans document'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'🅿️',
+        sous:'Situation réelle',
+        question:'Vous devez livrer une école en centre-ville. Aucune place de livraison disponible. La zone piétonne est juste devant. Que faites-vous ?',
+        items:[
+          '❌ Pas question d\'entrer en zone piétonne sans autorisation',
+          '✅ Chercher une place de stationnement à proximité dans les 200 mètres',
+          '✅ Contacter l\'établissement pour demander s\'il y a un accès secondaire',
+          '✅ Appeler l\'encadrant si aucune solution — il tranche',
+          '✅ Note l\'adresse difficile pour améliorer la logistique la prochaine fois',
+        ]
+      },
+      {
+        type:'stat_marseille',
+        titre:'Zones particulières à Marseille',
+        zones:[
+          {nom:'Vieux-Port', access:'Très restreint — zone touristique', solution:'Livraison tôt le matin avant 8h ou autorisation spéciale', col:'#ef4444'},
+          {nom:'Le Panier', access:'Rues très étroites — camionnette max', solution:'Vérifier le gabarit du véhicule AVANT — certaines rues impossibles', col:'#dc2626'},
+          {nom:'Centre-ville (1er/6e)', access:'Zones réglementées — horaires stricts', solution:'Livraisons souvent 6h-10h seulement — vérifier avant', col:'#f97316'},
+          {nom:'Collectivités (écoles)', access:'Entrée sécurisée — code ou interphone', solution:'Toujours appeler en avance — jamais se garer sur les accès urgence', col:'#f59e0b'},
+          {nom:'Zones industrielles', access:'Accès facile — souvent des quais de déchargement', solution:'Repérer le quai correct AVANT de manouvrer', col:'#22c55e'},
+        ]
+      },
+      {
+        type:'stat_astuces',
+        titre:'Les astuces du livreur expérimenté',
+        astuces:[
+          {astuce:'Reconnaître l\'adresse difficile la première fois', detail:'Lors de la première livraison sur un site inconnu — arriver 10 min en avance pour repérer', icon:'🗺️'},
+          {astuce:'Appeler le client pour les adresses difficiles', detail:'Avant de partir : "Est-ce qu\'il y a un accès particulier pour les livraisons ?"', icon:'📞'},
+          {astuce:'Feux de détresse = signal d\'action', detail:'Les mettre dès que vous êtes arrêté en dehors d\'une place — protection légale', icon:'🚨'},
+          {astuce:'Signaler les adresses impossibles', detail:'Chaque adresse difficile signalée = amélioration pour la prochaine tournée', icon:'📋'},
+          {astuce:'Ne jamais gêner les accès d\'urgence', detail:'Pompiers, ambulances, police — accès dégagés en permanence — infraction grave sinon', icon:'🚒'},
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Les 5 règles stationnement',
+        items:[
+          '🟡 Zone de livraison = priorité — mais pas à n\'importe quel prix',
+          '🚨 Feux de détresse = toujours en double file ou arrêt d\'urgence',
+          '⛔ Zone piétonne = jamais sans autorisation — même 30 secondes',
+          '📞 Adresse impossible = appeler l\'encadrant avant de décider seul',
+          '📋 Signaler les adresses difficiles = améliorer les tournées futures',
+        ],
+        couleur:'#8b5cf6'
+      }
+    ]
+  };
+
+  /* Ajouter les nouveaux types au renderer */
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+
+      case 'meteo_mistral':
+        var h='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.infos.forEach(function(info){
+          h+='<div style="background:'+info.col+'15;border:2px solid '+info.col+'44;border-radius:10px;padding:14px 18px">';
+          h+='<div style="font-size:13px;font-weight:900;color:'+info.col+';margin-bottom:6px">🌬️ '+info.cond+'</div>';
+          h+='<div style="font-size:12px;color:rgba(255,255,255,.8);margin-bottom:4px">⚠️ '+info.impact+'</div>';
+          h+='<div style="font-size:12px;color:'+info.col+';font-weight:700">→ '+info.conseil+'</div></div>';
+        });
+        return h+'</div>';
+
+      case 'meteo_pluie':
+      case 'meteo_soleil':
+        var h2='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h2+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.points.forEach(function(p){
+          h2+='<div style="display:flex;align-items:center;gap:14px;background:'+p.col+'15;border:1px solid '+p.col+'33;border-radius:10px;padding:13px 18px">';
+          h2+='<span style="font-size:26px;flex-shrink:0">'+p.icon+'</span>';
+          h2+='<div style="font-size:13px;color:#fff">'+p.txt+'</div></div>';
+        });
+        return h2+'</div>';
+
+      case 'stat_regles':
+        var h3='<div style="text-align:center;margin-bottom:16px"><div style="font-size:24px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h3+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.regles_stat.forEach(function(r){
+          h3+='<div style="background:'+r.col+'11;border:2px solid '+r.col+'33;border-radius:10px;padding:12px 16px">';
+          h3+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+          h3+='<span style="font-size:22px">'+r.icon+'</span>';
+          h3+='<div style="font-size:14px;font-weight:900;color:'+r.col+'">'+r.type+'</div></div>';
+          h3+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px">';
+          h3+='<div style="background:rgba(34,197,94,.1);border-radius:6px;padding:6px">✅ '+r.autorise+'</div>';
+          h3+='<div style="background:rgba(239,68,68,.1);border-radius:6px;padding:6px">❌ '+r.interdit+'</div>';
+          h3+='<div style="background:rgba(255,255,255,.05);border-radius:6px;padding:6px">⏱️ '+r.dure+'</div>';
+          h3+='</div></div>';
+        });
+        return h3+'</div>';
+
+      case 'stat_marseille':
+        var h4='<div style="text-align:center;margin-bottom:16px"><div style="font-size:24px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h4+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.zones.forEach(function(z){
+          h4+='<div style="display:flex;align-items:start;gap:14px;background:'+z.col+'11;border:1px solid '+z.col+'33;border-radius:10px;padding:12px 18px">';
+          h4+='<div style="width:130px;flex-shrink:0"><div style="font-size:13px;font-weight:900;color:'+z.col+'">'+z.nom+'</div>';
+          h4+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">'+z.access+'</div></div>';
+          h4+='<div style="font-size:12px;color:rgba(255,255,255,.8)">→ '+z.solution+'</div></div>';
+        });
+        return h4+'</div>';
+
+      case 'stat_astuces':
+        var h5='<div style="text-align:center;margin-bottom:16px"><div style="font-size:24px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h5+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.astuces.forEach(function(a){
+          h5+='<div style="display:flex;align-items:start;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:13px 18px">';
+          h5+='<span style="font-size:24px;flex-shrink:0">'+a.icon+'</span>';
+          h5+='<div><div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:3px">'+a.astuce+'</div>';
+          h5+='<div style="font-size:12px;color:rgba(255,255,255,.7)">'+a.detail+'</div></div></div>';
+        });
+        return h5+'</div>';
+
+      default:
+        return _old(slide, couleur);
+    }
+  };
+  console.log('Slides météo et stationnement chargées');
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   FICHES ÉLÈVES SUPPLÉMENTAIRES + AMÉLIORATIONS FINALES
+═══════════════════════════════════════════════════ */
+
+/* ── FICHES ÉLÈVES SUPPLÉMENTAIRES ── */
+(function(){
+  if(typeof FICHES_ELEVES === 'undefined') return;
+
+  FICHES_ELEVES.chargement = {
+    titre:'Chargement & Manutention',
+    exercices:[
+      {type:'schema', enonce:'Vous avez 4 clients : A (7h), B (9h), C (11h), D (13h). Numérotez dans quel ordre vous chargez (1=premier au fond, 4=dernier devant) :', reponse:'Client A : position ___\nClient B : position ___\nClient C : position ___\nClient D : position ___'},
+      {type:'qcm', enonce:'LIFO signifie :', choix:['A. Last In First Out — dernier chargé = premier sorti','B. First In First Out — premier chargé = premier sorti','C. Liste Inventaire Formation Obligatoire','D. Aucune de ces réponses'], reponse:'Réponse : ___'},
+      {type:'vrai_faux', enonce:'Un salarié peut porter seul une charge de 35 kg si c\'est urgent.', reponse:'VRAI □   FAUX □'},
+      {type:'calcul', enonce:'À 50 km/h, une caisse de 20 kg non arrimée représente un impact de combien de kg lors d\'un freinage d\'urgence ?', reponse:'Impact ≈ _____ kg (indice : multiplier par 15)'},
+      {type:'liste', enonce:'Listez 4 règles pour soulever correctement une charge lourde :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________'},
+      {type:'texte', enonce:'Qu\'est-ce que TMS ? Donnez 2 exemples de maladies liées aux TMS :', reponse:'TMS = _______________\nExemple 1 : _______________\nExemple 2 : _______________'},
+    ]
+  };
+
+  FICHES_ELEVES.relation_client = {
+    titre:'Relation client & Communication',
+    exercices:[
+      {type:'texte', enonce:'Décrivez les 5 premières secondes parfaites chez un client (du moment où vous sonnez) :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________'},
+      {type:'qcm', enonce:'ERAC est une méthode pour gérer les clients difficiles. E signifie :', choix:['A. Expliquer la situation','B. Écouter sans interrompre','C. Éviter le conflit','D. Évaluer la commande'], reponse:'Réponse : ___'},
+      {type:'tableau', enonce:'Complétez le tableau des types de clients :', colonnes:['Type de client','Particularité principale','Ce que vous adaptez'], lignes:['Collectivité','Centre de loisirs','Traiteur événement']},
+      {type:'vrai_faux', enonce:'Si un client est mécontent, je dois lui expliquer que c\'est la faute de la cuisine.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'Un client refuse de signer le BL. Écrivez exactement ce que vous faites et ce que vous dites :', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'texte', enonce:'Après une tournée difficile avec 2 problèmes, faites un compte-rendu oral en 4 points :', reponse:'1. Les faits : _______________\n2. Informations concrètes : _______________\n3. Anomalies : _______________\n4. Ce que j\'ai fait : _______________'},
+    ]
+  };
+
+  FICHES_ELEVES.traiteur = {
+    titre:'Logistique traiteur & Documents',
+    exercices:[
+      {type:'tableau', enonce:'Reliez chaque terme à sa définition :', colonnes:['Terme','Définition'], lignes:['GN 1/1','Chafing dish','Chariot isotherme','Mise en place','Bon de casse']},
+      {type:'liste', enonce:'Listez dans l\'ordre les 6 étapes d\'un événement traiteur :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________\n6. _______________'},
+      {type:'vrai_faux', enonce:'Sur un événement mariage, je peux goûter les plats si personne ne regarde.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'Je peux partir d\'un événement sans avoir fait l\'inventaire de retour.', reponse:'VRAI □   FAUX □'},
+      {type:'calcul', enonce:'Un buffet a 8 chafing dish à 120€ chacun, 40 bacs GN à 20€, et 200 assiettes à 15€. Quelle est la valeur totale du matériel ?', reponse:'Chafing dish : ___€\nBacs GN : ___€\nAssiettes : ___€\nTOTAL : ___€'},
+      {type:'texte', enonce:'Décrivez le comportement correct lors d\'un mariage (5 règles) :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________'},
+    ]
+  };
+
+  FICHES_ELEVES.constat = {
+    titre:'Remplir un constat amiable',
+    exercices:[
+      {type:'liste', enonce:'Listez dans l\'ordre les 8 étapes après un accident (de la sécurisation à l\'envoi à l\'assurance) :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________\n6. _______________\n7. _______________\n8. _______________'},
+      {type:'vrai_faux', enonce:'Je peux signer un constat vierge si l\'autre conducteur promet de remplir après.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'Pour un accrochage sans blessé, je n\'ai pas besoin de faire un constat.', reponse:'VRAI □   FAUX □'},
+      {type:'qcm', enonce:'Sous combien de jours faut-il envoyer le constat à l\'assurance ?', choix:['A. 2 jours','B. 5 jours','C. 15 jours','D. 1 mois'], reponse:'Réponse : ___'},
+      {type:'texte', enonce:'Dessinez un croquis simple d\'un accident à un carrefour (votre camion venait de droite, l\'autre venait d\'en face). Montrez la position, les directions et le point de choc.', reponse:'[Espace dessin]\n\n\n\n\n\nLégende : A=mon camion, B=autre véhicule, ×=point de choc'},
+      {type:'texte', enonce:'L\'autre conducteur devient agressif et veut partir sans constat. Qu\'est-ce que vous faites exactement ?', reponse:'_________________________________________________\n_________________________________________________'},
+    ]
+  };
+
+  FICHES_ELEVES.conduite_securisee = {
+    titre:'Conduite sécurisée — Alcool, Téléphone, Stupéfiants',
+    exercices:[
+      {type:'qcm', enonce:'Le taux légal d\'alcool pour un chauffeur professionnel en service est :', choix:['A. 0,5 g/L','B. 0,2 g/L','C. 0,0 g/L — tolérance zéro','D. 0,8 g/L'], reponse:'Réponse : ___'},
+      {type:'calcul', enonce:'À 90 km/h, vous regardez votre téléphone 4 secondes. Combien de mètres parcourez-vous les yeux fermés ?\n(Formule : vitesse km/h ÷ 3,6 × secondes)', reponse:'90 ÷ 3,6 = _____ m/s × 4 = _____ mètres'},
+      {type:'vrai_faux', enonce:'Fumer du cannabis le vendredi soir n\'affecte pas ma conduite le lundi matin.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'Avec un kit mains libres, je peux téléphoner en conduisant sans danger.', reponse:'VRAI □   FAUX □'},
+      {type:'liste', enonce:'Listez 3 signes que vous êtes trop fatigué pour conduire :', reponse:'1. _______________\n2. _______________\n3. _______________'},
+      {type:'texte', enonce:'Vous avez bu 2 verres de vin hier soir à 23h. Ce matin à 5h30 vous prenez le volant. Expliquez les risques :', reponse:'_________________________________________________\n_________________________________________________'},
+    ]
+  };
+
+  console.log('Fiches élèves supplémentaires chargées — total: '+Object.keys(FICHES_ELEVES).length);
+})();
+
+/* ── AMÉLIORATION RENDERSLIDES — AFFICHER TOUS LES BLOCS ── */
+(function(){
+  var oldRS = window.renderSlides;
+  window.renderSlides = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">🎬 Slides de formation</div>';
+    h += '<div class="page-sub" style="margin-bottom:20px">Projeter sur écran — dévoilement progressif · Ctrl+K pour chercher une slide</div>';
+
+    /* Grouper les slides par catégorie */
+    var categories = {
+      '🚗 Conduite & Sécurité':['securite_conduite','conduite','meteo_conduite','stationnement'],
+      '📦 Logistique':['chargement','chaine_froid','documents','traiteur','conduite_traiteur'],
+      '🤝 Professionnel':['relation_client','communication','reglementation','constat'],
+      '🌱 Environnement':['tri_dechets','environnement','hygiene'],
+      '🎯 Formation & RH':['recrutement'],
+    };
+
+    Object.keys(categories).forEach(function(catLabel){
+      var blocs = categories[catLabel];
+      var available = blocs.filter(function(b){ return typeof SLIDES_DATA !== 'undefined' && SLIDES_DATA[b]; });
+      if(!available.length) return;
+
+      h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:16px 0 10px;padding:4px 0;border-bottom:1px solid var(--border)">'+catLabel+'</div>';
+      h += '<div class="grid-2" style="margin-bottom:8px">';
+      available.forEach(function(key){
+        var s = SLIDES_DATA[key];
+        h += '<div class="card" style="cursor:pointer;border-color:'+s.couleur+'33;padding:14px" onclick="ouvrirPresentation(\''+key+'\')">';
+        h += '<div style="display:flex;align-items:center;gap:12px">';
+        h += '<div style="font-size:28px">'+s.icon+'</div>';
+        h += '<div style="flex:1"><div style="font-size:13px;font-weight:900;color:var(--text)">'+s.titre+'</div>';
+        h += '<div style="font-size:10px;color:var(--sub)">'+s.slides.length+' slides</div></div>';
+        h += '<button class="btn btn-primary btn-sm" style="background:'+s.couleur+';border-color:'+s.couleur+';flex-shrink:0">▶</button></div></div>';
+      });
+      h += '</div>';
+    });
+
+    c2.innerHTML = h;
+  };
+})();
+
+/* ── AMÉLIORATION ACADÉMIE — AFFICHER LE SCORE DANS LES BLOCS ── */
+(function(){
+  /* Quand on sélectionne un salarié dans l'académie,
+     afficher son score sur chaque bloc directement */
+  var oldSelAcad = window.selAcadSal;
+  window.selAcadSal = function(salId, el){
+    window.dossierSalActif = salId;
+    if(oldSelAcad) oldSelAcad(salId, el);
+  };
+})();
+
+/* ── BOUTON GÉNÉRATION DOCUMENTS DANS LE DOSSIER SALARIÉ ── */
+(function(){
+  /* Patcher pour mémoriser le salId quand on ouvre un dossier */
+  var oldOD = window.ouvrirDossier;
+  window.ouvrirDossier = function(salId){
+    window.dossierSalActif = salId;
+    window.progSalActif = salId;
+    window.acadSalActif = (DB.salaries||[]).find(function(s){return s.id==salId;});
+    if(oldOD) oldOD(salId);
+  };
+})();
+
+/* ── TOAST AMÉLIORÉ ── */
+if(typeof toast === 'undefined'){
+  window.toast = function(msg, type){
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:'+(type==='err'?'#ef4444':type==='ok'?'#22c55e':'#3b82f6')+';color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;animation:fadeIn .3s';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){t.remove();}, 3000);
+  };
+}
+
+console.log('Toutes les améliorations finales chargées');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FIX FINAL COMPLET — Documents + Programme 2 ans + Tout
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. BRANCHER genSyntheseParcours SUR genDoc ── */
+(function(){
+  var _oldGenDoc = window.genDoc;
+  window.genDoc = function(salId, key){
+    if(key === 'synthese_parcours' && typeof genSyntheseParcours === 'function'){
+      return genSyntheseParcours(salId);
+    }
+    if(key === 'plan_formation' && typeof genPlanFormation === 'function'){
+      return genPlanFormation(salId);
+    }
+    if(key === 'rapport_financeurs' && typeof genRapportFinanceurs === 'function'){
+      return genRapportFinanceurs();
+    }
+    if(key === 'livret_bord' && typeof imprimerLivretBord === 'function'){
+      return imprimerLivretBord(salId);
+    }
+    if(key === 'attestation_formation' && typeof imprimerAttestationFormation === 'function'){
+      return imprimerAttestationFormation(salId, 'Formation logistique complète', null, null);
+    }
+    if(_oldGenDoc) return _oldGenDoc(salId, key);
+  };
+})();
+
+/* ── 2. AJOUTER LES NOUVEAUX DOCS DANS LA PAGE DOCUMENTS ── */
+(function(){
+  var _oldRD = window.renderDocuments || function(){};
+  window.renderDocuments = function(c2){
+    if(!c2) return;
+
+    var h = '<div class="page-title">📄 Documents</div>';
+    h += '<div class="page-sub" style="margin-bottom:20px">Sélectionnez un salarié puis le document à générer</div>';
+
+    /* Sélecteur salarié */
+    h += '<div style="margin-bottom:20px">';
+    h += '<select id="doc-sal" onchange="window.dossierSalActif=parseInt(this.value)" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:13px;width:320px">';
+    h += '<option value="">Choisir un salarié...</option>';
+    (DB.salaries||[]).forEach(function(s){
+      h += '<option value="'+s.id+'">'+s.avatar+' '+s.prenom+(s.nom?' '+s.nom:'')+'</option>';
+    });
+    h += '</select></div>';
+
+    /* Documents originaux */
+    var docsOrig = [
+      {k:'bilan_mi',i:'📋',l:'Bilan mi-parcours',col:'var(--blue)'},
+      {k:'bilan_fin',i:'🏁',l:'Bilan fin de parcours',col:'var(--green)'},
+      {k:'plan_action',i:'🎯',l:'Plan d\'action',col:'var(--orange)'},
+      {k:'cr_entretien',i:'💬',l:'CR d\'entretien',col:'var(--purple)'},
+      {k:'attestation',i:'🏆',l:'Attestation compétences',col:'var(--yellow)'},
+      {k:'fiche_poste',i:'📄',l:'Fiche de poste',col:'var(--blue)'},
+      {k:'objectifs',i:'📌',l:'Objectifs du mois',col:'var(--orange)'},
+      {k:'convocation',i:'📨',l:'Convocation entretien',col:'var(--sub)'},
+      {k:'avertissement',i:'⚠️',l:'Avertissement',col:'var(--red)'},
+      {k:'felicitations',i:'🌟',l:'Félicitations',col:'var(--yellow)'},
+      {k:'recommandation',i:'💼',l:'Recommandation',col:'var(--green)'},
+      {k:'dossier',i:'🖨️',l:'Dossier complet',col:'var(--sub)'},
+    ];
+
+    /* Nouveaux documents */
+    var docsNew = [
+      {k:'synthese_parcours',i:'📊',l:'Synthèse de parcours',col:'#f97316',sub:'CV-ready — pour entretiens d\'embauche'},
+      {k:'plan_formation',i:'🎓',l:'Plan de formation individuel',col:'#3b82f6',sub:'Valable OPCO — signé par les deux parties'},
+      {k:'rapport_financeurs',i:'📈',l:'Rapport mensuel financeurs',col:'#22c55e',sub:'Indicateurs DDETS/FSE+ automatiques'},
+      {k:'livret_bord',i:'📗',l:'Livret de bord chauffeur',col:'#8b5cf6',sub:'À garder dans le camion'},
+      {k:'attestation_formation',i:'🏅',l:'Attestation de formation',col:'#f59e0b',sub:'Certifie le parcours de formation'},
+    ];
+
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:10px;padding:4px 0;border-bottom:1px solid var(--border)">📄 Documents standards</div>';
+    h += '<div class="grid-2" style="margin-bottom:20px">';
+    docsOrig.forEach(function(d){
+      h += '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px">';
+      h += '<span style="font-size:24px">'+d.i+'</span>';
+      h += '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:13px">'+d.l+'</div></div>';
+      h += '<button class="btn btn-sm" style="background:'+d.col+'22;border:1px solid '+d.col+'44;color:'+d.col+'" onclick="genDocPage(\''+d.k+'\')">Générer</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+
+    h += '<div style="font-size:11px;font-weight:800;color:var(--orange);text-transform:uppercase;margin-bottom:10px;padding:4px 0;border-bottom:1px solid var(--border)">🚀 Documents avancés</div>';
+    h += '<div class="grid-2">';
+    docsNew.forEach(function(d){
+      h += '<div style="background:var(--panel2);border:2px solid '+d.col+'33;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px">';
+      h += '<span style="font-size:24px">'+d.i+'</span>';
+      h += '<div style="flex:1"><div style="font-weight:800;color:var(--text);font-size:13px">'+d.l+'</div>';
+      h += '<div style="font-size:10px;color:var(--sub)">'+d.sub+'</div></div>';
+      h += '<button class="btn btn-sm" style="background:'+d.col+'22;border:1px solid '+d.col+'44;color:'+d.col+';font-weight:800" onclick="genDocPage(\''+d.k+'\')">Générer</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+
+    c2.innerHTML = h;
+  };
+
+  window.genDocPage = function(key){
+    var sel = document.getElementById('doc-sal');
+    var salId = sel ? parseInt(sel.value) : (window.dossierSalActif||0);
+    if(!salId && key !== 'rapport_financeurs'){
+      if(typeof toast === 'function') toast('Choisissez un salarié','err');
+      return;
+    }
+    window.dossierSalActif = salId;
+    genDoc(salId, key);
+  };
+})();
+
+/* ── 3. PROGRAMME 2 ANS — PROTECTION ABSOLUE ── */
+(function(){
+  /* S'assurer que renderProgramme est dans le router */
+  var _oldRender = window.render;
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(!c) return _oldRender ? _oldRender(page) : null;
+
+    if(page === 'programme'){
+      renderProgramme(c);
+      return;
+    }
+    if(page === 'tutorat'){
+      if(typeof renderTutorat === 'function') renderTutorat(c);
+      return;
+    }
+    if(page === 'fiche_progression'){
+      if(typeof renderFicheProgression === 'function') renderFicheProgression(c);
+      return;
+    }
+    if(page === 'cours_formateur'){
+      if(typeof renderCoursFormateur === 'function') renderCoursFormateur(c);
+      return;
+    }
+    if(page === 'academie'){
+      if(typeof renderAcademie === 'function') renderAcademie(c);
+      return;
+    }
+    if(page === 'slides'){
+      if(typeof renderSlides === 'function') renderSlides(c);
+      return;
+    }
+    if(_oldRender) _oldRender(page);
+  };
+
+  /* S'assurer que nav() met à jour la sidebar */
+  var _oldNav = window.nav;
+  window.nav = function(page){
+    window.PAGE = page;
+    /* Mettre à jour la sidebar */
+    document.querySelectorAll('.sb-item').forEach(function(el){
+      el.classList.remove('active');
+      if(el.getAttribute('data-p') === page) el.classList.add('active');
+    });
+    window.render(page);
+  };
+})();
+
+/* ── 4. SIDEBAR — S'ASSURER QUE TOUS LES ITEMS SONT LÀ ── */
+(function(){
+  var sb = document.querySelector('.sb');
+  if(!sb) return;
+
+  var items = [
+    {sec:'Formation', items:[
+      {p:'academie', ico:'🎓', lbl:'Académie logistique'},
+      {p:'programme', ico:'📅', lbl:'Programme 2 ans'},
+      {p:'tutorat', ico:'👨‍🏫', lbl:'Tutorat & Progression'},
+      {p:'slides', ico:'🎬', lbl:'Slides de formation'},
+      {p:'fiche_progression', ico:'📈', lbl:'Fiche de progression'},
+    ]},
+    {sec:'Formateur', items:[
+      {p:'cours_formateur', ico:'📚', lbl:'Guide formateur 2 ans'},
+    ]},
+  ];
+
+  items.forEach(function(group){
+    /* Chercher si la section existe */
+    var secs = sb.querySelectorAll('.sb-sec');
+    var secEl = null;
+    secs.forEach(function(s){ if(s.textContent.trim() === group.sec) secEl = s; });
+
+    if(!secEl){
+      secEl = document.createElement('div');
+      secEl.className = 'sb-sec';
+      secEl.textContent = group.sec;
+      sb.appendChild(secEl);
+    }
+
+    group.items.forEach(function(it){
+      /* Vérifier si déjà dans la sidebar */
+      var existing = sb.querySelector('[data-p="'+it.p+'"]');
+      if(!existing){
+        var d = document.createElement('div');
+        d.className = 'sb-item';
+        d.setAttribute('data-p', it.p);
+        d.innerHTML = '<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick = function(){ window.nav(it.p); };
+        sb.appendChild(d);
+      } else {
+        /* S'assurer que le onclick est correct */
+        existing.onclick = (function(p){ return function(){ window.nav(p); }; })(it.p);
+      }
+    });
+  });
+})();
+
+/* ── 5. BARRE DE RECHERCHE — POSITION CORRECTE ── */
+(function(){
+  /* S'assurer que la barre est visible et bien positionnée */
+  var bar = document.getElementById('search-universal');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'search-universal';
+    bar.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:8000;width:460px;max-width:calc(100vw - 240px)';
+    bar.innerHTML = '<div style="position:relative">'
+      +'<input id="search-inp" placeholder="🔍 Rechercher... (Ctrl+K)" autocomplete="off" style="width:100%;background:rgba(15,25,35,.95);border:2px solid var(--border2);border-radius:12px;color:var(--text);padding:9px 16px;font-size:13px;outline:none;box-sizing:border-box;box-shadow:0 4px 24px rgba(0,0,0,.5)" onkeyup="rechercherCRM(this.value)" onfocus="this.select();rechercherCRM(this.value)" onclick="this.select()">'
+      +'<div id="search-results" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:rgba(15,25,35,.98);border:2px solid var(--border2);border-radius:12px;max-height:380px;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.7);z-index:8001"></div>'
+      +'</div>';
+    document.body.appendChild(bar);
+  }
+})();
+
+/* ── 6. PROGRAMME 2 ANS — RÉINITIALISATION COMPLÈTE ── */
+window.renderProgramme = function(c2){
+  if(!c2) return;
+  var h = '<div class="page-title">📅 Programme de formation 2 ans</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Plan individuel sur 24 mois — sélectionnez un salarié</div>';
+
+  var actifs = (DB.salaries||[]).filter(function(s){ return s.statut === 'actif'; });
+  if(!actifs.length){
+    c2.innerHTML = h + '<div style="color:var(--sub);padding:20px;text-align:center">Aucun salarié actif</div>';
+    return;
+  }
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">';
+  actifs.forEach(function(s){
+    h += '<div onclick="afficherProg('+s.id+',this)" class="fsal-btn" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;transition:.15s">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<div id="prog-detail-zone"></div>';
+  c2.innerHTML = h;
+
+  setTimeout(function(){
+    var firstBtn = c2.querySelector('.fsal-btn');
+    afficherProg(actifs[0].id, firstBtn);
+  }, 100);
+};
+
+window.afficherProg = function(salId, el){
+  document.querySelectorAll('.fsal-btn').forEach(function(b){
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--panel)';
+  });
+  if(el){ el.style.borderColor = 'var(--blue)'; el.style.background = 'var(--panel2)'; }
+  window.progSalActif = salId;
+  window.dossierSalActif = salId;
+
+  var zone = document.getElementById('prog-detail-zone');
+  if(!zone) return;
+  zone.innerHTML = '<div style="color:var(--sub);padding:20px;text-align:center">Chargement...</div>';
+
+  setTimeout(function(){
+    try {
+      zone.innerHTML = buildProg(salId);
+    } catch(e) {
+      zone.innerHTML = '<div style="color:var(--red);padding:20px">Erreur: ' + e.message + '<br><small>'+e.stack+'</small></div>';
+    }
+  }, 50);
+};
+
+window.buildProg = function(salId){
+  var s = (DB.salaries||[]).find(function(x){ return x.id == salId; });
+  if(!s) return '<div style="color:var(--sub);padding:20px">Salarié introuvable</div>';
+
+  if(typeof PROGRAMME_2ANS === 'undefined' || !Array.isArray(PROGRAMME_2ANS)){
+    return '<div style="color:var(--orange);padding:20px;text-align:center">⏳ Programme en cours de chargement — rechargez la page</div>';
+  }
+
+  if(!DB.programme) DB.programme = {};
+  if(!DB.programme[salId]) DB.programme[salId] = {};
+  var prog = DB.programme[salId];
+
+  var dateEntree = s.dateEntree ? new Date(s.dateEntree) : new Date();
+  var now = new Date();
+  var moisActuel = Math.floor((now - dateEntree) / (30.44 * 24 * 3600 * 1000)) + 1;
+  if(isNaN(moisActuel)) moisActuel = 1;
+  moisActuel = Math.min(Math.max(moisActuel, 1), 24);
+
+  var faitCount = 0;
+  Object.keys(prog).forEach(function(k){ if(prog[k] && prog[k].fait) faitCount++; });
+  var pct = Math.round(faitCount / 24 * 100);
+
+  var blocsProjet = [];
+  if(s.projetPro && typeof PROJETS_BLOCS !== 'undefined'){
+    blocsProjet = PROJETS_BLOCS[s.projetPro] || [];
+  }
+
+  var h = '<div class="card" style="margin-bottom:16px">';
+  h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">';
+  if(typeof avt === 'function') h += avt(s);
+  h += '<div style="flex:1">';
+  h += '<div style="font-size:16px;font-weight:900;color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  h += '<div style="font-size:11px;color:var(--sub)">Mois '+moisActuel+'/24';
+  if(s.dateEntree) h += ' · Entrée: '+(typeof fmt==='function'?fmt(s.dateEntree):s.dateEntree);
+  h += '</div>';
+  if(s.projetPro) h += '<div style="font-size:11px;color:var(--orange);font-weight:700;margin-top:2px">🎯 '+s.projetPro+'</div>';
+  h += '</div>';
+  h += '<div style="text-align:center"><div style="font-size:26px;font-weight:900;color:var(--blue)">'+pct+'%</div><div style="font-size:10px;color:var(--sub)">accompli</div></div>';
+  h += '</div>';
+  h += '<div style="background:var(--border);border-radius:6px;height:6px;margin-bottom:16px"><div style="width:'+pct+'%;height:6px;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#22c55e)"></div></div>';
+
+  [1, 2].forEach(function(annee){
+    var label = annee === 1 ? 'Année 1 — Fondamentaux' : 'Année 2 — Approfondissement';
+    var col = annee === 1 ? 'var(--orange)' : 'var(--blue)';
+    var bg = annee === 1 ? 'rgba(249,115,22,.1)' : 'rgba(74,158,216,.1)';
+
+    h += '<div style="font-size:11px;font-weight:900;color:'+col+';text-transform:uppercase;padding:4px 10px;background:'+bg+';border-radius:6px;display:inline-block;margin-bottom:10px">'+label+'</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px">';
+
+    var lignes = PROGRAMME_2ANS.filter(function(p){
+      return p && typeof p === 'object' && typeof p.mois === 'number' && p.annee === annee;
+    });
+
+    if(!lignes.length){
+      h += '<div style="color:var(--sub);font-size:12px;padding:8px">Aucun module pour cette année</div>';
+    } else {
+      lignes.forEach(function(p){
+        try {
+          h += buildLigne(p, prog, moisActuel, blocsProjet, salId);
+        } catch(e) {}
+      });
+    }
+    h += '</div>';
+  });
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">';
+  if(typeof imprimerProgramme === 'function') h += '<button class="btn btn-primary" onclick="imprimerProgramme('+salId+')">🖨️ Imprimer</button>';
+  if(typeof imprimerLivretBord === 'function') h += '<button class="btn btn-green" onclick="imprimerLivretBord('+salId+')">📗 Livret de bord</button>';
+  h += '</div></div>';
+  return h;
+};
+
+function buildLigne(p, prog, moisActuel, blocsProjet, salId){
+  var moisKey = String(p.mois);
+  var data = prog[moisKey] || prog[p.mois] || {};
+  var estFait = !!data.fait;
+  var estActuel = p.mois === moisActuel;
+  var estRetard = p.mois < moisActuel && !estFait;
+  var prioritaire = (blocsProjet||[]).indexOf(p.bloc) >= 0;
+
+  var bord = estFait ? 'rgba(61,186,122,.35)' : estActuel ? 'rgba(249,115,22,.35)' : estRetard ? 'rgba(224,85,85,.25)' : 'var(--border)';
+  var bg2 = estFait ? 'rgba(61,186,122,.05)' : estActuel ? 'rgba(249,115,22,.05)' : estRetard ? 'rgba(224,85,85,.03)' : 'transparent';
+
+  var h = '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid '+bord+';border-radius:9px;background:'+bg2+'">';
+
+  h += '<input type="checkbox" '+(estFait?'checked':'')+' onchange="cocher2Ans('+salId+','+p.mois+',this)" style="width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
+
+  var badgeCol = estFait ? 'rgba(61,186,122,.2)' : estActuel ? 'rgba(249,115,22,.2)' : 'var(--panel2)';
+  var badgeTxt = estFait ? 'var(--green)' : estActuel ? 'var(--orange)' : 'var(--sub)';
+  h += '<div style="width:44px;height:24px;border-radius:6px;background:'+badgeCol+';color:'+badgeTxt+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0">M'+p.mois+'</div>';
+
+  h += '<span style="font-size:16px;flex-shrink:0">'+(p.icon||'📌')+'</span>';
+
+  h += '<div style="flex:1;min-width:0">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--text)">'+p.titre;
+  if(prioritaire) h += ' <span style="font-size:9px;background:rgba(249,115,22,.2);color:var(--orange);border-radius:4px;padding:1px 5px">⭐</span>';
+  if(estActuel) h += ' <span style="font-size:9px;background:rgba(249,115,22,.25);color:var(--orange);border-radius:4px;padding:1px 5px">CE MOIS</span>';
+  if(estRetard) h += ' <span style="font-size:9px;background:rgba(224,85,85,.2);color:var(--red);border-radius:4px;padding:1px 5px">RETARD</span>';
+  h += '</div>';
+  h += '<div style="font-size:10px;color:var(--sub)">'+(p.format||'')+(p.duree?' · '+p.duree+'h':'')+' · '+(p.desc||'')+'</div>';
+  if(data.date) h += '<div style="font-size:10px;color:var(--green)">✅ '+(typeof fmt==='function'?fmt(data.date):data.date)+(data.score?' — '+data.score+'%':'')+'</div>';
+  h += '</div>';
+
+  if(data.score){
+    var sc = data.score;
+    var scCol = sc >= 80 ? 'var(--green)' : sc >= 60 ? 'var(--yellow)' : 'var(--red)';
+    h += '<div style="font-size:13px;font-weight:900;color:'+scCol+'">'+sc+'%</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+window.cocher2Ans = function(salId, mois, cb){
+  if(!DB.programme) DB.programme = {};
+  if(!DB.programme[salId]) DB.programme[salId] = {};
+  var moisKey = String(mois);
+  if(cb.checked){
+    var score = prompt('Score QCM ? (0-100, Entrée pour ignorer)');
+    DB.programme[salId][moisKey] = {
+      fait: true,
+      date: new Date().toISOString().slice(0, 10),
+      score: score ? parseInt(score) : null
+    };
+  } else {
+    DB.programme[salId][moisKey] = { fait: false };
+  }
+  if(typeof sauver === 'function') sauver();
+  afficherProg(salId, null);
+};
+
+console.log('Fix final complet chargé ✅');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SUITE COMPLÈTE — Tout ce qui reste
+   1. QCM enrichis pour nouveaux blocs académie
+   2. Fiches élèves supplémentaires
+   3. Slide HACCP avancé
+   4. Module bilan hebdomadaire formateur
+   5. Liaison planning → CRM (tournées dans dossier)
+   6. Dashboard amélioré avec graphiques
+   7. Export dossier complet
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. QCM ENRICHIS POUR NOUVEAUX BLOCS ACADÉMIE ── */
+(function(){
+  if(typeof ACADEMIE === 'undefined') return;
+
+  function enrichirBloc(id, qcmsSupp){
+    var bloc = ACADEMIE.blocs.find(function(b){ return b.id === id; });
+    if(!bloc) return;
+    if(!bloc.qcm) bloc.qcm = [];
+    qcmsSupp.forEach(function(q){ bloc.qcm.push(q); });
+  }
+
+  enrichirBloc('gestion_stress', [
+    {q:'Laquelle de ces techniques aide le mieux à calmer rapidement le stress ?', choix:['Accélérer pour finir plus vite','La respiration 4-7-8 répétée 3 fois','Allumer la radio très fort','Appeler un ami pour se plaindre'], bonne:1, explication:'La technique 4-7-8 (inspirer 4s, bloquer 7s, expirer 8s) active le système parasympathique et calme le stress en moins de 90 secondes. Prouvée cliniquement.'},
+    {q:'Un client vous crie dessus à tort. Quelle est votre première action ?', choix:['Lui crier dessus en retour','Partir sans rien dire','Écouter sans interrompre puis appliquer ERAC','Appeler la police'], bonne:2, explication:'ERAC : Écouter, Reconnaître, Agir, Confirmer. La première étape est toujours d\'écouter sans interrompre. Le client se calme souvent de lui-même si on le laisse s\'exprimer.'},
+    {q:'Vous êtes en retard de 25 minutes. Quelle est la meilleure stratégie ?', choix:['Accélérer pour rattraper le temps','Appeler tous les clients en avance pour les prévenir','Ignorer — tout le monde comprend les retards','Sauter une livraison'], bonne:1, explication:'Prévenir libère du stress. Un client prévenu accepte un retard. Un client surpris devient une source de conflit supplémentaire. Et appeler les clients suivants évite l\'effet domino.'},
+  ]);
+
+  enrichirBloc('calculs_metier', [
+    {q:'Vous avez 5 clients, 15 min chacun, 2h de trajet. Avec 20% de marge, combien de temps total prévoir ?', choix:['2h15','3h','3h36','4h30'], bonne:2, explication:'5×15min = 1h15 + 2h trajet = 3h. 3h × 1,2 (20% marge) = 3h36. Toujours surestimer — un retard évité vaut mieux que du stress.'},
+    {q:'Une caisse pèse environ 18 kg. Vous en avez 72. Votre charge utile est de 1200 kg. Êtes-vous en surcharge ?', choix:['Non : 72×18=1296 > 1200, mais c\'est proche','Oui : 72×18=1296 kg > 1200 kg charge utile','Non : le poids est une estimation donc c\'est OK','Oui mais on peut quand même partir'], bonne:1, explication:'72 × 18 kg = 1296 kg. Votre charge utile est 1200 kg. 1296 > 1200 donc SURCHARGE. Ne jamais partir en surcharge même légère. Enlever au moins 6 caisses (108 kg) pour être en règle.'},
+  ]);
+
+  enrichirBloc('prise_de_poste', [
+    {q:'La feuille de route indique un client avec la note "portail code 4521". Vous arrivez, le portail est ouvert. Que faites-vous ?', choix:['Entrer directement — c\'est ouvert','Sonner ou appeler quand même pour signaler votre arrivée','Attendre dans le camion','Repartir et appeler l\'encadrant'], bonne:1, explication:'Même si le portail est ouvert, toujours signaler votre arrivée. Le client doit savoir que vous êtes là. Entrer sans prévenir peut créer une mauvaise surprise ou un problème de sécurité.'},
+    {q:'Au moment de partir, vous remarquez que le voyant de carburant est allumé. Il reste 50 km de tournée. Que faites-vous ?', choix:['Partir quand même — 50 km ça passe','Faire le plein avant de partir et noter le kilométrage','Appeler l\'encadrant pour qu\'il vienne avec du carburant','Annuler la tournée'], bonne:1, explication:'Faire le plein AVANT de partir et noter le kilométrage sur le carnet de bord. Tomber en panne pendant une tournée = retard pour tous les clients + coût de dépannage élevé.'},
+  ]);
+
+  enrichirBloc('gps_navigation', [
+    {q:'Votre GPS vous annonce 35 minutes pour une livraison. Vous connaissez un raccourci de 15 minutes. Que faites-vous ?', choix:['Toujours suivre le GPS sans réfléchir','Prendre le raccourci si vous êtes sûr qu\'il est praticable pour un utilitaire','Appeler l\'encadrant pour valider','Faire les deux routes et comparer'], bonne:1, explication:'Le GPS est un outil, pas une autorité. Si vous connaissez un raccourci praticable pour votre véhicule (hauteur, poids, revêtement), utilisez-le. Mais vérifiez qu\'il n\'y a pas de restriction pour les utilitaires.'},
+  ]);
+
+  enrichirBloc('droit_travail_insertion', [
+    {q:'Vous êtes en CDDI depuis 8 mois. Vous voulez prendre des congés payés. Combien de jours vous avez accumulé ?', choix:['0 jour — les congés c\'est qu\'en CDI','10 jours','20 jours','5 jours'], bonne:2, explication:'2,5 jours × 8 mois = 20 jours de congés payés. Les congés payés s\'appliquent dans tous les contrats de travail, y compris le CDDI.'},
+    {q:'Votre CPF en fin de CDDI vous appartient et peut être utilisé pour :', choix:['N\'importe quelle dépense personnelle','Financer des formations professionnelles reconnues','Acheter du matériel professionnel','Payer vos cotisations URSSAF'], bonne:1, explication:'Le CPF (Compte Personnel de Formation) finance uniquement des formations professionnelles reconnues. Il est personnel, ne se perd pas entre les employeurs, et s\'accumule tout au long de votre carrière.'},
+  ]);
+})();
+
+/* ── 2. NOUVELLES FICHES ÉLÈVES ── */
+(function(){
+  if(typeof FICHES_ELEVES === 'undefined') window.FICHES_ELEVES = {};
+
+  FICHES_ELEVES.gestion_stress = {
+    titre:'Gestion du stress en livraison',
+    exercices:[
+      {type:'liste', enonce:'Listez 4 sources de stress spécifiques à la livraison :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________'},
+      {type:'texte', enonce:'Décrivez la technique de respiration 4-7-8 étape par étape :', reponse:'1. Inspirer _____ secondes\n2. Bloquer _____ secondes\n3. Expirer _____ secondes\n4. Répéter _____ fois\nEffet attendu en : _____ secondes'},
+      {type:'vrai_faux', enonce:'Accélérer pour rattraper un retard est une bonne stratégie anti-stress.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'Vous avez 20 min de retard. Écrivez exactement ce que vous dites au client en l\'appelant :', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'qcm', enonce:'Le "recadrage cognitif" consiste à :', choix:['A. Cadrer la photo de son camion','B. Changer sa façon de voir une situation pour la rendre moins stressante','C. Remettre le cadre du tableau de bord','D. Appeler l\'encadrant pour recadrer le client'], reponse:'Réponse : ___'},
+    ]
+  };
+
+  FICHES_ELEVES.prise_de_poste = {
+    titre:'La prise de poste parfaite',
+    exercices:[
+      {type:'liste', enonce:'Listez dans l\'ordre les 10 étapes de la prise de poste parfaite :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________\n6. _______________\n7. _______________\n8. _______________\n9. _______________\n10. ______________'},
+      {type:'vrai_faux', enonce:'Il est suffisant d\'arriver exactement à l\'heure de prise de poste.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'Vous remarquez au tour du véhicule qu\'un pneu semble sous-gonflé. Décrivez exactement ce que vous faites :', reponse:'_________________________________________________'},
+      {type:'qcm', enonce:'Vous lisez la feuille de route. À quel moment de la journée ?', choix:['A. En conduisant vers le premier client','B. La veille au soir à la maison','C. Avant de commencer à charger','D. En arrivant chez le premier client'], reponse:'Réponse : ___'},
+      {type:'calcul', enonce:'Votre prise de poste est à 5h30. Vous avez 5 vérifications à faire (2 min chacune) avant de partir. À quelle heure devez-vous arriver au dépôt au plus tard ?', reponse:'5 × 2 min = _____ min\nArriver à ___:___ au plus tard'},
+    ]
+  };
+
+  FICHES_ELEVES.droit_travail = {
+    titre:'Vos droits en CDDI',
+    exercices:[
+      {type:'calcul', enonce:'Vous êtes en CDDI depuis 11 mois. Combien de jours de congés avez-vous accumulé ?', reponse:'___ mois × 2,5 jours = _____ jours de congés'},
+      {type:'vrai_faux', enonce:'En CDDI, je n\'ai pas droit à la mutuelle d\'entreprise.', reponse:'VRAI □   FAUX □'},
+      {type:'qcm', enonce:'Le CDDI peut durer au maximum :', choix:['A. 6 mois','B. 12 mois','C. 18 mois','D. 24 mois'], reponse:'Réponse : ___'},
+      {type:'texte', enonce:'Expliquez avec vos mots ce qu\'est le CPF et à quoi il sert :', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'vrai_faux', enonce:'Mon CPF disparaît quand je quitte La Table de Cana.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'Citez 3 obligations que vous avez en tant que salarié en CDDI :', reponse:'1. _______________\n2. _______________\n3. _______________'},
+    ]
+  };
+})();
+
+/* ── 3. SLIDE HACCP AVANCÉ ── */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.haccp_avance = {
+    titre:'HACCP avancé — Certification',
+    icon:'🏅',
+    couleur:'#0ea5e9',
+    slides:[
+      {type:'titre', titre:'HACCP avancé', sous:'Préparer la certification · Traçabilité · Cas pratiques', icon:'🏅', couleur:'#0ea5e9'},
+      {
+        type:'haccp_7principes',
+        titre:'Les 7 principes HACCP — à connaître par cœur',
+        principes:[
+          {num:1, principe:'Analyser les dangers', detail:'Identifier tous les dangers biologiques, chimiques et physiques'},
+          {num:2, principe:'Identifier les CCP', detail:'Points Critiques de Contrôle — où maîtriser le danger'},
+          {num:3, principe:'Établir les limites critiques', detail:'Températures, durées — les seuils à ne jamais dépasser'},
+          {num:4, principe:'Établir la surveillance', detail:'Comment et à quelle fréquence contrôler chaque CCP'},
+          {num:5, principe:'Établir les mesures correctives', detail:'Que faire si un CCP n\'est pas maîtrisé'},
+          {num:6, principe:'Établir la vérification', detail:'S\'assurer que le système fonctionne réellement'},
+          {num:7, principe:'Établir la documentation', detail:'Enregistrer tout — traçabilité obligatoire'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'🌡️',
+        sous:'Question pratique HACCP',
+        question:'Lors du chargement, vous constatez que les plats cuisinés sont à +6°C au lieu de +3°C maximum. Les produits sont prévus pour 4h de tournée. Que faites-vous ?',
+        items:[
+          '❌ Ne pas charger et partir quand même — trop risqué',
+          '✅ Signaler immédiatement à l\'encadrant AVANT de toucher quoi que ce soit',
+          '✅ Ne pas prendre la décision seul — c\'est une décision managériale et légale',
+          '✅ Documenter l\'anomalie sur le relevé de température avec l\'heure exacte',
+          '✅ L\'encadrant décide : rejeter les produits, trouver une solution, ou différer la livraison',
+          '✅ Si les produits sont livrés malgré tout — noter sur le BL la température constatée',
+        ]
+      },
+      {
+        type:'haccp_tracabilite',
+        titre:'La traçabilité — comment ça marche en pratique',
+        etapes:[
+          {etape:'À réception', action:'Note le numéro de lot et la date limite', document:'Bon de livraison fournisseur', col:'#3b82f6'},
+          {etape:'Au chargement', action:'Relève la température + heure + chauffeur', document:'Relevé de température départ', col:'#f97316'},
+          {etape:'En tournée', action:'Maintient la chaîne (frigo camion)', document:'Pas de document — surveillance', col:'#22c55e'},
+          {etape:'À la livraison', action:'Relève la température + signature BL', document:'BL signé avec température', col:'#a855f7'},
+          {etape:'En cas de problème', action:'Remonte à partir du numéro de lot', document:'Tous les documents archivés', col:'#ef4444'},
+        ]
+      },
+      {
+        type:'haccp_allergenes',
+        titre:'Les 14 allergènes majeurs — votre responsabilité',
+        allergenes:[
+          {nom:'Gluten',icon:'🌾',aliment:'Blé, seigle, orge, avoine'},
+          {nom:'Crustacés',icon:'🦐',aliment:'Crevettes, homard, crabe'},
+          {nom:'Œufs',icon:'🥚',aliment:'Dans les plats cuisinés, mayonnaise'},
+          {nom:'Poissons',icon:'🐟',aliment:'Sauces, bouillons de poisson'},
+          {nom:'Arachides',icon:'🥜',aliment:'Cacahuètes, huile d\'arachide'},
+          {nom:'Soja',icon:'🫘',aliment:'Tofu, sauce soja'},
+          {nom:'Lait',icon:'🥛',aliment:'Beurre, fromage, crème'},
+          {nom:'Fruits à coque',icon:'🌰',aliment:'Noix, amandes, noisettes'},
+        ],
+        note:'Si un client demande la composition d\'un plat : ne jamais inventer. Dire "je vérifie avec mon responsable" puis appeler.'
+      },
+      {
+        type:'recap',
+        titre:'Ce qu\'un contrôleur DDPP vérifie chez vous',
+        items:[
+          '📋 Vos relevés de température sont-ils remplis et signés ?',
+          '🌡️ Le frigo du camion est-il à la bonne température ?',
+          '📦 Les produits sont-ils dans des contenants couverts et étiquetés ?',
+          '🧤 Portez-vous des gants pour manipuler les denrées non emballées ?',
+          '📅 Les dates de péremption sont-elles respectées ?',
+          '✍️ Pouvez-vous retracer l\'origine de chaque produit (numéro de lot) ?',
+        ],
+        couleur:'#0ea5e9'
+      }
+    ]
+  };
+})();
+
+/* ── 4. BILAN HEBDOMADAIRE FORMATEUR ── */
+(function(){
+  if(typeof DB === 'undefined') return;
+  if(!DB.bilans_hebdo) DB.bilans_hebdo = {};
+
+  window.renderBilanHebdo = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">📊 Bilan hebdomadaire</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">Votre point de la semaine — à faire chaque vendredi</div>';
+
+    var now = new Date();
+    var semaine = Math.ceil((now - new Date(now.getFullYear(),0,1)) / 604800000);
+    var cleSem = now.getFullYear()+'_S'+semaine;
+
+    if(!DB.bilans_hebdo[cleSem]) DB.bilans_hebdo[cleSem] = {};
+    var bilan = DB.bilans_hebdo[cleSem];
+
+    /* Indicateurs rapides */
+    var actifs = (DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+    var absences = bilan.absences || [];
+    var incidents = bilan.incidents || [];
+
+    h += '<div class="card" style="margin-bottom:16px">';
+    h += '<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">Semaine '+semaine+' — '+now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})+'</div>';
+
+    /* Présence */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">👥 Présence cette semaine</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+    actifs.forEach(function(s){
+      var presKey = 'pres_'+s.id;
+      var pres = bilan[presKey] !== undefined ? bilan[presKey] : 'ok';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px">';
+      if(typeof avt === 'function') h += avt(s).replace('width:40px;height:40px','width:28px;height:28px').replace('font-size:20px','font-size:14px');
+      h += '<span style="font-size:12px;font-weight:700;flex:1">'+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+      h += '<select onchange="noterPresence(\''+cleSem+'\',\''+presKey+'\',this.value)" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px">';
+      ['ok','absent_justifie','absent_injustifie','retard','maladie'].forEach(function(opt){
+        var labels = {ok:'✅ Présent',absent_justifie:'🟡 Absent justifié',absent_injustifie:'🔴 Absent injustifié',retard:'⏰ Retard',maladie:'🏥 Maladie'};
+        h += '<option value="'+opt+'"'+(pres===opt?' selected':'')+'>'+labels[opt]+'</option>';
+      });
+      h += '</select></div>';
+    });
+    h += '</div>';
+
+    /* Incidents semaine */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">🚨 Incidents / Remarques semaine</div>';
+    h += '<textarea id="bilan-incidents" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box" placeholder="Incidents route, retards, remarques clients, problèmes matériel...">'+(bilan.notes_incidents||'')+'</textarea>';
+
+    /* Points positifs */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:10px 0 8px">⭐ Points positifs à noter</div>';
+    h += '<textarea id="bilan-positifs" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box" placeholder="Bonne conduite, client satisfait, initiative remarquée...">'+(bilan.notes_positifs||'')+'</textarea>';
+
+    /* Formations prévues semaine prochaine */
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:10px 0 8px">📅 Formation prévue semaine prochaine</div>';
+    h += '<input id="bilan-formation-prevue" value="'+(bilan.formation_prevue||'')+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;box-sizing:border-box" placeholder="Ex: Bloc chaîne du froid — groupe — lundi 9h">';
+
+    h += '<div style="display:flex;gap:8px;margin-top:14px">';
+    h += '<button class="btn btn-primary" onclick="sauverBilanHebdo(\''+cleSem+'\')">💾 Sauvegarder le bilan</button>';
+    h += '<button class="btn btn-secondary" onclick="imprimerBilanHebdo(\''+cleSem+'\')">🖨️ Imprimer</button>';
+    h += '</div></div>';
+
+    /* Historique bilans */
+    var keys = Object.keys(DB.bilans_hebdo).sort().reverse().slice(1,5);
+    if(keys.length){
+      h += '<div class="card"><div class="card-title">📚 Bilans précédents</div>';
+      keys.forEach(function(k){
+        var b = DB.bilans_hebdo[k];
+        h += '<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text)">'+k.replace('_',' — ')+(b.formation_prevue?' · '+b.formation_prevue:'')+'</div>';
+      });
+      h += '</div>';
+    }
+
+    c2.innerHTML = h;
+  };
+
+  window.noterPresence = function(sem, key, val){
+    if(!DB.bilans_hebdo) DB.bilans_hebdo = {};
+    if(!DB.bilans_hebdo[sem]) DB.bilans_hebdo[sem] = {};
+    DB.bilans_hebdo[sem][key] = val;
+    if(typeof sauver === 'function') sauver();
+  };
+
+  window.sauverBilanHebdo = function(sem){
+    if(!DB.bilans_hebdo[sem]) DB.bilans_hebdo[sem] = {};
+    var inc = document.getElementById('bilan-incidents');
+    var pos = document.getElementById('bilan-positifs');
+    var form = document.getElementById('bilan-formation-prevue');
+    if(inc) DB.bilans_hebdo[sem].notes_incidents = inc.value;
+    if(pos) DB.bilans_hebdo[sem].notes_positifs = pos.value;
+    if(form) DB.bilans_hebdo[sem].formation_prevue = form.value;
+    if(typeof sauver === 'function') sauver();
+    if(typeof toast === 'function') toast('Bilan sauvegardé ✅','ok');
+  };
+
+  window.imprimerBilanHebdo = function(sem){
+    var bilan = (DB.bilans_hebdo||{})[sem]||{};
+    var actifs = (DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+    var win = window.open('','_blank');
+    if(!win) return;
+    var css = 'body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px}h1{font-size:16px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#0f1923;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:7px;font-size:11px}.box{background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:10px}@media print{button{display:none}}';
+    var presLabels = {ok:'✅ Présent',absent_justifie:'🟡 Absent justifié',absent_injustifie:'🔴 Absent injustifié',retard:'⏰ Retard',maladie:'🏥 Maladie'};
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+    html += '<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+    html += '<h1>📊 Bilan hebdomadaire — '+sem.replace('_',' ')+'</h1>';
+    html += '<h2 style="font-size:12px;font-weight:900;color:#f97316">Présence</h2>';
+    html += '<table><tr><th>Salarié</th><th>Présence</th><th>Observation</th></tr>';
+    actifs.forEach(function(s){
+      var pres = bilan['pres_'+s.id]||'ok';
+      html += '<tr><td>'+s.prenom+(s.nom?' '+s.nom:'')+'</td><td>'+(presLabels[pres]||pres)+'</td><td style="min-width:120px"></td></tr>';
+    });
+    html += '</table>';
+    if(bilan.notes_incidents) html += '<div class="box"><b>🚨 Incidents :</b><br>'+bilan.notes_incidents+'</div>';
+    if(bilan.notes_positifs) html += '<div class="box"><b>⭐ Points positifs :</b><br>'+bilan.notes_positifs+'</div>';
+    if(bilan.formation_prevue) html += '<div class="box"><b>📅 Formation prévue :</b><br>'+bilan.formation_prevue+'</div>';
+    html += '</body></html>';
+    win.document.write(html); win.document.close();
+  };
+})();
+
+/* ── 5. MODULE TOURNÉES DANS DOSSIER SALARIÉ ── */
+(function(){
+  if(typeof DB === 'undefined') return;
+  if(!DB.tournees) DB.tournees = {};
+
+  window.ajouterTournee = function(salId){
+    var date = prompt('Date de la tournée (JJ/MM/AAAA) :', new Date().toLocaleDateString('fr-FR'));
+    if(!date) return;
+    var km = prompt('Kilométrage parcouru :');
+    var incidents = prompt('Incidents ou remarques (laisser vide si aucun) :');
+    var score = prompt('Auto-évaluation du chauffeur (1-4) :');
+
+    if(!DB.tournees[salId]) DB.tournees[salId] = [];
+    DB.tournees[salId].push({
+      date: date,
+      km: km ? parseInt(km) : 0,
+      incidents: incidents || '',
+      score: score ? parseInt(score) : 0,
+      saisie: new Date().toISOString()
+    });
+    if(typeof sauver === 'function') sauver();
+    if(typeof toast === 'function') toast('Tournée ajoutée ✅','ok');
+    afficherTournees(salId);
+  };
+
+  window.afficherTournees = function(salId){
+    var zone = document.getElementById('tournees-zone');
+    if(!zone) return;
+    var tournees = (DB.tournees&&DB.tournees[salId]) ? DB.tournees[salId] : [];
+
+    if(!tournees.length){
+      zone.innerHTML = '<div style="color:var(--sub);font-size:12px;padding:10px">Aucune tournée enregistrée. Cliquez sur "Ajouter" pour commencer.</div>';
+      return;
+    }
+
+    var h = '<div style="display:flex;flex-direction:column;gap:6px">';
+    tournees.slice(-10).reverse().forEach(function(t){
+      var col = t.score>=3?'var(--green)':t.score>=2?'var(--yellow)':'var(--red)';
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px">';
+      h += '<div style="font-size:11px;font-weight:700;color:var(--sub);width:80px;flex-shrink:0">'+t.date+'</div>';
+      if(t.km) h += '<div style="font-size:11px;color:var(--text)">'+t.km+' km</div>';
+      if(t.incidents) h += '<div style="flex:1;font-size:11px;color:var(--yellow)">⚠️ '+t.incidents+'</div>';
+      else h += '<div style="flex:1;font-size:11px;color:var(--green)">✅ Tournée sans incident</div>';
+      if(t.score) h += '<div style="font-size:14px;font-weight:900;color:'+col+'">'+t.score+'/4</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    zone.innerHTML = h;
+  };
+
+  /* Injecter dans le dossier salarié */
+  var oldOD = window.ouvrirDossier;
+  window.ouvrirDossier = function(salId){
+    window.dossierSalActif = salId;
+    window.progSalActif = salId;
+    if(oldOD) oldOD(salId);
+    /* Ajouter section tournées après chargement */
+    setTimeout(function(){
+      var overlay = document.getElementById('dossier-overlay') || document.querySelector('.dossier-content');
+      if(!overlay) return;
+      var existing = document.getElementById('tournees-section');
+      if(existing) existing.remove();
+      var sec = document.createElement('div');
+      sec.id = 'tournees-section';
+      sec.style.cssText = 'margin-top:14px';
+      sec.innerHTML = '<div class="card" style="border-color:rgba(74,158,216,.3)">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        +'<div class="card-title" style="color:var(--blue);margin:0">🚗 Historique des tournées</div>'
+        +'<button class="btn btn-primary btn-sm" onclick="ajouterTournee('+salId+')">+ Ajouter une tournée</button></div>'
+        +'<div id="tournees-zone"></div></div>';
+      overlay.appendChild(sec);
+      afficherTournees(salId);
+    }, 300);
+  };
+})();
+
+/* ── 6. BRANCHER DANS LE ROUTER ── */
+(function(){
+  var _old = window.render;
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(page === 'bilan_hebdo' && c){
+      if(typeof renderBilanHebdo === 'function') renderBilanHebdo(c);
+      return;
+    }
+    if(_old) _old(page);
+  };
+
+  /* Ajouter dans sidebar section Formateur */
+  var sb = document.querySelector('.sb');
+  if(sb){
+    var toAdd = [{p:'bilan_hebdo',ico:'📊',lbl:'Bilan hebdomadaire'}];
+    toAdd.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d = document.createElement('div');
+        d.className = 'sb-item';
+        d.setAttribute('data-p', it.p);
+        d.innerHTML = '<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick = function(){ window.nav(it.p); };
+        sb.appendChild(d);
+      }
+    });
+  }
+})();
+
+/* ── NOUVEAUX TYPES SLIDES ── */
+(function(){
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+      case 'haccp_7principes':
+        var h='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.principes.forEach(function(p){
+          h+='<div style="display:flex;align-items:center;gap:12px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:12px 16px">';
+          h+='<div style="width:32px;height:32px;border-radius:50%;background:#0ea5e9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0">'+p.num+'</div>';
+          h+='<div><div style="font-size:14px;font-weight:800;color:#fff">'+p.principe+'</div>';
+          h+='<div style="font-size:12px;color:rgba(255,255,255,.6)">'+p.detail+'</div></div></div>';
+        });
+        return h+'</div>';
+
+      case 'haccp_tracabilite':
+        var h2='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h2+='<div style="display:flex;align-items:stretch;gap:0">';
+        slide.etapes.forEach(function(e,i){
+          h2+='<div style="flex:1;background:'+e.col+'15;border:1px solid '+e.col+'44;border-radius:10px;padding:14px;text-align:center;margin:0 4px">';
+          h2+='<div style="font-size:11px;font-weight:800;color:'+e.col+';margin-bottom:8px">'+e.etape+'</div>';
+          h2+='<div style="font-size:12px;color:rgba(255,255,255,.8);margin-bottom:6px">'+e.action+'</div>';
+          h2+='<div style="font-size:10px;color:rgba(255,255,255,.5);font-style:italic">'+e.document+'</div></div>';
+          if(i<slide.etapes.length-1) h2+='<div style="display:flex;align-items:center;color:rgba(255,255,255,.2);font-size:16px">→</div>';
+        });
+        return h2+'</div>';
+
+      case 'haccp_allergenes':
+        var h3='<div style="text-align:center;margin-bottom:16px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h3+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">';
+        slide.allergenes.forEach(function(a){
+          h3+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;text-align:center">';
+          h3+='<div style="font-size:24px;margin-bottom:4px">'+a.icon+'</div>';
+          h3+='<div style="font-size:12px;font-weight:800;color:#fca5a5">'+a.nom+'</div>';
+          h3+='<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:3px">'+a.aliment+'</div></div>';
+        });
+        h3+='</div>';
+        h3+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;font-size:13px;color:#fcd34d;font-weight:700;text-align:center">⚠️ '+slide.note+'</div>';
+        return h3;
+
+      default:
+        return _old(slide, couleur);
+    }
+  };
+})();
+
+console.log('Suite complète chargée — QCM enrichis, fiches élèves, HACCP avancé, bilan hebdo, tournées');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE RECRUTEMENT V2 — COMPLET ET PROFESSIONNEL
+   Structure : Présentation responsable → Candidat → Entreprise
+   → Le poste → Échanges → Questions → Décision
+   Dévoilement progressif sur TOUT le contenu
+═══════════════════════════════════════════════════════════════ */
+
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.recrutement = {
+    titre:'Entretien de recrutement',
+    icon:'🤝',
+    couleur:'#f97316',
+    slides:[
+
+      /* ══ SLIDE 0 — OUVERTURE ══ */
+      {
+        type:'recru_ouverture',
+        titre:'Entretien de recrutement\nChauffeur Livreur Polyvalent',
+        sous:'La Table de Cana · Marseille',
+        duree:'45 minutes ensemble',
+        plan:[
+          {num:1, label:'Présentation mutuelle', duree:'5 min', icon:'👋'},
+          {num:2, label:'La Table de Cana', duree:'10 min', icon:'🏢'},
+          {num:3, label:'Le poste en détail', duree:'15 min', icon:'🚐'},
+          {num:4, label:'Vos questions / Nos questions', duree:'10 min', icon:'💬'},
+          {num:5, label:'Conclusion & Suite', duree:'5 min', icon:'✅'},
+        ]
+      },
+
+      /* ══ SLIDE 1 — PRÉSENTATION RESPONSABLE ══ */
+      {
+        type:'recru_responsable',
+        titre:'Je me présente',
+        items:[
+          {label:'Mon rôle', val:'Responsable logistique — je coordonne toute l\'activité de livraison', icon:'👤'},
+          {label:'Mon quotidien', val:'Je planifie les tournées, je forme les chauffeurs, je résous les problèmes terrain', icon:'🔧'},
+          {label:'Ma façon de travailler', val:'Proche de mon équipe — accessible, disponible, à l\'écoute. Mais la hiérarchie existe et se respecte.', icon:'🤝'},
+          {label:'Ce que je cherche', val:'Quelqu\'un de fiable, polyvalent et motivé à progresser. Pas le profil parfait — la bonne attitude.', icon:'🎯'},
+          {label:'Mon engagement', val:'Si vous avancez, je vous aide à avancer. Si vous bloquez, on en parle. Ensemble on trouve des solutions.', icon:'💪'},
+        ]
+      },
+
+      /* ══ SLIDE 2 — PAROLE AU CANDIDAT ══ */
+      {
+        type:'recru_candidat',
+        titre:'À vous — présentez-vous',
+        sous:'Prenez 2 à 3 minutes. Parlez librement.',
+        consignes:[
+          {q:'D\'où vous venez ?', detail:'Votre parcours, vos expériences passées — tout ce que vous voulez partager'},
+          {q:'Où vous en êtes aujourd\'hui ?', detail:'Votre situation actuelle, comment vous êtes arrivé à cet entretien'},
+          {q:'Où vous voulez aller ?', detail:'Ce que vous cherchez, ce qui vous attire dans ce poste'},
+        ],
+        note_formateur:'Ne pas interrompre. Laisser parler. Écouter comment la personne raconte son histoire — c\'est aussi révélateur que le contenu.',
+        signaux:[
+          {signal:'Raconte avec clarté et chronologie', type:'positif'},
+          {signal:'Assume ses périodes difficiles sans les cacher', type:'positif'},
+          {signal:'Montre une direction, un projet', type:'positif'},
+          {signal:'Critique tous ses anciens employeurs', type:'negatif'},
+          {signal:'Ne sait pas pourquoi il est là', type:'negatif'},
+        ]
+      },
+
+      /* ══ SLIDE 3 — QUI SOMMES NOUS ══ */
+      {
+        type:'recru_identite',
+        titre:'La Table de Cana — Qui sommes-nous ?',
+        items:[
+          {icon:'🏛️', titre:'Une SIAE', desc:'Structure d\'Insertion par l\'Activité Économique. Notre mission : accompagner des personnes vers un emploi durable. Ce n\'est pas un emploi classique — c\'est un tremplin.'},
+          {icon:'📍', titre:'Implantés à Marseille', desc:'Nous servons des clients sur tout le département 13. Collectivités, entreprises, particuliers, événements privés.'},
+          {icon:'👥', titre:'Une équipe soudée', desc:'Des chauffeurs, des cuisiniers, des encadrants qui travaillent ensemble chaque jour. L\'entraide est une valeur, pas un slogan.'},
+          {icon:'📈', titre:'Votre parcours ici', desc:'Formation continue, accompagnement projet professionnel, certifications financées. On investit sur vous.'},
+        ]
+      },
+
+      /* ══ SLIDE 4 — 3 ACTIVITÉS ══ */
+      {
+        type:'recru_activites',
+        titre:'Nos 3 activités — vous faites partie des trois',
+        activites:[
+          {
+            nom:'🎉 Traiteur événementiel',
+            col:'#ec4899',
+            points:[
+              'Buffets, mariages, cocktails, séminaires',
+              'Livraison de plats chauds et froids',
+              'Matériel et vaisselle fine',
+              'Événements en soirée ou week-end parfois',
+              '→ Conduite douce obligatoire — vaisselle fragile',
+            ]
+          },
+          {
+            nom:'🍽️ Restauration collective',
+            col:'#3b82f6',
+            points:[
+              'Clients réguliers : entreprises, associations, administrations',
+              'Livraisons quotidiennes planifiées',
+              'Créneaux stricts — ponctualité critique',
+              'BL à signer à chaque livraison',
+              '→ Régularité et rigueur avant tout',
+            ]
+          },
+          {
+            nom:'🌳 Centres de loisirs',
+            col:'#22c55e',
+            points:[
+              'Livraison TOUS les mercredis de l\'année',
+              'Toutes les vacances scolaires',
+              'Livraison professionnelle dans un contexte animé',
+              'Tenue et comportement irréprochables',
+              '→ Représenter La Table de Cana en toutes circonstances',
+            ]
+          },
+        ]
+      },
+
+      /* ══ SLIDE 5 — LE POSTE RÉEL ══ */
+      {
+        type:'recru_poste',
+        titre:'Le poste — la réalité sans filtre',
+        avertissement:'Ce n\'est pas un poste de chauffeur. C\'est un poste polyvalent logistique.',
+        missions:[
+          {icon:'🚐', mission:'Livraisons', detail:'Conduire, livrer, faire signer les BL, signaler tout incident'},
+          {icon:'📦', mission:'Préparation de commandes', detail:'Préparer les colis, vérifier les bons, organiser le chargement LIFO'},
+          {icon:'🔧', mission:'Rangement & Entretien', detail:'Ranger l\'entrepôt, nettoyer le camion, entretenir le matériel'},
+          {icon:'👫', mission:'Aide aux collègues', detail:'Si un collègue est débordé — vous aidez. Sans qu\'on vous le demande.'},
+          {icon:'💬', mission:'Communication', detail:'Avec la cuisine, le commercial, les autres encadrants, les clients'},
+          {icon:'🧹', mission:'Nettoyage hall logistique', detail:'L\'espace de travail propre est une responsabilité collective'},
+        ]
+      },
+
+      /* ══ SLIDE 6 — HORAIRES ET PLANNING ══ */
+      {
+        type:'recru_horaires',
+        titre:'Les horaires — soyons clairs',
+        items:[
+          {icon:'⏰', label:'Amplitude', val:'6h00 à 18h00 selon les journées', col:'#f97316', important:true},
+          {icon:'📅', label:'Planning', val:'Fait chaque vendredi pour la semaine suivante', col:'#3b82f6', important:false},
+          {icon:'⚡', label:'Flexibilité', val:'Peut être modifié si livraison ajoutée au dernier moment', col:'#f59e0b', important:true},
+          {icon:'🌳', label:'Mercredis', val:'TOUS les mercredis de l\'année — sans exception', col:'#22c55e', important:true},
+          {icon:'🏖️', label:'Vacances scolaires', val:'Toutes les vacances = journées travaillées', col:'#22c55e', important:true},
+          {icon:'🔄', label:'Modulation', val:'Pas d\'horaire fixe — on dépend des clients', col:'#a855f7', important:false},
+        ],
+        message:'Si vous avez besoin d\'un horaire fixe et prévisible — ce poste n\'est probablement pas fait pour vous.\nSi vous aimez que chaque journée soit différente — vous êtes au bon endroit.'
+      },
+
+      /* ══ SLIDE 7 — LE PHYSIQUE ══ */
+      {
+        type:'recru_physique',
+        titre:'L\'aspect physique — pas question de le cacher',
+        items:[
+          {action:'Port de charges répété toute la journée', detail:'Caisses alimentaires, bacs GN, matériel traiteur — 15 à 25 kg par unité', icon:'🏋️', col:'#f97316'},
+          {action:'Chargement et déchargement', detail:'Matin au dépôt, puis chez chaque client — plusieurs dizaines de caisses', icon:'📦', col:'#f59e0b'},
+          {action:'Nettoyage du camion en fin de journée', detail:'Votre camion, votre responsabilité — toujours propre au retour', icon:'🚿', col:'#3b82f6'},
+          {action:'Nettoyage du hall logistique', detail:'Espace collectif = responsabilité collective', icon:'🧹', col:'#22c55e'},
+          {action:'Parfois en équipe sur les événements', detail:'Déchargement et installation avec collègues — esprit d\'équipe concret', icon:'👫', col:'#a855f7'},
+        ],
+        note:'Question directe que je vais vous poser : avez-vous des contre-indications médicales au port de charges répété ?'
+      },
+
+      /* ══ SLIDE 8 — LA CONDUITE ══ */
+      {
+        type:'recru_conduite_slide',
+        titre:'La conduite — nos exigences non négociables',
+        header:'Vous conduisez au nom de La Table de Cana. Votre conduite est notre image.',
+        regles:[
+          {regle:'Zéro alcool pendant le service', loi:'Taux légal : 0,0 g/L pour les professionnels — pas 0,2 — ZÉRO', col:'#ef4444', icon:'🍺'},
+          {regle:'Zéro téléphone au volant', loi:'S\'arrêter avant de décrocher — 135€ + 3 points si contrôle', col:'#ef4444', icon:'📵'},
+          {regle:'Conduite douce avec le traiteur', loi:'Vaisselle fine, plats chauds — freinage brutal = casse = retenue possible', col:'#f97316', icon:'🍽️'},
+          {regle:'Ceinture en permanence', loi:'Sans exception — même pour 100 mètres', col:'#f59e0b', icon:'🦺'},
+          {regle:'Signaler tout incident immédiatement', loi:'Accrochage, panne, client problème — appeler avant de décider seul', col:'#3b82f6', icon:'📞'},
+        ]
+      },
+
+      /* ══ SLIDE 9 — L'ESPRIT MAISON ══ */
+      {
+        type:'recru_esprit',
+        titre:'L\'esprit de La Table de Cana',
+        items:[
+          {icon:'👂', txt:'Je suis à l\'écoute — si vous avez un problème, une idée, une difficulté — vous venez me voir'},
+          {icon:'💡', txt:'Vos idées comptent — si vous voyez quelque chose à améliorer, dites-le. On avance ensemble.'},
+          {icon:'⚖️', txt:'La hiérarchie existe — la proximité ne veut pas dire absence de cadre. Le respect va dans les deux sens.'},
+          {icon:'🌱', txt:'On investit sur vous — formations, certifications, accompagnement projet. Ce parcours vous appartient.'},
+          {icon:'🤜', txt:'Entraide obligatoire — quand un collègue est débordé, on aide. C\'est notre culture, pas une option.'},
+          {icon:'🏆', txt:'Vos réussites sont reconnues — progression visible, badges, attestations. Votre parcours laisse une trace.'},
+        ]
+      },
+
+      /* ══ SLIDE 10 — NOS QUESTIONS ══ */
+      {
+        type:'recru_nos_questions',
+        titre:'Mes questions — je vous les pose maintenant',
+        instruction:'Je vais poser chaque question une par une. Prenez le temps de répondre.',
+        questions:[
+          {num:1, q:'Notre prise de poste est à 5h30. Comment vous organisez votre matinée pour être là à l\'heure — pas juste à l\'heure, en avance ?', focus:'Chercher : une solution concrète, pas "je mettrai mon réveil"'},
+          {num:2, q:'Comment vous venez jusqu\'ici le matin ? (Le bus ne passe pas à 5h30 partout à Marseille)', focus:'Chercher : voiture, scooter, vélo, quelqu\'un qui amène — une vraie solution'},
+          {num:3, q:'Le planning peut changer le vendredi soir pour le lundi. Vous avez des contraintes personnelles qui rendraient ça impossible certaines semaines ?', focus:'Garde d\'enfant, traitement médical, autre emploi — creuser avec tact'},
+          {num:4, q:'Décrivez-moi une situation où vous avez aidé quelqu\'un au travail sans qu\'on vous le demande.', focus:'Chercher un exemple CONCRET — pas "je suis quelqu\'un d\'altruiste"'},
+          {num:5, q:'Votre responsable prend une décision avec laquelle vous n\'êtes pas d\'accord. Que faites-vous ?', focus:'Chercher : il en parle directement, pas dans le dos, avec respect'},
+          {num:6, q:'Dans 2 ans, vous vous voyez où professionnellement ?', focus:'Même vague, c\'est OK — chercher une direction, pas une réponse parfaite'},
+        ]
+      },
+
+      /* ══ SLIDE 11 — VOS QUESTIONS ══ */
+      {
+        type:'recru_vos_questions',
+        titre:'Vos questions — c\'est votre tour',
+        sous:'Un candidat qui n\'a aucune question n\'est probablement pas vraiment intéressé.',
+        bonnes_questions:[
+          'Comment se passe la formation dans les premiers mois ?',
+          'Qu\'est-ce qui fait qu\'un chauffeur réussit bien ici ?',
+          'Comment fonctionne le planning concrètement ?',
+          'Y a-t-il des évolutions possibles dans le poste ?',
+          'Comment se passent les évaluations ?',
+        ],
+        questions_alarme:[
+          'Combien on est payé en heures sup ? (dès le début = signal)',
+          'On travaille vraiment tous les mercredis ? (doit déjà savoir)',
+          'Y a des primes ? (aucune question sur le travail lui-même)',
+          'C\'est quoi les jours de congés exactement ? (dès le début)',
+        ],
+        note_formateur:'Laisser du silence après "vous avez des questions ?". Un bon candidat prépare ses questions.'
+      },
+
+      /* ══ SLIDE 12 — SIGNAUX ══ */
+      {
+        type:'recru_grille',
+        titre:'Ma grille d\'observation — pendant tout l\'entretien',
+        criteres:[
+          {critere:'Ponctualité à l\'entretien', ok:'Arrivé en avance ou à l\'heure', nok:'En retard sans appel préalable'},
+          {critere:'Présentation physique', ok:'Tenue correcte, regard direct, poignée de main', nok:'Négligé, regard fuyant, téléphone sorti'},
+          {critere:'Qualité d\'écoute', ok:'Laisse finir les phrases, répond à ce qui est demandé', nok:'Coupe la parole, répond à côté'},
+          {critere:'Solution transport 5h30', ok:'Solution concrète et réaliste', nok:'Vague ou inexistante'},
+          {critere:'Rapport aux anciens employeurs', ok:'Respectueux même si expérience difficile', nok:'Critique systématique'},
+          {critere:'Esprit d\'équipe', ok:'Exemple concret d\'entraide spontanée', nok:'Aucun exemple ou réponse générale'},
+          {critere:'Projet à 2 ans', ok:'Une direction, même imprécise', nok:'Aucune idée ou uniquement financier'},
+        ]
+      },
+
+      /* ══ SLIDE 13 — CONCLUSION ══ */
+      {
+        type:'recru_conclusion',
+        titre:'Pour conclure cet entretien',
+        etapes:[
+          {num:1, action:'Résumer ce que vous avez compris du candidat', detail:'"Ce que j\'ai retenu de vous c\'est... — Est-ce que c\'est juste ?"', icon:'🗣️'},
+          {num:2, action:'Expliquer la suite du processus', detail:'Délai de réponse, visite médicale, documents à prévoir, date de prise de poste envisagée', icon:'📅'},
+          {num:3, action:'Remercier chaleureusement', detail:'Même si ce n\'est pas le bon profil — toujours partir sur quelque chose de positif', icon:'🙏'},
+          {num:4, action:'Remplir la fiche d\'observation maintenant', detail:'Dans les 10 minutes — la mémoire s\'efface vite. Pas demain.', icon:'📋'},
+        ],
+        message_final:'Un entretien bien mené laisse une bonne impression quelle que soit la décision. Votre crédibilité de recruteur se construit aussi dans ces moments.'
+      },
+    ]
+  };
+
+  /* Types rendus pour le slide recrutement V2 */
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+
+      case 'recru_ouverture':
+        return '<div style="text-align:center;padding:30px 0">'
+          +'<div style="font-size:60px;margin-bottom:20px">🤝</div>'
+          +'<div style="font-size:36px;font-weight:900;color:#fff;margin-bottom:10px;white-space:pre-line">'+slide.titre+'</div>'
+          +'<div style="font-size:16px;color:rgba(255,255,255,.6);margin-bottom:8px">'+slide.sous+'</div>'
+          +'<div style="font-size:14px;color:var(--orange);font-weight:700;margin-bottom:30px">⏱️ '+slide.duree+'</div>'
+          +'<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">'
+          +slide.plan.map(function(p){
+            return '<div style="background:rgba(249,115,22,.1);border:2px solid rgba(249,115,22,.3);border-radius:12px;padding:14px 18px;text-align:center;min-width:120px">'
+              +'<div style="font-size:24px;margin-bottom:6px">'+p.icon+'</div>'
+              +'<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px">'+p.label+'</div>'
+              +'<div style="font-size:11px;color:rgba(255,255,255,.5)">'+p.duree+'</div></div>';
+          }).join('')
+          +'</div></div>';
+
+      case 'recru_responsable':
+        var h='<div style="text-align:center;margin-bottom:24px"><div style="font-size:28px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.items.forEach(function(it){
+          h+='<div style="display:flex;align-items:start;gap:14px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:14px 18px">';
+          h+='<span style="font-size:24px;flex-shrink:0">'+it.icon+'</span>';
+          h+='<div><div style="font-size:12px;font-weight:800;color:rgba(249,115,22,.9);margin-bottom:4px">'+it.label+'</div>';
+          h+='<div style="font-size:14px;color:#fff">'+it.val+'</div></div></div>';
+        });
+        return h+'</div>';
+
+      case 'recru_candidat':
+        var h2='<div style="text-align:center;margin-bottom:20px">'
+          +'<div style="font-size:28px;font-weight:900;color:#fff;margin-bottom:8px">'+slide.titre+'</div>'
+          +'<div style="font-size:16px;color:rgba(255,255,255,.6);font-style:italic">'+slide.sous+'</div></div>';
+        h2+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">';
+        slide.consignes.forEach(function(c){
+          h2+='<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 20px">';
+          h2+='<div style="font-size:16px;font-weight:800;color:#f97316;margin-bottom:6px">'+c.q+'</div>';
+          h2+='<div style="font-size:13px;color:rgba(255,255,255,.6)">'+c.detail+'</div></div>';
+        });
+        h2+='</div>';
+        h2+='<div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:14px 18px">';
+        h2+='<div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;margin-bottom:8px">👁️ Note formateur — observer pendant qu\'il parle</div>';
+        h2+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+        slide.signaux.forEach(function(s){
+          var isPos = s.type==='positif';
+          h2+='<div style="font-size:12px;color:'+(isPos?'#86efac':'#fca5a5')+'">'+(isPos?'✅':'🚨')+' '+s.signal+'</div>';
+        });
+        h2+='</div></div>';
+        return h2;
+
+      case 'recru_identite':
+        var h3='<div style="text-align:center;margin-bottom:20px"><div style="font-size:28px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h3+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">';
+        slide.items.forEach(function(it){
+          h3+='<div style="background:rgba(255,255,255,.05);border:2px solid rgba(249,115,22,.25);border-radius:14px;padding:18px">';
+          h3+='<div style="font-size:28px;margin-bottom:10px">'+it.icon+'</div>';
+          h3+='<div style="font-size:15px;font-weight:900;color:#f97316;margin-bottom:8px">'+it.titre+'</div>';
+          h3+='<div style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6">'+it.desc+'</div></div>';
+        });
+        return h3+'</div>';
+
+      case 'recru_activites':
+        var h4='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h4+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">';
+        slide.activites.forEach(function(a){
+          h4+='<div style="background:'+a.col+'15;border:2px solid '+a.col+'44;border-radius:14px;padding:18px">';
+          h4+='<div style="font-size:16px;font-weight:900;color:'+a.col+';margin-bottom:14px">'+a.nom+'</div>';
+          a.points.forEach(function(p){
+            var isNote=p.startsWith('→');
+            h4+='<div style="font-size:'+(isNote?'11':'12')+'px;color:'+(isNote?a.col:'rgba(255,255,255,.8)')+';padding:4px 0;border-bottom:1px solid '+a.col+'22;font-weight:'+(isNote?'800':'400')+'">'+p+'</div>';
+          });
+          h4+='</div>';
+        });
+        return h4+'</div>';
+
+      case 'recru_poste':
+        var h5='<div style="text-align:center;margin-bottom:16px">';
+        h5+='<div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">'+slide.titre+'</div>';
+        h5+='<div style="display:inline-block;background:rgba(239,68,68,.15);border:2px solid rgba(239,68,68,.4);border-radius:10px;padding:8px 20px;font-size:14px;color:#fca5a5;font-weight:700">⚠️ '+slide.avertissement+'</div></div>';
+        h5+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+        slide.missions.forEach(function(m){
+          h5+='<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px;text-align:center">';
+          h5+='<div style="font-size:28px;margin-bottom:8px">'+m.icon+'</div>';
+          h5+='<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:6px">'+m.mission+'</div>';
+          h5+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+m.detail+'</div></div>';
+        });
+        return h5+'</div>';
+
+      case 'recru_horaires':
+        var h6='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h6+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">';
+        slide.items.forEach(function(it){
+          h6+='<div style="display:flex;align-items:center;gap:14px;background:'+it.col+'12;border:'+(it.important?'2':'1')+'px solid '+it.col+(it.important?'55':'33')+';border-radius:10px;padding:12px 18px">';
+          h6+='<span style="font-size:24px;flex-shrink:0">'+it.icon+'</span>';
+          h6+='<div style="width:110px;flex-shrink:0;font-size:11px;font-weight:800;color:'+it.col+'">'+it.label+'</div>';
+          h6+='<div style="font-size:13px;color:#fff;font-weight:'+(it.important?'700':'400')+'">'+it.val+'</div>';
+          if(it.important) h6+='<span style="font-size:10px;background:'+it.col+'33;color:'+it.col+';border-radius:5px;padding:2px 8px;font-weight:800;flex-shrink:0">IMPORTANT</span>';
+          h6+='</div>';
+        });
+        h6+='<div style="background:rgba(249,115,22,.1);border:2px solid rgba(249,115,22,.35);border-radius:10px;padding:14px;font-size:13px;color:#fed7aa;font-style:italic;text-align:center;white-space:pre-line">'+slide.message+'</div>';
+        return h6;
+
+      case 'recru_physique':
+        var h7='<div style="text-align:center;margin-bottom:16px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h7+='<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">';
+        slide.items.forEach(function(it){
+          h7+='<div style="display:flex;align-items:center;gap:14px;background:'+it.col+'12;border:2px solid '+it.col+'33;border-radius:10px;padding:13px 18px">';
+          h7+='<span style="font-size:26px;flex-shrink:0">'+it.icon+'</span>';
+          h7+='<div style="flex:1"><div style="font-size:14px;font-weight:800;color:'+it.col+'">'+it.action+'</div>';
+          h7+='<div style="font-size:12px;color:rgba(255,255,255,.7)">'+it.detail+'</div></div></div>';
+        });
+        h7+='<div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:12px 16px;font-size:13px;color:#c4b5fd;font-style:italic">👁️ '+slide.note+'</div>';
+        return h7;
+
+      case 'recru_conduite_slide':
+        var h8='<div style="text-align:center;margin-bottom:14px">';
+        h8+='<div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">'+slide.titre+'</div>';
+        h8+='<div style="font-size:13px;color:rgba(255,255,255,.6);font-style:italic">'+slide.header+'</div></div>';
+        h8+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.regles.forEach(function(r){
+          h8+='<div style="display:flex;align-items:start;gap:14px;background:'+r.col+'12;border:2px solid '+r.col+'44;border-radius:10px;padding:13px 18px">';
+          h8+='<span style="font-size:26px;flex-shrink:0">'+r.icon+'</span>';
+          h8+='<div><div style="font-size:14px;font-weight:900;color:'+r.col+'">'+r.regle+'</div>';
+          h8+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px">'+r.loi+'</div></div></div>';
+        });
+        return h8;
+
+      case 'recru_esprit':
+        var h9='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h9+='<div style="display:flex;flex-direction:column;gap:9px">';
+        slide.items.forEach(function(it){
+          h9+='<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:13px 18px">';
+          h9+='<span style="font-size:26px;flex-shrink:0">'+it.icon+'</span>';
+          h9+='<span style="font-size:14px;color:#fff">'+it.txt+'</span></div>';
+        });
+        return h9+'</div>';
+
+      case 'recru_nos_questions':
+        var h10='<div style="margin-bottom:16px">';
+        h10+='<div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">'+slide.titre+'</div>';
+        h10+='<div style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:8px 14px;font-size:13px;color:#fed7aa;margin-bottom:16px">📌 '+slide.instruction+'</div></div>';
+        h10+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.questions.forEach(function(q){
+          h10+='<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 18px">';
+          h10+='<div style="display:flex;gap:10px;align-items:start;margin-bottom:8px">';
+          h10+='<div style="width:28px;height:28px;border-radius:50%;background:#8b5cf6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0">'+q.num+'</div>';
+          h10+='<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.5">'+q.q+'</div></div>';
+          h10+='<div style="background:rgba(249,115,22,.1);border-left:3px solid #f97316;padding:7px 12px;font-size:11px;color:#fed7aa;border-radius:0 6px 6px 0">👁️ '+q.focus+'</div></div>';
+        });
+        return h10+'</div>';
+
+      case 'recru_vos_questions':
+        var h11='<div style="text-align:center;margin-bottom:16px">';
+        h11+='<div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">'+slide.titre+'</div>';
+        h11+='<div style="font-size:14px;color:rgba(255,255,255,.6);font-style:italic">'+slide.sous+'</div></div>';
+        h11+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+        h11+='<div style="background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.3);border-radius:12px;padding:16px">';
+        h11+='<div style="font-size:13px;font-weight:800;color:#22c55e;margin-bottom:12px">✅ Bonnes questions — signe d\'intérêt</div>';
+        slide.bonnes_questions.forEach(function(q){
+          h11+='<div style="font-size:12px;color:rgba(255,255,255,.8);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">• '+q+'</div>';
+        });
+        h11+='</div>';
+        h11+='<div style="background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.3);border-radius:12px;padding:16px">';
+        h11+='<div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:12px">🚨 Questions signal d\'alarme</div>';
+        slide.questions_alarme.forEach(function(q){
+          h11+='<div style="font-size:12px;color:rgba(255,255,255,.8);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">• '+q+'</div>';
+        });
+        h11+='</div></div>';
+        h11+='<div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:8px;padding:10px 14px;margin-top:12px;font-size:12px;color:#c4b5fd">👁️ '+slide.note_formateur+'</div>';
+        return h11;
+
+      case 'recru_grille':
+        var h12='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h12+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.criteres.forEach(function(cr){
+          h12+='<div style="display:grid;grid-template-columns:160px 1fr 1fr;gap:8px;align-items:center">';
+          h12+='<div style="font-size:12px;font-weight:800;color:#f97316">'+cr.critere+'</div>';
+          h12+='<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:7px 10px;font-size:11px;color:#86efac">✅ '+cr.ok+'</div>';
+          h12+='<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:7px 10px;font-size:11px;color:#fca5a5">🚨 '+cr.nok+'</div>';
+          h12+='</div>';
+        });
+        return h12+'</div>';
+
+      case 'recru_conclusion':
+        var h13='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h13+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">';
+        slide.etapes.forEach(function(e){
+          h13+='<div style="display:flex;align-items:start;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:14px 18px">';
+          h13+='<div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0">'+e.num+'</div>';
+          h13+='<span style="font-size:22px;flex-shrink:0">'+e.icon+'</span>';
+          h13+='<div><div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:4px">'+e.action+'</div>';
+          h13+='<div style="font-size:12px;color:rgba(255,255,255,.6)">'+e.detail+'</div></div></div>';
+        });
+        h13+='<div style="background:rgba(249,115,22,.1);border:2px solid rgba(249,115,22,.3);border-radius:12px;padding:16px;text-align:center;font-size:15px;color:#fed7aa;font-weight:700;font-style:italic">💡 '+slide.message_final+'</div>';
+        return h13;
+
+      default:
+        return _old ? _old(slide, couleur) : '<div style="color:#fff;padding:20px">Type non reconnu : '+slide.type+'</div>';
+    }
+  };
+
+  console.log('Slide recrutement V2 chargé — 14 slides professionnelles');
+})();
+
+</script>
