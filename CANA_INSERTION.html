@@ -16295,3 +16295,906 @@ window.genRapportIAEntretien=function(salId,entretienIdx){
 console.log('ERP IAE COMPLET CHARGÉ ✅');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CENTRE DE FORMATION CHAUFFEUR — PARCOURS COMPLET
+   Partie 1 : Données + Accueil + Découverte + Carnet de bord
+═══════════════════════════════════════════════════════════════ */
+
+/* ── DONNÉES PARCOURS ── */
+if(!DB.parcours_chauffeur) DB.parcours_chauffeur = {};
+/*
+  DB.parcours_chauffeur[salId] = {
+    etape_accueil: {items: {key: bool}, date_validation: ''},
+    competences: {key: {niveau: 0-4, date, formateur, commentaire}},
+    carnet: {date: {heure_arrivee, heure_depart, vehicule, km, clients, livraisons, incidents, reussites, objectifs_statut, comportement, stress, motivation, note_resp, note_sal}},
+    defis: [defiId, ...],
+    niveau_global: 1-5
+  }
+*/
+
+var ACCUEIL_ITEMS = [
+  {id:'structure', label:'Présentation de la structure et de la mission SIAE'},
+  {id:'collegues', label:'Présentation des collègues et de l\'équipe'},
+  {id:'responsable', label:'Présentation du responsable et de sa disponibilité'},
+  {id:'horaires', label:'Présentation des horaires et du planning'},
+  {id:'valeurs', label:'Présentation des valeurs de l\'entreprise'},
+  {id:'locaux', label:'Visite des locaux — dépôt, entrepôt, vestiaires'},
+  {id:'vehicules', label:'Présentation des véhicules et de leur utilisation'},
+  {id:'epi', label:'Présentation et remise des EPI — gilet, chaussures, gants'},
+  {id:'reglement', label:'Présentation du règlement intérieur'},
+  {id:'securite', label:'Présentation des procédures de sécurité'},
+  {id:'clients', label:'Présentation des clients et des 3 activités'},
+  {id:'materiel', label:'Présentation du matériel traiteur — GN, chafing dish'},
+  {id:'telephone', label:'Remise et explication du téléphone professionnel'},
+  {id:'gps', label:'Explication du GPS et des outils de navigation'},
+  {id:'documents', label:'Explication des BL et feuilles de route'},
+];
+
+var COMPETENCES_METIER = [
+  {id:'ouvrir_vehicule', label:'Ouvrir et préparer le véhicule', cat:'🚐 Véhicule'},
+  {id:'verifier_niveaux', label:'Vérifier les niveaux (huile, carburant)', cat:'🚐 Véhicule'},
+  {id:'verifier_pneus', label:'Vérifier la pression des pneus', cat:'🚐 Véhicule'},
+  {id:'tour_vehicule', label:'Faire le tour du véhicule complet', cat:'🚐 Véhicule'},
+  {id:'preparer_chargement', label:'Préparer un chargement LIFO', cat:'📦 Chargement'},
+  {id:'arrimage', label:'Arrimer correctement la cargaison', cat:'📦 Chargement'},
+  {id:'verif_temperature', label:'Vérifier et noter la température frigo', cat:'🌡️ HACCP'},
+  {id:'haccp_pratique', label:'Appliquer les règles HACCP en situation réelle', cat:'🌡️ HACCP'},
+  {id:'lire_tournee', label:'Lire et comprendre une feuille de route', cat:'📋 Documents'},
+  {id:'remplir_bl', label:'Remplir et faire signer un BL', cat:'📋 Documents'},
+  {id:'gerer_refus', label:'Gérer un refus ou une réclamation client', cat:'📋 Documents'},
+  {id:'gps_navigation', label:'Utiliser le GPS professionnellement', cat:'🗺️ Navigation'},
+  {id:'stationnement', label:'Stationner correctement en zone de livraison', cat:'🗺️ Navigation'},
+  {id:'conduite_douce', label:'Adopter une conduite douce avec chargement', cat:'🚗 Conduite'},
+  {id:'eco_conduite', label:'Appliquer l\'éco-conduite sur une vraie tournée', cat:'🚗 Conduite'},
+  {id:'relation_client', label:'Se présenter et communiquer avec un client', cat:'🤝 Client'},
+  {id:'client_mecontent', label:'Gérer un client mécontent avec méthode ERAC', cat:'🤝 Client'},
+  {id:'prevenir_retard', label:'Prévenir proactivement d\'un retard', cat:'🤝 Client'},
+  {id:'signaler_panne', label:'Signaler une panne ou incident immédiatement', cat:'⚠️ Sécurité'},
+  {id:'epi_port', label:'Porter les EPI sans qu\'on le rappelle', cat:'⚠️ Sécurité'},
+  {id:'gestes_postures', label:'Appliquer les bons gestes de manutention', cat:'⚠️ Sécurité'},
+  {id:'nettoyage_vehicule', label:'Nettoyer et ranger le véhicule en fin de journée', cat:'🧹 Rigueur'},
+  {id:'ponctualite_systeme', label:'Arriver à l\'heure sans rappel', cat:'⏰ Ponctualité'},
+  {id:'communication_equipe', label:'Communiquer spontanément avec l\'équipe', cat:'👥 Équipe'},
+  {id:'aide_collegues', label:'Aider les collègues spontanément', cat:'👥 Équipe'},
+  {id:'transpalette', label:'Utiliser un transpalette correctement', cat:'🔧 Matériel'},
+  {id:'diable', label:'Utiliser un diable correctement', cat:'🔧 Matériel'},
+];
+
+var NIVEAUX_COMPETENCE = [
+  {val:0, label:'Non vu', col:'var(--border)', icon:'⬜'},
+  {val:1, label:'Découverte', col:'#64748b', icon:'👁️'},
+  {val:2, label:'En cours', col:'#f59e0b', icon:'🔧'},
+  {val:3, label:'Acquis', col:'#22c55e', icon:'✅'},
+  {val:4, label:'Maîtrisé', col:'#3b82f6', icon:'⭐'},
+  {val:5, label:'Expert — peut former', col:'#f97316', icon:'🏆'},
+];
+
+var OBJECTIFS_QUOTIDIENS = [
+  'Préparer seul le véhicule avant le départ',
+  'Réaliser le contrôle sécurité complet',
+  'Préparer le chargement dans l\'ordre LIFO',
+  'Respecter les horaires sans rappel',
+  'Communiquer proactivement avec les clients',
+  'Remplir et faire signer tous les BL',
+  'Vérifier et noter les températures',
+  'Nettoyer et ranger le véhicule au retour',
+  'Signaler tout incident dans la journée',
+  'Appliquer la conduite douce',
+];
+
+var DEFIS_DEFS = [
+  {id:'premier_mois_ponctuel', label:'Premier mois sans retard', icon:'⏰', pts:100},
+  {id:'premiere_tournee_autonome', label:'Première tournée 100% autonome', icon:'🚐', pts:150},
+  {id:'100_livraisons', label:'100 livraisons réalisées', icon:'📦', pts:200},
+  {id:'500_livraisons', label:'500 livraisons réalisées', icon:'🏆', pts:500},
+  {id:'aucun_incident', label:'30 jours sans incident', icon:'🛡️', pts:200},
+  {id:'client_satisfait', label:'Félicitation client reçue', icon:'⭐', pts:150},
+  {id:'esprit_equipe', label:'Aide spontanée à un collègue notée', icon:'🤝', pts:100},
+  {id:'formation_complete', label:'Programme 2 ans complété', icon:'🎓', pts:500},
+  {id:'tuteur', label:'Devient tuteur d\'un nouveau', icon:'👨‍🏫', pts:300},
+  {id:'zero_retard_3mois', label:'3 mois consécutifs sans retard', icon:'🌟', pts:300},
+];
+
+/* ── PAGE PRINCIPALE PARCOURS ── */
+window.renderParcoursChauffeur = function(c2){
+  if(!c2) return;
+  var h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+  h += '<div class="page-title">🚐 Parcours Chauffeur</div>';
+  h += '<button class="btn btn-primary" onclick="window.nav(\'tableau_formateur\')">🎯 Tableau formateur</button></div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Le logiciel raconte l\'histoire du salarié — du premier jour à l\'insertion</div>';
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    if(!DB.parcours_chauffeur[s.id]) DB.parcours_chauffeur[s.id] = {};
+    var pc = DB.parcours_chauffeur[s.id];
+    var niv = pc.niveau_global||0;
+    var nivCol = ['var(--border)','#ef4444','#f97316','#3b82f6','#22c55e','#f97316'][niv]||'var(--border)';
+    h += '<div onclick="selParcours('+s.id+',this)" class="fsal-btn-pc" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid '+nivCol+'33;border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    if(niv>0) h += '<div style="font-size:10px;color:'+nivCol+'">'+NIVEAUX_COMPETENCE[Math.min(niv,5)].icon+' Niveau '+niv+'/5</div>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  h += '<div id="parcours-detail"></div>';
+  c2.innerHTML = h;
+  var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selParcours(first.id, c2.querySelector('.fsal-btn-pc'));
+};
+
+window.selParcours = function(salId, el){
+  document.querySelectorAll('.fsal-btn-pc').forEach(function(b){b.style.borderColor='rgba(255,255,255,.1)';});
+  if(el) el.style.borderColor='var(--orange)';
+  window.parcoursSalId = salId;
+  window.dossierSalActif = salId;
+  afficherParcours(salId);
+};
+
+function afficherParcours(salId){
+  var zone = document.getElementById('parcours-detail'); if(!zone) return;
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  var pc = DB.parcours_chauffeur[salId];
+
+  /* Score compétences */
+  var comp = pc.competences||{};
+  var totalComp = COMPETENCES_METIER.length;
+  var acquises = Object.values(comp).filter(function(c){return c.niveau>=3;}).length;
+  var maitrisees = Object.values(comp).filter(function(c){return c.niveau>=4;}).length;
+  var niv = pc.niveau_global||calcNiveauGlobal(salId);
+  var nivDef = NIVEAUX_COMPETENCE[Math.min(niv,5)];
+
+  /* Score accueil */
+  var accueil = pc.etape_accueil||{};
+  var accItems = accueil.items||{};
+  var accFait = ACCUEIL_ITEMS.filter(function(a){return accItems[a.id];}).length;
+
+  /* Carnet */
+  var carnet = pc.carnet||{};
+  var nbJours = Object.keys(carnet).length;
+  var totalKm = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.km)||0);},0);
+  var totalLivraisons = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.livraisons)||0);},0);
+
+  var h = '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">';
+
+  /* Carte niveau */
+  h += '<div class="card" style="flex:1;min-width:200px;border-color:'+nivDef.col+'44;text-align:center">';
+  h += '<div style="font-size:36px;margin-bottom:6px">'+nivDef.icon+'</div>';
+  h += '<div style="font-size:20px;font-weight:900;color:'+nivDef.col+'">Niveau '+niv+'/5</div>';
+  h += '<div style="font-size:12px;color:var(--sub)">'+nivDef.label+'</div>';
+  h += '<div style="background:var(--border);border-radius:4px;height:6px;margin-top:10px">';
+  h += '<div style="width:'+(niv/5*100)+'%;height:6px;border-radius:4px;background:'+nivDef.col+'"></div></div></div>';
+
+  /* Stats */
+  h += '<div class="card" style="flex:2;min-width:280px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+  [{v:acquises+'/'+totalComp,l:'Compétences acquises',c:'var(--green)'},
+   {v:nbJours,l:'Jours au carnet',c:'var(--blue)'},
+   {v:totalLivraisons,l:'Livraisons réalisées',c:'var(--orange)'},
+   {v:totalKm,l:'Km parcourus',c:'var(--purple)'},
+   {v:accFait+'/'+ACCUEIL_ITEMS.length,l:'Accueil réalisé',c:'var(--yellow)'},
+   {v:(pc.defis||[]).length+'/'+DEFIS_DEFS.length,l:'Défis débloqués',c:'#ec4899'},
+  ].forEach(function(k){
+    h += '<div style="text-align:center;padding:8px;background:var(--panel2);border-radius:8px">';
+    h += '<div style="font-size:18px;font-weight:900;color:'+k.c+'">'+k.v+'</div>';
+    h += '<div style="font-size:9px;color:var(--sub);margin-top:2px">'+k.l+'</div></div>';
+  });
+  h += '</div></div></div>';
+
+  /* Onglets */
+  h += '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
+  [['accueil','🚪 Accueil'],['competences','⭐ Compétences'],['carnet','📓 Carnet'],['defis','🏆 Défis'],['ia','🤖 IA Formateur'],['passeport','🏅 Passeport']].forEach(function(tab){
+    h += '<button onclick="showParcoursTab(\''+tab[0]+'\')" id="ptab-'+tab[0]+'" class="btn btn-sm '+(tab[0]==='accueil'?'btn-primary':'btn-secondary')+'">'+tab[1]+'</button>';
+  });
+  h += '</div>';
+
+  /* Contenu */
+  h += '<div id="parcours-tab-content">';
+  h += renderParcoursAccueil(salId);
+  h += '</div>';
+
+  zone.innerHTML = h;
+}
+
+window.showParcoursTab = function(tab){
+  document.querySelectorAll('[id^="ptab-"]').forEach(function(b){b.className='btn btn-sm btn-secondary';});
+  var btn = document.getElementById('ptab-'+tab);
+  if(btn) btn.className='btn btn-sm btn-primary';
+  var content = document.getElementById('parcours-tab-content');
+  if(!content) return;
+  var salId = window.parcoursSalId;
+  var renderers = {
+    accueil: renderParcoursAccueil,
+    competences: renderParcoursCompetences,
+    carnet: renderParcoursCarnet,
+    defis: renderParcoursDefis,
+    ia: renderParcoursIA,
+    passeport: function(sid){ genPasseportProfessionnel(sid); return '<div style="color:var(--sub);padding:20px">Génération en cours...</div>'; }
+  };
+  content.innerHTML = renderers[tab] ? renderers[tab](salId) : '';
+};
+
+/* ── ONGLET ACCUEIL ── */
+function renderParcoursAccueil(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var accueil = pc.etape_accueil||{};
+  var items = accueil.items||{};
+  var fait = ACCUEIL_ITEMS.filter(function(a){return items[a.id];}).length;
+  var pct = Math.round(fait/ACCUEIL_ITEMS.length*100);
+
+  var h = '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h += '<div class="card-title">🚪 Étape 1 — Accueil & Intégration</div>';
+  if(fait===ACCUEIL_ITEMS.length) h += '<span style="background:rgba(34,197,94,.2);color:var(--green);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:800">✅ VALIDÉ</span>';
+  h += '</div>';
+  h += '<div style="background:var(--border);border-radius:4px;height:6px;margin-bottom:14px"><div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+( pct===100?'var(--green)':'var(--orange)')+'"></div></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:6px">';
+
+  ACCUEIL_ITEMS.forEach(function(item){
+    var checked = !!items[item.id];
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid '+(checked?'rgba(34,197,94,.3)':'var(--border)')+';border-radius:8px;background:'+(checked?'rgba(34,197,94,.05)':'transparent')+'">';
+    h += '<input type="checkbox" '+(checked?'checked':'')+' onchange="cocherAccueil('+salId+',\''+item.id+'\',this)" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
+    h += '<span style="font-size:12px;color:'+(checked?'var(--green)':'var(--text)')+'">'+item.label+'</span>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  if(fait===ACCUEIL_ITEMS.length && !accueil.date_validation){
+    h += '<div style="margin-top:14px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:14px;text-align:center">';
+    h += '<div style="font-size:14px;font-weight:800;color:var(--green);margin-bottom:8px">🎉 Accueil terminé ! Valider la première journée ?</div>';
+    h += '<button class="btn btn-green" onclick="validerAccueil('+salId+')">✅ Valider la première journée</button>';
+    h += '</div>';
+  } else if(accueil.date_validation){
+    h += '<div style="margin-top:10px;font-size:11px;color:var(--green)">✅ Première journée validée le '+(typeof fmt==='function'?fmt(accueil.date_validation):accueil.date_validation)+'</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+window.cocherAccueil = function(salId, itemId, cb){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  var pc = DB.parcours_chauffeur[salId];
+  if(!pc.etape_accueil) pc.etape_accueil={items:{}};
+  if(!pc.etape_accueil.items) pc.etape_accueil.items={};
+  pc.etape_accueil.items[itemId] = cb.checked;
+  if(typeof sauver==='function') sauver();
+  /* Re-render si tout coché */
+  var fait = ACCUEIL_ITEMS.filter(function(a){return pc.etape_accueil.items[a.id];}).length;
+  if(fait===ACCUEIL_ITEMS.length) afficherParcours(salId);
+};
+
+window.validerAccueil = function(salId){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  DB.parcours_chauffeur[salId].etape_accueil.date_validation = new Date().toISOString().slice(0,10);
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Première journée validée ! 🎉','ok');
+  if(typeof logAction==='function') logAction('Accueil validé','salId '+salId);
+  afficherParcours(salId);
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PARCOURS CHAUFFEUR — PARTIE 2
+   Compétences · Carnet de bord · Défis · IA Formateur · Passeport
+   Tableau formateur
+═══════════════════════════════════════════════════════════════ */
+
+/* ── ONGLET COMPÉTENCES ── */
+function renderParcoursCompetences(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+
+  /* Grouper par catégorie */
+  var cats = {};
+  COMPETENCES_METIER.forEach(function(c){
+    if(!cats[c.cat]) cats[c.cat]=[];
+    cats[c.cat].push(c);
+  });
+
+  var h = '<div>';
+  Object.keys(cats).forEach(function(cat){
+    h += '<div class="card" style="margin-bottom:12px"><div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">'+cat+'</div>';
+    cats[cat].forEach(function(c){
+      var d = comp[c.id]||{niveau:0};
+      var niv = d.niveau||0;
+      var nivDef = NIVEAUX_COMPETENCE[Math.min(niv,5)];
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h += '<div style="flex:1"><div style="font-size:12px;color:var(--text)">'+c.label+'</div>';
+      if(d.date) h += '<div style="font-size:10px;color:var(--sub)">'+( typeof fmt==='function'?fmt(d.date):d.date)+(d.formateur?' · '+d.formateur:'')+(d.commentaire?' · '+d.commentaire:'')+'</div>';
+      h += '</div>';
+      /* Boutons niveaux */
+      h += '<div style="display:flex;gap:3px">';
+      for(var v=0;v<=5;v++){
+        var nd = NIVEAUX_COMPETENCE[v];
+        h += '<button title="'+nd.label+'" onclick="noterCompetencePC('+salId+',\''+c.id+'\','+v+')" style="width:26px;height:26px;border-radius:5px;border:2px solid '+(niv===v?nd.col:'var(--border)')+';background:'+(niv===v?nd.col+'22':'transparent')+';cursor:pointer;font-size:11px;'+(v===0?'color:var(--sub)':'color:'+nd.col)+'">'+nd.icon+'</button>';
+      }
+      h += '</div></div>';
+    });
+    h += '</div>';
+  });
+
+  /* Barre de progression globale */
+  var acquises = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau>=3;}).length;
+  var pct = Math.round(acquises/COMPETENCES_METIER.length*100);
+  h += '<div class="card" style="border-color:rgba(34,197,94,.3)">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--green);margin-bottom:8px">📊 Avancement global : '+acquises+'/'+COMPETENCES_METIER.length+' compétences acquises (≥ niveau 3)</div>';
+  h += '<div style="background:var(--border);border-radius:6px;height:10px"><div style="width:'+pct+'%;height:10px;border-radius:6px;background:var(--green)"></div></div>';
+  h += '<div style="font-size:11px;color:var(--sub);margin-top:6px">'+pct+'% — Niveau global calculé : '+calcNiveauGlobal(salId)+'/5</div></div>';
+  h += '</div>';
+  return h;
+}
+
+window.noterCompetencePC = function(salId, compId, niveau){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  var pc = DB.parcours_chauffeur[salId];
+  if(!pc.competences) pc.competences={};
+  var comm = niveau>0 ? prompt('Commentaire ou observation (optionnel) :','') : '';
+  pc.competences[compId] = {
+    niveau:niveau,
+    date: new Date().toISOString().slice(0,10),
+    formateur:'Responsable',
+    commentaire:comm||''
+  };
+  pc.niveau_global = calcNiveauGlobal(salId);
+  if(typeof sauver==='function') sauver();
+  if(typeof logAction==='function') logAction('Compétence notée',compId+' → niveau '+niveau);
+  showParcoursTab('competences');
+};
+
+function calcNiveauGlobal(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+  var vals = Object.values(comp).map(function(c){return c.niveau||0;});
+  if(!vals.length) return 0;
+  var moy = vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  return Math.min(5,Math.round(moy));
+}
+
+/* ── ONGLET CARNET DE BORD ── */
+function renderParcoursCarnet(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var carnet = pc.carnet||{};
+  var today = new Date().toISOString().slice(0,10);
+
+  var h = '<div>';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h += '<div style="font-size:14px;font-weight:800;color:var(--text)">📓 Carnet de bord quotidien</div>';
+  h += '<button class="btn btn-primary btn-sm" onclick="ouvrirCarnetJour(\''+salId+'\',\''+today+'\')">+ Aujourd\'hui</button>';
+  h += '</div>';
+
+  /* Génération objectifs du jour */
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+  var pc2 = DB.parcours_chauffeur[salId]||{};
+  var comp2 = pc2.competences||{};
+  var objectifsDuJour = OBJECTIFS_QUOTIDIENS.filter(function(obj,i){
+    /* Prioriser les compétences non encore acquises */
+    var clés = Object.keys(comp2).filter(function(k){return (comp2[k].niveau||0)<3;});
+    return i<5;
+  }).slice(0,5);
+
+  h += '<div class="card" style="margin-bottom:12px;border-color:rgba(249,115,22,.3)">';
+  h += '<div class="card-title" style="color:var(--orange)">🎯 Objectifs d\'aujourd\'hui — générés automatiquement</div>';
+  objectifsDuJour.forEach(function(obj,i){
+    var done = carnet[today] && carnet[today].objectifs_statut && carnet[today].objectifs_statut[i];
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">';
+    h += '<div style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0">'+(i+1)+'</div>';
+    h += '<span style="font-size:12px;flex:1;color:var(--text)">'+obj+'</span>';
+    if(done){
+      var icons={atteint:'✅',partiel:'⚠️',non_atteint:'❌'};
+      h += '<span style="font-size:14px">'+( icons[done]||'')+'</span>';
+    }
+    h += '</div>';
+  });
+  h += '<div style="margin-top:10px;display:flex;gap:6px">';
+  h += '<button class="btn btn-green btn-sm" onclick="validerObjectifsJour(\''+salId+'\',\''+today+'\')">✅ Valider les objectifs du jour</button>';
+  h += '</div></div>';
+
+  /* Historique */
+  var jours = Object.keys(carnet).sort().reverse();
+  if(jours.length){
+    h += '<div class="card"><div class="card-title">📚 Historique des journées</div>';
+    jours.slice(0,14).forEach(function(date){
+      var j = carnet[date];
+      var couleur = j.note_resp>=4?'var(--green)':j.note_resp>=3?'var(--blue)':j.note_resp>=2?'var(--orange)':'var(--red)';
+      h += '<div style="display:flex;align-items:start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="ouvrirCarnetJour(\''+salId+'\',\''+date+'\')">';
+      h += '<div style="width:60px;font-size:10px;font-weight:700;color:var(--sub);flex-shrink:0">'+(typeof fmt==='function'?fmt(date):date)+'</div>';
+      h += '<div style="flex:1">';
+      if(j.secteur) h += '<div style="font-size:11px;color:var(--text)">'+j.secteur+(j.clients?' · '+j.clients+' clients':'')+(j.km?' · '+j.km+'km':'')+'</div>';
+      if(j.reussites) h += '<div style="font-size:11px;color:var(--green)">⭐ '+j.reussites+'</div>';
+      if(j.incidents) h += '<div style="font-size:11px;color:var(--red)">⚠️ '+j.incidents+'</div>';
+      h += '</div>';
+      if(j.note_resp) h += '<div style="font-size:16px;font-weight:900;color:'+couleur+'">'+j.note_resp+'/5</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+window.ouvrirCarnetJour = function(salId, date){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  var pc = DB.parcours_chauffeur[salId];
+  if(!pc.carnet) pc.carnet={};
+  var j = pc.carnet[date]||{};
+
+  var ov = document.createElement('div');
+  ov.id = 'carnet-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;padding:20px';
+
+  var h = '<div style="max-width:700px;margin:0 auto">';
+  h += '<div style="background:var(--panel);border-radius:14px;padding:24px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  h += '<div style="font-size:16px;font-weight:900;color:var(--text)">📓 Journée du '+(typeof fmt==='function'?fmt(date):date)+'</div>';
+  h += '<button onclick="document.getElementById(\'carnet-overlay\').remove()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:6px 12px;cursor:pointer">✕</button>';
+  h += '</div>';
+
+  var fields = [
+    {id:'heure_arrivee', label:'Heure d\'arrivée', type:'text', ph:'Ex: 05:25'},
+    {id:'heure_depart', label:'Heure de départ', type:'text', ph:'Ex: 14:30'},
+    {id:'vehicule', label:'Véhicule utilisé', type:'text', ph:'Ex: Transit AB-123'},
+    {id:'secteur', label:'Secteur de livraison', type:'text', ph:'Ex: Marseille 13e + Aubagne'},
+    {id:'clients', label:'Nombre de clients', type:'number', ph:'Ex: 8'},
+    {id:'livraisons', label:'Nombre de livraisons', type:'number', ph:'Ex: 8'},
+    {id:'km', label:'Kilomètres parcourus', type:'number', ph:'Ex: 85'},
+  ];
+
+  fields.forEach(function(f){
+    h += '<div style="margin-bottom:10px">';
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:4px">'+f.label+'</div>';
+    h += '<input id="carnet-'+f.id+'" type="'+f.type+'" value="'+(j[f.id]||'')+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;box-sizing:border-box">';
+    h += '</div>';
+  });
+
+  var textareas = [
+    {id:'reussites', label:'⭐ Réussites du jour', ph:'Ce qui s\'est bien passé...'},
+    {id:'incidents', label:'⚠️ Incidents / difficultés', ph:'Problèmes rencontrés...'},
+    {id:'note_sal', label:'💭 Commentaire du salarié', ph:'Comment il a vécu la journée...'},
+    {id:'note_resp', label:'📝 Observation du responsable', ph:'Votre évaluation de la journée...'},
+  ];
+
+  textareas.forEach(function(f){
+    h += '<div style="margin-bottom:10px">';
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:4px">'+f.label+'</div>';
+    h += '<textarea id="carnet-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box">'+(j[f.id]||'')+'</textarea>';
+    h += '</div>';
+  });
+
+  /* Note globale */
+  h += '<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">🌟 Note de la journée</div>';
+  h += '<div style="display:flex;gap:8px">';
+  for(var v=1;v<=5;v++){
+    var col=['','#ef4444','#f97316','#f59e0b','#22c55e','#3b82f6'][v];
+    var labels=['','Très difficile','Difficile','Correcte','Bonne','Excellente'];
+    h += '<button id="note-btn-'+v+'" onclick="setNoteJour('+v+')" style="flex:1;padding:8px;border-radius:8px;border:2px solid '+(j.note_resp==v?col:'var(--border)')+';background:'+(j.note_resp==v?col+'22':'transparent')+';cursor:pointer;font-size:11px;color:'+( j.note_resp==v?col:'var(--sub)')+';font-weight:700">'+v+'<br>'+labels[v]+'</button>';
+  }
+  h += '</div></div>';
+  window._carnetNoteJour = j.note_resp||3;
+
+  h += '<div style="display:flex;gap:8px;margin-top:6px">';
+  h += '<button class="btn btn-primary" style="flex:1" onclick="sauverCarnetJour(\''+salId+'\',\''+date+'\')">💾 Sauvegarder</button>';
+  h += '<button class="btn btn-green" onclick="genResumIAJour(\''+salId+'\',\''+date+'\')">🤖 IA Formateur</button>';
+  h += '</div>';
+  h += '</div></div>';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+};
+
+window.setNoteJour = function(v){
+  window._carnetNoteJour = v;
+  for(var i=1;i<=5;i++){
+    var btn = document.getElementById('note-btn-'+i);
+    var col=['','#ef4444','#f97316','#f59e0b','#22c55e','#3b82f6'][i];
+    if(btn) btn.style.borderColor=(i===v?col:'var(--border)'), btn.style.background=(i===v?col+'22':'transparent'), btn.style.color=(i===v?col:'var(--sub)');
+  }
+};
+
+window.sauverCarnetJour = function(salId, date){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  if(!DB.parcours_chauffeur[salId].carnet) DB.parcours_chauffeur[salId].carnet={};
+  var fields=['heure_arrivee','heure_depart','vehicule','secteur','clients','livraisons','km','reussites','incidents','note_sal','note_resp'];
+  var data={note_resp:window._carnetNoteJour||3};
+  fields.forEach(function(f){
+    var el=document.getElementById('carnet-'+f);
+    if(el) data[f]=el.value;
+  });
+  data.note_resp = window._carnetNoteJour||3;
+  DB.parcours_chauffeur[salId].carnet[date] = data;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Journée sauvegardée ✅','ok');
+  var ov=document.getElementById('carnet-overlay'); if(ov)ov.remove();
+  showParcoursTab('carnet');
+};
+
+window.validerObjectifsJour = function(salId, date){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  if(!DB.parcours_chauffeur[salId].carnet) DB.parcours_chauffeur[salId].carnet={};
+  if(!DB.parcours_chauffeur[salId].carnet[date]) DB.parcours_chauffeur[salId].carnet[date]={};
+  var statuts={};
+  var options=['atteint','partiel','non_atteint'];
+  var labels=['✅ Atteint','⚠️ Partiel','❌ Non atteint'];
+  for(var i=0;i<5;i++){
+    var choix=prompt('Objectif '+(i+1)+' : "'+OBJECTIFS_QUOTIDIENS[i]+'"\n0=Atteint · 1=Partiel · 2=Non atteint :','0');
+    statuts[i]=options[parseInt(choix)||0]||'atteint';
+  }
+  DB.parcours_chauffeur[salId].carnet[date].objectifs_statut=statuts;
+  if(typeof sauver==='function') sauver();
+  showParcoursTab('carnet');
+};
+
+/* ── ONGLET DÉFIS ── */
+function renderParcoursDefis(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var debloques = pc.defis||[];
+  var carnet = pc.carnet||{};
+  var totalLivraisons = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.livraisons)||0);},0);
+  var totalKm = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.km)||0);},0);
+
+  var h = '<div class="card">';
+  h += '<div class="card-title">🏆 Défis & Badges</div>';
+  h += '<div style="font-size:12px;color:var(--sub);margin-bottom:14px">Chaque défi débloqué ajoute un badge au dossier</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';
+
+  DEFIS_DEFS.forEach(function(defi){
+    var debloque = debloques.indexOf(defi.id)>=0;
+    h += '<div style="background:'+(debloque?'rgba(249,115,22,.1)':'var(--panel2)')+';border:2px solid '+(debloque?'rgba(249,115,22,.4)':'var(--border)')+';border-radius:12px;padding:14px">';
+    h += '<div style="font-size:28px;margin-bottom:6px">'+defi.icon+(debloque?' ✅':'')+'</div>';
+    h += '<div style="font-size:12px;font-weight:800;color:'+(debloque?'var(--orange)':'var(--text)')+'">'+defi.label+'</div>';
+    h += '<div style="font-size:10px;color:var(--sub);margin-top:3px">'+defi.pts+' points</div>';
+    if(!debloque){
+      h += '<button class="btn btn-sm btn-secondary" style="margin-top:8px;font-size:10px" onclick="debloquerDefi('+salId+',\''+defi.id+'\')">Valider ce défi</button>';
+    } else {
+      h += '<div style="font-size:10px;color:var(--orange);margin-top:6px;font-weight:700">DÉBLOQUÉ ✨</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+
+  var totalPts = debloques.reduce(function(s,id){
+    var d=DEFIS_DEFS.find(function(x){return x.id===id;});
+    return s+(d?d.pts:0);
+  },0);
+  h += '<div style="margin-top:14px;background:rgba(249,115,22,.1);border-radius:10px;padding:12px;text-align:center">';
+  h += '<div style="font-size:20px;font-weight:900;color:var(--orange)">'+totalPts+' points</div>';
+  h += '<div style="font-size:11px;color:var(--sub)">'+debloques.length+'/'+DEFIS_DEFS.length+' défis complétés · '+totalLivraisons+' livraisons · '+totalKm+' km</div>';
+  h += '</div></div>';
+  return h;
+}
+
+window.debloquerDefi = function(salId, defiId){
+  if(!DB.parcours_chauffeur[salId]) DB.parcours_chauffeur[salId]={};
+  if(!DB.parcours_chauffeur[salId].defis) DB.parcours_chauffeur[salId].defis=[];
+  if(DB.parcours_chauffeur[salId].defis.indexOf(defiId)>=0) return;
+  DB.parcours_chauffeur[salId].defis.push(defiId);
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Défi débloqué ! 🎉','ok');
+  if(typeof logAction==='function') logAction('Défi débloqué',defiId+' salId '+salId);
+  showParcoursTab('defis');
+};
+
+/* ── ONGLET IA FORMATEUR ── */
+function renderParcoursIA(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return '';
+  return '<div class="card">'
+    +'<div class="card-title" style="color:var(--blue)">🤖 IA Formateur</div>'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:14px">L\'IA analyse le parcours et génère des recommandations personnalisées</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<button class="btn btn-primary" onclick="genIAParcoursJour('+salId+')">📊 Résumé IA de la progression</button>'
+    +'<button class="btn btn-secondary" onclick="genIAParcoursDemain('+salId+')">🎯 Objectifs IA pour demain</button>'
+    +'<button class="btn btn-secondary" onclick="genIAParcoursAlert('+salId+')">⚠️ Analyse des difficultés</button>'
+    +'</div>'
+    +'<div id="ia-formateur-result" style="margin-top:14px"></div>'
+    +'</div>';
+}
+
+window.genIAParcoursJour = function(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+  var carnet = pc.carnet||{};
+  var dernJour = Object.keys(carnet).sort().reverse()[0];
+  var j = carnet[dernJour]||{};
+  var acquises = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau>=3;}).length;
+  var niv = calcNiveauGlobal(salId);
+
+  var zone = document.getElementById('ia-formateur-result');
+  if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Analyse en cours...</div>';
+
+  var prompt_ia = 'Tu es un formateur expert en logistique et en insertion professionnelle.\n'
+    +'Salarié : '+s.prenom+(s.nom?' '+s.nom:'')+'\n'
+    +'Niveau global : '+niv+'/5\n'
+    +'Compétences acquises : '+acquises+'/'+COMPETENCES_METIER.length+'\n'
+    +'Dernière journée ('+dernJour+') :\n'
+    +'- Livraisons : '+(j.livraisons||0)+'\n'
+    +'- Réussites : '+(j.reussites||'Non renseigné')+'\n'
+    +'- Incidents : '+(j.incidents||'Aucun')+'\n'
+    +'- Note : '+(j.note_resp||'-')+'/5\n\n'
+    +'Rédige en français un résumé de progression avec :\n'
+    +'1. Forces observées (2-3 points)\n'
+    +'2. Difficultés à travailler (2-3 points)\n'
+    +'3. Compétences à valider cette semaine\n'
+    +'4. Conseil personnalisé pour le salarié\n'
+    +'5. Conseil pour le formateur\n'
+    +'Sois précis, bienveillant et constructif. Maximum 300 mots.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:prompt_ia}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Analyse non disponible';
+    if(zone) zone.innerHTML='<div style="background:rgba(74,158,216,.08);border:1px solid rgba(74,158,216,.3);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;color:var(--text)">'+txt.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--blue)">$1</strong>')+'</div>';
+  }).catch(function(){
+    if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Connexion IA non disponible — vérifiez votre connexion internet</div>';
+  });
+};
+
+window.genIAParcoursDemain = function(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+  var nonAcquises = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau<3;});
+  var zone = document.getElementById('ia-formateur-result');
+  if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Génération des objectifs...</div>';
+
+  var prompt_ia = 'Tu es un formateur en logistique. Génère 5 objectifs pour la journée de demain.\n'
+    +'Salarié : '+s.prenom+', Niveau : '+calcNiveauGlobal(salId)+'/5\n'
+    +'Compétences non encore acquises : '+nonAcquises.slice(0,8).map(function(c){return c.label;}).join(', ')+'\n\n'
+    +'Génère 5 objectifs SMART pour demain, concrets, mesurables, adaptés au niveau.\n'
+    +'Format : numéroté, une phrase par objectif. En français.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt_ia}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'';
+    if(zone) zone.innerHTML='<div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;color:var(--text)">🎯 Objectifs pour demain :<br><br>'+txt.replace(/\n/g,'<br>')+'</div>';
+  }).catch(function(){
+    if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Non disponible hors connexion</div>';
+  });
+};
+
+window.genIAParcoursAlert = function(salId){
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+  var carnet = pc.carnet||{};
+  var jours = Object.values(carnet);
+  var notesMoy = jours.length ? jours.reduce(function(s,j){return s+(parseInt(j.note_resp)||3);},0)/jours.length : 3;
+  var incidents = jours.filter(function(j){return j.incidents&&j.incidents.trim();}).length;
+  var zone = document.getElementById('ia-formateur-result');
+  if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Analyse en cours...</div>';
+
+  var diff = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau<=1;}).map(function(c){return c.label;});
+
+  var prompt_ia = 'Analyse les difficultés de ce salarié et donne des conseils au formateur.\n'
+    +'Note moyenne journées : '+notesMoy.toFixed(1)+'/5\n'
+    +'Journées avec incidents : '+incidents+'/'+jours.length+'\n'
+    +'Compétences non maîtrisées : '+diff.slice(0,6).join(', ')+'\n\n'
+    +'Identifie les 3 risques principaux et propose des actions concrètes pour chacun.\n'
+    +'En français, bienveillant, pratique. Maximum 200 mots.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt_ia}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'';
+    if(zone) zone.innerHTML='<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;color:var(--text)">⚠️ Analyse des difficultés :<br><br>'+txt.replace(/\n/g,'<br>')+'</div>';
+  }).catch(function(){ if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">Non disponible</div>'; });
+};
+
+/* ── PASSEPORT PROFESSIONNEL COMPLET ── */
+window.genPasseportProfessionnel = function(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+  var carnet = pc.carnet||{};
+  var acquises = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau>=3;});
+  var maitrisees = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau>=4;});
+  var totalKm = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.km)||0);},0);
+  var totalLivraisons = Object.values(carnet).reduce(function(s,j){return s+(parseInt(j.livraisons)||0);},0);
+  var nbJours = Object.keys(carnet).length;
+  var niv = calcNiveauGlobal(salId);
+  var nivDef = NIVEAUX_COMPETENCE[Math.min(niv,5)];
+  var emp = typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(salId):0;
+  var acad = (DB.academie&&DB.academie[salId])||{};
+  var certifs = Object.keys((DB.passeports&&DB.passeports[salId])||{}).filter(function(k){var p=(DB.passeports[salId]||{})[k];return p&&p.obtenu;});
+  var badges = (DB.badges_attribues||[]).filter(function(b){return b.salId==salId;});
+  var defis = (pc.defis||[]).map(function(id){return DEFIS_DEFS.find(function(d){return d.id===id;});}).filter(Boolean);
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='.body{font-family:Arial,sans-serif;margin:0;color:#1a2435}.cover{background:linear-gradient(135deg,#0f1923 0%,#1e3a5f 50%,#0f1923 100%);padding:50px 40px;text-align:center;color:#fff}.cover-logo{font-size:60px;margin-bottom:16px}.cover-title{font-size:32px;font-weight:900;color:#f97316;margin-bottom:6px}.cover-org{font-size:13px;opacity:.6;text-transform:uppercase;letter-spacing:3px;margin-bottom:20px}.cover-nom{font-size:26px;font-weight:900;margin-bottom:6px}.cover-stats{display:flex;justify-content:center;gap:30px;margin-top:20px;flex-wrap:wrap}.cover-stat{text-align:center}.cover-stat-val{font-size:28px;font-weight:900;color:#f97316}.cover-stat-lbl{font-size:10px;opacity:.6}.page{padding:32px 40px;max-width:820px;margin:0 auto}.section{margin-bottom:24px}.section-title{font-size:14px;font-weight:900;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:6px;margin-bottom:12px}.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.comp-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px}.comp-nom{font-size:11px;font-weight:800;color:#1e3a5f;margin-bottom:4px}.niv-badge{font-size:9px;font-weight:800;border-radius:4px;padding:2px 7px;display:inline-block}.niv-3{background:#dcfce7;color:#16a34a}.niv-4{background:#dbeafe;color:#1d4ed8}.niv-5{background:#fff7ed;color:#ea580c}.barre-wrap{background:#e2e8f0;border-radius:4px;height:7px;margin-top:8px}.barre{height:7px;border-radius:4px}.apprec{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #22c55e;border-radius:12px;padding:18px;text-align:center;margin-bottom:20px}.apprec-val{font-size:16px;font-weight:900;color:#16a34a}.metier-tag{display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 12px;margin:3px;font-size:11px;color:#1d4ed8}.sig{display:flex;justify-content:space-between;margin-top:28px;padding-top:14px;border-top:2px solid #f97316}.sig-line{width:160px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;padding:10px 40px 20px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+
+  var CERTIFS_NOMS={permisb:'Permis B',permisc:'Permis C',haccp:'HACCP',sst:'SST',fimo:'FIMO',gestes:'Gestes & postures',alimentaire:'Habilitation alimentaire',cqp:'CQP Chauffeur livreur'};
+  var metiers=['Chauffeur livreur CDI','Chauffeur VL multi-sites','Logisticien polyvalent','Préparateur de commandes senior'];
+  if(niv>=4) metiers.push('Référent logistique','Tuteur interne');
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body class="body">';
+  html+='<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;z-index:99">🖨️ Imprimer</button>';
+
+  /* Cover */
+  html+='<div class="cover"><div class="cover-logo">🏆</div>';
+  html+='<div class="cover-title">Passeport Professionnel</div>';
+  html+='<div class="cover-org">La Table de Cana · Marseille · Structure d\'Insertion</div>';
+  html+='<div class="cover-nom">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  html+='<div style="font-size:13px;opacity:.7">Parcours du '+(typeof fmt==='function'?fmt(s.dateEntree):s.dateEntree||'')+' au '+(typeof fmt==='function'?fmt(s.dateFin):s.dateFin||new Date().toLocaleDateString('fr-FR'))+'</div>';
+  html+='<div class="cover-stats">';
+  [{v:nbJours,l:'Jours travaillés'},{v:totalLivraisons,l:'Livraisons'},{v:totalKm,l:'Kilomètres'},{v:acquises.length,l:'Compétences'}].forEach(function(k){
+    html+='<div class="cover-stat"><div class="cover-stat-val">'+k.v+'</div><div class="cover-stat-lbl">'+k.l+'</div></div>';
+  });
+  html+='</div>';
+  html+='<div style="margin-top:16px;font-size:20px;font-weight:900;color:#f97316">Niveau '+niv+'/5 — '+nivDef.label+'</div>';
+  html+='</div>';
+
+  html+='<div class="page">';
+
+  /* Appréciation */
+  html+='<div class="apprec"><div style="font-size:11px;color:#64748b;margin-bottom:6px">Appréciation globale du parcours</div>';
+  html+='<div class="apprec-val">'+(emp>=80?'Excellent — Insertion professionnelle assurée':emp>=65?'Très bon — Recommandé sans réserve':emp>=50?'Bon — Compétences solides acquises':'Satisfaisant — Parcours en progression')+'</div>';
+  html+='<div style="font-size:12px;color:#64748b;margin-top:6px">Score d\'employabilité : '+emp+'%</div></div>';
+
+  /* Compétences acquises */
+  html+='<div class="section"><div class="section-title">⭐ Compétences professionnelles validées</div>';
+  html+='<div class="comp-grid">';
+  acquises.forEach(function(c){
+    var d=comp[c.id]||{};
+    var niv2=d.niveau||3;
+    var cls=niv2>=5?'niv-5':niv2>=4?'niv-4':'niv-3';
+    var lbl=NIVEAUX_COMPETENCE[Math.min(niv2,5)].label;
+    html+='<div class="comp-card"><div class="comp-nom">'+c.label+'</div>';
+    html+='<span class="niv-badge '+cls+'">'+lbl+'</span>';
+    if(d.date) html+='<div style="font-size:9px;color:#94a3b8;margin-top:3px">'+(typeof fmt==='function'?fmt(d.date):d.date)+'</div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+
+  /* Formations */
+  var progF=(DB.programme&&DB.programme[salId])||{};
+  var formFaites=typeof PROGRAMME_2ANS!=='undefined'?PROGRAMME_2ANS.filter(function(p){return (progF[String(p.mois)]||{}).fait;}):[];
+  if(formFaites.length){
+    html+='<div class="section"><div class="section-title">🎓 Formations suivies</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    formFaites.forEach(function(p){html+='<span style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:3px 10px;font-size:11px">'+p.icon+' '+p.titre+'</span>';});
+    html+='</div></div>';
+  }
+
+  /* QCM */
+  var qcmBons = Object.keys(acad).filter(function(k){return acad[k].last_score>=70;});
+  if(qcmBons.length){
+    html+='<div class="section"><div class="section-title">📊 Évaluations QCM réussies</div>';
+    var BLOC_NOMS={reglementation:'Réglementation',chaine_froid:'Chaîne du froid',chargement:'Chargement',conduite_pro:'Conduite',relation_client:'Relation client',documents:'Documents',traiteur:'Traiteur',securite_travail:'Sécurité'};
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    qcmBons.forEach(function(k){html+='<span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 10px;font-size:11px">✅ '+(BLOC_NOMS[k]||k)+' — '+acad[k].last_score+'%</span>';});
+    html+='</div></div>';
+  }
+
+  /* Certifications */
+  if(certifs.length){
+    html+='<div class="section"><div class="section-title">🏅 Certifications obtenues</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    certifs.forEach(function(k){html+='<span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 10px;font-size:11px">🏅 '+(CERTIFS_NOMS[k]||k)+'</span>';});
+    html+='</div></div>';
+  }
+
+  /* Défis */
+  if(defis.length){
+    html+='<div class="section"><div class="section-title">🏆 Défis relevés</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    defis.forEach(function(d){html+='<span style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:3px 10px;font-size:11px">'+d.icon+' '+d.label+'</span>';});
+    html+='</div></div>';
+  }
+
+  /* Métiers accessibles */
+  html+='<div class="section"><div class="section-title">💼 Métiers accessibles</div>';
+  metiers.forEach(function(m){html+='<span class="metier-tag">→ '+m+'</span>';});
+  html+='</div>';
+
+  /* Recommandation */
+  html+='<div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:12px;padding:18px;margin-bottom:20px">';
+  html+='<div style="font-size:12px;font-weight:900;color:#92400e;margin-bottom:8px">📋 Recommandation de La Table de Cana</div>';
+  html+='<div style="font-size:12px;line-height:1.8">'+s.prenom+(s.nom?' '+s.nom:'')+' a réalisé un parcours de formation en logistique au sein de La Table de Cana. ';
+  html+='Sur la base de '+nbJours+' journées de formation et '+totalLivraisons+' livraisons réalisées, nous recommandons ce salarié pour les postes de logistique et de livraison. ';
+  html+='Son niveau de compétences atteint ('+acquises.length+'/'+COMPETENCES_METIER.length+' compétences validées) et son score d\'employabilité de '+emp+'% témoignent d\'un engagement sérieux et d\'une réelle progression.</div></div>';
+
+  /* Signature */
+  html+='<div class="sig">';
+  html+='<div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div style="font-size:11px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px;font-size:11px">La Table de Cana<br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div style="text-align:center"><b>Le responsable</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div>';
+  html+='</div></div>';
+  html+='<footer><span>La Table de Cana · Marseille · Passeport Professionnel certifié</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+  if(typeof logAction==='function') logAction('Passeport professionnel généré',s.prenom+(s.nom?' '+s.nom:''));
+};
+
+/* ── TABLEAU FORMATEUR ── */
+window.renderTableauFormateur = function(c2){
+  if(!c2) return;
+  var actifs = (DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+  var nivCols = ['var(--border)','#ef4444','#f97316','#3b82f6','#22c55e','#f97316'];
+  var nivLabels = ['—','🔴 Difficultés','🟠 Accompagnement','🔵 Progression','🟢 Autonome','🏆 Référent'];
+
+  var h = '<div class="page-title">🎯 Tableau du Formateur</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Vue d\'ensemble — en un regard, où concentrer l\'accompagnement</div>';
+
+  h += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  [['#ef4444','Rouge — Difficultés'],['#f97316','Orange — Accompagnement'],['#3b82f6','Bleu — Progression'],['#22c55e','Vert — Autonomie'],['#f97316','Or — Référent']].forEach(function(l){
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:'+l[0]+'"></div>'+l[1]+'</div>';
+  });
+  h += '</div>';
+
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px">';
+  actifs.forEach(function(s){
+    var pc = DB.parcours_chauffeur[s.id]||{};
+    var niv = pc.niveau_global||calcNiveauGlobal(s.id);
+    var col = nivCols[Math.min(niv,5)]||'var(--border)';
+    var comp = pc.competences||{};
+    var acquises = COMPETENCES_METIER.filter(function(c){return (comp[c.id]||{}).niveau>=3;}).length;
+    var carnet = pc.carnet||{};
+    var nbJours = Object.keys(carnet).length;
+    var dernNote = Object.values(carnet).sort(function(a,b){return (a.date||'')>(b.date||'')?-1:1;})[0];
+
+    h += '<div style="background:var(--panel);border:3px solid '+col+'44;border-radius:14px;padding:16px;cursor:pointer;border-left:6px solid '+col+'" onclick="selParcours('+s.id+',null);nav(\'parcours\')">';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+    h += '<span style="font-size:28px">'+s.avatar+'</span>';
+    h += '<div><div style="font-size:14px;font-weight:900;color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h += '<div style="font-size:11px;font-weight:700;color:'+col+'">'+( nivLabels[Math.min(niv,5)]||'—')+'</div></div></div>';
+
+    /* Barre progression compétences */
+    var pct = Math.round(acquises/COMPETENCES_METIER.length*100);
+    h += '<div style="background:var(--border);border-radius:4px;height:6px;margin-bottom:8px"><div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+col+'"></div></div>';
+
+    h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub)">';
+    h += '<span>'+acquises+'/'+COMPETENCES_METIER.length+' compétences</span>';
+    h += '<span>'+nbJours+' jours</span></div>';
+
+    if(dernNote && dernNote.note_resp){
+      var nc = dernNote.note_resp>=4?'var(--green)':dernNote.note_resp>=3?'var(--blue)':'var(--red)';
+      h += '<div style="margin-top:8px;font-size:11px;color:'+nc+'">Dernière note : '+dernNote.note_resp+'/5</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  c2.innerHTML = h;
+};
+
+/* ── ROUTER ── */
+(function(){
+  var _old = window.render;
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(!c) return _old?_old(page):null;
+    if(page==='parcours'){ renderParcoursChauffeur(c); return; }
+    if(page==='tableau_formateur'){ renderTableauFormateur(c); return; }
+    if(_old) _old(page);
+  };
+
+  var sb = document.querySelector('.sb');
+  if(sb){
+    /* Ajouter section Centre de Formation */
+    var secEl = document.createElement('div');
+    secEl.className='sb-sec'; secEl.textContent='Centre de Formation';
+    sb.appendChild(secEl);
+    var items=[
+      {p:'parcours',ico:'🚐',lbl:'Parcours chauffeur'},
+      {p:'tableau_formateur',ico:'🎯',lbl:'Tableau du formateur'},
+    ];
+    items.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d=document.createElement('div');
+        d.className='sb-item'; d.setAttribute('data-p',it.p);
+        d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick=function(){window.nav(it.p);}; sb.appendChild(d);
+      }
+    });
+  }
+})();
+
+console.log('Parcours Chauffeur Complet chargé ✅');
+
+</script>
