@@ -6775,7 +6775,11 @@ window.selProgSal = function(salId, el){
   document.querySelectorAll('.fsal-btn').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
   if(el){el.style.borderColor='var(--blue)';el.style.background='var(--panel2)';}
   window.progSalActif = salId;
-  renderProgDetail(salId);
+  try{ renderProgDetail(salId); }
+  catch(err){ 
+    var pd=document.getElementById('prog-detail');
+    if(pd) pd.innerHTML='<div style="color:var(--red);padding:20px">Erreur: '+err.message+'</div>';
+  }
 };
 
 function renderProgDetail(salId){
@@ -6784,7 +6788,13 @@ function renderProgDetail(salId){
   var prog = DB.programme[salId] || {};
   var dateEntree = s.dateEntree ? new Date(s.dateEntree) : new Date();
   var moisActuel = Math.floor((new Date()-dateEntree)/2592000000)+1;
+  if(isNaN(moisActuel)) moisActuel = 1;
   moisActuel = Math.max(1, Math.min(24, moisActuel));
+  /* Vérifier PROGRAMME_2ANS disponible */
+  if(typeof PROGRAMME_2ANS === 'undefined' || !PROGRAMME_2ANS.length){
+    document.getElementById('prog-detail').innerHTML='<div style="color:var(--sub);padding:30px;text-align:center">Chargement du programme...</div>';
+    return;
+  }
 
   /* Avancement global */
   var fait = Object.keys(prog).filter(function(m){return prog[m].fait;}).length;
@@ -7842,6 +7852,640 @@ window.fermerSlides = function(){
     d.onclick = function(){nav('slides');};
     sb.appendChild(d);
   }
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   SLIDES SUPPLÉMENTAIRES — 3 nouveaux blocs complets
+   + enrichissement des blocs existants
+═══════════════════════════════════════════════════════════ */
+
+/* Ajouter de nouvelles slides aux blocs existants */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  /* ══ ENRICHIR CHAÎNE DU FROID ══ */
+  var cf = SLIDES_DATA.chaine_froid;
+  if(cf) cf.slides.splice(3,0,
+    {
+      type:'bactéries',
+      titre:'Les bactéries — les vraies ennemies',
+      items:[
+        {nom:'Salmonelle',temp:'7°C à 45°C',danger:'Intoxication grave — diarrhées, vomissements, fièvre 72h',col:'#ef4444',icon:'🦠'},
+        {nom:'Listeria',temp:'1°C à 45°C — même au froid !',danger:'Mortelle pour femmes enceintes et personnes fragiles',col:'#dc2626',icon:'☠️'},
+        {nom:'Staphylocoque',temp:'7°C à 48°C',danger:'Intoxication rapide — vomissements en 2 à 4h',col:'#f97316',icon:'🤢'},
+        {nom:'E. Coli',temp:'7°C à 46°C',danger:'Diarrhées sévères — peut provoquer insuffisance rénale',col:'#ef4444',icon:'⚠️'},
+      ]
+    },
+    {
+      type:'quiz_pratique',
+      titre:'Mise en situation — que fais-tu ?',
+      scenarios:[
+        {situation:'Tu arrives au dépôt à 5h30. Le frigo du camion affiche +9°C alors qu\'il devrait être à +3°C.',action:'Tu NE PARS PAS. Tu appelles l\'encadrant immédiatement. Jamais partir avec un frigo hors température.', icon:'🌡️',col:'#ef4444'},
+        {situation:'Chez un client, tu remarques que les bacs livrés la semaine dernière sentent mauvais.',action:'Tu signales immédiatement à l\'encadrant. Ce n\'est pas ton problème direct mais tu as l\'obligation de signaler.', icon:'👃',col:'#f59e0b'},
+        {situation:'Tu as 30 min de retard à cause des embouteillages. Les plats chauds sont dans le camion.',action:'Tu appelles l\'encadrant ET le client. Tu vérifies la température. Si les plats sont tombés sous +63°C, tu signales.', icon:'⏰',col:'#f97316'},
+      ]
+    },
+    {
+      type:'chiffres_cles',
+      titre:'Les chiffres à connaître par cœur',
+      items:[
+        {val:'+63°C',label:'Minimum pour les plats chauds',icon:'🍲',col:'#ef4444'},
+        {val:'-18°C',label:'Maximum pour les surgelés',icon:'❄️',col:'#3b82f6'},
+        {val:'+3°C',label:'Maximum pour les plats cuisinés',icon:'🍽️',col:'#22c55e'},
+        {val:'2h',label:'Délai maximum dans la zone de danger +4°C à +63°C',icon:'⏱️',col:'#f59e0b'},
+        {val:'48h',label:'Délai pour signaler un problème HACCP à l\'encadrant',icon:'📞',col:'#a855f7'},
+        {val:'1°C',label:'Température à laquelle la Listeria peut survivre',icon:'☠️',col:'#dc2626'},
+      ]
+    }
+  );
+
+  /* ══ ENRICHIR SÉCURITÉ ══ */
+  var sec = SLIDES_DATA.securite;
+  if(sec) sec.slides.splice(3,0,
+    {
+      type:'risques_specifiques',
+      titre:'Les 5 situations les plus dangereuses en logistique',
+      items:[
+        {rang:1,situation:'Descendre d\'un camion',risque:'Chute = 1ère cause d\'accident grave en livraison',prevention:'Toujours faire face au camion, 3 points d\'appui', icon:'🚐',col:'#ef4444'},
+        {rang:2,situation:'Chambre froide seule',risque:'Enfermement accidentel — hypothermie en moins de 30 min',prevention:'Toujours signaler avant d\'entrer, ne jamais seul si possible', icon:'❄️',col:'#3b82f6'},
+        {rang:3,situation:'Port de charge répété',risque:'TMS — hernie discale irréversible',prevention:'Genoux pliés, dos droit, 25 kg max seul', icon:'📦',col:'#f97316'},
+        {rang:4,situation:'Fatigue au volant',risque:'30% des accidents mortels sur autoroute',prevention:'S\'arrêter, appeler l\'encadrant — obligation légale', icon:'😴',col:'#f59e0b'},
+        {rang:5,situation:'Sol mouillé après nettoyage',risque:'Chute = fractures, traumatismes crâniens',prevention:'EPI antidérapants, signalisation, ne pas courir', icon:'💧',col:'#a855f7'},
+      ]
+    },
+    {
+      type:'droits',
+      titre:'Tes droits en matière de sécurité',
+      icon:'⚖️',
+      points:[
+        {droit:'Droit de retrait', detail:'Si tu estimes que ta situation de travail présente un danger grave et imminent — tu peux te retirer sans être sanctionné'},
+        {droit:'Droit à la formation sécurité', detail:'Toute entreprise doit former ses salariés aux risques de leur poste — c\'est une obligation légale'},
+        {droit:'Droit aux EPI gratuits', detail:'Les EPI sont fournis gratuitement par l\'employeur — tu n\'as rien à payer'},
+        {droit:'Déclaration d\'accident', detail:'Tout accident du travail doit être déclaré — même "petit" — refus de déclaration = illégal'},
+        {droit:'Visite médicale', detail:'Visite médicale à l\'embauche et tous les 2 ans — obligatoire et sur temps de travail'},
+      ],
+      couleur:'#22c55e'
+    }
+  );
+
+  /* ══ ENRICHIR RELATION CLIENT ══ */
+  var rc = SLIDES_DATA.relation_client;
+  if(rc) rc.slides.splice(3,0,
+    {
+      type:'methode_erac',
+      titre:'La méthode ERAC — gérer n\'importe quelle situation',
+      etapes_speciales:[
+        {lettre:'E',mot:'ÉCOUTER',action:'Sans interrompre. Laisser le client vider son sac. Même si il crie. 30 à 60 secondes suffisent.',icon:'👂',col:'#3b82f6'},
+        {lettre:'R',mot:'RECONNAÎTRE',action:'"Je comprends votre frustration" — sans admettre une faute. Reconnaître ne veut pas dire accepter la responsabilité.',icon:'🤝',col:'#a855f7'},
+        {lettre:'A',mot:'AGIR',action:'Proposer une action concrète ou noter le problème sur le BL. "Je note ça et mon responsable vous rappelle."',icon:'⚙️',col:'#f97316'},
+        {lettre:'C',mot:'CONFIRMER',action:'"Est-ce que ça vous convient ?" — vérifier que le client accepte la solution proposée avant de partir.',icon:'✅',col:'#22c55e'},
+      ]
+    },
+    {
+      type:'phrases_interdites',
+      titre:'Ce qu\'on ne dit jamais devant un client',
+      comparaisons:[
+        {interdit:'"C\'est pas ma faute"',correct:'"Je comprends, je note et je transmets à mon responsable"',col:'#ef4444'},
+        {interdit:'"C\'est la cuisine qui a mal préparé"',correct:'"Il y a un problème, je le signale immédiatement"',col:'#ef4444'},
+        {interdit:'"Ça m\'intéresse pas, j\'ai d\'autres livraisons"',correct:'"Je note votre remarque et quelqu\'un vous recontactera"',col:'#ef4444'},
+        {interdit:'"De toute façon c\'est toujours comme ça ici"',correct:'"Je suis désolé pour ce désagrément, nous allons régler ça"',col:'#ef4444'},
+        {interdit:'"Signez là, j\'ai pas le temps"',correct:'"Pouvez-vous vérifier et signer le bon, s\'il vous plaît ?"',col:'#ef4444'},
+      ]
+    }
+  );
+
+  /* ══ ENRICHIR RÉGLEMENTATION ══ */
+  var reg = SLIDES_DATA.reglementation;
+  if(reg) reg.slides.splice(3,0,
+    {
+      type:'controle_routes',
+      titre:'Un contrôle routier — comment ça se passe',
+      icon:'👮',
+      etapes:[
+        {num:1,action:'Rester calme — se garer en sécurité',detail:'Signal lumineux du véhicule de contrôle = s\'arrêter immédiatement en sécurité'},
+        {num:2,action:'Préparer les documents',detail:'Permis de conduire, carte grise, assurance, contrôle technique — tout dans la boîte à gants'},
+        {num:3,action:'Ouvrir la vitre — rester poli',detail:'Ne jamais sortir du véhicule sans qu\'on vous le demande'},
+        {num:4,action:'Répondre calmement et honnêtement',detail:'Inutile de mentir — les agents peuvent vérifier tout instantanément'},
+        {num:5,action:'En cas d\'infraction — noter les informations',detail:'N° du procès-verbal, nom de l\'agent, motif — appeler l\'encadrant'},
+      ],
+      couleur:'#3b82f6'
+    },
+    {
+      type:'amendes',
+      titre:'Ce que ça coûte de ne pas respecter',
+      items:[
+        {infraction:'Surcharge du véhicule',amende:'135€ à 750€ + immobilisation',icon:'⚖️',col:'#ef4444'},
+        {infraction:'Téléphone au volant',amende:'135€ + 3 points retirés',icon:'📱',col:'#f97316'},
+        {infraction:'Alcool au volant (professionnel)',amende:'Suspension + prison possible + responsabilité civile',icon:'🍺',col:'#dc2626'},
+        {infraction:'Défaut d\'assurance',amende:'3 750€ + confiscation du véhicule',icon:'📄',col:'#ef4444'},
+        {infraction:'Délit de fuite',amende:'75 000€ + 5 ans de prison possible',icon:'🚨',col:'#dc2626'},
+        {infraction:'Contrôle technique périmé',amende:'135€ + immobilisation',icon:'🔧',col:'#f59e0b'},
+      ]
+    }
+  );
+
+  /* ══ ENRICHIR CONDUITE ══ */
+  var cond = SLIDES_DATA.conduite;
+  if(cond) cond.slides.splice(3,0,
+    {
+      type:'optimiser_tournee',
+      titre:'Optimiser sa tournée — les bonnes pratiques',
+      icon:'🗺️',
+      points:[
+        {action:'Lire la feuille de route AVANT de partir',detail:'15 minutes de préparation économisent 1h sur la route. Repérer les adresses difficiles.'},
+        {action:'Appeler les clients lointains la veille',detail:'Confirmer leur disponibilité avant de faire 30 km pour trouver porte fermée.'},
+        {action:'Prévoir +20% de temps',detail:'Toute tournée a des imprévus. Prévoir de la marge évite le stress et les infractions.'},
+        {action:'Connaître les zones de livraison Marseille',detail:'Zones piétonnes, horaires restreints, sens interdits — les connaître par coeur.'},
+        {action:'Signaler les difficultés de livraison',detail:'Adresse introuvable, accès impossible — noter pour améliorer les prochaines tournées.'},
+      ],
+      couleur:'#22c55e'
+    },
+    {
+      type:'check_depart',
+      titre:'Check-list avant chaque départ',
+      categories:[
+        {cat:'🔍 Vérifications véhicule', items:['Niveaux huile et carburant','Pression des pneus','Éclairages avant et arrière','Propreté de la cabine','Rétroviseurs réglés']},
+        {cat:'📦 Vérifications chargement', items:['Ordre de chargement LIFO respecté','Cargaison arrimée','Température du frigo','BL pour chaque client','Aucune surchage']},
+        {cat:'📄 Documents', items:['Permis dans la poche','Carte grise présente','Assurance à jour','Feuille de route','Téléphone chargé']},
+      ]
+    }
+  );
+
+  /* ══ NOUVEAU BLOC — DOCUMENTS & BL ══ */
+  SLIDES_DATA.documents = {
+    titre:'Documents & BL',
+    icon:'📋',
+    couleur:'#f59e0b',
+    slides:[
+      {type:'titre',titre:'Documents logistiques',sous:'BL, feuille de route — ta signature engage',icon:'📋',couleur:'#f59e0b'},
+      {
+        type:'anatomie_bl',
+        titre:'Anatomie d\'un Bon de Livraison',
+        elements:[
+          {zone:'En-tête',contenu:'Nom et adresse du fournisseur (La Table de Cana)',obligatoire:true,icon:'🏢'},
+          {zone:'Client',contenu:'Nom, adresse et code client du destinataire',obligatoire:true,icon:'👤'},
+          {zone:'Date et heure',contenu:'Date de livraison et heure prévue',obligatoire:true,icon:'📅'},
+          {zone:'Liste produits',contenu:'Désignation, quantité, poids de chaque article',obligatoire:true,icon:'📦'},
+          {zone:'Réserves',contenu:'Zone pour noter les problèmes constatés',obligatoire:false,icon:'⚠️'},
+          {zone:'Signatures',contenu:'Client ET chauffeur — les deux doivent signer',obligatoire:true,icon:'✍️'},
+        ]
+      },
+      {
+        type:'procedure',
+        titre:'Procédure BL — étape par étape',
+        icon:'📋',
+        etapes:[
+          {num:1,action:'Avant de décharger : vérifier le BL',detail:'Bon client ? Bonne adresse ? Bons produits ? Quantités correctes ?'},
+          {num:2,action:'Pendant le déchargement : noter les anomalies',detail:'Produit manquant, casse, mauvaise température → noter immédiatement'},
+          {num:3,action:'Faire signer le client AVANT de partir',detail:'L\'original reste chez le client. Vous gardez le duplicata.'},
+          {num:4,action:'Remettre les BL signés au retour',detail:'Tous les BL doivent être remis à l\'encadrant en fin de journée'},
+        ],
+        couleur:'#f59e0b'
+      },
+      {
+        type:'question',
+        titre:'Question pour le groupe',
+        question:'Un client dit qu\'il n\'a pas le temps de signer le BL et vous demande de le laisser là. Que faites-vous ?',
+        reponse:'Vous attendez ou vous notez son refus de signature sur le BL. JAMAIS vous ne partez sans signature ou sans noter le refus. Sans signature = livraison non prouvée.',
+        choix:['Vous attendez ou notez le refus sur le BL ✅','Vous laissez la commande et partez','Vous signez à sa place','Vous revenez demain']
+      },
+      {
+        type:'alerte',
+        titre:'Les erreurs qui créent des litiges',
+        icon:'⚠️',
+        points:[
+          'Signer un BL sans vérifier la commande — vous validez ce qui est écrit',
+          'Livrer sans BL — impossible de prouver que vous avez livré',
+          'Laisser le client signer après votre départ — il peut modifier le BL',
+          'Ne pas noter les anomalies — vous perdez le litige automatiquement',
+          'Perdre les BL — sans trace = aucune preuve = l\'entreprise paie',
+        ],
+        couleur:'#ef4444'
+      },
+      {
+        type:'termes',
+        titre:'Les termes documents à connaître',
+        items:[
+          {mot:'BL',def:'Bon de Livraison — preuve contractuelle de la livraison'},
+          {mot:'Original',def:'L\'exemplaire qui reste chez le client'},
+          {mot:'Duplicata',def:'La copie que le chauffeur conserve'},
+          {mot:'Réserves',def:'Mentions écrites sur le BL signalant un problème'},
+          {mot:'Litige',def:'Désaccord sur ce qui a été livré — résolu avec les BL'},
+          {mot:'Traçabilité',def:'Capacité à retrouver l\'historique complet d\'une livraison'},
+        ],
+        couleur:'#f59e0b'
+      },
+      {
+        type:'recap',
+        titre:'Les 5 choses à retenir',
+        items:[
+          '📋 Vérifier le BL AVANT de décharger — pas après',
+          '⚠️ Toute anomalie notée SUR LE BL immédiatement',
+          '✍️ Signature du client OBLIGATOIRE avant de partir',
+          '📄 Garder tous les BL signés — les remettre en fin de journée',
+          '🔴 Sans BL signé = pas de preuve = c\'est vous qui perdez le litige',
+        ],
+        couleur:'#f59e0b'
+      }
+    ]
+  };
+
+  /* ══ NOUVEAU BLOC — TRAITEUR ══ */
+  SLIDES_DATA.traiteur = {
+    titre:'Logistique Traiteur',
+    icon:'🍽️',
+    couleur:'#ec4899',
+    slides:[
+      {type:'titre',titre:'Logistique Traiteur',sous:'Matériel, événements, inventaires — représenter La Table de Cana',icon:'🍽️',couleur:'#ec4899'},
+      {
+        type:'nomenclature',
+        titre:'Le matériel traiteur — apprendre les noms',
+        items:[
+          {nom:'Bac GN 1/1',icon:'🔲',def:'Gastronorme plein format (530x325mm) — le plus grand',prix:'15-25€',col:'#ec4899'},
+          {nom:'Bac GN 1/2',icon:'▪️',def:'Demi-gastronorme (265x325mm) — le plus utilisé',prix:'10-18€',col:'#ec4899'},
+          {nom:'Chafing dish',icon:'🔥',def:'Maintien en température au buffet — eau chaude + GN',prix:'80-200€',col:'#f97316'},
+          {nom:'Chariot isotherme',icon:'🛒',def:'Transport de plats chauds ou froids sans rupture',prix:'300-800€',col:'#3b82f6'},
+          {nom:'Couvercle GN',icon:'🔳',def:'Couvercle pour bac GN — indispensable pour le transport',prix:'5-12€',col:'#22c55e'},
+          {nom:'Diable',icon:'🔧',def:'Chariot 2 roues pour déplacer les caisses empilées',prix:'50-150€',col:'#64748b'},
+        ]
+      },
+      {
+        type:'question',
+        titre:'Question pour le groupe',
+        question:'Un chafing dish complet en bon état coûte entre 80 et 200€. Si tu en casses un par négligence, que se passe-t-il ?',
+        reponse:'Un bon de casse est établi. La casse par négligence peut être retenue sur salaire selon les conditions. C\'est pour ça qu\'on manipule ce matériel avec soin.',
+        choix:['Un bon de casse est établi — peut être retenu sur salaire ✅','Rien — c\'est l\'assurance qui paie','Tu rachètes toi-même sans qu\'on te le demande','L\'entreprise absorbe toujours la casse']
+      },
+      {
+        type:'procedure',
+        titre:'Événement traiteur — procédure complète',
+        icon:'🎉',
+        etapes:[
+          {num:1,action:'Inventaire de départ',detail:'Compter et signer la liste de tout le matériel AVANT de charger'},
+          {num:2,action:'Vérification des températures',detail:'Plats chauds à +63°C min, froids à +3°C max — noter sur relevé'},
+          {num:3,action:'Installation sur site',detail:'Selon le plan de salle fourni — discrétion totale — pas de téléphone'},
+          {num:4,action:'Service et surveillance',detail:'Surveiller les niveaux, recharger les bacs, maintenir la présentation'},
+          {num:5,action:'Inventaire de retour',detail:'Tout recompter au retour — noter la casse immédiatement'},
+          {num:6,action:'Nettoyage et rangement',detail:'Matériel propre avant rangement — jamais ranger sale'},
+        ],
+        couleur:'#ec4899'
+      },
+      {
+        type:'comportement_evenement',
+        titre:'Comportement lors d\'un événement',
+        comparaisons:[
+          {interdit:'Goûter les plats ou boissons',correct:'Ne jamais toucher aux aliments et boissons de l\'événement',col:'#ef4444'},
+          {interdit:'Téléphone visible et sonnant',correct:'Téléphone sur silencieux et rangé pendant le service',col:'#ef4444'},
+          {interdit:'S\'asseoir sur les chaises client',correct:'Rester debout ou dans la zone de service',col:'#ef4444'},
+          {interdit:'Parler des autres clients entre collègues',correct:'Confidentialité totale sur tous les clients',col:'#ef4444'},
+          {interdit:'Tenue débraillée',correct:'Tenue irréprochable — tu représentes La Table de Cana',col:'#ef4444'},
+        ]
+      },
+      {
+        type:'inventaire_pratique',
+        titre:'Pourquoi l\'inventaire est critique',
+        items_chiffres:[
+          {val:'200€',label:'Prix d\'un chafing dish complet',icon:'🔥'},
+          {val:'25€',label:'Prix d\'un bac GN 1/1',icon:'🔲'},
+          {val:'15€',label:'Prix d\'une assiette de service',icon:'🍽️'},
+          {val:'5 000€',label:'Valeur du matériel d\'un buffet 100 personnes',icon:'💰'},
+        ],
+        note:'Un seul événement représente parfois 5 000€ de matériel. Un inventaire rigoureux protège l\'entreprise ET toi.',
+        couleur:'#ec4899'
+      },
+      {
+        type:'termes',
+        titre:'Les termes traiteur à connaître',
+        items:[
+          {mot:'GN',def:'Gastronorme — bac alimentaire standard en acier inox'},
+          {mot:'Chafing dish',def:'Appareil de maintien en température au buffet'},
+          {mot:'Mise en place',def:'Installation complète avant le début d\'un service'},
+          {mot:'Dressage',def:'Disposition professionnelle de la vaisselle et décoration'},
+          {mot:'Plan de salle',def:'Schéma indiquant le placement exact des tables et buffets'},
+          {mot:'Bon de casse',def:'Document notant le matériel cassé ou perdu lors d\'une prestation'},
+        ],
+        couleur:'#ec4899'
+      },
+      {
+        type:'recap',
+        titre:'Les 5 choses à retenir',
+        items:[
+          '📋 Inventaire signé AVANT de partir ET au retour — toujours',
+          '🌡️ Températures vérifiées et notées — avant chaque événement',
+          '🎉 Sur un événement : discrétion, tenue irréprochable, zéro téléphone visible',
+          '🍽️ Jamais toucher aux aliments ou boissons clients — règle absolue',
+          '💰 Le matériel traiteur vaut très cher — le manipuler comme si c\'était le vôtre',
+        ],
+        couleur:'#ec4899'
+      }
+    ]
+  };
+
+  /* ══ NOUVEAU BLOC — COMMUNICATION INTERNE ══ */
+  SLIDES_DATA.communication = {
+    titre:'Communication professionnelle',
+    icon:'💬',
+    couleur:'#8b5cf6',
+    slides:[
+      {type:'titre',titre:'Communication professionnelle',sous:'Téléphone, compte-rendu, signalement — bien communiquer',icon:'💬',couleur:'#8b5cf6'},
+      {
+        type:'regles_telephone',
+        titre:'Le téléphone professionnel — les règles',
+        icon:'📱',
+        points:[
+          {regle:'Ne jamais utiliser le téléphone au volant', detail:'Infraction = 135€ + 3 points. Main libre obligatoire même pour oreillette.', col:'#ef4444', obligatoire:true},
+          {regle:'Décrocher rapidement — max 3 sonneries', detail:'Un client ou l\'encadrant qui attend = mauvaise image professionnelle.', col:'#22c55e', obligatoire:false},
+          {regle:'Se présenter : "Bonjour, c\'est [prénom], chauffeur La Table de Cana"', detail:'Toujours se présenter — le client ne connaît pas forcément votre prénom.', col:'#3b82f6', obligatoire:false},
+          {regle:'Parler clairement et lentement', detail:'Les communications de route ont souvent du bruit. Adapter son débit.', col:'#f97316', obligatoire:false},
+          {regle:'Noter les informations importantes', detail:'Numéro de client, changement d\'heure, problème signalé — noter sur papier ou téléphone.', col:'#a855f7', obligatoire:false},
+        ]
+      },
+      {
+        type:'question',
+        titre:'Question pour le groupe',
+        question:'Tu es en train de livrer et ton téléphone sonne. C\'est l\'encadrant. Tu es au volant. Que fais-tu ?',
+        reponse:'Tu t\'arrêtes dans un endroit sûr avant de répondre, ou tu rappelles dès que tu es arrêté. JAMAIS au volant — même avec kit mains libres en zone complexe.',
+        choix:['Tu t\'arrêtes et rappelles dès que possible ✅','Tu décroches avec le kit mains libres sans t\'arrêter','Tu ignores et rappelles 2h plus tard','Tu envoies un SMS en conduisant']
+      },
+      {
+        type:'signalement',
+        titre:'Quand et comment signaler un problème',
+        categories_signal:[
+          {quand:'Immédiatement (dans la minute)',situations:['Accident ou incident sur la route','Client absent ou refus de livraison','Problème de température du frigo','Produit abîmé ou manquant découvert au chargement'],col:'#ef4444'},
+          {quand:'Dans la journée',situations:['Retard supérieur à 15 minutes','Remarque ou plainte d\'un client','Anomalie sur le véhicule (bruit, voyant)','Erreur sur la feuille de route'],col:'#f59e0b'},
+          {quand:'Au retour au dépôt',situations:['BL signés à remettre','Rapport de tournée','Kilométrage noté','Matériel à signaler pour entretien'],col:'#22c55e'},
+        ]
+      },
+      {
+        type:'compte_rendu',
+        titre:'Faire un bon compte-rendu oral',
+        icon:'🗣️',
+        points:[
+          {action:'Commencer par les faits', detail:'"J\'ai livré 7 clients sur 8. Le 5ème, Centre aéré Aubagne, était fermé."'},
+          {action:'Donner les informations concrètes', detail:'"J\'ai son numéro, il demande à être relivré demain avant 9h."'},
+          {action:'Signaler les anomalies avec précision', detail:'"Le BL n\'était pas signé car personne sur place — j\'ai photographié la porte fermée."'},
+          {action:'Terminer par ce que tu as fait', detail:'"J\'ai ramené la commande au dépôt et je la mets en chambre froide."'},
+        ],
+        couleur:'#8b5cf6'
+      },
+      {
+        type:'alerte',
+        titre:'Ne jamais rester seul avec un problème',
+        icon:'🚨',
+        points:[
+          'Un problème non signalé = un problème qui grandit seul',
+          'Tu n\'as pas à résoudre tous les problèmes seul — c\'est le rôle de l\'encadrant',
+          'Signaler tôt = solution rapide. Signaler tard = problème grave',
+          'Si tu n\'es pas sûr de quoi faire : appelle avant de décider seul',
+          'Il n\'y a pas de question stupide — il y a des problèmes non signalés',
+        ],
+        couleur:'#ef4444'
+      },
+      {
+        type:'termes',
+        titre:'Les termes communication à connaître',
+        items:[
+          {mot:'Compte-rendu',def:'Rapport oral ou écrit de ce qui s\'est passé pendant la tournée'},
+          {mot:'Signalement',def:'Action de remonter un problème à l\'encadrant'},
+          {mot:'Traçabilité orale',def:'Informer l\'encadrant de chaque événement important'},
+          {mot:'Kit mains libres',def:'Système permettant de téléphoner sans tenir le téléphone — recommandé mais ne remplace pas l\'arrêt'},
+          {mot:'Rapport d\'incident',def:'Document écrit décrivant un problème survenu — obligatoire pour les accidents'},
+          {mot:'Feedback',def:'Retour d\'information donné à quelqu\'un sur son travail'},
+        ],
+        couleur:'#8b5cf6'
+      },
+      {
+        type:'recap',
+        titre:'Les 5 choses à retenir',
+        items:[
+          '🚗 Téléphone au volant = 135€ + 3 points — s\'arrêter avant de répondre',
+          '📞 Tout problème signalé IMMÉDIATEMENT — jamais rester seul avec',
+          '🗣️ Compte-rendu = faits + informations + anomalies + ce que j\'ai fait',
+          '⏰ Retard > 15 min = appel client ET encadrant dans la journée',
+          '✅ Il n\'y a pas de question stupide — signaler vaut toujours mieux que supposer',
+        ],
+        couleur:'#8b5cf6'
+      }
+    ]
+  };
+
+  /* Ajouter les nouveaux types de slides au renderer */
+  var oldRender = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+
+      case 'bactéries':
+        var h='<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.items.forEach(function(b){
+          h+='<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:2px solid '+b.col+'44;border-radius:10px;padding:14px 18px">';
+          h+='<span style="font-size:28px;flex-shrink:0">'+b.icon+'</span>';
+          h+='<div style="flex:1"><div style="font-size:15px;font-weight:900;color:'+b.col+'">'+b.nom+'</div>';
+          h+='<div style="font-size:12px;color:rgba(255,255,255,.6)">Zone de danger : '+b.temp+'</div>';
+          h+='<div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:3px">'+b.danger+'</div></div></div>';
+        });
+        return h+'</div>';
+
+      case 'quiz_pratique':
+        var h2='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h2+='<div style="display:flex;flex-direction:column;gap:12px">';
+        slide.scenarios.forEach(function(s,i){
+          h2+='<div style="background:rgba(255,255,255,.05);border:1px solid '+s.col+'33;border-radius:12px;padding:16px 18px">';
+          h2+='<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:24px">'+s.icon+'</span><div style="font-size:14px;color:rgba(255,255,255,.8)"><strong>Situation '+( i+1)+' :</strong> '+s.situation+'</div></div>';
+          h2+='<div style="background:'+s.col+'22;border-left:3px solid '+s.col+';padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:#fff;font-weight:700">→ '+s.action+'</div></div>';
+        });
+        return h2+'</div>';
+
+      case 'chiffres_cles':
+        var h3='<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h3+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+        slide.items.forEach(function(it){
+          h3+='<div style="background:'+it.col+'22;border:2px solid '+it.col+'44;border-radius:12px;padding:20px;text-align:center">';
+          h3+='<div style="font-size:24px;margin-bottom:8px">'+it.icon+'</div>';
+          h3+='<div style="font-size:28px;font-weight:900;color:'+it.col+';margin-bottom:6px">'+it.val+'</div>';
+          h3+='<div style="font-size:12px;color:rgba(255,255,255,.7)">'+it.label+'</div></div>';
+        });
+        return h3+'</div>';
+
+      case 'risques_specifiques':
+        var h4='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h4+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.items.forEach(function(it){
+          h4+='<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid '+it.col+'44;border-radius:10px;padding:12px 16px">';
+          h4+='<div style="width:28px;height:28px;border-radius:50%;background:'+it.col+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0">'+it.rang+'</div>';
+          h4+='<span style="font-size:22px;flex-shrink:0">'+it.icon+'</span>';
+          h4+='<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#fff">'+it.situation+'</div>';
+          h4+='<div style="font-size:11px;color:'+it.col+'">⚠️ '+it.risque+'</div>';
+          h4+='<div style="font-size:11px;color:rgba(255,255,255,.6)">→ '+it.prevention+'</div></div></div>';
+        });
+        return h4+'</div>';
+
+      case 'droits':
+        var h5='<div style="text-align:center;margin-bottom:20px"><div style="font-size:48px">'+slide.icon+'</div><div style="font-size:26px;font-weight:900;color:'+slide.couleur+'">'+slide.titre+'</div></div>';
+        h5+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.points.forEach(function(p){
+          h5+='<div style="background:'+slide.couleur+'11;border:1px solid '+slide.couleur+'33;border-radius:10px;padding:14px 18px">';
+          h5+='<div style="font-size:14px;font-weight:800;color:'+slide.couleur+';margin-bottom:4px">'+p.droit+'</div>';
+          h5+='<div style="font-size:13px;color:rgba(255,255,255,.8)">'+p.detail+'</div></div>';
+        });
+        return h5+'</div>';
+
+      case 'methode_erac':
+        var h6='<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h6+='<div style="display:flex;flex-direction:column;gap:12px">';
+        slide.etapes_speciales.forEach(function(e){
+          h6+='<div style="display:flex;align-items:start;gap:14px;background:rgba(255,255,255,.05);border:2px solid '+e.col+'44;border-radius:12px;padding:16px 18px">';
+          h6+='<div style="width:44px;height:44px;border-radius:12px;background:'+e.col+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0">'+e.lettre+'</div>';
+          h6+='<div><div style="font-size:16px;font-weight:900;color:'+e.col+'">'+e.mot+' <span style="font-size:20px">'+e.icon+'</span></div>';
+          h6+='<div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px">'+e.action+'</div></div></div>';
+        });
+        return h6+'</div>';
+
+      case 'phrases_interdites':
+        var h7='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h7+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.comparaisons.forEach(function(comp){
+          h7+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+          h7+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5"><span style="font-size:14px">❌</span> '+comp.interdit+'</div>';
+          h7+='<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#86efac;font-weight:700"><span style="font-size:14px">✅</span> '+comp.correct+'</div>';
+          h7+='</div>';
+        });
+        return h7+'</div>';
+
+      case 'controle_routes':
+        var h8='<div style="text-align:center;margin-bottom:20px"><div style="font-size:48px">'+slide.icon+'</div><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h8+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.etapes.forEach(function(e){
+          h8+='<div style="display:flex;align-items:start;gap:12px;background:rgba(255,255,255,.05);border:1px solid '+slide.couleur+'33;border-radius:10px;padding:12px 16px">';
+          h8+='<div style="width:28px;height:28px;border-radius:50%;background:'+slide.couleur+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;font-size:13px">'+e.num+'</div>';
+          h8+='<div><div style="font-size:14px;font-weight:800;color:#fff">'+e.action+'</div><div style="font-size:12px;color:rgba(255,255,255,.6)">'+e.detail+'</div></div></div>';
+        });
+        return h8+'</div>';
+
+      case 'amendes':
+        var h9='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h9+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';
+        slide.items.forEach(function(it){
+          h9+='<div style="background:'+it.col+'11;border:2px solid '+it.col+'44;border-radius:10px;padding:14px">';
+          h9+='<div style="font-size:20px;margin-bottom:6px">'+it.icon+'</div>';
+          h9+='<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px">'+it.infraction+'</div>';
+          h9+='<div style="font-size:12px;color:'+it.col+';font-weight:700">'+it.amende+'</div></div>';
+        });
+        return h9+'</div>';
+
+      case 'optimiser_tournee':
+        var h10='<div style="text-align:center;margin-bottom:20px"><div style="font-size:48px">'+slide.icon+'</div><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h10+='<div style="display:flex;flex-direction:column;gap:10px">';
+        slide.points.forEach(function(p){
+          h10+='<div style="background:rgba(255,255,255,.05);border:1px solid '+slide.couleur+'33;border-radius:10px;padding:14px 18px">';
+          h10+='<div style="font-size:14px;font-weight:800;color:'+slide.couleur+'">→ '+p.action+'</div>';
+          h10+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">'+p.detail+'</div></div>';
+        });
+        return h10+'</div>';
+
+      case 'check_depart':
+        var h11='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h11+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+        slide.categories.forEach(function(cat){
+          h11+='<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:16px">';
+          h11+='<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">'+cat.cat+'</div>';
+          cat.items.forEach(function(item){
+            h11+='<div style="display:flex;gap:8px;padding:5px 0;font-size:12px;color:rgba(255,255,255,.8)"><span style="color:#22c55e">☐</span>'+item+'</div>';
+          });
+          h11+='</div>';
+        });
+        return h11+'</div>';
+
+      case 'nomenclature':
+        var h12='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h12+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+        slide.items.forEach(function(it){
+          h12+='<div style="background:rgba(255,255,255,.05);border:2px solid '+it.col+'33;border-radius:10px;padding:14px;text-align:center">';
+          h12+='<div style="font-size:28px;margin-bottom:8px">'+it.icon+'</div>';
+          h12+='<div style="font-size:13px;font-weight:900;color:'+it.col+';margin-bottom:4px">'+it.nom+'</div>';
+          h12+='<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px">'+it.def+'</div>';
+          h12+='<div style="font-size:11px;color:#f59e0b;font-weight:700">~'+it.prix+'</div></div>';
+        });
+        return h12+'</div>';
+
+      case 'comportement_evenement':
+        var h13='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h13+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.comparaisons.forEach(function(comp){
+          h13+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+          h13+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5">❌ '+comp.interdit+'</div>';
+          h13+='<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#86efac;font-weight:700">✅ '+comp.correct+'</div>';
+          h13+='</div>';
+        });
+        return h13+'</div>';
+
+      case 'inventaire_pratique':
+        var h14='<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h14+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">';
+        slide.items_chiffres.forEach(function(it){
+          h14+='<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:16px;text-align:center">';
+          h14+='<div style="font-size:24px;margin-bottom:6px">'+it.icon+'</div>';
+          h14+='<div style="font-size:22px;font-weight:900;color:'+slide.couleur+';margin-bottom:4px">'+it.val+'</div>';
+          h14+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+it.label+'</div></div>';
+        });
+        h14+='<div style="background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.3);border-radius:10px;padding:14px;text-align:center;font-size:14px;color:rgba(255,255,255,.9);font-weight:700">💡 '+slide.note+'</div>';
+        return h14;
+
+      case 'regles_telephone':
+        var h15='<div style="text-align:center;margin-bottom:20px"><div style="font-size:48px">'+slide.icon+'</div><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h15+='<div style="display:flex;flex-direction:column;gap:8px">';
+        slide.points.forEach(function(p){
+          h15+='<div style="display:flex;align-items:start;gap:12px;background:rgba(255,255,255,.05);border:2px solid '+p.col+(p.obligatoire?'':'22')+';border-radius:10px;padding:12px 16px">';
+          h15+='<span style="color:'+p.col+';font-size:18px;flex-shrink:0">'+(p.obligatoire?'🔴':'✅')+'</span>';
+          h15+='<div><div style="font-size:13px;font-weight:800;color:#fff">'+(p.obligatoire?'<span style="font-size:10px;background:'+p.col+';color:#fff;border-radius:4px;padding:1px 6px;margin-right:6px">LÉGAL</span>':'')+p.regle+'</div>';
+          h15+='<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px">'+p.detail+'</div></div></div>';
+        });
+        return h15+'</div>';
+
+      case 'signalement':
+        var h16='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h16+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+        slide.categories_signal.forEach(function(cat){
+          h16+='<div style="background:rgba(255,255,255,.05);border:2px solid '+cat.col+'44;border-radius:12px;padding:16px">';
+          h16+='<div style="font-size:12px;font-weight:900;color:'+cat.col+';margin-bottom:10px;padding:4px 8px;background:'+cat.col+'22;border-radius:6px;text-align:center">'+cat.quand+'</div>';
+          cat.situations.forEach(function(s){
+            h16+='<div style="font-size:11px;color:rgba(255,255,255,.8);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08)">• '+s+'</div>';
+          });
+          h16+='</div>';
+        });
+        return h16+'</div>';
+
+      case 'compte_rendu':
+        var h17='<div style="text-align:center;margin-bottom:20px"><div style="font-size:48px">'+slide.icon+'</div><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h17+='<div style="display:flex;flex-direction:column;gap:12px">';
+        slide.points.forEach(function(p,i){
+          h17+='<div style="background:rgba(255,255,255,.05);border:1px solid '+slide.couleur+'33;border-radius:10px;padding:14px 18px">';
+          h17+='<div style="font-size:14px;font-weight:800;color:'+slide.couleur+';margin-bottom:6px">'+(i+1)+'. '+p.action+'</div>';
+          h17+='<div style="font-size:12px;color:rgba(255,255,255,.6);font-style:italic">Exemple : '+p.detail+'</div></div>';
+        });
+        return h17+'</div>';
+
+      case 'anatomie_bl':
+        var h18='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+        h18+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';
+        slide.elements.forEach(function(el){
+          h18+='<div style="background:rgba(255,255,255,.05);border:2px solid '+(el.obligatoire?'rgba(245,158,11,.4)':'rgba(255,255,255,.15)')+';border-radius:10px;padding:14px">';
+          h18+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:20px">'+el.icon+'</span>';
+          h18+='<span style="font-size:13px;font-weight:900;color:#fff">'+el.zone+'</span>';
+          if(el.obligatoire) h18+='<span style="font-size:9px;background:rgba(245,158,11,.3);color:#fbbf24;border-radius:4px;padding:2px 6px;font-weight:800;margin-left:auto">OBLIGATOIRE</span>';
+          h18+='</div><div style="font-size:12px;color:rgba(255,255,255,.7)">'+el.contenu+'</div></div>';
+        });
+        return h18+'</div>';
+
+      default:
+        return oldRender(slide, couleur);
+    }
+  };
+
+  console.log('Slides enrichies chargées — '+ Object.keys(SLIDES_DATA).length+' blocs disponibles');
 })();
 
 </script>
