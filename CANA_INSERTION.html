@@ -6839,16 +6839,16 @@ function renderProgDetail(salId){
   /* Année 1 */
   h += '<div style="font-size:11px;font-weight:900;color:var(--orange);text-transform:uppercase;margin-bottom:8px;padding:4px 10px;background:rgba(249,115,22,.1);border-radius:6px;display:inline-block">Année 1 — Fondamentaux</div>';
   h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">';
-  PROGRAMME_2ANS.filter(function(p){return p.annee===1;}).forEach(function(p){
-    h += renderProgrammeLigne(p, prog, moisActuel, blocsProjet, salId);
+  PROGRAMME_2ANS.filter(function(p){return p&&p.annee===1&&typeof p.mois==='number';}).forEach(function(p){
+    try{ h += renderProgrammeLigne(p, prog, moisActuel, blocsProjet, salId); }catch(e){}
   });
   h += '</div>';
 
   /* Année 2 */
   h += '<div style="font-size:11px;font-weight:900;color:var(--blue);text-transform:uppercase;margin-bottom:8px;padding:4px 10px;background:rgba(74,158,216,.1);border-radius:6px;display:inline-block">Année 2 — Approfondissement</div>';
   h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">';
-  PROGRAMME_2ANS.filter(function(p){return p.annee===2;}).forEach(function(p){
-    h += renderProgrammeLigne(p, prog, moisActuel, blocsProjet, salId);
+  PROGRAMME_2ANS.filter(function(p){return p&&p.annee===2&&typeof p.mois==='number';}).forEach(function(p){
+    try{ h += renderProgrammeLigne(p, prog, moisActuel, blocsProjet, salId); }catch(e){}
   });
   h += '</div>';
 
@@ -10441,5 +10441,289 @@ window.revealNext = function(couleur){
 })();
 
 console.log('Mega patch 2 chargé — Académie enrichie, documents, fiches, constat');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   FIX COMPLET — SLIDES PROGRESSIVES + DOCS + FORMATEUR
+═══════════════════════════════════════════════════ */
+
+/* ── 1. RENDRE TOUTES LES FONCTIONS ACCESSIBLES ── */
+window.genSyntheseParcours = window.genSyntheseParcours || function(salId){
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s){ toast('Sélectionnez un salarié','err'); return; }
+  alert('Génération synthèse pour '+s.prenom+' — fonction en chargement...');
+};
+
+/* Fix boutons documents — récupérer le salId courant */
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('button');
+  if(!btn) return;
+  var onclick = btn.getAttribute('onclick')||'';
+  /* Patch les boutons qui ont salId=0 */
+  if(onclick.indexOf('genSyntheseParcours(0)') >= 0 || onclick.indexOf('genPlanFormation(0)') >= 0){
+    e.preventDefault(); e.stopPropagation();
+    var salId = window.dossierSalActif || window.progSalActif || (DB.salaries.filter(function(s){return s.statut==='actif';})[0]||{}).id || 0;
+    if(onclick.indexOf('genSyntheseParcours') >= 0) genSyntheseParcours(salId);
+    if(onclick.indexOf('genPlanFormation') >= 0) genPlanFormation(salId);
+    if(onclick.indexOf('imprimerAttestationFormation') >= 0) imprimerAttestationFormation&&imprimerAttestationFormation(salId,'Formation logistique complète',null,null);
+  }
+});
+
+/* ── 2. DÉVOILEMENT PROGRESSIF SUR TOUT LE CONTENU DES SLIDES ── */
+/* Remplacer afficherSlide pour injecter le système progressif */
+var _oldAfficherSlide = window.afficherSlide;
+window.afficherSlide = function(idx, deck){
+  _oldAfficherSlide(idx, deck);
+  /* Après le rendu, cacher tous les éléments révélables et ajouter le bouton */
+  setTimeout(function(){
+    var content = document.getElementById('slide-content-wrap');
+    if(!content){
+      /* Créer wrapper si pas existant */
+      var overlay = document.getElementById('slide-overlay');
+      if(!overlay) return;
+      var mainArea = overlay.querySelector('[style*="flex:1"]');
+      if(!mainArea) return;
+      mainArea.id = 'slide-content-wrap';
+      content = mainArea;
+    }
+
+    /* Trouver tous les éléments enfants directs du contenu principal */
+    var slideDiv = content.querySelector('[style*="max-width:900px"]') || content.querySelector('div');
+    if(!slideDiv) return;
+
+    var children = Array.prototype.slice.call(slideDiv.children);
+    if(children.length <= 1) return; /* Slide titre — ne pas masquer */
+
+    /* Garder le premier enfant (titre) visible */
+    /* Masquer tout le reste */
+    var toReveal = [];
+    children.forEach(function(child, i){
+      if(i === 0) return; /* titre toujours visible */
+      child.style.opacity = '0';
+      child.style.transform = 'translateY(12px)';
+      child.style.transition = 'opacity .3s, transform .3s';
+      toReveal.push(child);
+    });
+
+    if(!toReveal.length) return;
+
+    /* Stocker pour révélation */
+    window._slideRevealQueue = toReveal;
+    window._slideRevealIdx = 0;
+
+    /* Ajouter bouton révélation dans la nav */
+    var nav = document.getElementById('slide-nav-bar');
+    if(!nav){
+      /* Trouver la barre de navigation */
+      var overlay2 = document.getElementById('slide-overlay');
+      if(!overlay2) return;
+      var navBars = overlay2.querySelectorAll('[style*="justify-content:space-between"]');
+      nav = navBars[navBars.length - 1];
+      if(nav) nav.id = 'slide-nav-bar';
+    }
+
+    if(nav && !document.getElementById('reveal-prog-btn')){
+      var revBtn = document.createElement('button');
+      revBtn.id = 'reveal-prog-btn';
+      revBtn.style.cssText = 'background:#a855f7;border:none;border-radius:8px;color:#fff;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px';
+      revBtn.textContent = '▶ Révéler (0/'+toReveal.length+')';
+      revBtn.onclick = function(){
+        var queue = window._slideRevealQueue || [];
+        var ridx = window._slideRevealIdx || 0;
+        if(ridx >= queue.length){
+          revBtn.textContent = '✅ Tout révélé';
+          revBtn.style.background = '#22c55e';
+          return;
+        }
+        var el = queue[ridx];
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+        window._slideRevealIdx = ridx + 1;
+        revBtn.textContent = '▶ Révéler ('+window._slideRevealIdx+'/'+queue.length+')';
+        if(window._slideRevealIdx >= queue.length){
+          setTimeout(function(){ revBtn.textContent = '✅ Tout révélé'; revBtn.style.background = '#22c55e'; }, 300);
+        }
+      };
+      /* Insérer avant les boutons de navigation */
+      var firstBtn = nav.querySelector('button');
+      if(firstBtn) nav.insertBefore(revBtn, firstBtn);
+      else nav.appendChild(revBtn);
+    }
+  }, 100);
+};
+
+/* ── 3. FICHES ÉLÈVES IMPRIMABLES POUR CHAQUE MODULE ── */
+var FICHES_ELEVES = {
+  reglementation:{
+    titre:'Réglementation du transport',
+    exercices:[
+      {type:'calcul', enonce:'Votre camion a un PTAC de 3200 kg et pèse 1850 kg à vide. Calculez la charge utile :',  reponse:'PTAC − Poids à vide = _____ − _____ = _____ kg de charge utile'},
+      {type:'vrai_faux', enonce:'Avec un permis B, je peux conduire un camion de 4 tonnes de PTAC.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'En cas d\'accident avec alcool, l\'assurance de l\'entreprise couvre toujours.', reponse:'VRAI □   FAUX □'},
+      {type:'qcm', enonce:'Le taux légal d\'alcool pour un chauffeur professionnel en service est :', choix:['A. 0,5 g/L','B. 0,2 g/L','C. 0,0 g/L','D. 0,8 g/L'], reponse:'Réponse : ___'},
+      {type:'texte', enonce:'Citez 3 documents que vous devez avoir dans le véhicule :', reponse:'1. _______________  2. _______________  3. _______________'},
+      {type:'texte', enonce:'Que faites-vous lors d\'un contrôle routier ?', reponse:'_________________________________________________'},
+    ]
+  },
+  chaine_froid:{
+    titre:'Chaîne du froid',
+    exercices:[
+      {type:'tableau', enonce:'Complétez le tableau des températures réglementaires :', colonnes:['Type d\'aliment','Température min','Température max'], lignes:['Surgelés','Plats cuisinés','Viandes fraîches','Fruits et légumes','Plats chauds en livraison']},
+      {type:'vrai_faux', enonce:'La Listeria peut se développer même dans un réfrigérateur à +2°C.', reponse:'VRAI □   FAUX □'},
+      {type:'qcm', enonce:'HACCP signifie :', choix:['A. Hygiène Alimentaire Contrôle Cuisine Professionnelle','B. Analyse des risques et maîtrise des points critiques','C. Haute Autorité de Contrôle des Cuisines Pro','D. Aucune de ces réponses'], reponse:'Réponse : ___'},
+      {type:'texte', enonce:'Le frigo du camion affiche +9°C au lieu de +3°C. Que faites-vous exactement ?', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'texte', enonce:'Citez 2 bactéries dangereuses dans les aliments et leur risque :', reponse:'1. _______________  Risque : _______________\n2. _______________  Risque : _______________'},
+    ]
+  },
+  chargement:{
+    titre:'Chargement professionnel',
+    exercices:[
+      {type:'schema', enonce:'Vous avez 3 livraisons : Client A (6h30) — Client B (8h) — Client C (10h). Numérotez dans quel ordre vous chargez (1=premier chargé) :', reponse:'Client A : ___ (position dans le camion : ___)\nClient B : ___ (position dans le camion : ___)\nClient C : ___ (position dans le camion : ___)'},
+      {type:'qcm', enonce:'LIFO signifie :', choix:['A. Last In First Out — dernier chargé = premier sorti','B. First In Last Out — premier chargé = dernier sorti','C. Liste Inventaire de Formation Obligatoire','D. Aucune de ces réponses'], reponse:'Réponse : ___'},
+      {type:'vrai_faux', enonce:'On peut porter seul une charge de 40 kg si on le fait vite.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'Décrivez la bonne technique pour soulever une caisse de 20 kg :', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'texte', enonce:'Que signifie TMS et quels risques cela représente-t-il ?', reponse:'_________________________________________________'},
+      {type:'calcul', enonce:'À 50 km/h, une caisse de 20 kg non arrimée représente un impact de combien de kg ?', reponse:'Impact = _____ kg'},
+    ]
+  },
+  securite_conduite:{
+    titre:'Sécurité — Alcool, Téléphone, Stupéfiants',
+    exercices:[
+      {type:'qcm', enonce:'Le taux légal d\'alcool pour un chauffeur professionnel en service est :', choix:['A. 0,5 g/L comme tout conducteur','B. 0,2 g/L','C. 0,0 g/L — tolérance zéro','D. 0,8 g/L'], reponse:'Réponse : ___'},
+      {type:'calcul', enonce:'À 90 km/h, si vous regardez votre téléphone pendant 3 secondes, combien de mètres parcourez-vous les yeux fermés ?', reponse:'Distance = 90 km/h ÷ 3,6 × ___ secondes = _____ mètres'},
+      {type:'vrai_faux', enonce:'Fumer du cannabis le soir n\'affecte pas la conduite le lendemain matin.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'Un kit mains libres rend la conduite aussi sûre que sans téléphone.', reponse:'VRAI □   FAUX □'},
+      {type:'texte', enonce:'En cas d\'accident sous l\'influence de l\'alcool, qui paie les dégâts ?', reponse:'_________________________________________________'},
+      {type:'texte', enonce:'Citez 3 signes que vous êtes trop fatigué pour conduire :', reponse:'1. _______________  2. _______________  3. _______________'},
+    ]
+  },
+  constat:{
+    titre:'Remplir un constat amiable',
+    exercices:[
+      {type:'liste', enonce:'Listez les 5 premières choses à faire juste après un accident (dans l\'ordre) :', reponse:'1. _______________\n2. _______________\n3. _______________\n4. _______________\n5. _______________'},
+      {type:'vrai_faux', enonce:'Je peux signer un constat vierge si l\'autre conducteur dit qu\'il remplira après.', reponse:'VRAI □   FAUX □'},
+      {type:'vrai_faux', enonce:'Si l\'accrochage est léger, pas besoin de faire un constat.', reponse:'VRAI □   FAUX □'},
+      {type:'qcm', enonce:'Sous combien de jours faut-il envoyer le constat à l\'assurance ?', choix:['A. 2 jours','B. 5 jours','C. 10 jours','D. 1 mois'], reponse:'Réponse : ___'},
+      {type:'texte', enonce:'L\'autre conducteur veut partir sans constat. Que faites-vous exactement ?', reponse:'_________________________________________________\n_________________________________________________'},
+      {type:'texte', enonce:'Citez 3 informations obligatoires à échanger lors d\'un constat :', reponse:'1. _______________  2. _______________  3. _______________'},
+    ]
+  },
+};
+
+window.imprimerFicheEleve = function(moduleId){
+  var fiche = FICHES_ELEVES[moduleId];
+  if(!fiche){ toast('Fiche non disponible','err'); return; }
+  var win = window.open('','_blank');
+  if(!win) return;
+
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px;line-height:1.7}h1{font-size:16px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:20px}.header{background:#f8fafc;padding:12px;border-radius:8px;display:flex;gap:24px;flex-wrap:wrap;font-size:11px;margin-bottom:20px}.ex{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid}.ex-num{font-size:10px;font-weight:800;color:#f97316;text-transform:uppercase;margin-bottom:6px}.ex-enonce{font-size:13px;font-weight:700;color:#1a2435;margin-bottom:10px}.ex-reponse{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;padding:10px;font-size:11px;color:#94a3b8;min-height:44px;white-space:pre-line}.choix{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.choix-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-size:12px}.tableau table{width:100%;border-collapse:collapse}.tableau th{background:#0f1923;color:#fff;padding:7px;font-size:11px}.tableau td{border:1px solid #e2e8f0;padding:20px 8px;font-size:11px}.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:140px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}@media print{button{display:none}}';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase">La Table de Cana · Académie Logistique · Fiche élève</div>';
+  html+='<h1>'+fiche.titre+' — Exercices pratiques</h1>';
+  html+='<div class="header"><span><b>Nom :</b> .......................................</span><span><b>Date :</b> ....................</span><span><b>Score :</b> _____ / '+fiche.exercices.length+'</span></div>';
+
+  fiche.exercices.forEach(function(ex,i){
+    html+='<div class="ex">';
+    html+='<div class="ex-num">Exercice '+(i+1)+' — '+( ex.type==='calcul'?'Calcul':ex.type==='vrai_faux'?'Vrai ou Faux':ex.type==='qcm'?'QCM':ex.type==='tableau'?'Tableau à compléter':ex.type==='schema'?'Schéma':ex.type==='liste'?'Liste à compléter':'Réponse libre')+'</div>';
+    html+='<div class="ex-enonce">'+ex.enonce+'</div>';
+
+    if(ex.type==='qcm'&&ex.choix){
+      html+='<div class="choix">';
+      ex.choix.forEach(function(ch){html+='<div class="choix-item">□ '+ch+'</div>';});
+      html+='</div>';
+    }
+    if(ex.type==='tableau'&&ex.colonnes){
+      html+='<div class="tableau"><table><tr>';
+      ex.colonnes.forEach(function(col){html+='<th>'+col+'</th>';});
+      html+='</tr>';
+      ex.lignes.forEach(function(ligne){html+='<tr><td>'+ligne+'</td>';for(var k=1;k<ex.colonnes.length;k++)html+='<td style="min-height:30px"></td>';html+='</tr>';});
+      html+='</table></div>';
+    }
+    if(ex.reponse&&ex.type!=='qcm'&&ex.type!=='tableau'){
+      html+='<div class="ex-reponse">'+ex.reponse.replace(/\n/g,'<br>')+'</div>';
+    } else if(ex.type==='qcm'){
+      html+='<div class="ex-reponse">Réponse : ___</div>';
+    }
+    html+='</div>';
+  });
+
+  html+='<div class="sig"><div style="text-align:center"><b>Salarié</b><div class="sig-line"></div></div><div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana · '+new Date().toLocaleDateString('fr-FR')+'</div><div style="text-align:center"><b>Formateur</b><div class="sig-line"></div></div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── 4. CORRIGER LE GUIDE FORMATEUR POUR AFFICHER LES QCM ET FICHES ÉLÈVES ── */
+(function(){
+  var oldRF = window.renderCoursFormateur;
+  if(!oldRF) return;
+  window.renderCoursFormateur = function(c2){
+    oldRF(c2);
+    /* Ajouter boutons fiches élèves */
+    var fichesBtns = document.createElement('div');
+    fichesBtns.className = 'card';
+    fichesBtns.style.marginTop = '16px';
+    fichesBtns.style.borderColor = 'rgba(74,158,216,.3)';
+    fichesBtns.innerHTML = '<div class="card-title" style="color:var(--blue)">📄 Fiches élèves — À imprimer avant chaque séance</div>'
+      +'<div style="font-size:12px;color:var(--sub);margin-bottom:14px">Distribuez ces fiches aux salariés AVANT la formation. Ils complètent d\'abord seuls, puis vous corrigez ensemble.</div>'
+      +'<div class="grid-2">';
+
+    Object.keys(FICHES_ELEVES).forEach(function(key){
+      var f = FICHES_ELEVES[key];
+      fichesBtns.innerHTML += '<div style="background:var(--panel2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px">'
+        +'<div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--text)">'+f.titre+'</div>'
+        +'<div style="font-size:11px;color:var(--sub)">'+f.exercices.length+' exercices · À distribuer en début de séance</div></div>'
+        +'<button class="btn btn-primary btn-sm" onclick="imprimerFicheEleve(\''+key+'\')">🖨️ Imprimer</button></div>';
+    });
+
+    fichesBtns.innerHTML += '</div>';
+    if(c2) c2.appendChild(fichesBtns);
+
+    /* Ajouter QCM intégrés par bloc */
+    var qcmSection = document.createElement('div');
+    qcmSection.className = 'card';
+    qcmSection.style.marginTop = '16px';
+    qcmSection.style.borderColor = 'rgba(61,186,122,.3)';
+    qcmSection.innerHTML = '<div class="card-title" style="color:var(--green)">🎯 QCM de l\'Académie — Accès direct par module</div>'
+      +'<div style="font-size:12px;color:var(--sub);margin-bottom:14px">Lancez le QCM directement depuis ici pour chaque salarié en fin de séance.</div>'
+      +'<div class="grid-2">';
+
+    if(typeof ACADEMIE !== 'undefined' && ACADEMIE.blocs){
+      ACADEMIE.blocs.forEach(function(bloc){
+        qcmSection.innerHTML += '<div style="background:var(--panel2);border:1px solid '+bloc.couleur+'33;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px">'
+          +'<span style="font-size:24px">'+bloc.icon+'</span>'
+          +'<div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--text)">'+bloc.titre+'</div>'
+          +'<div style="font-size:10px;color:var(--sub)">'+bloc.qcm.length+' questions</div></div>'
+          +'<button class="btn btn-sm" style="background:'+bloc.couleur+';border:none;color:#fff" onclick="window.acadSalActif=DB.salaries.filter(function(s){return s.statut===\'actif\';})[0];ouvrirQCM(\''+bloc.id+'\')">Lancer</button></div>';
+      });
+    }
+
+    qcmSection.innerHTML += '</div>';
+    if(c2) c2.appendChild(qcmSection);
+  };
+})();
+
+/* ── 5. CORRIGER genSyntheseParcours ET genPlanFormation ── */
+/* S'assurer que dossierSalActif est bien défini */
+(function(){
+  /* Patcher renderDossier pour mémoriser le salId */
+  var oldOuvrirDossier = window.ouvrirDossier;
+  window.ouvrirDossier = function(salId){
+    window.dossierSalActif = salId;
+    if(oldOuvrirDossier) oldOuvrirDossier(salId);
+  };
+
+  /* Patcher ouvrirFicheCocher pour mémoriser */
+  var oldOFC = window.ouvrirFicheCocher;
+  window.ouvrirFicheCocher = function(salId, type){
+    window.dossierSalActif = salId;
+    if(oldOFC) oldOFC(salId, type);
+  };
+})();
+
+console.log('Fix complet chargé — slides progressives, fiches élèves, QCM formateur');
 
 </script>
