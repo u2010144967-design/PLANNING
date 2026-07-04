@@ -9486,3 +9486,960 @@ window.imprimerAttestationFormation = function(salId, blocTitre, score, duree){
 })();
 
 </script>
+
+<script>
+/* ═══ CORRECTION PROGRAMME 2 ANS — ORDRE DE CHARGEMENT ═══ */
+(function(){
+  /* Attendre que tout soit chargé */
+  function tryRender(){
+    if(typeof PROGRAMME_2ANS === 'undefined' || !PROGRAMME_2ANS.length){
+      setTimeout(tryRender, 200);
+      return;
+    }
+    /* Rebrancher le router */
+    var oldR = window.render;
+    window.render = function(page){
+      if(page === 'programme'){
+        var c = document.getElementById('content');
+        if(c) renderProgramme(c);
+      } else if(page === 'tutorat'){
+        var c2 = document.getElementById('content');
+        if(c2) renderTutorat(c2);
+      } else {
+        oldR(page);
+      }
+    };
+  }
+  setTimeout(tryRender, 500);
+
+  /* Corriger selProgSal pour attendre PROGRAMME_2ANS */
+  var _old = window.selProgSal;
+  window.selProgSal = function(salId, el){
+    document.querySelectorAll('.fsal-btn').forEach(function(b){
+      b.style.borderColor='var(--border)'; b.style.background='var(--panel)';
+    });
+    if(el){ el.style.borderColor='var(--blue)'; el.style.background='var(--panel2)'; }
+    window.progSalActif = salId;
+    if(typeof PROGRAMME_2ANS === 'undefined' || !PROGRAMME_2ANS.length){
+      var pd = document.getElementById('prog-detail');
+      if(pd) pd.innerHTML = '<div style="padding:20px;color:var(--sub);text-align:center">Chargement du programme en cours...</div>';
+      setTimeout(function(){ renderProgDetail(salId); }, 500);
+    } else {
+      try{ renderProgDetail(salId); }
+      catch(e){
+        var pd2 = document.getElementById('prog-detail');
+        if(pd2) pd2.innerHTML = '<div style="color:var(--red);padding:20px">Erreur: '+e.message+'</div>';
+      }
+    }
+  };
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MEGA PATCH 2 — PARTIE 1
+   Slides dévoilement progressif + Constat + Nouvelles fiches
+   + Nouveaux documents + Passeport enrichi
+═══════════════════════════════════════════════════════════════ */
+
+/* ══ DÉVOILEMENT PROGRESSIF DES SLIDES ══ */
+(function(){
+  /* Remplacer le type 'question' par version progressive */
+  var oldRSC = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    if(slide.type === 'question_progressive' || slide.reveal){
+      return renderSlideProgressive(slide, couleur);
+    }
+    return oldRSC(slide, couleur);
+  };
+})();
+
+function renderSlideProgressive(slide, couleur){
+  window._revealIdx = 0;
+  window._revealItems = slide.items || slide.choix || [];
+  window._revealTotal = window._revealItems.length;
+
+  var h = '<div style="text-align:center;margin-bottom:24px">';
+  if(slide.icon) h += '<div style="font-size:48px;margin-bottom:12px">'+slide.icon+'</div>';
+  h += '<div style="font-size:11px;font-weight:800;color:'+couleur+';text-transform:uppercase;margin-bottom:8px">'+( slide.sous||'Question ouverte')+'</div>';
+  h += '<div style="font-size:22px;font-weight:900;color:#fff;line-height:1.4;margin-bottom:24px">'+slide.question+'</div></div>';
+  h += '<div id="reveal-list" style="display:flex;flex-direction:column;gap:10px"></div>';
+  h += '<div style="text-align:center;margin-top:24px">';
+  h += '<button onclick="revealNext(\''+couleur+'\')" id="reveal-btn" style="background:'+couleur+';border:none;border-radius:10px;color:#fff;padding:12px 32px;font-size:15px;font-weight:800;cursor:pointer">▶ Révéler la prochaine réponse</button>';
+  h += '<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:8px" id="reveal-count">0 / '+window._revealTotal+' révélées</div>';
+  h += '</div>';
+
+  /* Lancer la révélation au premier clic bouton suivant */
+  setTimeout(function(){ window._revealItems = slide.items || slide.choix || []; window._revealIdx = 0; }, 100);
+  return h;
+}
+
+window.revealNext = function(couleur){
+  var items = window._revealItems || [];
+  var idx = window._revealIdx || 0;
+  if(idx >= items.length) return;
+
+  var item = items[idx];
+  var list = document.getElementById('reveal-list');
+  if(!list) return;
+
+  var div = document.createElement('div');
+  var isGood = typeof item === 'string' && item.indexOf('✅') >= 0;
+  var isBad = typeof item === 'string' && item.indexOf('❌') >= 0;
+  var isAlert = typeof item === 'string' && item.indexOf('🔴') >= 0;
+
+  var bg = isGood ? 'rgba(34,197,94,.12)' : isBad ? 'rgba(239,68,68,.12)' : isAlert ? 'rgba(239,68,68,.08)' : 'rgba(255,255,255,.06)';
+  var border = isGood ? 'rgba(34,197,94,.4)' : isBad ? 'rgba(239,68,68,.4)' : isAlert ? 'rgba(239,68,68,.3)' : (couleur||'rgba(255,255,255,.2)')+'55';
+  var col = isGood ? '#86efac' : isBad ? '#fca5a5' : '#fff';
+
+  div.style.cssText = 'opacity:0;transform:translateY(10px);transition:.3s;background:'+bg+';border:1px solid '+border+';border-radius:10px;padding:14px 18px;font-size:14px;color:'+col+';font-weight:'+(isGood||isBad?'700':'400');
+
+  /* Contenu */
+  if(typeof item === 'object' && item.label){
+    div.innerHTML = '<strong style="color:'+(couleur||'#fff')+'">'+(idx+1)+'. '+item.label+'</strong>'+(item.detail?'<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">'+item.detail+'</div>':'');
+  } else {
+    div.innerHTML = '<span style="margin-right:8px;opacity:.5">'+(idx+1)+'.</span>'+item;
+  }
+
+  list.appendChild(div);
+  setTimeout(function(){ div.style.opacity='1'; div.style.transform='translateY(0)'; }, 20);
+
+  window._revealIdx = idx + 1;
+  var count = document.getElementById('reveal-count');
+  if(count) count.textContent = window._revealIdx + ' / ' + items.length + ' révélées';
+
+  var btn = document.getElementById('reveal-btn');
+  if(btn && window._revealIdx >= items.length){
+    btn.textContent = '✅ Tout révélé';
+    btn.style.background = '#22c55e';
+    btn.onclick = null;
+  }
+};
+
+/* Activer le dévoilement progressif sur TOUTES les slides question */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+  Object.keys(SLIDES_DATA).forEach(function(key){
+    var deck = SLIDES_DATA[key];
+    if(!deck || !deck.slides) return;
+    deck.slides.forEach(function(slide){
+      if(slide.type === 'question'){
+        slide.type = 'question_progressive';
+        slide.items = slide.choix || slide.items || [];
+        slide.reveal = true;
+      }
+    });
+  });
+})();
+
+/* ══ SLIDE CONSTAT AMIABLE ══ */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') SLIDES_DATA = {};
+  SLIDES_DATA.constat = {
+    titre:'Remplir un constat amiable',
+    icon:'📋',
+    couleur:'#f97316',
+    slides:[
+      {type:'titre', titre:'Le constat amiable', sous:'Comment le remplir correctement · Les pièges à éviter · Ce qui est obligatoire', icon:'📋', couleur:'#f97316'},
+      {
+        type:'constat_intro',
+        titre:'Pourquoi c\'est si important',
+        points:[
+          {txt:'Le constat est le SEUL document légal qui fait foi après un accident', icon:'⚖️', col:'#f97316'},
+          {txt:'Sans constat signé = ta parole contre la sienne = tu perds souvent', icon:'🗣️', col:'#ef4444'},
+          {txt:'Un constat mal rempli peut être retourné contre toi même si tu n\'es pas fautif', icon:'🔄', col:'#dc2626'},
+          {txt:'L\'assurance se base UNIQUEMENT sur le constat pour décider qui paye', icon:'💰', col:'#f59e0b'},
+          {txt:'Tu as 5 jours pour envoyer le constat à l\'assurance', icon:'📅', col:'#22c55e'},
+        ]
+      },
+      {
+        type:'constat_anatomie',
+        titre:'Le constat — ce que chaque case signifie',
+        zones:[
+          {num:'A', label:'Date, heure, lieu', obligatoire:true, detail:'Date et heure EXACTES de l\'accident. Ville, rue, numéro exact. Si possible : intersection ou point de repère.', piege:'Ne pas écrire "vers 10h" ou "rue principale" — être précis'},
+          {num:'B', label:'Blessé(s)', obligatoire:true, detail:'Cocher OUI s\'il y a un blessé, même léger. Si doute : cocher OUI. Sous-déclarer un blessé = infraction.', piege:'Ne jamais cocher NON si une personne se plaint de douleur même légère'},
+          {num:'C', label:'Dégâts matériels autres', obligatoire:true, detail:'Véhicule endommagé, mur, poteau, etc. Tout noter même si ça semble mineur.', piege:'Un dégât non déclaré sur le constat ne peut pas être réclamé après'},
+          {num:'D', label:'Témoins', obligatoire:false, detail:'Nom, prénom, adresse des témoins. Un témoin neutre = énorme avantage en cas de litige.', piege:'Ne jamais compter sur un témoin qui ne laisse pas ses coordonnées'},
+          {num:'E', label:'Véhicules A et B — Identité', obligatoire:true, detail:'Nom, adresse, téléphone. Numéro de permis. Assurance et numéro de police d\'assurance.', piege:'Photographier la carte grise et l\'assurance de l\'autre — les gens oublient leurs numéros'},
+          {num:'F', label:'Croquis', obligatoire:true, detail:'Schéma simple de la position des véhicules, direction de chacun, point de choc. Flèches pour les directions.', piege:'Un croquis incompréhensible est pire que pas de croquis — simple = 2 voitures + flèches'},
+          {num:'G', label:'Cases à cocher', obligatoire:true, detail:'Les cases qui décrivent la situation : en stationnement, tournait, changeait de file, etc. Cocher ce qui vous correspond UNIQUEMENT.', piege:'NE PAS cocher des cases pour l\'autre — chacun coche ses propres cases de son côté'},
+        ]
+      },
+      {
+        type:'question_progressive',
+        icon:'🤔',
+        sous:'Question — réfléchissez avant de répondre',
+        question:'L\'autre conducteur vous dit : "C\'est ma faute, mais signez quand même le constat vierge, je remplirai après." Que faites-vous ?',
+        items:[
+          '❌ JAMAIS signer un constat vierge ou incomplet — c\'est une arnaque classique',
+          '❌ L\'autre peut remplir n\'importe quoi après votre signature',
+          '✅ Le constat se remplit ENSEMBLE, devant vous, AVANT de signer',
+          '✅ Si l\'autre refuse de remplir : noter son refus et appeler la police',
+          '✅ Photographier sa plaque, son véhicule, ses papiers AVANT qu\'il parte',
+        ]
+      },
+      {
+        type:'constat_procedure',
+        titre:'La procédure exacte — étape par étape',
+        etapes:[
+          {num:1, action:'Sécuriser la zone — feux de détresse + triangle à 30m', urgence:true, detail:'Avant tout geste administratif — mettre le triangle'},
+          {num:2, action:'Vérifier s\'il y a des blessés — appeler le 15 si oui', urgence:true, detail:'Même légèrement blessé = appel 15 obligatoire'},
+          {num:3, action:'Appeler l\'encadrant immédiatement', urgence:true, detail:'Il doit être informé avant que vous remplissiez quoi que ce soit'},
+          {num:4, action:'Photographier TOUT avant de déplacer les véhicules', urgence:false, detail:'Position des voitures, dégâts, plaque de l\'autre, croquis de la route'},
+          {num:5, action:'Remplir le constat ENSEMBLE avec l\'autre conducteur', urgence:false, detail:'Chacun remplit SA partie. On ne touche pas la partie de l\'autre.'},
+          {num:6, action:'Vérifier les informations avant de signer', urgence:false, detail:'Lire ce que l\'autre a écrit. Si quelque chose est faux : ne pas signer, noter le désaccord.'},
+          {num:7, action:'Signer UNIQUEMENT quand tout est rempli et exact', urgence:false, detail:'La signature rend le document officiel et irrévocable'},
+          {num:8, action:'Garder le double et envoyer l\'original à l\'assurance sous 5 jours', urgence:false, detail:'Par lettre recommandée — garder l\'accusé de réception'},
+        ]
+      },
+      {
+        type:'constat_pieges',
+        titre:'Les 7 pièges à éviter absolument',
+        pieges:[
+          {piege:'Signer un constat incomplet ou vierge', consequence:'L\'autre peut écrire n\'importe quoi — vous avez légalement tout accepté', col:'#dc2626'},
+          {piege:'Admettre sa responsabilité à l\'oral', consequence:'"C\'est ma faute" dit à la bouche peut être utilisé contre vous — même si ce n\'est pas vrai', col:'#ef4444'},
+          {piege:'Partir sans échanger les informations', consequence:'Délit de fuite — prison possible + assurance annulée', col:'#dc2626'},
+          {piege:'Ne pas photographier les dégâts', consequence:'Sans photos, les dégâts peuvent être contestés après', col:'#f97316'},
+          {piege:'Oublier de noter les témoins', consequence:'Sans témoin neutre, c\'est parole contre parole', col:'#f59e0b'},
+          {piege:'Ne pas appeler l\'encadrant', consequence:'Faute professionnelle grave — procédure disciplinaire possible', col:'#a855f7'},
+          {piege:'Envoyer le constat après 5 jours', consequence:'L\'assurance peut refuser de prendre en charge — vous payez tout', col:'#ef4444'},
+        ]
+      },
+      {
+        type:'constat_croquis',
+        titre:'Faire un bon croquis — simple et efficace',
+        exemple:{
+          description:'Le croquis doit montrer : la route, la position des deux véhicules, les directions (flèches), le point de choc (croix)',
+          regles:[
+            'Dessiner la rue comme une bande avec les voies',
+            'Placer chaque véhicule avec sa direction (flèche)',
+            'Marquer le point de choc avec une ×',
+            'Indiquer les noms des rues si intersection',
+            'Simple vaut mieux que compliqué — 30 secondes suffisent',
+          ],
+          a_eviter:[
+            'Croquis incompréhensible = contre-productif',
+            'Trop de détails inutiles — rester simple',
+            'Ne pas oublier les flèches de direction',
+          ]
+        }
+      },
+      {
+        type:'question_progressive',
+        icon:'📋',
+        sous:'Situation réelle — que faites-vous ?',
+        question:'Vous avez eu un accrochage léger au parking. L\'autre conducteur dit "ce n\'est rien, pas besoin de constat". Que faites-vous ?',
+        items:[
+          '❌ Ne jamais partir sans constat même pour un accrochage léger',
+          '❌ Les dégâts "légers" au parking peuvent coûter 500€ à 2 000€',
+          '✅ Insister pour faire le constat — c\'est votre droit et votre protection',
+          '✅ Si l\'autre refuse : photographier sa plaque et ses papiers',
+          '✅ Appeler la police si l\'autre devient agressif ou veut partir',
+          '✅ Appeler l\'encadrant dans TOUS les cas — même léger',
+        ]
+      },
+      {
+        type:'recap',
+        titre:'Ce qu\'il faut retenir',
+        items:[
+          '📋 Constat = rempli ENSEMBLE, signé UNIQUEMENT quand complet et exact',
+          '📸 Photographier TOUT avant de déplacer les véhicules — toujours',
+          '🤐 Ne jamais dire "c\'est ma faute" à l\'oral — laisser l\'assurance décider',
+          '❌ Jamais signer un constat vierge ou incomplet — arnaque classique',
+          '📞 Appeler l\'encadrant immédiatement — avant de remplir quoi que ce soit',
+          '⏰ Envoyer à l\'assurance sous 5 jours — recommandé',
+        ],
+        couleur:'#f97316'
+      }
+    ]
+  };
+})();
+
+/* ══ NOUVELLES FICHES À COCHER ══ */
+(function(){
+  if(typeof FICHES_TYPES === 'undefined') return;
+
+  FICHES_TYPES.retour_evenement = {
+    titre:'Fiche retour d\'événement traiteur',
+    icon:'🍽️',
+    sections:[
+      {titre:'Inventaire matériel au retour',items:[
+        'Bacs GN 1/1 recomptés et conformes à l\'inventaire de départ',
+        'Bacs GN 1/2 recomptés et conformes',
+        'Chafing dish complets (dessus + dessous + brûleurs)',
+        'Chariots isothermes présents et propres',
+        'Vaisselle recomptée — assiettes, verres, couverts',
+        'Nappes et linge de table récupérés',
+        'Présentoirs et supports récupérés',
+        'Aucune pièce manquante ou casse non signalée',
+      ]},
+      {titre:'État du matériel retour',items:[
+        'Aucune casse constatée',
+        'Casse éventuelle notée sur bon de casse et signalée',
+        'Bacs alimentaires nettoyés ou signalés pour nettoyage',
+        'Chafing dish vidés et refroidis avant rangement',
+        'Matériel rangé dans les emplacements prévus',
+      ]},
+      {titre:'Véhicule après événement',items:[
+        'Camion nettoyé intérieur — aucun déchet',
+        'Kilométrage noté au retour',
+        'Anomalie véhicule signalée si constatée',
+        'Clés et documents remis à l\'encadrant',
+        'Plein de carburant effectué si nécessaire',
+      ]},
+      {titre:'Débriefing événement',items:[
+        'Client satisfait — aucune remarque',
+        'Incident ou remarque signalée à l\'encadrant',
+        'BL ou bon de prestation signé récupéré',
+        'Photos de terrain transmises si demandées',
+        'Heure de retour au dépôt notée',
+      ]},
+    ]
+  };
+
+  FICHES_TYPES.incident_accident = {
+    titre:'Fiche déclaration d\'incident/accident',
+    icon:'🚨',
+    sections:[
+      {titre:'Identification de l\'incident',items:[
+        'Date et heure exactes de l\'incident notées',
+        'Lieu précis (adresse, rue, point de repère)',
+        'Type d\'incident : accident route / chute / blessure / casse matériel / autre',
+        'Véhicule(s) impliqué(s) identifié(s)',
+        'Personnes présentes identifiées',
+      ]},
+      {titre:'Actions immédiates effectuées',items:[
+        'Sécurisation de la zone (feux de détresse, triangle)',
+        'Vérification des blessés — 15 appelé si nécessaire',
+        'Encadrant appelé immédiatement',
+        'Police appelée si nécessaire (17)',
+        'Constat amiable rempli si accident avec tiers',
+        'Photos des dégâts prises avant déplacement',
+      ]},
+      {titre:'Témoins et informations',items:[
+        'Coordonnées des témoins relevées',
+        'Plaque et assurance de l\'autre véhicule notées',
+        'Rapport oral fait à l\'encadrant dans l\'heure',
+        'Rapport écrit transmis dans les 24h',
+      ]},
+      {titre:'Suite à donner',items:[
+        'Constat envoyé à l\'assurance sous 5 jours',
+        'Déclaration d\'accident du travail si blessure (24h)',
+        'Véhicule expertisé si dégâts',
+        'Reprise de poste validée par l\'encadrant',
+      ]},
+    ]
+  };
+
+  FICHES_TYPES.bilan_tournee = {
+    titre:'Bilan quotidien de tournée',
+    icon:'📊',
+    sections:[
+      {radio:'Journée globale', options:['Excellente — zéro problème','Bonne — quelques ajustements','Difficile — incidents à signaler','Très difficile — intervention encadrant']},
+      {titre:'Livraisons réalisées',items:[
+        'Toutes les livraisons prévues effectuées',
+        'Tous les BL signés et récupérés',
+        'Aucun retard supérieur à 15 minutes',
+        'Clients satisfaits — aucune remarque négative',
+        'Produits livrés dans les bonnes conditions de température',
+      ]},
+      {titre:'Véhicule',items:[
+        'Kilométrage retour noté',
+        'Véhicule propre intérieur et extérieur',
+        'Aucune anomalie mécanique constatée',
+        'Niveau carburant vérifié',
+        'Aucun incident sur la route',
+      ]},
+      {titre:'Problèmes rencontrés — à signaler',items:[
+        'Client absent ou inaccessible — signalé à l\'encadrant',
+        'Commande incomplète — noté sur BL avec réserves',
+        'Problème de température constaté — signalé',
+        'Incident ou accrochage — constat fait',
+        'Autre problème — transmis à l\'encadrant',
+      ]},
+    ]
+  };
+
+  FICHES_TYPES.remise_materiel = {
+    titre:'Fiche remise de matériel',
+    icon:'📦',
+    sections:[
+      {titre:'Équipements de protection (EPI)',items:[
+        'Gilet haute visibilité remis — taille notée',
+        'Chaussures de sécurité remises — pointure notée',
+        'Gants de manutention remis',
+        'Veste de froid remise si nécessaire',
+        'EPI expliqués et obligation portée comprise',
+      ]},
+      {titre:'Équipements de travail',items:[
+        'Téléphone professionnel remis — numéro noté',
+        'Badge d\'accès remis si nécessaire',
+        'Carburant carte remise si nécessaire',
+        'Trousseau de clés camion remis',
+        'Charte d\'utilisation signée',
+      ]},
+      {titre:'Documents remis',items:[
+        'Livret d\'accueil remis et expliqué',
+        'Charte du chauffeur remise et signée',
+        'Règlement intérieur remis',
+        'Feuille de route modèle remise',
+        'Contacts d\'urgence remis',
+      ]},
+      {titre:'Engagement du salarié',items:[
+        'Salarié s\'engage à prendre soin du matériel',
+        'Salarié s\'engage à signaler toute perte ou casse',
+        'Salarié s\'engage à rendre le matériel en état',
+        'Signature de la fiche de remise effectuée',
+      ]},
+    ]
+  };
+
+  FICHES_TYPES.coaching_terrain = {
+    titre:'Fiche coaching terrain',
+    icon:'🎯',
+    sections:[
+      {titre:'Conduite observée',items:[
+        'Démarrage progressif et sans à-coups',
+        'Vitesse adaptée aux conditions',
+        'Respect du code de la route',
+        'Éco-conduite appliquée',
+        'Gestion correcte des situations inattendues',
+        'Pas d\'utilisation du téléphone au volant',
+        'Ceinture portée durant tout le trajet',
+      ]},
+      {titre:'Chargement et manutention',items:[
+        'Ordre de chargement LIFO respecté',
+        'Arrimage correct de la cargaison',
+        'Bons gestes de port de charge',
+        'Utilisation du matériel de manutention si nécessaire',
+        'Port des EPI durant les opérations',
+      ]},
+      {titre:'Relation client observée',items:[
+        'Présentation correcte et professionnelle',
+        'BL vérifié avant déchargement',
+        'Vérification de la commande avec le client',
+        'Signature du BL obtenue',
+        'Comportement professionnel durant toute la livraison',
+      ]},
+      {radio:'Niveau global observé', options:['Excellent — autonome complet','Bien — quelques ajustements mineurs','En progression — accompagnement à poursuivre','Insuffisant — formation complémentaire nécessaire']},
+    ]
+  };
+
+  FICHES_TYPES.visite_medicale = {
+    titre:'Fiche suivi visite médicale',
+    icon:'🏥',
+    sections:[
+      {titre:'Suivi médical',items:[
+        'Médecin traitant connu et régulier',
+        'Carte vitale à jour',
+        'Mutuelle en cours de validité',
+        'Aucune contre-indication à la conduite',
+        'Permis de conduire valide médicalement',
+        'Vision correcte — lunettes ou lentilles si nécessaires',
+      ]},
+      {titre:'Visite médicale du travail',items:[
+        'Visite d\'embauche effectuée',
+        'Date de la prochaine visite notée dans le CRM',
+        'Aptitude au poste de chauffeur livreur confirmée',
+        'Aucune restriction médicale signalée',
+        'Vaccinations à jour selon les recommandations',
+      ]},
+      {titre:'Déclarations du salarié',items:[
+        'Aucun traitement médicamenteux pouvant altérer la conduite',
+        'Aucun problème de santé non déclaré pouvant impacter le travail',
+        'Engagement à signaler tout changement médical à l\'encadrant',
+      ]},
+    ]
+  };
+})();
+
+/* ══ NOUVEAUX DOCUMENTS ══ */
+(function(){
+  /* Synthèse de parcours */
+  window.genSyntheseParcours = function(salId){
+    var s = DB.salaries.find(function(x){return x.id==salId;});
+    if(!s) return;
+    var acad = DB.academie&&DB.academie[salId]?DB.academie[salId]:{};
+    var pass = DB.passeports&&DB.passeports[salId]?DB.passeports[salId]:{};
+    var badges = DB.badges_attribues?DB.badges_attribues.filter(function(b){return b.salId==salId;}).map(function(b){var bd=BADGES_DEFS&&BADGES_DEFS.find(function(x){return x.id===b.badgeId;});return bd?bd.icon+' '+bd.label:'';}).filter(Boolean):[];
+    var prog = DB.programme&&DB.programme[salId]?DB.programme[salId]:{};
+    var moisFaits = Object.keys(prog).filter(function(m){return prog[m].fait;}).length;
+    var scoreMoy = scoreGlobal(salId);
+    var emp = typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(salId):0;
+    var certifs = Object.keys(pass).filter(function(k){return pass[k].obtenu;});
+    var CERTIFS_DEFS={permisb:'Permis B',permisc:'Permis C',haccp:'HACCP',sst:'SST',fimo:'FIMO',fco:'FCO',caces1:'CACES 1',caces3:'CACES 3',gestes:'Gestes & postures',adr:'ADR',incendie:'Sécurité incendie',electrique:'Habilitation électrique',cqp:'CQP Chauffeur livreur',be:'Permis remorque BE',extincteur:'Manipulation extincteurs',ecoconduite:'Attestation éco-conduite',alimentaire:'Habilitation alimentaire'};
+
+    var win = window.open('','_blank');
+    if(!win) return;
+    var css='body{font-family:Arial,sans-serif;padding:32px;max-width:750px;margin:0 auto;color:#1a2435;font-size:12px;line-height:1.7}.header{background:#0f1923;color:#fff;padding:24px;border-radius:12px;margin-bottom:20px}.h1{font-size:22px;font-weight:900;color:#f97316}.h2{font-size:13px;font-weight:900;margin:16px 0 8px;padding:6px 12px;background:#f8fafc;border-radius:6px;border-left:4px solid #f97316}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.box{border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}.box-val{font-size:24px;font-weight:900;color:#f97316}.box-lbl{font-size:10px;color:#64748b}.skill{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f4f8}.bar-wrap{width:120px;background:#f0f4f8;border-radius:4px;height:8px}.bar-fill{height:8px;border-radius:4px}.certif{display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;margin:3px;font-size:11px}.badge-item{display:inline-block;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:4px 10px;margin:3px;font-size:11px}.sig{display:flex;justify-content:space-between;margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:16px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+    html+='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+    html+='<div class="header"><div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px">LA TABLE DE CANA · MARSEILLE · STRUCTURE D\'INSERTION</div>';
+    html+='<div class="h1">Synthèse de parcours professionnel</div>';
+    html+='<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.9);margin-top:8px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    html+='<div style="font-size:12px;color:rgba(255,255,255,.6)">'+s.poste+' · '+s.typeContrat+' · Entrée le '+fmt(s.dateEntree)+'</div>';
+    if(s.projetPro) html+='<div style="font-size:12px;color:#f97316;margin-top:4px">🎯 Projet : '+s.projetPro+'</div>';
+    html+='</div>';
+    html+='<div class="grid">';
+    html+='<div class="box"><div class="box-val">'+(scoreMoy>0?scoreMoy.toFixed(1)+'/4':'—')+'</div><div class="box-lbl">Score évaluation</div></div>';
+    html+='<div class="box"><div class="box-val">'+emp+'%</div><div class="box-lbl">Employabilité</div></div>';
+    html+='<div class="box"><div class="box-val">'+moisFaits+'/24</div><div class="box-lbl">Modules formés</div></div>';
+    html+='</div>';
+    if(certifs.length){
+      html+='<h2 class="h2">🏅 Certifications obtenues</h2>';
+      certifs.forEach(function(k){html+='<span class="certif">✅ '+(CERTIFS_DEFS[k]||k)+'</span>';});
+    }
+    if(Object.keys(acad).length){
+      html+='<h2 class="h2">🎓 Compétences logistiques — niveaux atteints</h2>';
+      Object.keys(acad).forEach(function(k){
+        var d=acad[k]; if(!d.last_score) return;
+        var pct=d.last_score; var col=pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444';
+        var BLOC_NOMS={reglementation:'Réglementation transport',chaine_froid:'Chaîne du froid',chargement:'Chargement & manutention',conduite_pro:'Conduite professionnelle',relation_client:'Relation client',documents:'Documents logistiques',traiteur:'Logistique traiteur',securite_travail:'Sécurité au travail'};
+        html+='<div class="skill"><span style="font-size:11px">'+(BLOC_NOMS[k]||k)+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%;background:'+col+'"></div></div><span style="font-size:11px;font-weight:800;color:'+col+'">'+pct+'%</span></div>';
+      });
+    }
+    if(badges.length){
+      html+='<h2 class="h2">🏆 Badges obtenus</h2>';
+      badges.forEach(function(b){html+='<span class="badge-item">'+b+'</span>';});
+    }
+    if(s.projetPro){
+      html+='<h2 class="h2">🎯 Projet professionnel</h2>';
+      html+='<p>'+s.projetPro+'</p>';
+      if(s.objectifs) html+='<p>'+s.objectifs+'</p>';
+    }
+    html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div style="font-size:11px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+    html+='<div style="text-align:center;color:#64748b;padding-top:20px;font-size:11px">La Table de Cana<br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+    html+='<div style="text-align:center"><b>L\'encadrant</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div></div>';
+    html+='<footer><span>La Table de Cana · Marseille · Document destiné à accompagner les candidatures</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+    html+='</body></html>';
+    win.document.write(html); win.document.close();
+  };
+
+  /* Rapport mensuel financeurs */
+  window.genRapportFinanceurs = function(){
+    var actifs = DB.salaries.filter(function(s){return s.statut==='actif';});
+    var sortis = DB.salaries.filter(function(s){return s.statut==='sorti';});
+    var emplois = sortis.filter(function(s){return s.typeSortie&&(s.typeSortie.indexOf('CDI')>=0||s.typeSortie.indexOf('CDD')>=0||s.typeSortie.indexOf('emploi')>=0);});
+    var formations = sortis.filter(function(s){return s.typeSortie&&s.typeSortie.indexOf('formation')>=0;});
+    var scoreTotal = actifs.reduce(function(sum,s){var sg=scoreGlobal(s.id);return sum+(sg>0?sg:0);},0);
+    var scoreMoyEq = actifs.length?scoreTotal/actifs.length:0;
+
+    var win = window.open('','_blank');
+    if(!win) return;
+    var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px}.header{background:#0f1923;color:#fff;padding:20px;border-radius:10px;margin-bottom:20px}h2{font-size:13px;font-weight:900;background:#f8fafc;padding:8px 12px;border-radius:6px;border-left:4px solid #f97316;margin:16px 0 8px}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}.kpi-val{font-size:26px;font-weight:900;color:#f97316}.kpi-lbl{font-size:10px;color:#64748b}table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#0f1923;color:#fff;padding:7px;font-size:10px;text-align:left}td{border:1px solid #e2e8f0;padding:7px;font-size:10px}footer{font-size:9px;color:#94a3b8;display:flex;justify-content:space-between;margin-top:14px}@media print{button{display:none}}';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+    html+='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+    html+='<div class="header"><div style="font-size:10px;color:rgba(255,255,255,.5)">CONFIDENTIEL — À USAGE INTERNE</div>';
+    html+='<div style="font-size:20px;font-weight:900;color:#f97316">Rapport mensuel — Indicateurs d\'insertion</div>';
+    html+='<div style="font-size:12px;color:rgba(255,255,255,.7)">La Table de Cana · Marseille · '+new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'})+'</div></div>';
+    html+='<div class="kpi-grid">';
+    var kpis=[{v:actifs.length,l:'Salariés actifs'},{v:sortis.length,l:'Sorties totales'},{v:emplois.length,l:'Sorties emploi'},{v:sortis.length?Math.round(emplois.length/sortis.length*100)+'%':'—',l:'Taux insertion'}];
+    kpis.forEach(function(k){html+='<div class="kpi"><div class="kpi-val">'+k.v+'</div><div class="kpi-lbl">'+k.l+'</div></div>';});
+    html+='</div>';
+    html+='<h2>👷 Salariés actifs</h2>';
+    html+='<table><tr><th>Salarié</th><th>Poste</th><th>Contrat</th><th>Entrée</th><th>Fin prévue</th><th>Score</th><th>Employabilité</th></tr>';
+    actifs.forEach(function(s){
+      var sg=scoreGlobal(s.id); var emp2=typeof calculerScoreEmployabilite==='function'?calculerScoreEmployabilite(s.id):0;
+      html+='<tr><td>'+s.prenom+(s.nom?' '+s.nom:'')+'</td><td>'+s.poste+'</td><td>'+s.typeContrat+'</td><td>'+fmt(s.dateEntree)+'</td><td>'+fmt(s.dateFin)+'</td><td>'+(sg>0?sg.toFixed(1)+'/4':'—')+'</td><td>'+emp2+'%</td></tr>';
+    });
+    html+='</table>';
+    html+='<h2>🚪 Sorties du mois</h2>';
+    if(sortis.length){
+      html+='<table><tr><th>Salarié</th><th>Type de sortie</th><th>Date</th></tr>';
+      sortis.slice(0,10).forEach(function(s){html+='<tr><td>'+s.prenom+(s.nom?' '+s.nom:'')+'</td><td>'+(s.typeSortie||'—')+'</td><td>'+fmt(s.dateSortie)+'</td></tr>';});
+      html+='</table>';
+    } else html+='<p style="color:#64748b">Aucune sortie ce mois.</p>';
+    html+='<h2>📊 Indicateurs qualité</h2>';
+    html+='<p>Entretiens réalisés ce mois : <strong>'+DB.entretiens.length+'</strong></p>';
+    html+='<p>Évaluations réalisées : <strong>'+DB.evaluations.length+'</strong></p>';
+    html+='<p>Score moyen d\'employabilité : <strong>'+scoreMoyEq.toFixed(1)+'/4</strong></p>';
+    html+='<footer><span>La Table de Cana · Rapport confidentiel financeurs · DDETS/FSE+</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+    html+='</body></html>';
+    win.document.write(html); win.document.close();
+  };
+
+  /* Plan de formation individuel */
+  window.genPlanFormation = function(salId){
+    var s = DB.salaries.find(function(x){return x.id==salId;});
+    if(!s) return;
+    var win = window.open('','_blank');
+    if(!win) return;
+    var acad = DB.academie&&DB.academie[salId]?DB.academie[salId]:{};
+    var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px}h1{font-size:18px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}h2{font-size:12px;font-weight:900;background:#f8fafc;padding:7px 12px;border-radius:6px;margin:14px 0 8px}table{width:100%;border-collapse:collapse;margin-bottom:12px}th{background:#0f1923;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:7px;font-size:11px}.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}@media print{button{display:none}}';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+    html+='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+    html+='<div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700">La Table de Cana · Plan de formation individuel</div>';
+    html+='<h1>Plan de formation — '+s.prenom+(s.nom?' '+s.nom:'')+'</h1>';
+    html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:20px;flex-wrap:wrap;font-size:11px;margin-bottom:14px"><span><b>Poste :</b> '+s.poste+'</span><span><b>Contrat :</b> '+s.typeContrat+'</span><span><b>Entrée :</b> '+fmt(s.dateEntree)+'</span><span><b>Projet :</b> '+(s.projetPro||'À définir')+'</span></div>';
+    html+='<h2>📋 Bilan des compétences actuelles</h2>';
+    html+='<table><tr><th>Bloc de compétence</th><th>Score actuel</th><th>Niveau</th><th>Date dernière éval</th><th>Objectif</th></tr>';
+    var BLOCS=['reglementation','chaine_froid','chargement','conduite_pro','relation_client','documents','traiteur','securite_travail'];
+    var NOMS={reglementation:'Réglementation',chaine_froid:'Chaîne du froid',chargement:'Chargement',conduite_pro:'Conduite',relation_client:'Relation client',documents:'Documents',traiteur:'Traiteur',securite_travail:'Sécurité'};
+    var NIVEAUX=['','Découverte','En progression','Maîtrisé','Expert'];
+    BLOCS.forEach(function(b){
+      var d=acad[b]||{};
+      html+='<tr><td>'+( NOMS[b]||b)+'</td><td>'+(d.last_score?d.last_score+'%':'Non évalué')+'</td><td>'+(d.niveau?NIVEAUX[d.niveau]:'—')+'</td><td>'+(d.date_validation?fmt(d.date_validation):'—')+'</td><td style="min-width:80px"></td></tr>';
+    });
+    html+='</table>';
+    html+='<h2>🎯 Objectifs de formation — 12 prochains mois</h2>';
+    html+='<table><tr><th>Objectif</th><th>Méthode</th><th>Délai</th><th>Indicateur de succès</th><th>Validé</th></tr>';
+    for(var i=0;i<6;i++) html+='<tr><td style="height:28px"></td><td></td><td></td><td></td><td style="text-align:center">☐</td></tr>';
+    html+='</table>';
+    html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div style="font-size:11px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div><div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>'+new Date().toLocaleDateString('fr-FR')+'</div><div style="text-align:center"><b>L\'encadrant</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div></div>';
+    html+='</body></html>';
+    win.document.write(html); win.document.close();
+  };
+
+  /* Ajouter boutons dans les documents du dossier salarié */
+  var oldGenDoc = window.genDoc;
+  window.genDoc = function(salId, key){
+    if(key==='synthese_parcours') return genSyntheseParcours(salId);
+    if(key==='plan_formation') return genPlanFormation(salId);
+    if(key==='rapport_financeurs') return genRapportFinanceurs();
+    if(oldGenDoc) oldGenDoc(salId, key);
+  };
+})();
+
+/* ══ PASSEPORT COMPÉTENCES ENRICHI ══ */
+(function(){
+  /* Ajouter nouvelles certifications */
+  var nouvelles = [
+    {id:'cqp',icon:'🏆',label:'CQP Chauffeur livreur',desc:'Certificat de qualification professionnelle'},
+    {id:'be',icon:'🚛',label:'Permis remorque BE',desc:'Véhicule + remorque > 750kg'},
+    {id:'extincteur',icon:'🔥',label:'Manipulation extincteurs',desc:'Sécurité incendie pratique'},
+    {id:'ecoconduite',icon:'🌱',label:'Attestation éco-conduite',desc:'Conduite responsable certifiée'},
+    {id:'alimentaire',icon:'🍽️',label:'Habilitation alimentaire',desc:'Contact denrées alimentaires'},
+    {id:'premiers_secours',icon:'🏥',label:'PSC1 — Gestes premiers secours',desc:'Formation citoyenne aux premiers secours'},
+  ];
+
+  if(typeof CERTIFS !== 'undefined'){
+    nouvelles.forEach(function(nc){
+      var exists = CERTIFS.find(function(c){return c.id===nc.id;});
+      if(!exists) CERTIFS.push(nc);
+    });
+  }
+
+  /* Ajouter dans renderPasseportDetail */
+  var old = window.renderPasseportDetail;
+  window.renderPasseportDetail = function(salId, el){
+    if(old) old(salId, el);
+    /* Ajouter section objectifs certif */
+    var det = document.getElementById('passeport-detail');
+    if(!det) return;
+    var s = DB.salaries.find(function(x){return x.id==salId;});
+    if(!s||!s.projetPro) return;
+    /* Certifications recommandées selon projet */
+    var reco = {
+      'Chauffeur livreur CDI':['permisb','haccp','gestes','sst'],
+      'Chauffeur PL':['permisc','fimo','fco','adr'],
+      'Logistique grande surface':['caces1','caces3','gestes','sst'],
+      'Traiteur / Restauration':['haccp','alimentaire','gestes'],
+    };
+    var blocsReco = reco[s.projetPro]||[];
+    if(!blocsReco.length) return;
+    var pass = DB.passeports&&DB.passeports[salId]?DB.passeports[salId]:{};
+    var manquantes = blocsReco.filter(function(k){return !pass[k]||!pass[k].obtenu;});
+    if(!manquantes.length) return;
+    var div = document.createElement('div');
+    div.className = 'card';
+    div.style.marginTop = '14px';
+    div.style.borderColor = 'rgba(168,85,247,.3)';
+    div.innerHTML = '<div class="card-title" style="color:var(--purple)">🎯 Certifications recommandées pour : '+s.projetPro+'</div>'
+      +'<div style="font-size:12px;color:var(--sub);margin-bottom:10px">Selon votre projet professionnel, ces certifications sont prioritaires</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+      +manquantes.map(function(k){
+        var CERTIFS_DEFS={permisb:'Permis B',permisc:'Permis C',haccp:'HACCP',sst:'SST',fimo:'FIMO',fco:'FCO',caces1:'CACES 1',caces3:'CACES 3',gestes:'Gestes & postures',adr:'ADR',alimentaire:'Habilitation alimentaire',cqp:'CQP Chauffeur livreur'};
+        return '<span style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--purple)">+ '+(CERTIFS_DEFS[k]||k)+'</span>';
+      }).join('')
+      +'</div>';
+    det.appendChild(div);
+  };
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MEGA PATCH 2 — PARTIE 2
+   Académie enrichie + Entreprises partenaires + Guide formateur enrichi
+═══════════════════════════════════════════════════════════════ */
+
+/* ══ NOUVEAUX BLOCS ACADÉMIE ══ */
+(function(){
+  if(typeof ACADEMIE === 'undefined') return;
+
+  ACADEMIE.blocs.push({
+    id:'gestion_stress',
+    icon:'🧘',
+    titre:'Gestion du stress en livraison',
+    sous:'Retard, client difficile, embouteillages — rester calme',
+    couleur:'#8b5cf6',
+    niveau_vise:2,
+    duree_h:1,
+    cours:[
+      {
+        titre:'Pourquoi le stress est dangereux en livraison',
+        contenu:'Le stress réduit vos capacités de conduite. Un conducteur stressé prend plus de risques, accélère trop, freine brusquement, grille des feux rouges.\n\nLes sources de stress en livraison :\n• Retard sur la tournée\n• Embouteillages imprévus\n• Client mécontent ou agressif\n• Commande incorrecte\n• Véhicule en panne\n• Téléphone de l\'encadrant\n\n🔴 Un seul de ces facteurs suffit à rendre la conduite dangereuse si vous ne le gérez pas.',
+        termes:[
+          {mot:'Stress positif',def:'Niveau d\'alerte qui améliore les performances — court terme'},
+          {mot:'Stress négatif',def:'Surcharge qui dégrade les performances — dangereux en conduite'},
+          {mot:'Gestion des émotions',def:'Capacité à identifier et contrôler ses réactions émotionnelles'},
+        ]
+      },
+      {
+        titre:'Les techniques qui marchent vraiment',
+        contenu:'Technique 1 — La respiration 4-7-8 :\n• Inspirer par le nez pendant 4 secondes\n• Bloquer pendant 7 secondes\n• Expirer lentement pendant 8 secondes\n• Répéter 3 fois. Effet immédiat en 90 secondes.\n\nTechnique 2 — S\'arrêter 2 minutes :\nMieux vaut 2 minutes d\'arrêt que 30 minutes d\'accident. Trouver un endroit sûr, couper le moteur, respirer.\n\nTechnique 3 — Prévenir plutôt que subir :\nAppeler le client ET l\'encadrant AVANT d\'être en retard. Prévenir libère du stress. Subir l\'accumule.\n\nTechnique 4 — Le recadrage :\n"Ce retard est grave" → "Ce retard est gérable si je préviens maintenant"\n"Ce client est impossible" → "Ce client est mécontent et j\'ai la méthode ERAC"',
+        termes:[
+          {mot:'Technique de respiration',def:'Méthode de contrôle du stress par la respiration volontaire'},
+          {mot:'Recadrage cognitif',def:'Changer sa façon de voir une situation pour la rendre moins stressante'},
+          {mot:'Anticipation',def:'Prévoir les problèmes avant qu\'ils arrivent — principal outil anti-stress'},
+        ]
+      }
+    ],
+    qcm:[
+      {q:'Le stress en conduite provoque quoi ?', choix:['Une meilleure concentration','Des prises de risques et une conduite dégradée','Aucun effet sur la conduite','Un temps de réaction amélioré'], bonne:1, explication:'Le stress négatif dégrade la conduite : accélérations brusques, inattention, prise de risques. Un conducteur stressé est un conducteur dangereux.'},
+      {q:'Que faire en premier si vous êtes en retard de 20 minutes ?', choix:['Accélérer pour rattraper le retard','S\'arrêter et appeler client ET encadrant avant d\'arriver','Ignorer — les clients comprennent','Éviter les appels pour ne pas perdre de temps'], bonne:1, explication:'Prévenir libère du stress. Un client prévenu accepte un retard. Un client surpris est une source de conflit supplémentaire.'},
+      {q:'La technique 4-7-8 c\'est quoi ?', choix:['4 cafés, 7 minutes de pause, 8km/h max','Inspirer 4s, bloquer 7s, expirer 8s — technique de respiration','4 étapes pour gérer un client en 7 minutes avec 8 questions','Aucune de ces réponses'], bonne:1, explication:'La respiration 4-7-8 est une technique prouvée de gestion du stress. En 90 secondes elle calme le système nerveux. Efficace avant d\'entrer chez un client difficile.'},
+    ]
+  });
+
+  ACADEMIE.blocs.push({
+    id:'calculs_metier',
+    icon:'🔢',
+    titre:'Calculs et chiffres du métier',
+    sous:'Tournée, carburant, kilométrage, charge utile',
+    couleur:'#06b6d4',
+    niveau_vise:2,
+    duree_h:1,
+    cours:[
+      {
+        titre:'Calculer le temps d\'une tournée',
+        contenu:'Formule : Temps total = Temps de trajet + Temps par client + Marge imprévus\n\nTemps par client = 10 à 20 minutes minimum (déchargement + BL + signature)\n\nExemple — Tournée de 8 clients :\n• Temps de trajet estimé : 2h\n• 8 clients × 15 min = 2h\n• Marge imprévus (+20%) = 48 min\n• TOTAL : environ 4h48\n\nSi tu penses que ça prend 3h → tu seras en retard.\n\n🔴 Toujours surestimer le temps — mieux vaut arriver en avance qu\'en retard.',
+        termes:[
+          {mot:'Temps de cycle',def:'Temps total pour effectuer une livraison complète chez un client'},
+          {mot:'Marge de sécurité',def:'Temps supplémentaire prévu pour absorber les imprévus — 20% du total'},
+          {mot:'Optimisation de tournée',def:'Organisation des livraisons pour minimiser le temps et le kilométrage'},
+        ]
+      },
+      {
+        titre:'Calculer sa charge utile et éviter la surcharge',
+        contenu:'Rappel : Charge utile = PTAC − Poids à vide\n\nComment peser sans balance :\n• Une caisse GN pleine de viande ≈ 15 à 25 kg\n• Un chafing dish complet ≈ 8 à 12 kg\n• Un carton alimentaire standard ≈ 10 à 15 kg\n• 1 salarié supplémentaire ≈ 80 kg\n\nEstimation rapide :\nNombre de caisses × poids moyen estimé + poids à vide = estimation du poids total\n\n🔴 En cas de doute : ne pas charger. Appeler l\'encadrant. La surcharge est un délit.',
+        termes:[
+          {mot:'Pesée à quai',def:'Vérification du poids du camion sur une bascule — obligatoire pour les PL'},
+          {mot:'Tare',def:'Poids du véhicule vide — inscrit sur la carte grise'},
+          {mot:'Bordereau de poids',def:'Document indiquant le poids de la cargaison — fourni par l\'expéditeur'},
+        ]
+      }
+    ],
+    qcm:[
+      {q:'Pour 6 clients avec 15 min chacun et 1h30 de trajet, combien de temps prévoir au total ?', choix:['2h30 (trajet + clients)','3h30 (+ marge 20%)','4h (arrondi sécurité)','2h — ça va vite'], bonne:2, explication:'6×15min = 1h30 + 1h30 de trajet = 3h + 20% de marge = 3h36. Arrondir à 4h pour être sûr. Sous-estimer le temps = retard garanti.'},
+      {q:'Votre camion a un PTAC de 3200 kg et pèse 1850 kg à vide. Vous avez 50 caisses de 25kg. Êtes-vous en surcharge ?', choix:['Non — 50×25=1250kg < 1350kg charge utile','Oui — 50×25=1250kg > 1200kg charge utile','Non — le PTAC est pour les PL pas les utilitaires','Oui — toujours demander avant de charger 50 caisses'], bonne:0, explication:'Charge utile = 3200-1850 = 1350 kg. 50×25kg = 1250 kg. 1250 < 1350 donc OK. Mais c\'est limite — vérifier le poids réel des caisses car 25kg est une estimation.'},
+      {q:'Pourquoi faut-il toujours surestimer le temps de tournée ?', choix:['Pour avoir plus d\'heures supplémentaires','Pour absorber les imprévus sans être en retard','Pour avoir le temps de faire une pause','Pour montrer que la tournée est difficile'], bonne:1, explication:'Les imprévus sont inévitables : client lent, embouteillage, BL à corriger. Prévoir 20% de marge permet d\'absorber ces imprévus sans être en retard et sans stress.'},
+    ]
+  });
+
+  ACADEMIE.blocs.push({
+    id:'prise_de_poste',
+    icon:'🌅',
+    titre:'La prise de poste parfaite',
+    sous:'Les 10 premières minutes qui décident de la journée',
+    couleur:'#f59e0b',
+    niveau_vise:2,
+    duree_h:1,
+    cours:[
+      {
+        titre:'Pourquoi les 10 premières minutes comptent',
+        contenu:'Les 10 premières minutes au dépôt déterminent souvent la qualité de toute la journée.\n\nCheck-list de la prise de poste parfaite :\n\n✅ 1. Arriver avec 10 minutes d\'avance (pas juste à l\'heure)\n✅ 2. Saluer l\'encadrant et les collègues\n✅ 3. Prendre connaissance des informations du jour (changements, urgences)\n✅ 4. Récupérer et lire la feuille de route AVANT de toucher quoi que ce soit\n✅ 5. Vérifier le véhicule (tour extérieur, niveaux, éclairages)\n✅ 6. Vérifier la température du frigo AVANT le chargement\n✅ 7. Charger dans l\'ordre LIFO\n✅ 8. Vérifier que les BL correspondent à la feuille de route\n✅ 9. Signaler toute anomalie à l\'encadrant avant de partir\n✅ 10. Partir en ayant communiqué votre heure de retour estimée\n\n🔴 Un chauffeur qui part sans avoir fait ces 10 points crée des problèmes en cours de journée.',
+        termes:[
+          {mot:'Prise de poste',def:'Moment où le salarié commence officiellement son travail — avec toutes ses vérifications'},
+          {mot:'Tour du véhicule',def:'Inspection visuelle rapide du véhicule avant tout départ — obligatoire'},
+          {mot:'Brief du matin',def:'Réunion rapide encadrant-chauffeurs pour les informations du jour'},
+        ]
+      }
+    ],
+    qcm:[
+      {q:'À quelle heure arriver si votre prise de poste est à 5h30 ?', choix:['À 5h30 pile','À 5h20 minimum','À 5h15 idéalement','Ça n\'a pas d\'importance'], bonne:2, explication:'Arriver 15 minutes avant permet de faire toutes les vérifications sans stress. Un départ à l\'heure nécessite une arrivée en avance.'},
+      {q:'Vous remarquez qu\'un pneu semble sous-gonflé juste avant de partir. Que faites-vous ?', choix:['Partir quand même — c\'est une livraison urgente','Vérifier et signaler à l\'encadrant avant de partir','Gonfler vous-même si vous savez faire','Ignorer — les pneus sont toujours un peu mous le matin'], bonne:1, explication:'Signaler AVANT de partir. Un pneu sous-gonflé = risque d\'éclatement = accident. L\'encadrant décide si vous partez ou si le véhicule doit être vérifié.'},
+      {q:'Pourquoi lire la feuille de route AVANT de charger ?', choix:['Pour mémoriser les adresses','Pour organiser le chargement dans l\'ordre LIFO correct','Pour calculer le temps de tournée','Toutes ces réponses'], bonne:3, explication:'Les trois réponses sont correctes. Lire la feuille de route avant de charger permet : de comprendre l\'ordre de livraison, de charger correctement en LIFO, et d\'estimer le temps total.'},
+    ]
+  });
+
+  ACADEMIE.blocs.push({
+    id:'gps_navigation',
+    icon:'🗺️',
+    titre:'GPS et navigation professionnelle',
+    sous:'Utiliser le GPS intelligemment, zones difficiles Marseille',
+    couleur:'#10b981',
+    niveau_vise:1,
+    duree_h:0.5,
+    cours:[
+      {
+        titre:'Le GPS n\'a pas toujours raison',
+        contenu:'Le GPS est un outil, pas une autorité.\n\nSituations où le GPS se trompe :\n• Zones piétonnes (surtout Marseille centre — cours Julien, Vieux Port)\n• Sens interdits récents non mis à jour\n• Routes fermées pour travaux\n• Chemins impossibles pour un utilitaire (hauteur, poids)\n• Zones de livraison avec horaires restrictifs\n\nQuand le GPS dit quelque chose d\'impossible :\n1. Ne pas forcer — un utilitaire qui reste coincé bloque toute une rue\n2. Faire demi-tour dès que possible\n3. Appeler l\'encadrant ou le client pour un autre accès\n4. Signaler l\'adresse difficile pour la prochaine fois\n\n🔴 À Marseille spécifiquement : zones piétonnes, rues étroites du Panier, accès restreints aux collectivités — TOUJOURS vérifier à l\'avance les nouvelles adresses.',
+        termes:[
+          {mot:'Zone à faibles émissions',def:'ZFE — certaines zones de Marseille interdites aux véhicules polluants — vérifier vignette Crit\'Air'},
+          {mot:'Livraison en créneau',def:'Livraison uniquement pendant une plage horaire précise — fréquent en centre-ville'},
+          {mot:'Crit\'Air',def:'Vignette classifiant les véhicules selon leur niveau de pollution — obligatoire en ZFE'},
+        ]
+      }
+    ],
+    qcm:[
+      {q:'Le GPS vous indique de passer par une rue piétonne. Que faites-vous ?', choix:['Vous passez doucement — c\'est le GPS qui dit','Vous trouvez un autre itinéraire et signalez l\'adresse difficile','Vous appelez la police pour signaler le GPS','Vous attendez que la rue se libère'], bonne:1, explication:'Le GPS se trompe parfois, surtout pour les zones piétonnes et les nouvelles restrictions. Trouver un autre itinéraire et signaler l\'adresse difficile pour améliorer les tournées futures.'},
+      {q:'Qu\'est-ce que la ZFE ?', choix:['Zone à faibles émissions — certaines zones interdites aux véhicules polluants','Zone de fréquentation élevée — centres commerciaux','Zone franche économique — pas de taxes','Aucune de ces réponses'], bonne:0, explication:'ZFE = Zone à Faibles Émissions. À Marseille, certaines zones sont interdites aux véhicules les plus polluants. Vérifier la vignette Crit\'Air du véhicule avant toute nouvelle tournée en centre-ville.'},
+    ]
+  });
+
+  ACADEMIE.blocs.push({
+    id:'droit_travail_insertion',
+    icon:'⚖️',
+    titre:'Vos droits en CDDI',
+    sous:'Ce qu\'il faut savoir pour votre parcours',
+    couleur:'#6366f1',
+    niveau_vise:1,
+    duree_h:1,
+    cours:[
+      {
+        titre:'Le CDDI — vos droits concrets',
+        contenu:'Le CDDI (Contrat à Durée Déterminée d\'Insertion) est un vrai contrat de travail avec de vrais droits.\n\nDurée : 4 mois minimum, 24 mois maximum\n\nVos droits :\n• Salaire au SMIC minimum\n• Congés payés : 2,5 jours par mois travaillé\n• Mutuelle d\'entreprise\n• Ticket restaurant si applicable\n• Formation pendant le temps de travail\n• Accompagnement CIP pour votre projet professionnel\n\nVos obligations :\n• Respecter les horaires\n• Prévenir en cas d\'absence\n• Respecter le règlement intérieur\n• Participer aux formations proposées\n• Travailler à votre projet professionnel avec le CIP\n\n🔴 Un CDDI n\'est pas un emploi précaire subi — c\'est une opportunité construite. Votre engagement détermine ce que vous en retirez.',
+        termes:[
+          {mot:'CDDI',def:'Contrat à Durée Déterminée d\'Insertion — contrat spécifique aux structures d\'insertion'},
+          {mot:'SMIC',def:'Salaire Minimum Interprofessionnel de Croissance — plancher légal de rémunération'},
+          {mot:'CIP',def:'Conseiller en Insertion Professionnelle — vous accompagne dans votre projet d\'emploi'},
+          {mot:'CPF',def:'Compte Personnel de Formation — crédits pour financer vos formations futures'},
+          {mot:'OPCO',def:'Opérateur de Compétences — finance les formations professionnelles — UNIFORMATION pour les SIAE'},
+        ]
+      }
+    ],
+    qcm:[
+      {q:'Combien de jours de congés vous accumulez par mois en CDDI ?', choix:['1 jour','2,5 jours','5 jours','Aucun en CDDI'], bonne:1, explication:'En CDDI comme dans tout contrat de travail : 2,5 jours de congés payés par mois travaillé. Sur un contrat de 6 mois = 15 jours de congés.'},
+      {q:'Quelle est la durée maximum d\'un CDDI ?', choix:['6 mois','12 mois','18 mois','24 mois'], bonne:3, explication:'Un CDDI peut durer jusqu\'à 24 mois, renouvellements inclus. La durée minimum est de 4 mois.'},
+      {q:'Qu\'est-ce que le CPF ?', choix:['Contrat professionnel de formation','Compte Personnel de Formation — crédits pour financer des formations','Centre de perfectionnement féminin','Aucune de ces réponses'], bonne:1, explication:'Le CPF (Compte Personnel de Formation) accumule des crédits formation tout au long de votre carrière. Ces crédits sont PERSONNELS et ne se perdent pas quand vous changez d\'employeur.'},
+    ]
+  });
+})();
+
+/* ══ ENTREPRISES PARTENAIRES — INITIALISATION ══ */
+(function(){
+  /* Forcer l\'affichage même si vide */
+  var oldRenderEntreprises = window.render;
+  /* Ajouter exemples si complètement vide */
+  if(typeof DB !== 'undefined' && DB && !DB.entreprises) DB.entreprises = [];
+  if(typeof DB !== 'undefined' && DB && DB.entreprises && !DB.entreprises.length){
+    DB.entreprises = [
+      {nom:'Exemple — Traiteur Marseillais',secteur:'Restauration/Traiteur',ville:'Marseille',contact:'Directeur RH',tel:'04 XX XX XX XX',email:'contact@exemple.fr',interet:'Élevé',notes:'Entreprise partenaire historique — a déjà recruté 2 de nos salariés. Privilégier pour les chauffeurs avec permis B.'},
+    ];
+  }
+})();
+
+/* ══ DOCUMENTS — AJOUTER DANS L\'UI ══ */
+(function(){
+  /* Injecter les nouveaux boutons dans les documents */
+  var oldRenderDocs = window.renderDocuments;
+  if(typeof oldRenderDocs === 'function'){
+    window.renderDocuments = function(c2){
+      oldRenderDocs(c2);
+      /* Ajouter section nouveaux documents */
+      var extra = document.createElement('div');
+      extra.className = 'card';
+      extra.style.marginTop = '16px';
+      extra.innerHTML = '<div class="card-title">📄 Documents spéciaux</div>'
+        +'<div class="grid-2">'
+        +'<div style="background:var(--panel2);border-radius:10px;padding:16px;text-align:center"><div style="font-size:28px;margin-bottom:8px">📋</div><div style="font-size:13px;font-weight:800;margin-bottom:8px">Synthèse de parcours</div><div style="font-size:11px;color:var(--sub);margin-bottom:10px">1 page CV-ready pour les entretiens d\'embauche</div><button class="btn btn-primary btn-sm" style="width:100%" onclick="var salId=window.dossierSalActif||0;genSyntheseParcours(salId)">Générer</button></div>'
+        +'<div style="background:var(--panel2);border-radius:10px;padding:16px;text-align:center"><div style="font-size:28px;margin-bottom:8px">📊</div><div style="font-size:13px;font-weight:800;margin-bottom:8px">Rapport financeurs</div><div style="font-size:11px;color:var(--sub);margin-bottom:10px">Rapport mensuel indicateurs DDETS/FSE+</div><button class="btn btn-primary btn-sm" style="width:100%" onclick="genRapportFinanceurs()">Générer</button></div>'
+        +'<div style="background:var(--panel2);border-radius:10px;padding:16px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🎓</div><div style="font-size:13px;font-weight:800;margin-bottom:8px">Plan de formation</div><div style="font-size:11px;color:var(--sub);margin-bottom:10px">Plan individuel signé — valable pour l\'OPCO</div><button class="btn btn-primary btn-sm" style="width:100%" onclick="var salId=window.dossierSalActif||0;genPlanFormation(salId)">Générer</button></div>'
+        +'<div style="background:var(--panel2);border-radius:10px;padding:16px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🏆</div><div style="font-size:13px;font-weight:800;margin-bottom:8px">Attestation formation</div><div style="font-size:11px;color:var(--sub);margin-bottom:10px">Attestation avec signatures — valable OPCO</div><button class="btn btn-primary btn-sm" style="width:100%" onclick="var salId=window.dossierSalActif||0;imprimerAttestationFormation&&imprimerAttestationFormation(salId,\'Formation logistique\',null,null)">Générer</button></div>'
+        +'</div>';
+      if(c2) c2.appendChild(extra);
+    };
+  }
+})();
+
+/* ══ SLIDE CONSTAT — NOUVEAUX TYPES ══ */
+(function(){
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    if(slide.type === 'constat_intro'){
+      var h='<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+      h+='<div style="display:flex;flex-direction:column;gap:10px">';
+      slide.points.forEach(function(p){
+        h+='<div style="display:flex;align-items:center;gap:14px;background:'+p.col+'15;border:2px solid '+p.col+'44;border-radius:10px;padding:14px 18px">';
+        h+='<span style="font-size:28px;flex-shrink:0">'+p.icon+'</span>';
+        h+='<div style="font-size:14px;color:#fff">'+p.txt+'</div></div>';
+      });
+      return h+'</div>';
+    }
+    if(slide.type === 'constat_anatomie'){
+      var h2='<div style="text-align:center;margin-bottom:16px"><div style="font-size:24px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+      h2+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+      slide.zones.forEach(function(z){
+        h2+='<div style="background:rgba(255,255,255,.05);border:2px solid '+(z.obligatoire?'rgba(249,115,22,.5)':'rgba(255,255,255,.2)')+';border-radius:10px;padding:12px">';
+        h2+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:26px;height:26px;border-radius:50%;background:#f97316;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0">'+z.num+'</div>';
+        h2+='<div style="font-size:13px;font-weight:800;color:#fff">'+z.label+(z.obligatoire?' <span style="font-size:9px;background:#f97316;border-radius:4px;padding:1px 6px">OBLIGATOIRE</span>':'')+'</div></div>';
+        h2+='<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px">'+z.detail+'</div>';
+        h2+='<div style="font-size:10px;color:#fca5a5;font-style:italic">⚠️ '+z.piege+'</div></div>';
+      });
+      return h2+'</div>';
+    }
+    if(slide.type === 'constat_procedure'){
+      var h3='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+      h3+='<div style="display:flex;flex-direction:column;gap:8px">';
+      slide.etapes.forEach(function(e){
+        h3+='<div style="display:flex;align-items:center;gap:12px;background:'+(e.urgence?'rgba(220,38,38,.1)':'rgba(255,255,255,.05)')+';border:2px solid '+(e.urgence?'rgba(220,38,38,.4)':'rgba(255,255,255,.15)')+';border-radius:10px;padding:11px 16px">';
+        h3+='<div style="width:28px;height:28px;border-radius:50%;background:'+(e.urgence?'#dc2626':'#f97316')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0">'+e.num+'</div>';
+        h3+='<div style="flex:1"><div style="font-size:13px;font-weight:800;color:#fff">'+e.action+(e.urgence?' <span style="font-size:9px;background:#dc2626;border-radius:4px;padding:1px 6px">URGENT</span>':'')+'</div>';
+        h3+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+e.detail+'</div></div></div>';
+      });
+      return h3+'</div>';
+    }
+    if(slide.type === 'constat_pieges'){
+      var h4='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+      h4+='<div style="display:flex;flex-direction:column;gap:8px">';
+      slide.pieges.forEach(function(p,i){
+        h4+='<div style="background:'+p.col+'11;border:1px solid '+p.col+'44;border-radius:10px;padding:12px 16px">';
+        h4+='<div style="display:flex;gap:10px;align-items:start">';
+        h4+='<span style="color:'+p.col+';font-size:18px;flex-shrink:0">⛔</span>';
+        h4+='<div><div style="font-size:13px;font-weight:800;color:'+p.col+'">'+p.piege+'</div>';
+        h4+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px">→ '+p.consequence+'</div></div></div></div>';
+      });
+      return h4+'</div>';
+    }
+    if(slide.type === 'constat_croquis'){
+      var ex=slide.exemple;
+      var h5='<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>';
+      h5+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+      /* SVG croquis simple */
+      h5+='<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:16px;text-align:center">';
+      h5+='<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px">Exemple de croquis simple</div>';
+      h5+='<svg viewBox="0 0 200 160" style="width:100%;max-width:200px;display:block;margin:0 auto">';
+      h5+='<rect x="20" y="20" width="160" height="120" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1"/>';
+      h5+='<rect x="20" y="60" width="160" height="40" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.3)" stroke-width="1"/>';
+      h5+='<text x="100" y="55" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="8">RUE PRINCIPALE</text>';
+      /* Voiture A */
+      h5+='<rect x="45" y="70" width="30" height="18" rx="3" fill="#3b82f6" opacity=".8"/>';
+      h5+='<text x="60" y="82" text-anchor="middle" fill="#fff" font-size="7">A</text>';
+      h5+='<line x1="75" y1="79" x2="90" y2="79" stroke="#f97316" stroke-width="2" marker-end="url(#arrow)"/>';
+      /* Voiture B */
+      h5+='<rect x="125" y="73" width="30" height="18" rx="3" fill="#ef4444" opacity=".8"/>';
+      h5+='<text x="140" y="85" text-anchor="middle" fill="#fff" font-size="7">B</text>';
+      h5+='<line x1="125" y1="82" x2="110" y2="82" stroke="#f97316" stroke-width="2"/>';
+      /* Point de choc */
+      h5+='<text x="100" y="80" text-anchor="middle" fill="#f97316" font-size="16">×</text>';
+      h5+='<text x="100" y="130" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="7">× = point de choc</text>';
+      h5+='</svg></div>';
+      /* Règles */
+      h5+='<div style="display:flex;flex-direction:column;gap:8px">';
+      h5+='<div style="font-size:12px;font-weight:800;color:#f97316;margin-bottom:4px">✅ À faire</div>';
+      ex.regles.forEach(function(r){h5+='<div style="font-size:12px;color:rgba(255,255,255,.8)">• '+r+'</div>';});
+      h5+='<div style="font-size:12px;font-weight:800;color:#ef4444;margin-top:10px;margin-bottom:4px">❌ À éviter</div>';
+      ex.a_eviter.forEach(function(r){h5+='<div style="font-size:12px;color:rgba(255,255,255,.7)">• '+r+'</div>';});
+      h5+='</div>';
+      return h5+'</div>';
+    }
+    return _old(slide, couleur);
+  };
+})();
+
+console.log('Mega patch 2 chargé — Académie enrichie, documents, fiches, constat');
+
+</script>
