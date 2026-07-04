@@ -10727,3 +10727,1431 @@ window.imprimerFicheEleve = function(moduleId){
 console.log('Fix complet chargé — slides progressives, fiches élèves, QCM formateur');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   PROGRAMME 2 ANS — RÉÉCRITURE COMPLÈTE
+   Remplace toutes les versions précédentes
+═══════════════════════════════════════════════════ */
+window.renderProgramme = function(c2){
+  if(!c2) return;
+  var h = '<div class="page-title">📅 Programme de formation 2 ans</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Plan individuel sur 24 mois — sélectionnez un salarié</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="prog-sal-list">';
+  var actifs = DB.salaries.filter(function(s){return s.statut==='actif';});
+  actifs.forEach(function(s){
+    h += '<div onclick="afficherProg('+s.id+',this)" class="fsal-btn" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h += '</div><div id="prog-detail-zone"></div>';
+  c2.innerHTML = h;
+  if(actifs.length) setTimeout(function(){ afficherProg(actifs[0].id, c2.querySelector('.fsal-btn')); }, 50);
+};
+
+window.afficherProg = function(salId, el){
+  document.querySelectorAll('.fsal-btn').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--blue)';el.style.background='var(--panel2)';}
+  window.progSalActif = salId;
+  var zone = document.getElementById('prog-detail-zone');
+  if(!zone) return;
+  try {
+    zone.innerHTML = buildProg(salId);
+  } catch(e) {
+    zone.innerHTML = '<div style="color:var(--red);padding:20px">Erreur affichage: '+e.message+'</div>';
+  }
+};
+
+function buildProg(salId){
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s) return '<div style="color:var(--sub);padding:20px">Salarié introuvable</div>';
+
+  if(typeof PROGRAMME_2ANS === 'undefined' || !Array.isArray(PROGRAMME_2ANS) || !PROGRAMME_2ANS.length){
+    return '<div style="color:var(--sub);padding:20px;text-align:center">Programme en cours de chargement...</div>';
+  }
+
+  if(!DB.programme) DB.programme = {};
+  if(!DB.programme[salId]) DB.programme[salId] = {};
+  var prog = DB.programme[salId];
+
+  var dateEntree = s.dateEntree ? new Date(s.dateEntree) : new Date();
+  var moisActuel = Math.floor((new Date() - dateEntree) / 2592000000) + 1;
+  if(isNaN(moisActuel) || moisActuel < 1) moisActuel = 1;
+  if(moisActuel > 24) moisActuel = 24;
+
+  var fait = 0;
+  Object.keys(prog).forEach(function(k){ if(prog[k] && prog[k].fait) fait++; });
+  var pct = Math.round(fait / 24 * 100);
+
+  var blocsProjet = [];
+  if(s.projetPro && typeof PROJETS_BLOCS !== 'undefined' && PROJETS_BLOCS[s.projetPro]){
+    blocsProjet = PROJETS_BLOCS[s.projetPro];
+  }
+
+  var h = '<div class="card" style="margin-bottom:16px">';
+  h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">';
+  h += avt(s);
+  h += '<div style="flex:1">';
+  h += '<div style="font-size:16px;font-weight:900;color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  h += '<div style="font-size:11px;color:var(--sub)">Entrée: '+fmt(s.dateEntree)+' · Mois '+moisActuel+'/24</div>';
+  if(s.projetPro) h += '<div style="font-size:11px;color:var(--orange);font-weight:700">🎯 '+s.projetPro+'</div>';
+  h += '</div>';
+  h += '<div style="text-align:center"><div style="font-size:28px;font-weight:900;color:var(--blue)">'+pct+'%</div><div style="font-size:10px;color:var(--sub)">accompli</div></div>';
+  h += '</div>';
+  h += '<div style="background:var(--border);border-radius:8px;height:8px;margin-bottom:16px">';
+  h += '<div style="width:'+pct+'%;height:8px;border-radius:8px;background:linear-gradient(90deg,var(--blue),var(--green))"></div></div>';
+
+  ['Année 1 — Fondamentaux','Année 2 — Approfondissement'].forEach(function(label, ai){
+    var annee = ai + 1;
+    var col = annee===1?'var(--orange)':'var(--blue)';
+    var bg = annee===1?'rgba(249,115,22,.1)':'rgba(74,158,216,.1)';
+    h += '<div style="font-size:11px;font-weight:900;color:'+col+';text-transform:uppercase;margin-bottom:8px;padding:4px 10px;background:'+bg+';border-radius:6px;display:inline-block">'+label+'</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">';
+
+    PROGRAMME_2ANS.forEach(function(p){
+      if(!p || typeof p !== 'object') return;
+      if(p.annee !== annee) return;
+      if(typeof p.mois !== 'number') return;
+
+      var moisKey = String(p.mois);
+      var data = prog[moisKey] || prog[p.mois] || {};
+      var estFait = !!data.fait;
+      var estActuel = p.mois === moisActuel;
+      var estRetard = p.mois < moisActuel && !estFait;
+      var prioritaire = blocsProjet.indexOf(p.bloc) >= 0;
+
+      var bord = estFait?'rgba(61,186,122,.4)':estActuel?'rgba(249,115,22,.4)':estRetard?'rgba(224,85,85,.3)':'var(--border)';
+      var bg2 = estFait?'rgba(61,186,122,.06)':estActuel?'rgba(249,115,22,.06)':estRetard?'rgba(224,85,85,.04)':'transparent';
+
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid '+bord+';border-radius:10px;background:'+bg2+'">';
+      h += '<input type="checkbox" '+(estFait?'checked':'')+' onchange="cocher2Ans('+salId+','+p.mois+',this)" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0">';
+      h += '<div style="width:48px;height:26px;border-radius:7px;background:'+(estFait?'rgba(61,186,122,.2)':estActuel?'rgba(249,115,22,.2)':'var(--panel2)')+';color:'+(estFait?'var(--green)':estActuel?'var(--orange)':'var(--sub)')+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0">M'+p.mois+'</div>';
+      h += '<span style="font-size:18px;flex-shrink:0">'+p.icon+'</span>';
+      h += '<div style="flex:1;min-width:0">';
+      h += '<div style="font-size:12px;font-weight:800;color:var(--text)">'+p.titre;
+      if(prioritaire) h += ' <span style="font-size:9px;background:rgba(249,115,22,.2);color:var(--orange);border-radius:4px;padding:1px 5px">PRIORITAIRE</span>';
+      if(estActuel) h += ' <span style="font-size:9px;background:rgba(249,115,22,.3);color:var(--orange);border-radius:4px;padding:1px 5px">CE MOIS</span>';
+      if(estRetard) h += ' <span style="font-size:9px;background:rgba(224,85,85,.2);color:var(--red);border-radius:4px;padding:1px 5px">EN RETARD</span>';
+      h += '</div>';
+      h += '<div style="font-size:10px;color:var(--sub)">'+p.format+' · '+p.duree+'h · '+p.desc+'</div>';
+      if(data.date) h += '<div style="font-size:10px;color:var(--green)">✅ '+fmt(data.date)+(data.score?' — '+data.score+'%':'')+'</div>';
+      h += '</div>';
+      if(data.score) h += '<div style="font-size:13px;font-weight:900;color:'+(data.score>=80?'var(--green)':data.score>=60?'var(--yellow)':'var(--red)')+'">'+data.score+'%</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  h += '<button class="btn btn-primary" onclick="imprimerProgramme('+salId+')">🖨️ Imprimer</button>';
+  h += '<button class="btn btn-green" onclick="imprimerLivretBord('+salId+')">📗 Livret de bord</button>';
+  h += '</div></div>';
+  return h;
+}
+
+window.cocher2Ans = function(salId, mois, cb){
+  if(!DB.programme) DB.programme = {};
+  if(!DB.programme[salId]) DB.programme[salId] = {};
+  var moisKey = String(mois);
+  if(cb.checked){
+    var score = prompt('Score QCM obtenu ? (0-100, Entrée pour ignorer)');
+    DB.programme[salId][moisKey] = {fait:true, date:new Date().toISOString().slice(0,10), score:score?parseInt(score):null};
+  } else {
+    DB.programme[salId][moisKey] = {fait:false};
+  }
+  if(typeof sauver==='function') sauver();
+  afficherProg(salId, null);
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   BARRE DE RECHERCHE UNIVERSELLE
+═══════════════════════════════════════════════════ */
+(function(){
+  /* Injecter la barre dans le header */
+  var header = document.querySelector('.header') || document.querySelector('header') || document.querySelector('.topbar');
+  
+  /* Créer la barre dans le main layout */
+  var searchBar = document.createElement('div');
+  searchBar.id = 'search-universal';
+  searchBar.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:8000;width:440px;max-width:90vw';
+  
+  searchBar.innerHTML = 
+    '<div style="position:relative">'
+    +'<input id="search-inp" placeholder="🔍 Rechercher dans tout le CRM... (Ctrl+K)" style="width:100%;background:#162030;border:2px solid var(--border2);border-radius:12px;color:var(--text);padding:10px 16px;font-size:13px;outline:none;box-sizing:border-box;box-shadow:0 4px 20px rgba(0,0,0,.4)" onkeyup="rechercherCRM(this.value)" onfocus="rechercherCRM(this.value)">'
+    +'<div id="search-results" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#162030;border:2px solid var(--border2);border-radius:12px;max-height:400px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:8001"></div>'
+    +'</div>';
+  
+  document.body.appendChild(searchBar);
+
+  /* Raccourci clavier */
+  document.addEventListener('keydown', function(e){
+    if((e.ctrlKey || e.metaKey) && e.key === 'k'){
+      e.preventDefault();
+      var inp = document.getElementById('search-inp');
+      if(inp){ inp.focus(); inp.select(); }
+    }
+    if(e.key === 'Escape'){
+      var res = document.getElementById('search-results');
+      if(res) res.style.display = 'none';
+    }
+  });
+
+  /* Fermer en cliquant ailleurs */
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#search-universal')){
+      var res = document.getElementById('search-results');
+      if(res) res.style.display = 'none';
+    }
+  });
+})();
+
+window.rechercherCRM = function(q){
+  var res = document.getElementById('search-results');
+  if(!res) return;
+  q = (q||'').trim().toLowerCase();
+  if(q.length < 2){ res.style.display='none'; return; }
+
+  var resultats = [];
+
+  /* Normaliser pour recherche phonétique */
+  function norm(str){
+    return (str||'').toLowerCase()
+      .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+      .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+      .replace(/[ùûü]/g,'u').replace(/[ç]/g,'c');
+  }
+  var qn = norm(q);
+
+  function match(str){ return norm(str||'').indexOf(qn) >= 0; }
+
+  /* Salariés */
+  (DB.salaries||[]).forEach(function(s){
+    var nom = s.prenom+(s.nom?' '+s.nom:'');
+    if(match(nom)||match(s.poste)||match(s.vehicule)||match(s.projetPro)||match(s.notesCIP)||match(s.notesRH)||match(s.adresse)||match(s.email)||match(s.tel)){
+      resultats.push({cat:'👤 Salarié', label:nom, sub:s.poste+' · '+s.typeContrat, action:function(sid){return function(){ouvrirDossier(sid);};}(s.id), score:nom.toLowerCase().indexOf(q)>=0?2:1});
+    }
+  });
+
+  /* Entretiens */
+  (DB.entretiens||[]).forEach(function(e){
+    var s = (DB.salaries||[]).find(function(x){return x.id==e.salId;});
+    var nom = s?(s.prenom+(s.nom?' '+s.nom:'')):'';
+    if(match(e.type)||match(e.notes)||match(nom)){
+      resultats.push({cat:'💬 Entretien', label:e.type+' — '+nom, sub:fmt(e.date)+(e.notes?' · '+e.notes.slice(0,40):''), action:function(sid){return function(){ouvrirDossier(sid);nav('salaries');};}(e.salId), score:1});
+    }
+  });
+
+  /* Évaluations */
+  (DB.evaluations||[]).forEach(function(e){
+    var s = (DB.salaries||[]).find(function(x){return x.id==e.salId;});
+    var nom = s?(s.prenom+(s.nom?' '+s.nom:'')):'';
+    if(match(nom)&&match(q)){
+      resultats.push({cat:'⭐ Évaluation', label:'Évaluation '+nom, sub:fmt(e.date)+' · Score: '+calculMoyEval(e).toFixed(1)+'/4', action:function(sid){return function(){ouvrirDossier(sid);};}(e.salId), score:1});
+    }
+  });
+
+  /* Académie */
+  if(typeof ACADEMIE !== 'undefined' && ACADEMIE.blocs){
+    ACADEMIE.blocs.forEach(function(bloc){
+      if(match(bloc.titre)||match(bloc.sous)){
+        resultats.push({cat:'🎓 Formation', label:bloc.icon+' '+bloc.titre, sub:bloc.sous, action:function(bid){return function(){nav('academie');window.acadSalActif=null;setTimeout(function(){ouvrirBloc(bid);},300);};}(bloc.id), score:2});
+      }
+      /* Cours dans les blocs */
+      (bloc.cours||[]).forEach(function(cours){
+        if(match(cours.titre)||match(cours.contenu)){
+          resultats.push({cat:'📚 Cours', label:cours.titre, sub:bloc.icon+' '+bloc.titre, action:function(bid){return function(){nav('academie');setTimeout(function(){ouvrirBloc(bid);},300);};}(bloc.id), score:1});
+        }
+        /* Termes */
+        (cours.termes||[]).forEach(function(t){
+          if(match(t.mot)||match(t.def)){
+            resultats.push({cat:'📖 Terme métier', label:t.mot, sub:t.def.slice(0,60), action:function(bid){return function(){nav('academie');setTimeout(function(){ouvrirBloc(bid);},300);};}(bloc.id), score:1});
+          }
+        });
+      });
+      /* QCM */
+      (bloc.qcm||[]).forEach(function(qcm){
+        if(match(qcm.q)||match(qcm.explication)){
+          resultats.push({cat:'🎯 QCM', label:qcm.q.slice(0,50), sub:bloc.icon+' '+bloc.titre, action:function(bid){return function(){nav('academie');setTimeout(function(){ouvrirQCM(bid);},300);};}(bloc.id), score:1});
+        }
+      });
+    });
+  }
+
+  /* Slides */
+  if(typeof SLIDES_DATA !== 'undefined'){
+    Object.keys(SLIDES_DATA).forEach(function(key){
+      var deck = SLIDES_DATA[key];
+      if(match(deck.titre)){
+        resultats.push({cat:'🎬 Slide', label:deck.icon+' '+deck.titre, sub:deck.slides.length+' slides', action:function(k){return function(){nav('slides');setTimeout(function(){ouvrirPresentation(k);},300);};}(key), score:2});
+      }
+    });
+  }
+
+  /* Entreprises */
+  (DB.entreprises||[]).forEach(function(e,i){
+    if(match(e.nom)||match(e.secteur)||match(e.contact)||match(e.notes)){
+      resultats.push({cat:'🏢 Entreprise', label:e.nom, sub:e.secteur+' · '+(e.ville||''), action:function(){nav('entreprises');}, score:1});
+    }
+  });
+
+  /* Fiches types */
+  if(typeof FICHES_TYPES !== 'undefined'){
+    Object.keys(FICHES_TYPES).forEach(function(key){
+      var f = FICHES_TYPES[key];
+      if(match(f.titre)){
+        resultats.push({cat:'✅ Fiche', label:f.icon+' '+f.titre, sub:'Fiche à cocher', action:function(){nav('fiches');}, score:1});
+      }
+      /* Items dans les sections */
+      (f.sections||[]).forEach(function(sec){
+        (sec.items||[]).forEach(function(item){
+          if(match(item)){
+            resultats.push({cat:'✅ Point fiche', label:item.slice(0,50), sub:f.icon+' '+f.titre, action:function(){nav('fiches');}, score:0});
+          }
+        });
+      });
+    });
+  }
+
+  /* Passeport */
+  if(typeof CERTIFS !== 'undefined'){
+    CERTIFS.forEach(function(cert){
+      if(match(cert.label)||match(cert.desc)){
+        resultats.push({cat:'🏅 Certification', label:cert.icon+' '+cert.label, sub:cert.desc, action:function(){nav('passeport');}, score:1});
+      }
+    });
+  }
+
+  /* Pages CRM */
+  var pages = [
+    {nom:'Dashboard',page:'dashboard'},{nom:'Alertes',page:'alertes'},{nom:'Salariés',page:'salaries'},
+    {nom:'Entretiens',page:'entretiens'},{nom:'Évaluations',page:'evaluations'},{nom:'Plans action',page:'plans'},
+    {nom:'Formations',page:'formations'},{nom:'Centre de commandement',page:'commandement'},
+    {nom:'Frise chronologique',page:'parcours'},{nom:'Accompagnement social',page:'social'},
+    {nom:'Mur d\'activité',page:'mur'},{nom:'Matching emploi',page:'matching'},
+    {nom:'Mur des réussites',page:'mur_reussites'},{nom:'Défi mensuel',page:'defi'},
+    {nom:'Académie logistique',page:'academie'},{nom:'Programme 2 ans',page:'programme'},
+    {nom:'Tutorat',page:'tutorat'},{nom:'Slides formation',page:'slides'},
+    {nom:'Guide formateur',page:'cours_formateur'},
+  ];
+  pages.forEach(function(p){
+    if(match(p.nom)){
+      resultats.push({cat:'📱 Page', label:p.nom, sub:'Aller à cette page', action:function(pg){return function(){nav(pg);};}(p.page), score:2});
+    }
+  });
+
+  /* Trier et limiter */
+  resultats.sort(function(a,b){return b.score-a.score;});
+  var top = resultats.slice(0,12);
+
+  if(!top.length){
+    res.innerHTML = '<div style="padding:16px;text-align:center;color:var(--sub);font-size:12px">Aucun résultat pour "'+q+'"</div>';
+    res.style.display = 'block';
+    return;
+  }
+
+  /* Grouper par catégorie */
+  var groups = {};
+  top.forEach(function(r){ if(!groups[r.cat]) groups[r.cat]=[]; groups[r.cat].push(r); });
+
+  var html = '';
+  Object.keys(groups).forEach(function(cat){
+    html += '<div style="font-size:9px;font-weight:800;color:var(--sub);text-transform:uppercase;padding:8px 14px 4px">'+ cat+'</div>';
+    groups[cat].forEach(function(r){
+      html += '<div onclick="this.closest(\'#search-results\').style.display=\'none\';document.getElementById(\'search-inp\').value=\'\'" style="padding:8px 14px;cursor:pointer;border-radius:8px;margin:0 4px;display:flex;align-items:center;gap:10px;transition:.1s" onmouseover="this.style.background=\'var(--panel2)\'" onmouseout="this.style.background=\'transparent\'" data-action="'+encodeURIComponent(r.action.toString())+'">';
+      html += '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">'+r.label+'</div>';
+      html += '<div style="font-size:10px;color:var(--sub)">'+r.sub+'</div></div>';
+      html += '<span style="font-size:10px;color:var(--border2)">→</span></div>';
+    });
+  });
+
+  res.innerHTML = html;
+  res.style.display = 'block';
+
+  /* Brancher les actions */
+  var divs = res.querySelectorAll('[data-action]');
+  top.forEach(function(r, i){
+    if(divs[i]) divs[i].addEventListener('click', r.action);
+  });
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   SLIDES — DÉVOILEMENT PROGRESSIF PERMANENT
+   Chaque élément apparaît et RESTE affiché
+═══════════════════════════════════════════════════ */
+
+/* Remplacer afficherSlide */
+window.afficherSlide = function(idx, deck){
+  var overlay = document.getElementById('slide-overlay');
+  if(!overlay) return;
+  var slide = deck.slides[idx];
+  var total = deck.slides.length;
+
+  /* Réinitialiser l'état de révélation */
+  window._revealEls = [];
+  window._revealPos = 0;
+
+  var h = '';
+
+  /* Header */
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0">';
+  h += '<div style="font-size:14px;font-weight:700;color:'+deck.couleur+'">'+deck.icon+' '+deck.titre+'</div>';
+  h += '<div style="display:flex;align-items:center;gap:16px"><span style="font-size:12px;color:rgba(255,255,255,.4)">'+(idx+1)+' / '+total+'</span>';
+  h += '<button onclick="fermerSlides()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:6px 14px;cursor:pointer;font-size:12px">✕</button></div></div>';
+
+  /* Zone contenu — on va y mettre le titre + les éléments cachés */
+  h += '<div style="flex:1;overflow-y:auto;padding:32px 40px" id="slide-main-zone">';
+  h += '<div style="max-width:900px;margin:0 auto" id="slide-content-box">';
+  h += renderSlideContent(slide, deck.couleur);
+  h += '</div></div>';
+
+  /* Nav */
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:rgba(0,0,0,.5);border-top:1px solid rgba(255,255,255,.1);flex-shrink:0">';
+  h += '<div style="flex:1;margin-right:16px"><div style="background:rgba(255,255,255,.1);border-radius:4px;height:4px"><div style="width:'+Math.round((idx+1)/total*100)+'%;height:4px;border-radius:4px;background:'+deck.couleur+'"></div></div></div>';
+  h += '<div style="display:flex;gap:10px;align-items:center">';
+  h += '<button id="btn-reveal" onclick="revealProchain()" style="background:#8b5cf6;border:none;border-radius:8px;color:#fff;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">▶ Afficher</button>';
+  if(idx>0) h += '<button onclick="slideN(-1)" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;padding:10px 20px;cursor:pointer;font-size:13px">←</button>';
+  if(idx<total-1) h += '<button onclick="slideN(1)" style="background:'+deck.couleur+';border:none;border-radius:8px;color:#fff;padding:10px 24px;cursor:pointer;font-size:14px;font-weight:700">→</button>';
+  else h += '<button onclick="fermerSlides()" style="background:#22c55e;border:none;border-radius:8px;color:#fff;padding:10px 24px;cursor:pointer;font-size:14px;font-weight:700">✅ Fin</button>';
+  h += '</div></div>';
+
+  overlay.innerHTML = h;
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0a1628;z-index:999999;display:flex;flex-direction:column;overflow:hidden';
+
+  /* Masquer tous les éléments sauf le premier */
+  setTimeout(function(){
+    var box = document.getElementById('slide-content-box');
+    if(!box) return;
+    var children = Array.prototype.slice.call(box.children);
+    /* Garder le premier visible (titre), masquer le reste */
+    window._revealEls = [];
+    children.forEach(function(el, i){
+      if(i === 0){
+        el.style.opacity = '1'; /* titre toujours visible */
+      } else {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.transition = 'opacity .35s ease, transform .35s ease';
+        window._revealEls.push(el);
+      }
+    });
+    window._revealPos = 0;
+    /* Sous-éléments dans les grids/listes */
+    children.forEach(function(el, i){
+      if(i === 0) return;
+      /* Pour les divs qui contiennent plusieurs items (grid, flex) */
+      var subItems = el.querySelectorAll('[style*="border-radius:10px"],[style*="border-radius:12px"],[style*="border-radius:8px"]');
+      if(subItems.length > 1 && el.children.length > 1){
+        /* Masquer aussi les sous-éléments si le parent est un grid */
+        if(getComputedStyle(el).display === 'grid' || el.style.cssText.indexOf('grid')>=0 || el.style.cssText.indexOf('flex-direction:column')>=0){
+          /* Ne pas démultiplier — laisser le parent gérer */
+        }
+      }
+    });
+    updateRevealBtn();
+  }, 80);
+};
+
+function updateRevealBtn(){
+  var btn = document.getElementById('btn-reveal');
+  if(!btn) return;
+  var els = window._revealEls || [];
+  var pos = window._revealPos || 0;
+  if(pos >= els.length){
+    btn.textContent = '✅ Tout affiché';
+    btn.style.background = '#22c55e';
+  } else {
+    btn.textContent = '▶ Afficher ('+(pos+1)+'/'+els.length+')';
+    btn.style.background = '#8b5cf6';
+  }
+}
+
+window.revealProchain = function(){
+  var els = window._revealEls || [];
+  var pos = window._revealPos || 0;
+  if(pos >= els.length) return;
+  var el = els[pos];
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  window._revealPos = pos + 1;
+  updateRevealBtn();
+};
+
+window.slideN = function(dir){
+  var key = window.slideState&&window.slideState.key;
+  if(!key) return;
+  var deck = SLIDES_DATA[key];
+  if(!deck) return;
+  var idx = (window.slideState.idx||0) + dir;
+  if(idx < 0) idx = 0;
+  if(idx >= deck.slides.length) idx = deck.slides.length-1;
+  window.slideState.idx = idx;
+  afficherSlide(idx, deck);
+};
+
+window.fermerSlides = function(){
+  var ov = document.getElementById('slide-overlay');
+  if(ov) ov.remove();
+  document.onkeydown = null;
+};
+
+/* Keyboard */
+document.addEventListener('keydown', function(e){
+  var ov = document.getElementById('slide-overlay');
+  if(!ov) return;
+  if(e.key==='ArrowRight') slideN(1);
+  if(e.key==='ArrowLeft') slideN(-1);
+  if(e.key===' '){e.preventDefault(); revealProchain();}
+  if(e.key==='Escape') fermerSlides();
+});
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   SLIDE RECRUTEMENT — ENTRETIEN CHAUFFEUR LIVREUR
+   45 minutes · La Table de Cana
+═══════════════════════════════════════════════════ */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.recrutement = {
+    titre:'Entretien de recrutement — Chauffeur',
+    icon:'🎯',
+    couleur:'#f97316',
+    slides:[
+
+      /* ── TITRE ── */
+      {type:'titre', titre:'Entretien de recrutement\nChauffeur Livreur', sous:'La Table de Cana · Marseille · 45 minutes', icon:'🚐', couleur:'#f97316'},
+
+      /* ── 1. PRÉSENTATION STRUCTURE ── */
+      {
+        type:'recru_section',
+        badge:'PARTIE 1 · 10 minutes',
+        titre:'Qui sommes-nous ?',
+        icon:'🏢',
+        couleur:'#3b82f6',
+        items:[
+          {txt:'La Table de Cana est une Structure d\'Insertion par l\'Activité Économique (SIAE)', icon:'🏛️'},
+          {txt:'Notre mission : accompagner des personnes éloignées de l\'emploi vers un retour durable en entreprise', icon:'🤝'},
+          {txt:'Ce n\'est pas un emploi classique — c\'est un tremplin avec accompagnement, formation et projet professionnel', icon:'🚀'},
+          {txt:'Nous investissons sur vous. On attend que vous investissiez en retour.', icon:'💼'},
+        ]
+      },
+      {
+        type:'recru_3activites',
+        titre:'Nos 3 activités',
+        activites:[
+          {nom:'Traiteur événementiel', icon:'🎉', desc:'Buffets, mariages, cocktails, événements privés et professionnels. Livraison de plats chauds et froids, matériel, vaisselle fine.', col:'#ec4899'},
+          {nom:'Restauration collective', icon:'🍽️', desc:'Clients réguliers : entreprises, administrations, associations. Livraisons quotidiennes planifiées sur des créneaux précis.', col:'#3b82f6'},
+          {nom:'Centres de loisirs', icon:'🌳', desc:'Livraison tous les mercredis de l\'année + toutes les vacances scolaires. Clients publics avec horaires stricts.', col:'#22c55e'},
+        ]
+      },
+      {
+        type:'recru_important',
+        titre:'Ce que vous devez comprendre dès maintenant',
+        message:'PAS DE CHAUFFEUR = PAS DE LIVRAISON = CLIENT NON LIVRÉ',
+        sous:'La cuisine a travaillé. Les denrées sont prêtes. Si le camion ne part pas, tout tombe. Chaque chauffeur est critique pour l\'ensemble de l\'équipe.',
+        couleur:'#ef4444'
+      },
+
+      /* ── 2. LE POSTE EN DÉTAIL ── */
+      {
+        type:'recru_section',
+        badge:'PARTIE 2 · 20 minutes',
+        titre:'Le poste en détail',
+        icon:'🚐',
+        couleur:'#f97316',
+        items:[
+          {txt:'Vous n\'êtes PAS uniquement chauffeur — vous êtes polyvalent logistique', icon:'🔄'},
+          {txt:'Livraisons · Préparation de commandes · Rangement · Déchargement · Aide collègues', icon:'📦'},
+          {txt:'Communication avec les autres services : cuisine, commercial, autres encadrants', icon:'💬'},
+          {txt:'Relation directe avec les clients lors des livraisons — vous représentez La Table de Cana', icon:'🤝'},
+        ]
+      },
+      {
+        type:'recru_horaires',
+        titre:'Les horaires — la réalité du poste',
+        infos:[
+          {label:'Amplitude', val:'6h à 18h selon les journées', icon:'⏰', col:'#f97316'},
+          {label:'Planning', val:'Fait chaque vendredi pour la semaine suivante', icon:'📅', col:'#3b82f6'},
+          {label:'Flexibilité', val:'Peut être modifié si livraison ajoutée au dernier moment', icon:'⚡', col:'#f59e0b'},
+          {label:'Mercredis', val:'TOUS les mercredis de l\'année + toutes les vacances scolaires', icon:'🌳', col:'#22c55e'},
+          {label:'Modulation', val:'Pas d\'horaire fixe — on dépend des clients', icon:'🔄', col:'#a855f7'},
+        ],
+        alerte:'Si vous avez besoin d\'un horaire fixe et prévisible — ce poste n\'est pas pour vous. Si vous aimez la variété et l\'autonomie — vous êtes au bon endroit.'
+      },
+      {
+        type:'recru_physique',
+        titre:'Le côté physique — soyons honnêtes',
+        items_physique:[
+          {action:'Port de charges répété', detail:'Caisses alimentaires, matériel traiteur, bacs GN — plusieurs fois par jour', poids:'Jusqu\'à 25 kg seul, au-delà à deux', col:'#f97316'},
+          {action:'Chargement et déchargement', detail:'Matin au dépôt, puis chez chaque client', poids:'Plusieurs dizaines de caisses par tournée', col:'#f59e0b'},
+          {action:'Nettoyage du camion', detail:'Le véhicule doit être propre en fin de journée — c\'est votre responsabilité', poids:'', col:'#3b82f6'},
+          {action:'Nettoyage du hall logistique', detail:'Entretien de votre espace de travail — esprit d\'équipe', poids:'', col:'#22c55e'},
+        ]
+      },
+      {
+        type:'recru_equipe',
+        titre:'L\'esprit de l\'équipe',
+        points_equipe:[
+          {txt:'Je suis proche de mes salariés — accessible, à l\'écoute, disponible', icon:'👂'},
+          {txt:'Mais la hiérarchie existe et se respecte — la proximité ne signifie pas l\'absence de cadre', icon:'⚖️'},
+          {txt:'Je suis ouvert à vos idées pour améliorer et avancer ensemble', icon:'💡'},
+          {txt:'Quand un collègue est débordé, on aide — c\'est notre culture', icon:'🤜'},
+          {txt:'La cuisine, le commercial, les autres encadrants sont vos collègues — on communique', icon:'🗣️'},
+          {txt:'Un problème ? On en parle — jamais laisser traîner', icon:'🚨'},
+        ]
+      },
+      {
+        type:'recru_conduite',
+        titre:'La conduite — nos exigences non négociables',
+        regles:[
+          {regle:'Zéro alcool pendant le service', detail:'Vous conduisez au nom de La Table de Cana — tolérance zéro', col:'#ef4444', icon:'🍺'},
+          {regle:'Zéro téléphone au volant', detail:'S\'arrêter avant de décrocher — infraction = 135€ + 3 points', col:'#ef4444', icon:'📱'},
+          {regle:'Conduite douce avec le matériel traiteur', detail:'Vaisselle fine, plats chauds — freinage brutal = casse', col:'#f97316', icon:'🍽️'},
+          {regle:'Respect du code de la route', detail:'Vous portez l\'image de l\'entreprise à chaque feu rouge', col:'#f59e0b', icon:'🚦'},
+          {regle:'Signaler tout incident immédiatement', detail:'Accrochage, panne, problème client — appeler avant de décider seul', col:'#3b82f6', icon:'📞'},
+        ]
+      },
+
+      /* ── 3. QUESTIONS À POSER ── */
+      {
+        type:'recru_section',
+        badge:'PARTIE 3 · 15 minutes',
+        titre:'Vos questions — révélation progressive',
+        icon:'🤔',
+        couleur:'#8b5cf6',
+        items:[
+          {txt:'Posez chaque question UNE PAR UNE en cliquant sur ▶ Afficher', icon:'▶'},
+          {txt:'Laissez la personne répondre AVANT d\'aller à la suivante', icon:'⏸️'},
+          {txt:'Observez : hésitation, regard, posture — autant que les mots', icon:'👁️'},
+        ]
+      },
+      {
+        type:'recru_questions',
+        titre:'Questions — Ponctualité et mobilité',
+        categorie:'🕐 CRITÈRE ÉLIMINATOIRE N°1',
+        questions:[
+          {q:'Notre prise de poste est à 5h30 le matin. Comment vous organisez votre matinée pour être là à l\'heure ?', attention:'Chercher : il a une solution concrète, pas "je me lèverai tôt"'},
+          {q:'Si votre réveil ne sonne pas un matin, qu\'est-ce qui se passe ?', attention:'Chercher : alarme de secours, quelqu\'un qui appelle, système B — pas "ça n\'arrivera pas"'},
+          {q:'Comment vous venez jusqu\'ici à 5h30 ? (bus, voiture, vélo, covoiturage ?)', attention:'À Marseille le bus ne passe pas à 5h30 dans tous les quartiers — vérifier la solution réelle'},
+          {q:'Dans vos postes précédents, quel était votre taux d\'absence ?', attention:'Quelqu\'un d\'honnête admet 1 ou 2 absences. Méfiance si "jamais absent" ou hésitation'},
+        ]
+      },
+      {
+        type:'recru_questions',
+        titre:'Questions — Physique et flexibilité',
+        categorie:'💪 RÉSISTANCE ET ADAPTATION',
+        questions:[
+          {q:'On décharge parfois 200 à 300 kg dans une journée. Est-ce que vous avez des contre-indications médicales au port de charges ?', attention:'Question légale et neutre — laisser répondre librement'},
+          {q:'Le planning change parfois le vendredi soir pour le lundi. Vous avez des contraintes personnelles qui rendraient certains horaires impossibles ?', attention:'Garde d\'enfant, traitement médical, autre emploi ? Creuser avec tact'},
+          {q:'On a 3 activités : traiteur événementiel, restauration collective, centres de loisirs. Qu\'est-ce qui vous attire dans ce type de travail ?', attention:'Quelqu\'un qui ne connaît pas les 3 activités n\'a pas lu l\'annonce attentivement'},
+        ]
+      },
+      {
+        type:'recru_questions',
+        titre:'Questions — Esprit d\'équipe et relation à l\'autorité',
+        categorie:'🤝 COMPORTEMENT ET VALEURS',
+        questions:[
+          {q:'Décrivez-moi une situation où vous avez aidé un collègue sans qu\'on vous le demande.', attention:'Chercher un exemple concret, pas une réponse générale — "je suis quelqu\'un de serviable"'},
+          {q:'Comment vous décrivez votre responsable idéal ?', attention:'S\'il critique tous ses anciens responsables = signal d\'alarme. S\'il cherche proximité ET cadre = bon signe'},
+          {q:'Vous n\'êtes pas d\'accord avec une décision que je prends. Comment vous réagissez ?', attention:'Chercher : il en parle directement avec moi, il ne ronchonne pas dans le dos, il propose une alternative'},
+          {q:'Si vous terminez votre tournée et qu\'un collègue est encore en train de préparer les commandes, qu\'est-ce que vous faites ?', attention:'Réponse attendue : je l\'aide. Sans hésitation.'},
+        ]
+      },
+      {
+        type:'recru_questions',
+        titre:'Questions — Projet et insertion',
+        categorie:'🚀 MOTIVATION ET AVENIR',
+        questions:[
+          {q:'Ce parcours dure jusqu\'à 24 mois. Qu\'est-ce que vous voulez apprendre ou obtenir pendant cette période ?', attention:'Chercher : il a réfléchi à son projet — permis C, certification, compétences. Pas "juste un travail"'},
+          {q:'Dans 2 ans, vous vous voyez où ?', attention:'Même réponse vague c\'est ok si la personne y a réfléchi — chercher une direction, pas une réponse parfaite'},
+          {q:'Pourquoi vous avez choisi La Table de Cana et pas une autre entreprise ?', attention:'Si il ne sait pas qui on est = il n\'a pas préparé = signal d\'alarme'},
+        ]
+      },
+
+      /* ── SIGNAUX ── */
+      {
+        type:'recru_signaux',
+        titre:'Ce que j\'observe — grille formateur',
+        positifs:[
+          'Il est arrivé à l\'heure ou en avance à l\'entretien',
+          'Il a préparé des questions sur le poste',
+          'Il parle de ses anciens postes avec respect',
+          'Il a une solution de transport concrète à 5h30',
+          'Il sourit quand on parle de l\'équipe et de la diversité des tâches',
+          'Il montre de la curiosité pour la formation et l\'évolution',
+        ],
+        negatifs:[
+          'Il critique tous ses anciens responsables ou collègues',
+          'Il hésite sur les horaires ou dit "on verra"',
+          'Il n\'a pas de solution de transport à 5h30',
+          'Il pose des questions uniquement sur le salaire et les congés',
+          'Il regarde son téléphone pendant l\'entretien',
+          'Il ne peut pas donner d\'exemple concret quand on lui demande',
+          'Il dit avoir des problèmes de dos sans évoquer de suivi médical',
+        ]
+      },
+
+      /* ── FIN ── */
+      {
+        type:'recru_fin',
+        titre:'Clôture de l\'entretien',
+        etapes:[
+          {num:1, action:'Demander si la personne a des questions', detail:'Une personne qui n\'a aucune question n\'est peut-être pas vraiment intéressée'},
+          {num:2, action:'Expliquer la suite du processus', detail:'Délai de réponse, visite médicale, documents à fournir'},
+          {num:3, action:'Remercier chaleureusement', detail:'Même si ce n\'est pas le bon profil — respect et bienveillance toujours'},
+          {num:4, action:'Remplir la fiche d\'observation dans les 10 minutes', detail:'La mémoire s\'efface vite — noter ses impressions immédiatement'},
+        ],
+        message:'Un entretien raté avec respect vaut mieux qu\'un recrutement précipité.'
+      }
+    ]
+  };
+})();
+
+/* Types spéciaux pour les slides recrutement */
+(function(){
+  var _old = window.renderSlideContent;
+  window.renderSlideContent = function(slide, couleur){
+    switch(slide.type){
+
+      case 'recru_section':
+        return '<div style="text-align:center;margin-bottom:20px">'
+          +'<div style="display:inline-block;background:'+slide.couleur+'22;border:2px solid '+slide.couleur+'55;border-radius:10px;padding:6px 18px;font-size:11px;font-weight:800;color:'+slide.couleur+';margin-bottom:14px">'+slide.badge+'</div>'
+          +'<div style="font-size:28px;font-weight:900;color:#fff;margin-bottom:16px">'+slide.icon+' '+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:10px">'
+          +slide.items.map(function(it){
+            return '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 18px">'
+              +'<span style="font-size:24px;flex-shrink:0">'+it.icon+'</span>'
+              +'<span style="font-size:14px;color:#fff">'+it.txt+'</span></div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_3activites':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'
+          +slide.activites.map(function(a){
+            return '<div style="background:'+a.col+'15;border:2px solid '+a.col+'44;border-radius:14px;padding:20px;text-align:center">'
+              +'<div style="font-size:40px;margin-bottom:10px">'+a.icon+'</div>'
+              +'<div style="font-size:15px;font-weight:900;color:'+a.col+';margin-bottom:10px">'+a.nom+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.6">'+a.desc+'</div></div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_important':
+        return '<div style="text-align:center;padding:40px 0">'
+          +'<div style="font-size:56px;margin-bottom:20px">⚠️</div>'
+          +'<div style="font-size:28px;font-weight:900;color:'+slide.couleur+';margin-bottom:20px;line-height:1.3">'+slide.message+'</div>'
+          +'<div style="font-size:18px;color:rgba(255,255,255,.7);max-width:600px;margin:0 auto;line-height:1.6">'+slide.sous+'</div>'
+          +'</div>';
+
+      case 'recru_horaires':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">'
+          +slide.infos.map(function(info){
+            return '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid '+info.col+'33;border-radius:10px;padding:12px 18px">'
+              +'<span style="font-size:24px;flex-shrink:0">'+info.icon+'</span>'
+              +'<div style="width:120px;flex-shrink:0;font-size:11px;font-weight:800;color:'+info.col+'">'+info.label+'</div>'
+              +'<div style="font-size:13px;color:#fff">'+info.val+'</div></div>';
+          }).join('')
+          +'</div>'
+          +'<div style="background:rgba(249,115,22,.12);border:2px solid rgba(249,115,22,.4);border-radius:10px;padding:14px;font-size:13px;color:#fed7aa;text-align:center;font-style:italic">'+slide.alerte+'</div>';
+
+      case 'recru_physique':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:10px">'
+          +slide.items_physique.map(function(it){
+            return '<div style="background:'+it.col+'11;border:2px solid '+it.col+'33;border-radius:10px;padding:14px 18px">'
+              +'<div style="font-size:15px;font-weight:800;color:'+it.col+';margin-bottom:4px">'+it.action+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.7)">'+it.detail+'</div>'
+              +(it.poids?'<div style="font-size:11px;color:'+it.col+';margin-top:4px;font-weight:700">⚖️ '+it.poids+'</div>':'')
+              +'</div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_equipe':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:8px">'
+          +slide.points_equipe.map(function(p){
+            return '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:13px 18px">'
+              +'<span style="font-size:24px;flex-shrink:0">'+p.icon+'</span>'
+              +'<span style="font-size:14px;color:#fff">'+p.txt+'</span></div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_conduite':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:8px">'
+          +slide.regles.map(function(r){
+            return '<div style="display:flex;align-items:center;gap:14px;background:'+r.col+'11;border:2px solid '+r.col+'33;border-radius:10px;padding:13px 18px">'
+              +'<span style="font-size:26px;flex-shrink:0">'+r.icon+'</span>'
+              +'<div><div style="font-size:14px;font-weight:800;color:'+r.col+'">'+r.regle+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.7)">'+r.detail+'</div></div></div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_questions':
+        return '<div style="margin-bottom:16px">'
+          +'<div style="display:inline-block;background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.4);border-radius:8px;padding:4px 14px;font-size:11px;font-weight:800;color:#a78bfa;margin-bottom:12px">'+slide.categorie+'</div>'
+          +'<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:16px">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:10px">'
+          +slide.questions.map(function(q,i){
+            return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 18px">'
+              +'<div style="display:flex;gap:10px;margin-bottom:8px">'
+              +'<div style="width:26px;height:26px;border-radius:50%;background:#8b5cf6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0">'+(i+1)+'</div>'
+              +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.5">'+q.q+'</div></div>'
+              +'<div style="background:rgba(249,115,22,.1);border-left:3px solid #f97316;padding:8px 12px;border-radius:0 6px 6px 0;font-size:11px;color:#fed7aa">👁️ '+q.attention+'</div>'
+              +'</div>';
+          }).join('')
+          +'</div>';
+
+      case 'recru_signaux':
+        return '<div style="text-align:center;margin-bottom:20px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+          +'<div style="background:rgba(34,197,94,.08);border:2px solid rgba(34,197,94,.3);border-radius:12px;padding:16px">'
+          +'<div style="font-size:13px;font-weight:800;color:#22c55e;margin-bottom:12px">✅ Signaux positifs</div>'
+          +slide.positifs.map(function(p){return '<div style="font-size:12px;color:rgba(255,255,255,.8);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">• '+p+'</div>';}).join('')
+          +'</div>'
+          +'<div style="background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.3);border-radius:12px;padding:16px">'
+          +'<div style="font-size:13px;font-weight:800;color:#ef4444;margin-bottom:12px">🚨 Signaux d\'alarme</div>'
+          +slide.negatifs.map(function(p){return '<div style="font-size:12px;color:rgba(255,255,255,.8);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)">• '+p+'</div>';}).join('')
+          +'</div></div>';
+
+      case 'recru_fin':
+        return '<div style="text-align:center;margin-bottom:24px"><div style="font-size:26px;font-weight:900;color:#fff">'+slide.titre+'</div></div>'
+          +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">'
+          +slide.etapes.map(function(e){
+            return '<div style="display:flex;align-items:start;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 18px">'
+              +'<div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0">'+e.num+'</div>'
+              +'<div><div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:4px">'+e.action+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.6)">'+e.detail+'</div></div></div>';
+          }).join('')
+          +'</div>'
+          +'<div style="background:rgba(249,115,22,.1);border:2px solid rgba(249,115,22,.3);border-radius:10px;padding:16px;text-align:center;font-size:16px;color:#fed7aa;font-weight:700;font-style:italic">'+slide.message+'</div>';
+
+      default:
+        return _old(slide, couleur);
+    }
+  };
+})();
+
+/* ── FICHE OBSERVATION RECRUTEUR ── */
+window.imprimerFicheRecruteur = function(){
+  var win = window.open('','_blank');
+  if(!win) return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto;color:#1a2435;font-size:12px}h1{font-size:16px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}.header{background:#f8fafc;padding:12px;border-radius:8px;display:flex;gap:20px;flex-wrap:wrap;font-size:11px;margin-bottom:16px}.crit{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;page-break-inside:avoid}.crit-titre{font-size:12px;font-weight:800;color:#f97316;margin-bottom:8px}.note-grille{display:flex;gap:6px;margin-bottom:8px}.note-case{width:34px;height:34px;border:2px solid #e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#64748b}.obs{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;min-height:44px;padding:8px;font-size:11px;color:#94a3b8}.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:140px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}.decision{border:2px solid #f97316;border-radius:10px;padding:16px;margin-top:16px;text-align:center}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<h1>🎯 Fiche observation recruteur — Chauffeur Livreur</h1>';
+  html+='<div class="header"><span><b>Candidat :</b> .....................................</span><span><b>Date :</b> ....................</span><span><b>Heure :</b> ..........</span><span><b>Convoqué à :</b> .......... □ À l\'heure □ Retard ....min</span></div>';
+
+  var criteres=[
+    {titre:'Présentation physique',items:['Tenue propre et correcte','Regard direct et sourire','Poignée de main ferme'],note:true},
+    {titre:'Ponctualité et mobilité',items:['Solution de transport à 5h30 = _______________','Système d\'alarme de secours = _______________','Taux d\'absence annoncé = _______________'],note:true},
+    {titre:'Condition physique',items:['Contre-indication médicale ? □ OUI □ NON','Problème de dos ou articulations ? □ OUI □ NON','A déjà fait de la manutention ? □ OUI □ NON'],note:false},
+    {titre:'Flexibilité horaires',items:['Contraintes personnelles identifiées : _______________','Planning variable accepté ? □ OUI □ NON □ HÉSITATION','Mercredis + vacances scolaires acceptés ? □ OUI □ NON'],note:false},
+    {titre:'Esprit d\'équipe',items:['Exemple concret d\'entraide donné ? □ OUI □ NON','Comment il parle de ses anciens employeurs : □ Bien □ Neutre □ Mal','Rapport à l\'autorité : □ Sain □ Difficile □ Excessif'],note:true},
+    {titre:'Motivation et projet',items:['Il sait qui on est ? □ OUI □ NON','Il a un projet pour les 2 ans : _______________','Il a des questions sur l\'évolution ? □ OUI □ NON'],note:true},
+    {titre:'Signaux non verbaux',items:['Téléphone rangé durant tout l\'entretien ? □ OUI □ NON','Écoute sans couper la parole ? □ OUI □ NON','Supporte le silence ? □ OUI □ NON □ PARLE POUR MEUBLER'],note:false},
+  ];
+  criteres.forEach(function(cr){
+    html+='<div class="crit"><div class="crit-titre">'+cr.titre+'</div>';
+    cr.items.forEach(function(item){html+='<p style="margin:4px 0;font-size:11px">'+item+'</p>';});
+    if(cr.note){
+      html+='<div style="font-size:10px;font-weight:800;color:#64748b;margin-top:8px;margin-bottom:4px">NOTE : 1=Insuffisant · 2=Passable · 3=Bien · 4=Excellent</div>';
+      html+='<div class="note-grille"><div class="note-case">1</div><div class="note-case">2</div><div class="note-case">3</div><div class="note-case">4</div></div>';
+    }
+    html+='<div class="obs">Observations : </div></div>';
+  });
+  html+='<div class="decision"><div style="font-size:14px;font-weight:800;margin-bottom:12px">DÉCISION</div><div style="display:flex;gap:20px;justify-content:center;font-size:13px;font-weight:700"><span>□ RETENU</span><span>□ RETENU SOUS CONDITIONS</span><span>□ NON RETENU</span></div><div style="margin-top:12px;min-height:40px;border:1px dashed #cbd5e1;border-radius:6px;padding:8px;font-size:11px;color:#94a3b8">Motif / commentaire : </div></div>';
+  html+='<div class="sig"><div style="text-align:center"><b>Le recruteur</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div><div style="text-align:center;color:#64748b;padding-top:20px">'+new Date().toLocaleDateString('fr-FR')+'</div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* Ajouter bouton fiche recruteur dans le guide formateur */
+(function(){
+  var oldRF = window.renderCoursFormateur;
+  window.renderCoursFormateur = function(c2){
+    if(oldRF) oldRF(c2);
+    var div = document.createElement('div');
+    div.className = 'card';
+    div.style.cssText = 'margin-top:16px;border-color:rgba(249,115,22,.3)';
+    div.innerHTML = '<div class="card-title" style="color:var(--orange)">🎯 Outil recrutement</div>'
+      +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
+      +'<button class="btn btn-primary" onclick="ouvrirPresentation(\'recrutement\')">▶ Lancer le slide recrutement (45 min)</button>'
+      +'<button class="btn btn-secondary" onclick="imprimerFicheRecruteur()">🖨️ Imprimer fiche observation recruteur</button>'
+      +'</div>';
+    if(c2) c2.appendChild(div);
+  };
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   FICHE DE PROGRESSION CHAUFFEUR
+   Suivi au fur et à mesure — visible dans le dossier salarié
+═══════════════════════════════════════════════════ */
+
+if(!DB.progressions) DB.progressions = {};
+/* Structure : DB.progressions[salId] = [
+     {date, type, note, formateur, valide}
+   ]
+*/
+
+var COMPETENCES_PROGRESSION = [
+  {id:'conduite_generale', label:'Conduite générale', cat:'🚗 Conduite', items:[
+    'Démarrage et arrêt progressifs',
+    'Respect du code de la route',
+    'Gestion de la fatigue — pauses respectées',
+    'Utilisation correcte du GPS',
+    'Stationnement en zone de livraison',
+    'Éco-conduite appliquée',
+    'Zéro téléphone au volant',
+    'Ceinture portée en permanence',
+  ]},
+  {id:'conduite_traiteur', label:'Conduite traiteur', cat:'🍽️ Traiteur', items:[
+    'Conduite douce avec vaisselle fine',
+    'Freinages progressifs avec charge',
+    'Virages ralentis au maximum',
+    'Dos d\'âne passés à vitesse réduite',
+    'Aucune casse constatée depuis 1 mois',
+    'Arrimage correct avant départ événement',
+  ]},
+  {id:'chargement_manut', label:'Chargement & Manutention', cat:'📦 Chargement', items:[
+    'Ordre LIFO respecté systématiquement',
+    'Bons gestes de port de charge',
+    'Utilisation du matériel de manutention',
+    'Port des EPI pendant manutention',
+    'Arrimage de la cargaison vérifié',
+    'Température frigo vérifiée avant départ',
+  ]},
+  {id:'relation_client', label:'Relation client', cat:'🤝 Client', items:[
+    'Présentation professionnelle à chaque livraison',
+    'BL vérifié avant déchargement',
+    'Signature client obtenue systématiquement',
+    'Anomalies notées sur le BL',
+    'Aucune plainte client reçue',
+    'Retards signalés avant d\'arriver',
+  ]},
+  {id:'documents', label:'Documents', cat:'📋 Documents', items:[
+    'BL remplis correctement',
+    'Feuille de route lue avant départ',
+    'BL remis en fin de journée',
+    'Relevés de température remplis',
+    'Aucun BL perdu',
+  ]},
+  {id:'ponctualite', label:'Ponctualité & Présence', cat:'⏰ Présence', items:[
+    'Arrivée à l\'heure ou en avance',
+    'Absence justifiée et signalée à temps',
+    'Prise de poste complète en 10 min',
+    'Retours au dépôt dans les délais',
+    'Planning respecté sans rappel',
+  ]},
+  {id:'equipe', label:'Esprit d\'équipe', cat:'🤝 Équipe', items:[
+    'Aide spontanée aux collègues',
+    'Communication avec les autres services',
+    'Signalement des problèmes à l\'encadrant',
+    'Respect de la hiérarchie',
+    'Participation aux formations',
+    'Entretien du matériel et du camion',
+  ]},
+  {id:'hygiene_secu', label:'Hygiène & Sécurité', cat:'🦺 Sécurité', items:[
+    'Port des EPI obligatoires',
+    'Tenue propre et correcte',
+    'Chambre froide : veste portée',
+    'Signalement des anomalies véhicule',
+    'Aucun accident du travail',
+    'Zéro alcool — contrôle OK',
+  ]},
+];
+
+var NIVEAUX_PROGRESSION = [
+  {val:0, label:'Non évalué', col:'var(--border)', bg:'transparent'},
+  {val:1, label:'À travailler', col:'#ef4444', bg:'rgba(239,68,68,.1)'},
+  {val:2, label:'En progression', col:'#f59e0b', bg:'rgba(245,158,11,.1)'},
+  {val:3, label:'Acquis', col:'#22c55e', bg:'rgba(34,197,94,.1)'},
+  {val:4, label:'Exemplaire', col:'#f97316', bg:'rgba(249,115,22,.1)'},
+];
+
+/* ── PAGE FICHE PROGRESSION ── */
+window.renderFicheProgression = function(c2){
+  var h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+  h += '<div class="page-title">📈 Fiche de progression</div>';
+  h += '<span class="formateur-badge">👨‍🏫 Évaluation formateur</span></div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Suivi au fur et à mesure — évaluez chaque compétence pour chaque chauffeur</div>';
+
+  /* Sélecteur salarié */
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">';
+  DB.salaries.filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    h += '<div onclick="selProgSal2('+s.id+',this)" class="fsal-btn2" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<span style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</span></div>';
+  });
+  h += '</div>';
+  h += '<div id="progression-detail"></div>';
+  c2.innerHTML = h;
+
+  var first = DB.salaries.filter(function(s){return s.statut==='actif';})[0];
+  if(first) selProgSal2(first.id, c2.querySelector('.fsal-btn2'));
+};
+
+window.selProgSal2 = function(salId, el){
+  document.querySelectorAll('.fsal-btn2').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--panel)';});
+  if(el){el.style.borderColor='var(--green)';el.style.background='var(--panel2)';}
+  window.progSalActif2 = salId;
+  afficherProgression(salId);
+};
+
+function afficherProgression(salId){
+  var zone = document.getElementById('progression-detail');
+  if(!zone) return;
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s){ zone.innerHTML='<div style="color:var(--sub);padding:20px">Salarié introuvable</div>'; return; }
+
+  if(!DB.progressions) DB.progressions = {};
+  if(!DB.progressions[salId]) DB.progressions[salId] = {};
+  var prog = DB.progressions[salId];
+
+  /* Score global */
+  var total = 0, count = 0;
+  COMPETENCES_PROGRESSION.forEach(function(cat){
+    cat.items.forEach(function(item, ii){
+      var key = cat.id+'_'+ii;
+      var val = prog[key] !== undefined ? prog[key] : 0;
+      if(val > 0){ total += val; count++; }
+    });
+  });
+  var scoreMoy = count > 0 ? (total/count).toFixed(1) : '—';
+  var pctAcquis = count > 0 ? Math.round(count / COMPETENCES_PROGRESSION.reduce(function(s,c){return s+c.items.length;},0) * 100) : 0;
+
+  var h = '<div class="card" style="margin-bottom:16px">';
+  h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">';
+  h += avt(s);
+  h += '<div style="flex:1"><div style="font-size:16px;font-weight:900;color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  h += '<div style="font-size:11px;color:var(--sub)">'+s.poste+' · '+s.typeContrat+'</div></div>';
+  h += '<div style="display:flex;gap:20px">';
+  h += '<div style="text-align:center"><div style="font-size:28px;font-weight:900;color:var(--orange)">'+scoreMoy+'<span style="font-size:14px">/4</span></div><div style="font-size:10px;color:var(--sub)">Score moyen</div></div>';
+  h += '<div style="text-align:center"><div style="font-size:28px;font-weight:900;color:var(--green)">'+pctAcquis+'%</div><div style="font-size:10px;color:var(--sub)">évalué</div></div>';
+  h += '</div></div>';
+
+  /* Légende */
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  NIVEAUX_PROGRESSION.forEach(function(n){
+    if(n.val===0) return;
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:11px"><div style="width:14px;height:14px;border-radius:4px;background:'+n.bg+';border:1px solid '+n.col+'"></div><span style="color:var(--sub)">'+n.val+' — '+n.label+'</span></div>';
+  });
+  h += '</div>';
+
+  /* Grille par catégorie */
+  COMPETENCES_PROGRESSION.forEach(function(cat){
+    h += '<div style="margin-bottom:16px">';
+    h += '<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">'+cat.cat+' — '+cat.label+'</div>';
+
+    cat.items.forEach(function(item, ii){
+      var key = cat.id+'_'+ii;
+      var val = prog[key] !== undefined ? prog[key] : 0;
+      var niv = NIVEAUX_PROGRESSION[val] || NIVEAUX_PROGRESSION[0];
+
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid '+(val>0?niv.col+'44':'var(--border)')+';border-radius:8px;margin-bottom:5px;background:'+niv.bg+'">';
+      h += '<span style="font-size:12px;flex:1;color:var(--text)">'+item+'</span>';
+      h += '<div style="display:flex;gap:4px">';
+      for(var v=1;v<=4;v++){
+        var nv = NIVEAUX_PROGRESSION[v];
+        h += '<button onclick="noterCompetence('+salId+',\''+key+'\','+v+')" style="width:28px;height:28px;border-radius:6px;border:2px solid '+(val===v?nv.col:'var(--border)')+';background:'+(val===v?nv.bg:'transparent')+';color:'+(val===v?nv.col:'var(--sub)')+';font-size:12px;font-weight:900;cursor:pointer;transition:.15s">'+v+'</button>';
+      }
+      h += '<button onclick="noterCompetence('+salId+',\''+key+'\',0)" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--sub);font-size:11px;cursor:pointer">✕</button>';
+      h += '</div></div>';
+    });
+    h += '</div>';
+  });
+
+  /* Observations libres */
+  var obsKey = 'obs_'+salId;
+  var obsVal = prog.observations || '';
+  h += '<div style="margin-top:16px"><div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">📝 Observations formateur</div>';
+  h += '<textarea id="obs-prog-textarea" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box" placeholder="Notez vos observations sur la progression de ce salarié...">'+obsVal+'</textarea>';
+  h += '<button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="sauverObs('+salId+')">Sauvegarder les observations</button>';
+  h += '</div>';
+
+  /* Boutons */
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">';
+  h += '<button class="btn btn-primary" onclick="imprimerProgression('+salId+')">🖨️ Imprimer la fiche</button>';
+  h += '<button class="btn btn-green" onclick="imprimerAttestation2('+salId+')">🎓 Attestation de progression</button>';
+  h += '</div>';
+  h += '</div>';
+
+  zone.innerHTML = h;
+}
+
+window.noterCompetence = function(salId, key, val){
+  if(!DB.progressions) DB.progressions = {};
+  if(!DB.progressions[salId]) DB.progressions[salId] = {};
+  DB.progressions[salId][key] = val;
+  if(typeof sauver==='function') sauver();
+  afficherProgression(salId);
+};
+
+window.sauverObs = function(salId){
+  var ta = document.getElementById('obs-prog-textarea');
+  if(!ta) return;
+  if(!DB.progressions) DB.progressions = {};
+  if(!DB.progressions[salId]) DB.progressions[salId] = {};
+  DB.progressions[salId].observations = ta.value;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Observations sauvegardées','ok');
+};
+
+/* ── IMPRESSION FICHE DE PROGRESSION ── */
+window.imprimerProgression = function(salId){
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s) return;
+  var prog = DB.progressions&&DB.progressions[salId]?DB.progressions[salId]:{};
+  var win = window.open('','_blank');
+  if(!win) return;
+
+  var css = 'body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto;color:#1a2435;font-size:11px;line-height:1.5}h1{font-size:16px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:14px}.header{background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px;margin-bottom:14px}h2{font-size:11px;font-weight:900;background:#f8fafc;padding:5px 10px;border-radius:5px;margin:12px 0 6px;border-left:3px solid #f97316}table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#0f1923;color:#fff;padding:5px 8px;font-size:10px;text-align:left}td{border:1px solid #e2e8f0;padding:5px 8px;font-size:10px}.n0{background:#f8fafc;color:#94a3b8}.n1{background:#fef2f2;color:#ef4444;font-weight:700}.n2{background:#fffbeb;color:#f59e0b;font-weight:700}.n3{background:#f0fdf4;color:#22c55e;font-weight:700}.n4{background:#fff7ed;color:#f97316;font-weight:700}.sig{display:flex;justify-content:space-between;margin-top:20px;padding-top:10px;border-top:1px solid #e2e8f0}.sig-line{width:140px;border-bottom:1px solid #1a2435;margin:14px auto 4px;text-align:center}@media print{button{display:none}}';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase">La Table de Cana · Fiche de progression chauffeur</div>';
+  html+='<h1>📈 Fiche de progression — '+s.prenom+(s.nom?' '+s.nom:'')+'</h1>';
+  html+='<div class="header"><span><b>Poste :</b> '+s.poste+'</span><span><b>Contrat :</b> '+s.typeContrat+'</span><span><b>Entrée :</b> '+fmt(s.dateEntree)+'</span><span><b>Date évaluation :</b> '+new Date().toLocaleDateString('fr-FR')+'</span></div>';
+  html+='<div style="font-size:10px;color:#64748b;margin-bottom:10px">1=À travailler · 2=En progression · 3=Acquis · 4=Exemplaire</div>';
+
+  COMPETENCES_PROGRESSION.forEach(function(cat){
+    html+='<h2>'+cat.cat+' — '+cat.label+'</h2>';
+    html+='<table><tr><th>Compétence</th><th style="width:80px;text-align:center">Niveau</th><th>Observation</th></tr>';
+    cat.items.forEach(function(item,ii){
+      var key=cat.id+'_'+ii;
+      var val=prog[key]!==undefined?prog[key]:0;
+      var niv=NIVEAUX_PROGRESSION[val]||NIVEAUX_PROGRESSION[0];
+      html+='<tr><td>'+item+'</td><td class="n'+val+'" style="text-align:center">'+(val>0?val+' — '+niv.label:'—')+'</td><td style="min-width:120px"></td></tr>';
+    });
+    html+='</table>';
+  });
+
+  if(prog.observations){
+    html+='<h2>📝 Observations formateur</h2><p style="background:#f8fafc;padding:8px;border-radius:6px">'+prog.observations+'</p>';
+  }
+
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div style="font-size:10px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:16px;font-size:10px">La Table de Cana<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div style="text-align:center"><b>Le formateur</b><div class="sig-line"></div><div style="font-size:10px">La Table de Cana</div></div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── ATTESTATION PROGRESSION ── */
+window.imprimerAttestation2 = function(salId){
+  var s = DB.salaries.find(function(x){return x.id==salId;});
+  if(!s) return;
+  var prog = DB.progressions&&DB.progressions[salId]?DB.progressions[salId]:{};
+  var acquis = 0, total = 0;
+  COMPETENCES_PROGRESSION.forEach(function(cat){
+    cat.items.forEach(function(item,ii){
+      total++;
+      var key=cat.id+'_'+ii;
+      if(prog[key]>=3) acquis++;
+    });
+  });
+  var pct = Math.round(acquis/total*100);
+  var win = window.open('','_blank');
+  if(!win) return;
+  var css='body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto;text-align:center;color:#1a2435}.cadre{border:3px solid #f97316;border-radius:16px;padding:40px}.logo{font-size:56px;margin-bottom:16px}.score{font-size:40px;font-weight:900;color:'+(pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444')+'}.sig-row{display:flex;justify-content:space-around;margin-top:32px;padding-top:24px;border-top:1px dashed #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="display:block;margin:0 auto 20px;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div class="cadre"><div class="logo">📈</div>';
+  html+='<h1 style="color:#f97316;font-size:20px">La Table de Cana — Attestation de progression</h1>';
+  html+='<p style="color:#64748b">Certifie que</p>';
+  html+='<div style="font-size:24px;font-weight:900;color:#f97316;margin:16px 0">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  html+='<p>a atteint le niveau suivant dans le cadre de son parcours professionnel</p>';
+  html+='<div class="score">'+acquis+' / '+total+' compétences acquises</div>';
+  html+='<div style="font-size:18px;color:#64748b;margin-top:8px">'+pct+'% des compétences validées au niveau 3 ou 4</div>';
+  html+='<div class="sig-row"><div><b>Le salarié</b><div class="sig-line"></div><div style="font-size:11px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="color:#64748b;padding-top:20px;font-size:12px">La Table de Cana<br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div><b>Le formateur</b><div class="sig-line"></div><div style="font-size:11px">La Table de Cana</div></div></div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── ROUTER ── */
+(function(){
+  var oldR = window.render;
+  window.render = function(page){
+    if(page==='fiche_progression'){
+      var c=document.getElementById('content');
+      if(c) renderFicheProgression(c);
+    } else {
+      oldR(page);
+    }
+  };
+
+  /* Ajouter dans sidebar section Formateur */
+  var sb = document.querySelector('.sb');
+  if(sb){
+    var items = [{p:'fiche_progression',ico:'📈',lbl:'Fiche de progression'}];
+    items.forEach(function(it){
+      var exists = sb.querySelector('[data-p="'+it.p+'"]');
+      if(exists) return;
+      var d = document.createElement('div');
+      d.className = 'sb-item';
+      d.setAttribute('data-p', it.p);
+      d.innerHTML = '<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+      d.onclick = function(){nav(it.p);};
+      sb.appendChild(d);
+    });
+  }
+})();
+
+console.log('Fiche progression chauffeur chargée');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   AMÉLIORATIONS FINALES
+   - Nouvelles fiches à cocher manquantes
+   - Nouveaux documents
+   - Enrichissement entreprises partenaires
+   - Amélioration guide formateur avec scripts
+═══════════════════════════════════════════════════ */
+
+/* ── NOUVELLES FICHES À COCHER ── */
+(function(){
+  if(typeof FICHES_TYPES === 'undefined') return;
+
+  /* Lettre de motivation */
+  FICHES_TYPES.lettre_motivation = {
+    titre:'Préparation lettre de motivation',
+    icon:'✉️',
+    sections:[
+      {titre:'Informations de base',items:[
+        'Nom et prénom du salarié noté',
+        'Poste visé identifié clairement',
+        'Entreprise cible identifiée',
+        'Date de rédaction notée',
+      ]},
+      {titre:'Contenu de la lettre',items:[
+        'Accroche personnalisée rédigée',
+        'Compétences logistiques listées (min 3)',
+        'Expérience La Table de Cana mentionnée',
+        'Formation et certifications incluses',
+        'Projet professionnel lié au poste',
+        'Formule de politesse adaptée',
+      ]},
+      {titre:'Validation',items:[
+        'Lettre relue par le CIP',
+        'Corrections appliquées',
+        'Version finale imprimée',
+        'Lettre sauvegardée en PDF',
+      ]},
+    ]
+  };
+
+  /* Contrat de tutorat */
+  FICHES_TYPES.contrat_tutorat = {
+    titre:'Mise en place tutorat',
+    icon:'👨‍🏫',
+    sections:[
+      {titre:'Désignation du tuteur',items:[
+        'Salarié tuteur identifié et volontaire',
+        'Niveau 3 ou 4 étoiles sur le bloc concerné vérifié',
+        'Bloc de tutorat défini clairement',
+        'Salarié tutoré identifié',
+      ]},
+      {titre:'Organisation',items:[
+        'Durée du tutorat définie (date début/fin)',
+        'Créneaux de tutorat planifiés',
+        'Objectifs du tuteur expliqués',
+        'Badge tuteur attribué dans le CRM',
+      ]},
+      {titre:'Engagement',items:[
+        'Le tuteur s\'engage à préparer ses séances',
+        'Le tuteur s\'engage à donner un feedback bienveillant',
+        'Le tuteur s\'engage à signaler les difficultés',
+        'Les deux parties ont signé',
+      ]},
+    ]
+  };
+
+  /* Rapport d'incident */
+  FICHES_TYPES.rapport_incident = {
+    titre:'Rapport d\'incident route',
+    icon:'🚨',
+    sections:[
+      {titre:'Identification',items:[
+        'Date, heure, lieu exacts notés',
+        'Véhicule concerné identifié',
+        'Type d\'incident précisé : accident / panne / litige client / autre',
+        'Personnes impliquées identifiées',
+        'Témoin(s) identifié(s) avec coordonnées',
+      ]},
+      {titre:'Déroulement',items:[
+        'Chronologie des faits décrite',
+        'Actions immédiates listées',
+        'Services contactés notés (15 / 17 / encadrant)',
+        'Constat amiable établi si accident avec tiers',
+        'Photos prises avant déplacement des véhicules',
+      ]},
+      {titre:'Conséquences et suite',items:[
+        'Dégâts matériels évalués',
+        'Blessures signalées si nécessaire',
+        'Véhicule disponible ou immobilisé précisé',
+        'Assurance informée sous 5 jours',
+        'Déclaration AT effectuée si blessure (24h)',
+        'Plan d\'action défini pour éviter récidive',
+      ]},
+    ]
+  };
+
+  /* Fiche délégation */
+  FICHES_TYPES.delegation = {
+    titre:'Fiche de délégation de mission',
+    icon:'📋',
+    sections:[
+      {titre:'Mission déléguée',items:[
+        'Intitulé de la mission clairement défini',
+        'Durée de la délégation précisée',
+        'Ressources mises à disposition listées',
+        'Limites de la délégation expliquées',
+      ]},
+      {titre:'Responsabilités',items:[
+        'Le salarié comprend et accepte la mission',
+        'Points de contrôle définis',
+        'Interlocuteur en cas de problème identifié',
+        'Reporting attendu précisé',
+      ]},
+      {titre:'Validation',items:[
+        'Mission accomplie dans les délais',
+        'Compte-rendu fait à l\'encadrant',
+        'Points d\'amélioration identifiés',
+        'Bilan signé par les deux parties',
+      ]},
+    ]
+  };
+})();
+
+/* ── ENRICHIR ENTREPRISES PARTENAIRES ── */
+(function(){
+  if(typeof DB === 'undefined') return;
+  if(!DB.entreprises) DB.entreprises = [];
+
+  /* Ajouter entreprises exemples si moins de 2 */
+  if(DB.entreprises.length < 2){
+    var exemples = [
+      {nom:'Groupe Scolarest — Marseille', secteur:'Restauration collective', ville:'Marseille 13', contact:'Responsable RH', tel:'04 91 XX XX XX', email:'rh@scolarest.fr', interet:'Élevé', notes:'Partenaire historique. Recrute des chauffeurs livreurs avec permis B. Sensible aux profils SIAE. Contact à entretenir.'},
+      {nom:'Sodexo Services — PACA', secteur:'Restauration collective', ville:'Marseille 8e', contact:'Directeur régional', tel:'04 91 XX XX XX', email:'contact@sodexo.fr', interet:'Moyen', notes:'Grande structure. Processus de recrutement long. Valoriser les certifications HACCP et éco-conduite.'},
+      {nom:'Traiteur Borel Events', secteur:'Traiteur événementiel', ville:'Aix-en-Provence', contact:'Chef de cuisine', tel:'04 42 XX XX XX', email:'contact@borel.fr', interet:'Élevé', notes:'Entreprise à taille humaine. Apprécie les profils sérieux et autonomes. Déjà recruté 1 de nos salariés.'},
+      {nom:'Mairie de Marseille — Services', secteur:'Collectivité publique', ville:'Marseille 1er', contact:'DRH', tel:'04 91 55 XX XX', email:'drh@marseille.fr', interet:'Faible', notes:'Recrutement via concours principalement. À contacter pour les contrats aidés type PEC.'},
+    ];
+    exemples.forEach(function(e){
+      var exists = DB.entreprises.find(function(x){return x.nom===e.nom;});
+      if(!exists) DB.entreprises.push(e);
+    });
+  }
+})();
+
+/* ── GUIDE FORMATEUR ENRICHI — SCRIPTS FORMATEUR ── */
+(function(){
+  if(typeof COURS_FORMATEUR_2ANS === 'undefined') return;
+
+  /* Ajouter scripts à chaque bloc */
+  var scripts = {
+    0: {
+      script_ouverture:'Bonjour [prénom]. Je suis content de vous accueillir. Avant qu\'on commence, j\'ai une question simple : si je vous dis "sécurité au travail", qu\'est-ce qui vous vient en tête spontanément ? Prenez 30 secondes.',
+      questions_guidees:[
+        'Qu\'est-ce qu\'un EPI pour vous ? Pouvez-vous m\'en citer un ?',
+        'Vous avez déjà eu un accident ou vu quelqu\'un se blesser au travail ? Qu\'est-ce qui s\'est passé ?',
+        'Selon vous, pourquoi on se blesse souvent dans la logistique ?',
+        'Si vous vous blessez demain matin ici, quelle est la première chose que vous faites ?',
+      ],
+      gestion_difficulte:'Si le salarié dit "je sais déjà tout ça" : proposez-lui de passer le QCM directement. Ses lacunes apparaîtront. Pas besoin d\'argumenter.'
+    },
+    1: {
+      script_ouverture:'Aujourd\'hui on parle de la chaîne du froid. Commençons par une question pratique : à quelle température est votre réfrigérateur chez vous ? Et pourquoi c\'est important ?',
+      questions_guidees:[
+        'Qu\'est-ce qu\'une intoxication alimentaire selon vous ? Vous en avez déjà eu une ?',
+        'Si le frigo du camion tombe en panne pendant une tournée, qu\'est-ce qu\'il se passe selon vous ?',
+        'Vous avez livré des plats chauds la semaine dernière. Comment vous avez vérifié qu\'ils étaient à la bonne température ?',
+        'HACCP — vous avez déjà entendu ce mot ? Qu\'est-ce que ça veut dire pour vous ?',
+      ],
+      gestion_difficulte:'Si le salarié confond les températures : utiliser un thermomètre réel et aller vérifier ensemble dans la chambre froide. Le concret ancre mieux que la théorie.'
+    },
+  };
+
+  COURS_FORMATEUR_2ANS.blocs.forEach(function(bloc, i){
+    if(scripts[i]){
+      bloc.script_ouverture = scripts[i].script_ouverture;
+      bloc.questions_guidees = scripts[i].questions_guidees;
+      bloc.gestion_difficulte = scripts[i].gestion_difficulte;
+    }
+  });
+
+  /* Afficher les scripts dans renderCoursFormateur */
+  var oldToggle = window.toggleCoursDetail;
+  window.toggleCoursDetail = function(id){
+    if(oldToggle) oldToggle(id);
+    /* Injecter scripts si pas encore là */
+    var el = document.getElementById(id);
+    if(!el || el.style.display === 'none') return;
+    var bi = parseInt(id.replace('cf-',''));
+    var bloc = COURS_FORMATEUR_2ANS.blocs[bi];
+    if(!bloc) return;
+    if(bloc.script_ouverture && !el.querySelector('.script-formateur')){
+      var scriptDiv = document.createElement('div');
+      scriptDiv.className = 'script-formateur';
+      scriptDiv.style.cssText = 'background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.3);border-radius:8px;padding:12px;margin-top:10px';
+      var html = '<div style="font-size:10px;font-weight:800;color:var(--purple);text-transform:uppercase;margin-bottom:8px">🎙️ Script d\'ouverture — ce que vous dites mot pour mot</div>';
+      html += '<div style="font-size:12px;color:var(--text);font-style:italic;background:var(--panel2);padding:10px;border-radius:6px;margin-bottom:10px">"'+bloc.script_ouverture+'"</div>';
+      if(bloc.questions_guidees){
+        html += '<div style="font-size:10px;font-weight:800;color:var(--blue);margin-bottom:6px">❓ Questions à poser dans l\'ordre</div>';
+        bloc.questions_guidees.forEach(function(q,qi){
+          html += '<div style="font-size:11px;color:var(--text);padding:4px 0;border-bottom:1px solid var(--border)">'+(qi+1)+'. '+q+'</div>';
+        });
+      }
+      if(bloc.gestion_difficulte){
+        html += '<div style="font-size:10px;font-weight:800;color:var(--orange);margin-top:8px;margin-bottom:4px">⚡ Si ça coince</div>';
+        html += '<div style="font-size:11px;color:var(--text)">'+bloc.gestion_difficulte+'</div>';
+      }
+      scriptDiv.innerHTML = html;
+      el.appendChild(scriptDiv);
+    }
+  };
+})();
+
+/* ── RECHERCHE — AJOUTER PROGRESSIONS ── */
+(function(){
+  var oldRechercher = window.rechercherCRM;
+  window.rechercherCRM = function(q){
+    oldRechercher(q);
+    /* Ajouter résultats progressions si pas déjà dans les résultats */
+    var res = document.getElementById('search-results');
+    if(!res || res.style.display === 'none') return;
+    var qn = (q||'').toLowerCase();
+    if(qn.length < 2) return;
+
+    /* Progressions */
+    if('progression'.indexOf(qn)>=0 || 'fiche'.indexOf(qn)>=0 || 'compétence'.indexOf(qn)>=0){
+      var extra = document.createElement('div');
+      extra.innerHTML = '<div style="font-size:9px;font-weight:800;color:var(--sub);text-transform:uppercase;padding:8px 14px 4px">📈 Progression</div>'
+        +'<div onclick="nav(\'fiche_progression\')" style="padding:8px 14px;cursor:pointer;border-radius:8px;margin:0 4px;display:flex;align-items:center;gap:10px" onmouseover="this.style.background=\'var(--panel2)\'" onmouseout="this.style.background=\'transparent\'">'
+        +'<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">📈 Fiche de progression chauffeur</div>'
+        +'<div style="font-size:10px;color:var(--sub)">Évaluation compétences par compétence</div></div>'
+        +'<span style="font-size:10px;color:var(--border2)">→</span></div>';
+      if(res.firstChild) res.insertBefore(extra, res.firstChild);
+      else res.appendChild(extra);
+    }
+  };
+})();
+
+console.log('Améliorations finales chargées');
+
+</script>
