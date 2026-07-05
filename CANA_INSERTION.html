@@ -17198,3 +17198,1653 @@ window.renderTableauFormateur = function(c2){
 console.log('Parcours Chauffeur Complet chargé ✅');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PARCOURS PÉDAGOGIQUE COMPLET — 13 PHASES
+   Partie 1 : Données + Phases 1 à 6 + Carnet du formateur
+═══════════════════════════════════════════════════════════════ */
+
+if(!DB.pedagogique) DB.pedagogique = {};
+/*
+  DB.pedagogique[salId] = {
+    profil_depart: {conduite, organisation, communication, stress, autonomie, client, securite},
+    phases: {phase_id: {statut, date, notes, scores}},
+    gestes: {geste_id: {niveau, date, note}},
+    autonomie_pct: 0-100,
+    situations_difficiles: [...],
+    bilans_trimestriels: [...],
+    carnet_formateur: {date: {appris, reussi, aide, erreur, progres, priorite, pret}},
+    carnet_salarié: {date: {appris, difficile, fier, besoin, compris, ressenti}},
+    objectifs_perso: [{objectif, progres, date_cible, atteint}],
+  }
+*/
+
+var PHASES_DEF = [
+  {id:'diagnostic', num:1, titre:'Accueil & Diagnostic', icon:'🔍', couleur:'#8b5cf6',
+   desc:'Connaître la personne avant de commencer — entretien approfondi'},
+  {id:'observation', num:2, titre:'Observer avant d\'agir', icon:'👁️', couleur:'#3b82f6',
+   desc:'Le salarié observe un chauffeur expérimenté et comprend le "pourquoi"'},
+  {id:'gestes', num:3, titre:'Apprendre les gestes', icon:'🤲', couleur:'#f97316',
+   desc:'Chaque geste technique évalué séparément'},
+  {id:'methode', num:4, titre:'La méthode de travail', icon:'🗂️', couleur:'#f59e0b',
+   desc:'Organisation, anticipation, préparation — score d\'organisation calculé'},
+  {id:'tournees', num:5, titre:'Tournées accompagnées', icon:'🚐', couleur:'#22c55e',
+   desc:'Le salarié conduit, le responsable reste à côté et note'},
+  {id:'autonomie', num:6, titre:'Autonomie progressive', icon:'🚀', couleur:'#0ea5e9',
+   desc:'Le salarié prend en main — autonomie de 0 à 100%'},
+  {id:'client', num:7, titre:'Relation client', icon:'🤝', couleur:'#a855f7',
+   desc:'Sourire, politesse, communication, gestion des conflits'},
+  {id:'situations', num:8, titre:'Situations difficiles', icon:'⚡', couleur:'#ef4444',
+   desc:'Exercices pratiques — client absent, panne, GPS en erreur'},
+  {id:'evaluations', num:9, titre:'Évaluations mensuelles', icon:'📊', couleur:'#06b6d4',
+   desc:'Bilan mensuel avec comparaison — progression / stagnation / régression'},
+  {id:'coaching', num:10, titre:'Coaching personnalisé', icon:'🎯', couleur:'#ec4899',
+   desc:'Le logiciel propose des actions selon les difficultés détectées'},
+  {id:'objectifs', num:11, titre:'Objectifs personnalisés', icon:'📌', couleur:'#84cc16',
+   desc:'Objectifs sur-mesure suivis au quotidien'},
+  {id:'bilans', num:12, titre:'Bilans de compétences', icon:'📋', couleur:'#f97316',
+   desc:'Bilan trimestriel complet — technique, social, professionnel'},
+  {id:'emploi', num:13, titre:'Préparation à l\'emploi', icon:'💼', couleur:'#22c55e',
+   desc:'CV, lettre, entretiens simulés, recherche entreprises'},
+];
+
+var PROFIL_AXES = [
+  {id:'conduite', label:'Conduite', icon:'🚗'},
+  {id:'organisation', label:'Organisation', icon:'🗂️'},
+  {id:'communication', label:'Communication', icon:'💬'},
+  {id:'stress', label:'Gestion du stress', icon:'😌'},
+  {id:'autonomie', label:'Autonomie', icon:'🚀'},
+  {id:'client', label:'Relation client', icon:'🤝'},
+  {id:'securite', label:'Sécurité', icon:'🦺'},
+  {id:'lecture', label:'Lecture / Écriture', icon:'📖'},
+];
+
+var GESTES_TECH = [
+  {id:'monter_vehicule', label:'Monter correctement dans le véhicule', cat:'🚐 Véhicule'},
+  {id:'regler_siege', label:'Régler le siège et la position de conduite', cat:'🚐 Véhicule'},
+  {id:'regler_retroviseurs', label:'Régler les rétroviseurs correctement', cat:'🚐 Véhicule'},
+  {id:'controler_pneus', label:'Contrôler les pneus (pression, état)', cat:'🚐 Véhicule'},
+  {id:'controler_niveaux', label:'Contrôler les niveaux (huile, carburant, liquide)', cat:'🚐 Véhicule'},
+  {id:'verifier_papiers', label:'Vérifier les papiers du véhicule', cat:'🚐 Véhicule'},
+  {id:'utiliser_hayon', label:'Utiliser le hayon correctement et en sécurité', cat:'🔧 Matériel'},
+  {id:'utiliser_transpalette', label:'Utiliser un transpalette correctement', cat:'🔧 Matériel'},
+  {id:'utiliser_diable', label:'Utiliser un diable correctement', cat:'🔧 Matériel'},
+  {id:'porter_caisse', label:'Porter une caisse avec les bons gestes', cat:'📦 Manutention'},
+  {id:'proteger_dos', label:'Protéger son dos lors de la manutention', cat:'📦 Manutention'},
+  {id:'charger', label:'Charger dans le bon ordre (LIFO)', cat:'📦 Manutention'},
+  {id:'repartir_charges', label:'Répartir les charges correctement dans le camion', cat:'📦 Manutention'},
+  {id:'securiser_chargement', label:'Sécuriser le chargement (sangles, cales)', cat:'📦 Manutention'},
+  {id:'fermer_vehicule', label:'Fermer et verrouiller correctement le véhicule', cat:'🚐 Véhicule'},
+];
+
+var GESTES_NIVEAUX = ['Non évalué','Incorrect — à retravailler','En apprentissage','Correct avec aide','Maîtrisé seul'];
+
+var ORGANISATION_ITEMS = [
+  {id:'prepare_materiel', label:'Prépare son matériel avant de partir'},
+  {id:'anticipe', label:'Anticipe les problèmes possibles'},
+  {id:'verifie_planning', label:'Vérifie son planning et sa feuille de route'},
+  {id:'pose_questions', label:'Pose des questions quand il ne sait pas'},
+  {id:'est_organise', label:'Est organisé — rien n\'est oublié'},
+  {id:'prepare_telephone', label:'Prépare son téléphone (chargé, contacts enregistrés)'},
+  {id:'prepare_documents', label:'Prépare ses documents (BL, feuille de route)'},
+  {id:'prepare_cles', label:'Prépare ses clés et badges d\'accès'},
+  {id:'prepare_epi', label:'Prépare et porte ses EPI sans rappel'},
+];
+
+/* ── PAGE PRINCIPALE PÉDAGOGIQUE ── */
+window.renderPedagogique = function(c2){
+  if(!c2) return;
+  var h = '<div class="page-title">🎓 Parcours Pédagogique</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">13 phases · Du diagnostic à l\'insertion · Carnet du formateur</div>';
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    if(!DB.pedagogique[s.id]) DB.pedagogique[s.id]={};
+    var ped = DB.pedagogique[s.id];
+    var phaseActuelle = getPhaseActuelle(s.id);
+    h += '<div onclick="selPedago('+s.id+',this)" class="fsal-btn-pg" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    var ph = PHASES_DEF[phaseActuelle];
+    if(ph) h += '<div style="font-size:10px;color:'+ph.couleur+'">Phase '+ph.num+' — '+ph.titre+'</div>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  h += '<div id="pedago-detail"></div>';
+  c2.innerHTML = h;
+  var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selPedago(first.id, c2.querySelector('.fsal-btn-pg'));
+};
+
+function getPhaseActuelle(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var phases = ped.phases||{};
+  for(var i=PHASES_DEF.length-1;i>=0;i--){
+    if(phases[PHASES_DEF[i].id]&&phases[PHASES_DEF[i].id].statut==='complete') return Math.min(i+1,PHASES_DEF.length-1);
+  }
+  return 0;
+}
+
+window.selPedago = function(salId, el){
+  document.querySelectorAll('.fsal-btn-pg').forEach(function(b){b.style.borderColor='var(--border)';});
+  if(el) el.style.borderColor='var(--purple)';
+  window.pedaGoSalId = salId;
+  window.dossierSalActif = salId;
+  afficherPedago(salId);
+};
+
+function afficherPedago(salId){
+  var zone = document.getElementById('pedago-detail'); if(!zone) return;
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  var ped = DB.pedagogique[salId];
+  var phaseIdx = getPhaseActuelle(salId);
+
+  /* Onglets */
+  var h = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+  [['phases','📋 Phases'],['profil','📊 Profil'],['gestes','🤲 Gestes'],['carnet','📓 Carnet'],['coaching','🎯 Coaching'],['bilan','📋 Bilan 3 mois']].forEach(function(tab){
+    h += '<button onclick="showPedaTab(\''+tab[0]+'\')" id="pedatab-'+tab[0]+'" class="btn btn-sm '+(tab[0]==='phases'?'btn-primary':'btn-secondary')+'">'+tab[1]+'</button>';
+  });
+  h += '</div>';
+  h += '<div id="peda-tab-content">';
+  h += renderPedaPhases(salId);
+  h += '</div>';
+  zone.innerHTML = h;
+}
+
+window.showPedaTab = function(tab){
+  document.querySelectorAll('[id^="pedatab-"]').forEach(function(b){b.className='btn btn-sm btn-secondary';});
+  var btn = document.getElementById('pedatab-'+tab); if(btn) btn.className='btn btn-sm btn-primary';
+  var c = document.getElementById('peda-tab-content'); if(!c) return;
+  var sid = window.pedaGoSalId;
+  var r = {phases:renderPedaPhases, profil:renderPedaProfil, gestes:renderPedaGestes, carnet:renderPedaCarnet, coaching:renderPedaCoaching, bilan:renderPedaBilan};
+  c.innerHTML = r[tab] ? r[tab](sid) : '';
+};
+
+/* ── PHASES ── */
+function renderPedaPhases(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var phases = ped.phases||{};
+  var phaseActuelle = getPhaseActuelle(salId);
+
+  var h = '<div class="card">';
+  h += '<div class="card-title">📋 Les 13 phases du parcours pédagogique</div>';
+
+  /* Timeline */
+  h += '<div style="display:flex;flex-direction:column;gap:8px">';
+  PHASES_DEF.forEach(function(ph, i){
+    var data = phases[ph.id]||{};
+    var statut = data.statut||'pending';
+    var estActuelle = i===phaseActuelle && statut!=='complete';
+    var col = statut==='complete'?'var(--green)':estActuelle?ph.couleur:'var(--border)';
+    var bg = statut==='complete'?'rgba(34,197,94,.06)':estActuelle?ph.couleur+'11':'transparent';
+
+    h += '<div style="display:flex;align-items:start;gap:12px;padding:12px 14px;border:2px solid '+col+'33;border-radius:12px;background:'+bg+'">';
+
+    /* Numéro + icône */
+    h += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">';
+    h += '<div style="width:36px;height:36px;border-radius:50%;background:'+(statut==='complete'?'var(--green)':estActuelle?ph.couleur:'var(--panel2)')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(statut==='complete'?'16px':'13px')+';font-weight:900">'+(statut==='complete'?'✓':ph.num)+'</div>';
+    h += '<span style="font-size:16px">'+ph.icon+'</span></div>';
+
+    /* Contenu */
+    h += '<div style="flex:1">';
+    h += '<div style="font-size:13px;font-weight:800;color:var(--text)">Phase '+ph.num+' — '+ph.titre;
+    if(estActuelle) h += ' <span style="font-size:9px;background:'+ph.couleur+';color:#fff;border-radius:4px;padding:1px 7px">EN COURS</span>';
+    h += '</div>';
+    h += '<div style="font-size:11px;color:var(--sub);margin-top:2px">'+ph.desc+'</div>';
+    if(data.date) h += '<div style="font-size:10px;color:var(--green);margin-top:4px">✅ Complétée le '+(typeof fmt==='function'?fmt(data.date):data.date)+'</div>';
+    if(data.notes) h += '<div style="font-size:11px;color:var(--text);margin-top:4px;background:var(--panel2);padding:6px 10px;border-radius:6px">'+data.notes+'</div>';
+    h += '</div>';
+
+    /* Actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(statut!=='complete'){
+      h += '<button class="btn btn-sm btn-primary" style="background:'+ph.couleur+';border-color:'+ph.couleur+'" onclick="ouvrirPhase('+salId+',\''+ph.id+'\')">Ouvrir</button>';
+      if(i>0) h += '<button class="btn btn-sm btn-green" onclick="validerPhase('+salId+',\''+ph.id+'\')">✅ Valider</button>';
+    } else {
+      h += '<button class="btn btn-sm btn-secondary" onclick="ouvrirPhase('+salId+',\''+ph.id+'\')">Modifier</button>';
+    }
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+window.ouvrirPhase = function(salId, phaseId){
+  var ph = PHASES_DEF.find(function(p){return p.id===phaseId;}); if(!ph)return;
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].phases) DB.pedagogique[salId].phases={};
+  var data = DB.pedagogique[salId].phases[phaseId]||{};
+
+  var ov = document.createElement('div');
+  ov.id = 'phase-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:20px';
+
+  var contenu = getContenuPhase(phaseId, salId);
+  ov.innerHTML = '<div style="max-width:680px;margin:0 auto;background:var(--panel);border-radius:14px;padding:24px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div style="font-size:16px;font-weight:900;color:'+ph.couleur+'">'+ph.icon+' Phase '+ph.num+' — '+ph.titre+'</div>'
+    +'<button onclick="document.getElementById(\'phase-overlay\').remove()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:6px 12px;cursor:pointer">✕</button>'
+    +'</div>'
+    +contenu
+    +'<div style="margin-top:14px;display:flex;gap:8px">'
+    +'<button class="btn btn-green" onclick="sauverPhase('+salId+',\''+phaseId+'\')">💾 Sauvegarder</button>'
+    +'<button class="btn btn-primary" onclick="validerPhase('+salId+',\''+phaseId+'\')">✅ Valider la phase</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+};
+
+function getContenuPhase(phaseId, salId){
+  var ped = DB.pedagogique[salId]||{};
+  var data = (ped.phases||{})[phaseId]||{};
+
+  if(phaseId==='diagnostic') return getContenuDiagnostic(salId);
+  if(phaseId==='gestes') return getContenuGestes(salId);
+  if(phaseId==='methode') return getContenuMethode(salId);
+  if(phaseId==='autonomie') return getContenuAutonomie(salId);
+  if(phaseId==='situations') return getContenuSituations(salId);
+
+  /* Contenu générique */
+  var h = '<div style="font-size:12px;color:var(--sub);margin-bottom:14px">Évaluation de la phase — noter les observations</div>';
+  h += '<textarea id="phase-notes" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:120px;box-sizing:border-box" placeholder="Vos observations pour cette phase...">'+(data.notes||'')+'</textarea>';
+  return h;
+}
+
+function getContenuDiagnostic(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var profil = ped.profil_depart||{};
+  var h = '<div style="font-size:12px;color:var(--sub);margin-bottom:14px">Profil de départ — évaluation initiale sur 10</div>';
+  PROFIL_AXES.forEach(function(ax){
+    h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">';
+    h += '<span style="font-size:18px;flex-shrink:0">'+ax.icon+'</span>';
+    h += '<div style="width:120px;font-size:12px;font-weight:700;color:var(--text)">'+ax.label+'</div>';
+    h += '<input type="range" id="diag-'+ax.id+'" min="0" max="10" value="'+(profil[ax.id]||5)+'" style="flex:1;accent-color:var(--orange)" oninput="document.getElementById(\'diag-val-'+ax.id+'\').textContent=this.value">';
+    h += '<span id="diag-val-'+ax.id+'" style="width:28px;font-size:13px;font-weight:900;color:var(--orange);text-align:right">'+(profil[ax.id]||5)+'</span>';
+    h += '<span style="color:var(--sub);font-size:11px">/10</span></div>';
+  });
+  h += '<div style="margin-top:14px"><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:6px">Observations générales</div>';
+  h += '<textarea id="phase-notes" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box" placeholder="Freins sociaux, état de santé, niveau de lecture, comportement...">'+(((ped.phases||{}).diagnostic||{}).notes||'')+'</textarea>';
+  h += '</div>';
+  return h;
+}
+
+function getContenuGestes(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var gestes = ped.gestes||{};
+  var cats = {};
+  GESTES_TECH.forEach(function(g){if(!cats[g.cat])cats[g.cat]=[];cats[g.cat].push(g);});
+  var h = '';
+  Object.keys(cats).forEach(function(cat){
+    h += '<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:12px 0 6px">'+cat+'</div>';
+    cats[cat].forEach(function(g){
+      var niv = (gestes[g.id]||{}).niveau||0;
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">';
+      h += '<div style="flex:1;font-size:12px;color:var(--text)">'+g.label+'</div>';
+      h += '<select id="geste-'+g.id+'" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px">';
+      GESTES_NIVEAUX.forEach(function(lbl,i){h+='<option value="'+i+'"'+(niv===i?' selected':'')+'>'+lbl+'</option>';});
+      h += '</select></div>';
+    });
+  });
+  h += '<textarea id="phase-notes" placeholder="Observations gestes..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;min-height:60px;resize:vertical;box-sizing:border-box;margin-top:12px">'+(((ped.phases||{}).gestes||{}).notes||'')+'</textarea>';
+  return h;
+}
+
+function getContenuMethode(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var methode = ped.methode||{};
+  var h = '<div style="font-size:12px;color:var(--sub);margin-bottom:12px">Score d\'organisation — évaluer chaque point</div>';
+  ORGANISATION_ITEMS.forEach(function(item){
+    var val = methode[item.id]||0;
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+    h += '<div style="flex:1;font-size:12px;color:var(--text)">'+item.label+'</div>';
+    h += '<div style="display:flex;gap:4px">';
+    for(var v=1;v<=4;v++){
+      var col=['','#ef4444','#f59e0b','#22c55e','#3b82f6'][v];
+      h += '<button id="org-'+item.id+'-'+v+'" onclick="setOrganisation(\''+salId+'\',\''+item.id+'\','+v+')" style="width:28px;height:28px;border-radius:6px;border:2px solid '+(val===v?col:'var(--border)')+';background:'+(val===v?col+'22':'transparent')+';cursor:pointer;font-size:11px;font-weight:800;color:'+(val===v?col:'var(--sub)')+'">'+v+'</button>';
+    }
+    h += '</div></div>';
+  });
+  h += '<textarea id="phase-notes" placeholder="Observations méthode..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;min-height:60px;resize:vertical;box-sizing:border-box;margin-top:12px">'+(((ped.phases||{}).methode||{}).notes||'')+'</textarea>';
+  return h;
+}
+
+function getContenuAutonomie(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var pct = ped.autonomie_pct||0;
+  var h = '<div style="text-align:center;margin-bottom:20px">';
+  h += '<div style="font-size:48px;font-weight:900;color:var(--blue)">'+pct+'%</div>';
+  h += '<div style="font-size:12px;color:var(--sub)">Niveau d\'autonomie actuel</div></div>';
+  h += '<input type="range" min="0" max="100" step="10" value="'+pct+'" style="width:100%;accent-color:var(--blue);margin-bottom:10px" oninput="document.getElementById(\'auto-val\').textContent=this.value+\'%\';window._autoVal=parseInt(this.value)">';
+  h += '<div id="auto-val" style="text-align:center;font-size:20px;font-weight:900;color:var(--blue)">'+pct+'%</div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:14px"><span>Accompagné total</span><span>Totalement autonome</span></div>';
+  var items=['Prépare seul','Charge seul','Organise seul','Conduit seul','Livre seul'];
+  h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+  items.forEach(function(item,i){
+    var fait = pct>=(i+1)*20;
+    h += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">'+(fait?'✅':'⬜')+'</span><span style="font-size:12px;color:'+(fait?'var(--green)':'var(--sub)')+'">'+item+'</span></div>';
+  });
+  h += '</div>';
+  h += '<textarea id="phase-notes" placeholder="Observations autonomie..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;min-height:60px;resize:vertical;box-sizing:border-box">'+(((ped.phases||{}).autonomie||{}).notes||'')+'</textarea>';
+  window._autoVal = pct;
+  return h;
+}
+
+function getContenuSituations(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var sits = ped.situations_difficiles||[];
+  var scenarios = [
+    {id:'client_absent',label:'Client absent à la livraison'},
+    {id:'client_refuse',label:'Client refuse la livraison'},
+    {id:'panne_vehicule',label:'Panne du véhicule en route'},
+    {id:'telephone_hors',label:'Téléphone hors service'},
+    {id:'gps_erreur',label:'GPS en erreur — mauvaise direction'},
+    {id:'caisse_manquante',label:'Caisse manquante au déchargement'},
+    {id:'bl_faux',label:'Bon de livraison incorrect'},
+  ];
+  var h = '<div style="font-size:12px;color:var(--sub);margin-bottom:12px">Cocher les situations testées et noter la réaction du salarié</div>';
+  scenarios.forEach(function(sc){
+    var sit = sits.find(function(s){return s.id===sc.id;})||{};
+    var cols=['','#ef4444','#f59e0b','#22c55e','#3b82f6'];
+    var labels=['','Mauvaise réaction','Hésitante','Correcte','Excellente'];
+    h += '<div style="padding:10px 0;border-bottom:1px solid var(--border)">';
+    h += '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">'+sc.label+'</div>';
+    h += '<div style="display:flex;gap:6px">';
+    for(var v=1;v<=4;v++){
+      h += '<button onclick="setSituation(\''+salId+'\',\''+sc.id+'\','+v+')" id="sit-'+sc.id+'-'+v+'" style="padding:4px 10px;border-radius:6px;border:2px solid '+(sit.note===v?cols[v]:'var(--border)')+';background:'+(sit.note===v?cols[v]+'22':'transparent')+';cursor:pointer;font-size:11px;font-weight:700;color:'+(sit.note===v?cols[v]:'var(--sub)')+'">'+labels[v]+'</button>';
+    }
+    h += '</div></div>';
+  });
+  h += '<textarea id="phase-notes" placeholder="Observations situations difficiles..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;min-height:60px;resize:vertical;box-sizing:border-box;margin-top:12px">'+(((ped.phases||{}).situations||{}).notes||'')+'</textarea>';
+  return h;
+}
+
+window.setOrganisation = function(salId, itemId, val){
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].methode) DB.pedagogique[salId].methode={};
+  DB.pedagogique[salId].methode[itemId]=val;
+  for(var v=1;v<=4;v++){
+    var col=['','#ef4444','#f59e0b','#22c55e','#3b82f6'][v];
+    var btn=document.getElementById('org-'+itemId+'-'+v);
+    if(btn){btn.style.borderColor=v===val?col:'var(--border)';btn.style.background=v===val?col+'22':'transparent';btn.style.color=v===val?col:'var(--sub)';}
+  }
+};
+
+window.setSituation = function(salId, sitId, val){
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].situations_difficiles) DB.pedagogique[salId].situations_difficiles=[];
+  var sits = DB.pedagogique[salId].situations_difficiles;
+  var idx = sits.findIndex(function(s){return s.id===sitId;});
+  if(idx>=0) sits[idx].note=val; else sits.push({id:sitId,note:val});
+  var cols=['','#ef4444','#f59e0b','#22c55e','#3b82f6'];
+  var labels=['','Mauvaise','Hésitante','Correcte','Excellente'];
+  for(var v=1;v<=4;v++){
+    var btn=document.getElementById('sit-'+sitId+'-'+v);
+    if(btn){btn.style.borderColor=v===val?cols[v]:'var(--border)';btn.style.background=v===val?cols[v]+'22':'transparent';btn.style.color=v===val?cols[v]:'var(--sub)';}
+  }
+};
+
+window.sauverPhase = function(salId, phaseId){
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].phases) DB.pedagogique[salId].phases={};
+  var data = DB.pedagogique[salId].phases[phaseId]||{};
+  var notesEl=document.getElementById('phase-notes');
+  if(notesEl) data.notes=notesEl.value;
+
+  /* Sauver profil diagnostic */
+  if(phaseId==='diagnostic'){
+    var profil={};
+    PROFIL_AXES.forEach(function(ax){
+      var el=document.getElementById('diag-'+ax.id);
+      if(el) profil[ax.id]=parseInt(el.value)||5;
+    });
+    DB.pedagogique[salId].profil_depart=profil;
+  }
+  /* Sauver gestes */
+  if(phaseId==='gestes'){
+    if(!DB.pedagogique[salId].gestes) DB.pedagogique[salId].gestes={};
+    GESTES_TECH.forEach(function(g){
+      var el=document.getElementById('geste-'+g.id);
+      if(el) DB.pedagogique[salId].gestes[g.id]={niveau:parseInt(el.value)||0,date:new Date().toISOString().slice(0,10)};
+    });
+  }
+  /* Sauver autonomie */
+  if(phaseId==='autonomie' && window._autoVal!==undefined){
+    DB.pedagogique[salId].autonomie_pct=window._autoVal;
+  }
+
+  DB.pedagogique[salId].phases[phaseId]=data;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Phase sauvegardée ✅','ok');
+};
+
+window.validerPhase = function(salId, phaseId){
+  sauverPhase(salId, phaseId);
+  if(!DB.pedagogique[salId].phases[phaseId]) DB.pedagogique[salId].phases[phaseId]={};
+  DB.pedagogique[salId].phases[phaseId].statut='complete';
+  DB.pedagogique[salId].phases[phaseId].date=new Date().toISOString().slice(0,10);
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Phase validée ! ✅','ok');
+  if(typeof logAction==='function') logAction('Phase validée',phaseId+' salId '+salId);
+  var ov=document.getElementById('phase-overlay'); if(ov)ov.remove();
+  showPedaTab('phases');
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PARCOURS PÉDAGOGIQUE — PARTIE 2
+   Profil radar · Carnet formateur + salarié · Coaching IA
+   Bilan 3 mois · Router
+═══════════════════════════════════════════════════════════════ */
+
+/* ── PROFIL RADAR ── */
+function renderPedaProfil(salId){
+  var ped = DB.pedagogique[salId]||{};
+  var profil = ped.profil_depart||{};
+  var AXMAX = 10;
+
+  /* SVG Radar 8 axes */
+  var cx=200,cy=200,r=140,n=PROFIL_AXES.length;
+  var pts = PROFIL_AXES.map(function(ax,i){
+    var angle = (Math.PI*2/n)*i - Math.PI/2;
+    var val = (profil[ax.id]||5)/AXMAX;
+    return {
+      x: cx+Math.cos(angle)*r*val,
+      y: cy+Math.sin(angle)*r*val,
+      lx: cx+Math.cos(angle)*(r+30),
+      ly: cy+Math.sin(angle)*(r+30),
+      label: ax.label, icon: ax.icon, val: profil[ax.id]||5
+    };
+  });
+
+  var svg='<svg viewBox="0 0 400 400" style="width:100%;max-width:360px;display:block;margin:0 auto">';
+  /* Grilles */
+  for(var g=2;g<=AXMAX;g+=2){
+    var gpoly=PROFIL_AXES.map(function(ax,i){
+      var angle=(Math.PI*2/n)*i-Math.PI/2;
+      return (cx+Math.cos(angle)*r*g/AXMAX)+','+(cy+Math.sin(angle)*r*g/AXMAX);
+    }).join(' ');
+    svg+='<polygon points="'+gpoly+'" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
+  }
+  /* Axes */
+  PROFIL_AXES.forEach(function(ax,i){
+    var angle=(Math.PI*2/n)*i-Math.PI/2;
+    svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Math.cos(angle)*r)+'" y2="'+(cy+Math.sin(angle)*r)+'" stroke="rgba(255,255,255,.1)" stroke-width="1"/>';
+  });
+  /* Polygone valeurs */
+  var poly=pts.map(function(p){return p.x+','+p.y;}).join(' ');
+  svg+='<polygon points="'+poly+'" fill="rgba(249,115,22,.25)" stroke="#f97316" stroke-width="2.5"/>';
+  /* Points */
+  pts.forEach(function(p){
+    svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#f97316"/>';
+  });
+  /* Labels */
+  pts.forEach(function(p){
+    var anchor=p.lx<cx-10?'end':p.lx>cx+10?'start':'middle';
+    svg+='<text x="'+p.lx+'" y="'+p.ly+'" fill="rgba(255,255,255,.7)" font-size="10" text-anchor="'+anchor+'" dy="3">'+p.icon+' '+p.label+' ('+p.val+')</text>';
+  });
+  svg+='</svg>';
+
+  var h='<div class="card" style="margin-bottom:12px">';
+  h+='<div class="card-title">📊 Profil de départ — Radar des compétences</div>';
+  h+=svg;
+
+  /* Tableau */
+  h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px">';
+  PROFIL_AXES.forEach(function(ax){
+    var val=profil[ax.id]||5;
+    var col=val>=8?'var(--green)':val>=5?'var(--yellow)':val>=3?'var(--orange)':'var(--red)';
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--panel2);border-radius:8px">';
+    h+='<span style="font-size:18px">'+ax.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--text)">'+ax.label+'</div>';
+    h+='<div style="background:var(--border);border-radius:4px;height:5px;margin-top:4px"><div style="width:'+( val*10)+'%;height:5px;border-radius:4px;background:'+col+'"></div></div></div>';
+    h+='<div style="font-size:13px;font-weight:900;color:'+col+'">'+val+'</div></div>';
+  });
+  h+='</div></div>';
+
+  /* Axes faibles */
+  var faibles=PROFIL_AXES.filter(function(ax){return (profil[ax.id]||5)<5;});
+  if(faibles.length){
+    h+='<div class="card" style="border-color:rgba(239,68,68,.3)">';
+    h+='<div class="card-title" style="color:var(--red)">⚠️ Points de vigilance — axes < 5/10</div>';
+    faibles.forEach(function(ax){
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h+='<span style="font-size:18px">'+ax.icon+'</span>';
+      h+='<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">'+ax.label+'</div>';
+      h+='<div style="font-size:11px;color:var(--sub)">Score initial : '+(profil[ax.id]||0)+'/10 — à accompagner en priorité</div></div></div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+/* ── GESTES TECH RÉSUMÉ ── */
+function renderPedaGestes(salId){
+  var ped=DB.pedagogique[salId]||{};
+  var gestes=ped.gestes||{};
+  var cats={};
+  GESTES_TECH.forEach(function(g){if(!cats[g.cat])cats[g.cat]=[];cats[g.cat].push(g);});
+  var maitrisés=GESTES_TECH.filter(function(g){return (gestes[g.id]||{}).niveau>=3;}).length;
+  var pct=Math.round(maitrisés/GESTES_TECH.length*100);
+
+  var h='<div class="card" style="margin-bottom:12px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<div class="card-title">🤲 Gestes techniques</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="ouvrirPhase('+salId+',\'gestes\')">Évaluer</button></div>';
+  h+='<div style="background:var(--border);border-radius:6px;height:8px;margin-bottom:10px"><div style="width:'+pct+'%;height:8px;border-radius:6px;background:var(--green)"></div></div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:14px">'+maitrisés+'/'+GESTES_TECH.length+' gestes maîtrisés (niveau ≥ 3)</div>';
+
+  Object.keys(cats).forEach(function(cat){
+    h+='<div style="font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;margin:10px 0 6px">'+cat+'</div>';
+    cats[cat].forEach(function(g){
+      var d=gestes[g.id]||{niveau:0};
+      var niv=d.niveau||0;
+      var col=niv>=4?'var(--blue)':niv>=3?'var(--green)':niv>=2?'var(--yellow)':niv>=1?'var(--red)':'var(--border)';
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">';
+      h+='<div style="width:14px;height:14px;border-radius:4px;background:'+col+';flex-shrink:0"></div>';
+      h+='<div style="flex:1;font-size:11px;color:var(--text)">'+g.label+'</div>';
+      h+='<div style="font-size:10px;color:'+col+';font-weight:700">'+GESTES_NIVEAUX[niv]+'</div></div>';
+    });
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ── CARNET FORMATEUR + SALARIÉ ── */
+function renderPedaCarnet(salId){
+  var ped=DB.pedagogique[salId]||{};
+  var carnetF=ped.carnet_formateur||{};
+  var carnetS=ped.carnet_salarie||{};
+  var today=new Date().toISOString().slice(0,10);
+
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+
+  /* Carnet formateur */
+  h+='<div class="card"><div class="card-title">📓 Carnet du formateur</div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:10px">À remplir après chaque journée de formation</div>';
+
+  var fieldsF=[
+    {id:'appris',label:'📚 Ce que le salarié a appris aujourd\'hui',ph:'Compétences nouvelles observées...'},
+    {id:'reussi',label:'⭐ Ce qu\'il a réussi',ph:'Réussites à valoriser...'},
+    {id:'aide',label:'🤝 Ce dont il a eu besoin d\'aide',ph:'Points nécessitant assistance...'},
+    {id:'erreur',label:'⚠️ L\'erreur à corriger demain',ph:'Point prioritaire à travailler...'},
+    {id:'progres',label:'📈 Progression observée',ph:'Est-ce qu\'il progresse ? Stagne ? Régresse ?'},
+    {id:'pret',label:'🚀 Prêt pour la prochaine étape ?',ph:'Oui / Presque / Non — justification...'},
+  ];
+  fieldsF.forEach(function(f){
+    var val=(carnetF[today]||{})[f.id]||'';
+    h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px">'+f.label+'</div>';
+    h+='<textarea id="cf-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px;font-size:11px;resize:vertical;min-height:44px;box-sizing:border-box">'+val+'</textarea></div>';
+  });
+  h+='<button class="btn btn-primary btn-sm" onclick="sauverCarnetF('+salId+',\''+today+'\')">💾 Sauver</button></div>';
+
+  /* Carnet salarié */
+  h+='<div class="card"><div class="card-title">✏️ Carnet du salarié</div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:10px">Le salarié remplit lui-même — 5 min par jour</div>';
+
+  var fieldsS=[
+    {id:'appris',label:'📚 Ce que j\'ai appris aujourd\'hui',ph:'En mes propres mots...'},
+    {id:'difficile',label:'😓 Ce que j\'ai trouvé difficile',ph:'Ce qui m\'a posé problème...'},
+    {id:'fier',label:'⭐ Ce dont je suis fier',ph:'Ce que j\'ai réussi...'},
+    {id:'besoin',label:'🙋 Ce dont j\'ai besoin',ph:'Aide, explication, matériel...'},
+    {id:'compris',label:'💡 Ce que j\'ai compris',ph:'Ce qui est clair maintenant...'},
+    {id:'ressenti',label:'❤️ Comment je me sens',ph:'Bien / Fatigué / Stressé / Motivé...'},
+  ];
+  fieldsS.forEach(function(f){
+    var val=(carnetS[today]||{})[f.id]||'';
+    h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px">'+f.label+'</div>';
+    h+='<textarea id="cs-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px;font-size:11px;resize:vertical;min-height:44px;box-sizing:border-box">'+val+'</textarea></div>';
+  });
+  h+='<button class="btn btn-green btn-sm" onclick="sauverCarnetS('+salId+',\''+today+'\')">💾 Sauver</button></div>';
+
+  h+='</div>';
+
+  /* Historique */
+  var allDates=[...new Set([...Object.keys(carnetF),...Object.keys(carnetS)])].sort().reverse().slice(0,7);
+  if(allDates.length){
+    h+='<div class="card" style="margin-top:12px"><div class="card-title">📚 Historique des carnets</div>';
+    allDates.forEach(function(date){
+      var f=carnetF[date]||{},s=carnetS[date]||{};
+      h+='<div style="padding:10px 0;border-bottom:1px solid var(--border)">';
+      h+='<div style="font-size:11px;font-weight:800;color:var(--orange);margin-bottom:4px">'+(typeof fmt==='function'?fmt(date):date)+'</div>';
+      if(f.appris) h+='<div style="font-size:11px;color:var(--blue)">📓 Formateur : '+f.appris.slice(0,80)+(f.appris.length>80?'...':'')+'</div>';
+      if(s.appris) h+='<div style="font-size:11px;color:var(--green)">✏️ Salarié : '+s.appris.slice(0,80)+(s.appris.length>80?'...':'')+'</div>';
+      if(f.erreur) h+='<div style="font-size:11px;color:var(--red)">⚠️ À corriger : '+f.erreur.slice(0,60)+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+window.sauverCarnetF=function(salId,date){
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].carnet_formateur) DB.pedagogique[salId].carnet_formateur={};
+  var fields=['appris','reussi','aide','erreur','progres','pret'];
+  var data={};
+  fields.forEach(function(f){var el=document.getElementById('cf-'+f);if(el)data[f]=el.value;});
+  DB.pedagogique[salId].carnet_formateur[date]=data;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Carnet formateur sauvegardé ✅','ok');
+};
+
+window.sauverCarnetS=function(salId,date){
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].carnet_salarie) DB.pedagogique[salId].carnet_salarie={};
+  var fields=['appris','difficile','fier','besoin','compris','ressenti'];
+  var data={};
+  fields.forEach(function(f){var el=document.getElementById('cs-'+f);if(el)data[f]=el.value;});
+  DB.pedagogique[salId].carnet_salarie[date]=data;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Carnet salarié sauvegardé ✅','ok');
+};
+
+/* ── COACHING IA ── */
+function renderPedaCoaching(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return '';
+  var ped=DB.pedagogique[salId]||{};
+  var phaseActuelle=getPhaseActuelle(salId);
+  var ph=PHASES_DEF[phaseActuelle];
+  var profil=ped.profil_depart||{};
+  var gestes=ped.gestes||{};
+  var gestesProb=GESTES_TECH.filter(function(g){return (gestes[g.id]||{}).niveau<=1;});
+  var autonomie=ped.autonomie_pct||0;
+  var carnetF=ped.carnet_formateur||{};
+  var derniereErreur=Object.values(carnetF).sort(function(a,b){return (a.date||'')>(b.date||'')?-1:1;})[0];
+
+  return '<div class="card">'
+    +'<div class="card-title" style="color:var(--blue)">🎯 Coaching personnalisé</div>'
+    +'<div style="font-size:12px;color:var(--sub);margin-bottom:14px">L\'IA analyse le parcours et génère des recommandations sur-mesure</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+    +'<button class="btn btn-primary" onclick="genCoachingIA('+salId+',\'plan\')">📋 Plan de formation personnalisé</button>'
+    +'<button class="btn btn-secondary" onclick="genCoachingIA('+salId+',\'difficultes\')">⚠️ Analyser les difficultés</button>'
+    +'<button class="btn btn-secondary" onclick="genCoachingIA('+salId+',\'prochain\')">→ Que faire demain ?</button>'
+    +'<button class="btn btn-secondary" onclick="genCoachingIA('+salId+',\'feedback\')">💬 Feedback pour le salarié</button>'
+    +'</div>'
+    +'<div id="coaching-result" style="min-height:60px"></div>'
+    +'</div>';
+}
+
+window.genCoachingIA=function(salId,type){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var ped=DB.pedagogique[salId]||{};
+  var zone=document.getElementById('coaching-result');
+  if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px;padding:10px">Analyse IA en cours...</div>';
+
+  var profil=ped.profil_depart||{};
+  var gestes=ped.gestes||{};
+  var phaseIdx=getPhaseActuelle(salId);
+  var ph=PHASES_DEF[phaseIdx];
+  var carnetF=ped.carnet_formateur||{};
+  var dernJour=Object.values(carnetF).slice(-1)[0]||{};
+  var gestesProb=GESTES_TECH.filter(function(g){return (gestes[g.id]||{}).niveau<=1;}).map(function(g){return g.label;});
+
+  var prompts={
+    plan:'Tu es un formateur expert en logistique et insertion professionnelle.\n'
+      +'Salarié : '+s.prenom+(s.nom?' '+s.nom:'')+'\n'
+      +'Phase actuelle : '+(ph?ph.titre:'Phase 1')+'\n'
+      +'Autonomie : '+(ped.autonomie_pct||0)+'%\n'
+      +'Points faibles profil : '+Object.keys(profil).filter(function(k){return profil[k]<5;}).join(', ')+'\n'
+      +'Gestes non maîtrisés : '+gestesProb.slice(0,5).join(', ')+'\n'
+      +'Génère un plan de formation sur 4 semaines, semaine par semaine, adapté à ce profil. En français, concret.',
+
+    difficultes:'Analyse les difficultés de ce salarié et donne 3 actions concrètes au formateur.\n'
+      +'Profil : '+JSON.stringify(profil)+'\n'
+      +'Gestes en difficulté : '+gestesProb.join(', ')+'\n'
+      +'Dernière note : '+(dernJour.progres||'Non renseigné')+'\n'
+      +'Sois précis et bienveillant. En français. Max 200 mots.',
+
+    prochain:'Que doit faire le formateur demain avec ce salarié ?\n'
+      +'Phase : '+(ph?ph.titre:'?')+'\n'
+      +'Dernière erreur à corriger : '+(dernJour.erreur||'Aucune')+'\n'
+      +'Prêt pour la suite ? '+(dernJour.pret||'Non évalué')+'\n'
+      +'Propose 3 activités concrètes pour demain. En français.',
+
+    feedback:'Rédige un feedback positif et constructif à lire au salarié.\n'
+      +'Prénom : '+s.prenom+'\n'
+      +'Phase : '+(ph?ph.titre:'?')+'\n'
+      +'Réussites récentes : '+(dernJour.reussi||'Non renseigné')+'\n'
+      +'Point à améliorer : '+(dernJour.erreur||'Non renseigné')+'\n'
+      +'Ton : chaleureux, encourageant, honnête. 100-150 mots en français.',
+  };
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompts[type]||prompts.plan}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Analyse non disponible';
+    if(zone) zone.innerHTML='<div style="background:rgba(74,158,216,.08);border:1px solid rgba(74,158,216,.3);border-radius:10px;padding:14px;font-size:12px;line-height:1.8;color:var(--text)">'+txt.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--orange)">$1</strong>')+'</div>';
+  }).catch(function(){
+    if(zone) zone.innerHTML='<div style="color:var(--sub);font-size:12px">IA non disponible — connexion requise</div>';
+  });
+};
+
+/* ── BILAN 3 MOIS ── */
+function renderPedaBilan(salId){
+  var ped=DB.pedagogique[salId]||{};
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return '';
+  var bilans=ped.bilans_trimestriels||[];
+  var phaseActuelle=getPhaseActuelle(salId);
+  var gestes=ped.gestes||{};
+  var maitrisés=GESTES_TECH.filter(function(g){return (gestes[g.id]||{}).niveau>=3;}).length;
+
+  var h='<div class="card" style="margin-bottom:12px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">📋 Bilan trimestriel</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="creerBilanTrimestriel('+salId+')">+ Nouveau bilan</button></div>';
+
+  if(!bilans.length){
+    h+='<div style="color:var(--sub);font-size:12px;padding:10px">Aucun bilan trimestriel créé. Cliquer sur "+ Nouveau bilan" pour commencer.</div>';
+  } else {
+    bilans.slice().reverse().forEach(function(b,i){
+      var col=b.verdict==='positif'?'var(--green)':b.verdict==='neutre'?'var(--yellow)':'var(--red)';
+      h+='<div style="background:var(--panel2);border:2px solid '+col+'33;border-radius:12px;padding:16px;margin-bottom:10px">';
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+      h+='<div style="font-size:14px;font-weight:900;color:var(--text)">Bilan n°'+(bilans.length-i)+' — '+b.date+'</div>';
+      h+='<span style="background:'+col+'22;color:'+col+';border-radius:8px;padding:4px 12px;font-size:11px;font-weight:800">'+b.verdict+'</span></div>';
+      if(b.technique) h+='<div style="font-size:12px;color:var(--text);margin-bottom:6px"><strong style="color:var(--blue)">Technique :</strong> '+b.technique+'</div>';
+      if(b.social) h+='<div style="font-size:12px;color:var(--text);margin-bottom:6px"><strong style="color:var(--green)">Social :</strong> '+b.social+'</div>';
+      if(b.professionnel) h+='<div style="font-size:12px;color:var(--text);margin-bottom:6px"><strong style="color:var(--orange)">Professionnel :</strong> '+b.professionnel+'</div>';
+      if(b.objectifs_suivants) h+='<div style="font-size:12px;color:var(--purple)"><strong>Objectifs suivants :</strong> '+b.objectifs_suivants+'</div>';
+      h+='<div style="margin-top:10px;display:flex;gap:6px">';
+      h+='<button class="btn btn-sm btn-green" onclick="imprimerBilanTrim('+salId+','+i+')">🖨️ Imprimer</button></div></div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+
+window.creerBilanTrimestriel=function(salId){
+  var technique=prompt('Bilan technique (compétences métier) :','');
+  if(technique===null)return;
+  var social=prompt('Bilan social (comportement, équipe, communication) :','');
+  var professionnel=prompt('Bilan professionnel (autonomie, initiative, projet) :','');
+  var objectifs=prompt('Objectifs pour les 3 prochains mois :','');
+  var verdict=prompt('Verdict global (positif / neutre / négatif) :','positif');
+  if(!DB.pedagogique[salId]) DB.pedagogique[salId]={};
+  if(!DB.pedagogique[salId].bilans_trimestriels) DB.pedagogique[salId].bilans_trimestriels=[];
+  DB.pedagogique[salId].bilans_trimestriels.push({
+    date:new Date().toLocaleDateString('fr-FR'),
+    technique:technique,social:social||'',
+    professionnel:professionnel||'',
+    objectifs_suivants:objectifs||'',
+    verdict:verdict||'positif'
+  });
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Bilan créé ✅','ok');
+  if(typeof logAction==='function') logAction('Bilan trimestriel créé','salId '+salId);
+  showPedaTab('bilan');
+};
+
+window.imprimerBilanTrim=function(salId,idx){
+  var ped=DB.pedagogique[salId]||{};
+  var bilans=ped.bilans_trimestriels||[];
+  var b=bilans.slice().reverse()[idx]; if(!b)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;font-size:12px;color:#1a2435}h1{font-size:18px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}h2{font-size:13px;font-weight:900;background:#f8fafc;padding:7px 12px;border-radius:6px;margin:14px 0 8px}.sig{display:flex;justify-content:space-between;margin-top:28px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<h1>Bilan trimestriel — '+s.prenom+(s.nom?' '+s.nom:'')+'</h1>';
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;font-size:11px;margin-bottom:14px">';
+  html+='<span><b>Date :</b> '+b.date+'</span><span><b>Verdict :</b> '+b.verdict+'</span></div>';
+  if(b.technique){html+='<h2>🔧 Bilan technique</h2><p>'+b.technique+'</p>';}
+  if(b.social){html+='<h2>🤝 Bilan social</h2><p>'+b.social+'</p>';}
+  if(b.professionnel){html+='<h2>💼 Bilan professionnel</h2><p>'+b.professionnel+'</p>';}
+  if(b.objectifs_suivants){html+='<h2>🎯 Objectifs suivants</h2><p>'+b.objectifs_suivants+'</p>';}
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div style="text-align:center"><b>Le formateur</b><div class="sig-line"></div><div>La Table de Cana</div></div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── ROUTER ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById('content');
+    if(!c)return _old?_old(page):null;
+    if(page==='pedagogique'){renderPedagogique(c);return;}
+    if(_old)_old(page);
+  };
+  var sb=document.querySelector('.sb');
+  if(sb){
+    if(!sb.querySelector('[data-p="pedagogique"]')){
+      var d=document.createElement('div');
+      d.className='sb-item';d.setAttribute('data-p','pedagogique');
+      d.innerHTML='<span class="sb-ico">🎓</span>Parcours pédagogique';
+      d.onclick=function(){window.nav('pedagogique');};
+      sb.appendChild(d);
+    }
+  }
+})();
+
+console.log('Parcours pédagogique complet chargé ✅');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MODULE OPCO — TITRE PROFESSIONNEL CLVUL
+   Partie 1 : Données + Grilles officielles + Suivi mensuel
+   Basé sur TP-00299 Conducteur Livreur VUL — Niveau 3
+═══════════════════════════════════════════════════════════════ */
+
+if(!DB.opco) DB.opco = {};
+/*
+  DB.opco[salId] = {
+    inscrit: bool,
+    date_inscription: '',
+    centre_examen: '',
+    date_examen_prevue: '',
+    suivis_mensuels: [{mois, date, scores:{C1..C7}, obs, signe}],
+    bilan_3mois: {date, scores, obs, verdict, signe_sal, signe_resp},
+    bilan_6mois: {date, scores, obs, verdict, signe_sal, signe_resp},
+    resultat_final: {obtenu, date, mention}
+  }
+*/
+
+/* ── 7 COMPÉTENCES OFFICIELLES CLVUL ── */
+var CLVUL_COMPETENCES = [
+  {
+    id:'C1', code:'C1',
+    titre:'Veiller au bon fonctionnement du véhicule',
+    criteres:[
+      'Les contrôles sont effectués tout au long du service',
+      'Les anomalies sont signalées oralement ou par écrit',
+      'La propreté intérieure répond aux normes de la marchandise',
+      'La propreté de la cabine et de l\'extérieur est satisfaisante',
+      'Les principes de prévention des risques physiques sont appliqués',
+    ],
+    icon:'🚐', couleur:'#3b82f6'
+  },
+  {
+    id:'C2', code:'C2',
+    titre:'Identifier et organiser la tournée',
+    criteres:[
+      'L\'organisation du parcours est optimisée',
+      'Les livraisons et enlèvements sont programmés',
+      'Les contraintes de livraison sont prises en compte',
+      'Le bordereau de livraison est imprimé et contrôlé',
+      'Les documents d\'accompagnement sont contrôlés et renseignés',
+    ],
+    icon:'🗺️', couleur:'#f97316'
+  },
+  {
+    id:'C3', code:'C3',
+    titre:'Manutentionner, charger, décharger',
+    criteres:[
+      'Le véhicule est chargé selon la chronologie de livraison',
+      'La marchandise est répartie de manière équilibrée',
+      'La marchandise est calée et arrimée correctement',
+      'Les moyens de manutention sont adaptés à la marchandise',
+      'Les principes de prévention des risques physiques sont respectés',
+    ],
+    icon:'📦', couleur:'#f59e0b'
+  },
+  {
+    id:'C4', code:'C4',
+    titre:'Conduire et manœuvrer en sécurité',
+    criteres:[
+      'Le code de la route et les réglementations sont respectés',
+      'La conduite est préventive et anticipée',
+      'Les manœuvres sont effectuées avec précision et aisance',
+      'Les principes de l\'éco-conduite sont mis en œuvre',
+      'Les caractéristiques et le gabarit du véhicule sont pris en compte',
+    ],
+    icon:'🚗', couleur:'#22c55e'
+  },
+  {
+    id:'C5', code:'C5',
+    titre:'Gérer le contexte urbain',
+    criteres:[
+      'Le parcours est adapté en fonction des impératifs et des aléas',
+      'Le partage de l\'espace urbain est pris en compte',
+      'Les techniques de gestion du stress sont appliquées',
+      'L\'attitude vis-à-vis des autres usagers est adaptée',
+    ],
+    icon:'🏙️', couleur:'#a855f7'
+  },
+  {
+    id:'C6', code:'C6',
+    titre:'Assurer la livraison en contexte commercial',
+    criteres:[
+      'La remise ou l\'enlèvement de marchandise est opérée correctement',
+      'Les documents de transport sont renseignés',
+      'Le contrôle des émargements est effectué',
+      'Le comportement commercial est adapté (image de marque)',
+      'Les reprises d\'emballages sont effectuées si nécessaire',
+    ],
+    icon:'🤝', couleur:'#0ea5e9'
+  },
+  {
+    id:'C7', code:'C7',
+    titre:'Prévenir les risques et gérer les incidents',
+    criteres:[
+      'Le comportement est adapté dans les situations difficiles',
+      'Les procédures d\'alerte et de secours sont appliquées',
+      'Le constat européen est renseigné et transmis dans les délais',
+      'Les effets de l\'alcool, médicaments et drogues sont connus',
+      'Les distracteurs de conduite (téléphone, écrans) sont pris en compte',
+    ],
+    icon:'⚠️', couleur:'#ef4444'
+  },
+];
+
+var CLVUL_NIVEAUX = [
+  {val:0, label:'Non évalué', col:'var(--border)'},
+  {val:1, label:'Insuffisant', col:'#ef4444'},
+  {val:2, label:'En progression', col:'#f59e0b'},
+  {val:3, label:'Satisfaisant', col:'#22c55e'},
+  {val:4, label:'Maîtrisé', col:'#3b82f6'},
+];
+
+/* ── PAGE PRINCIPALE OPCO ── */
+window.renderOPCO = function(c2){
+  if(!c2) return;
+  var h = '<div class="page-title">🏅 Module OPCO — Titre CLVUL</div>';
+  h += '<div class="page-sub" style="margin-bottom:16px">Conducteur Livreur sur Véhicule Utilitaire Léger · Niveau 3 · TP-00299</div>';
+
+  h += '<div style="background:rgba(249,115,22,.08);border:2px solid rgba(249,115,22,.3);border-radius:12px;padding:16px;margin-bottom:20px">';
+  h += '<div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:8px">📋 Ce module est indépendant du reste du CRM</div>';
+  h += '<div style="font-size:12px;color:var(--text);line-height:1.7">Il génère les grilles officielles alignées sur le référentiel CLVUL du Ministère du Travail. Ces documents sont utilisables comme preuves de suivi pour l\'OPCO Cohésion sociale dans le cadre d\'une AFEST (Action de Formation En Situation de Travail).</div>';
+  h += '</div>';
+
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    if(!DB.opco[s.id]) DB.opco[s.id]={};
+    var op = DB.opco[s.id];
+    var inscrit = !!op.inscrit;
+    var nbSuivis = (op.suivis_mensuels||[]).length;
+    h += '<div onclick="selOPCO('+s.id+',this)" class="fsal-btn-op" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid '+(inscrit?'rgba(249,115,22,.4)':'var(--border)')+';border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h += '<span style="font-size:18px">'+s.avatar+'</span>';
+    h += '<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h += '<div style="font-size:10px;color:'+(inscrit?'var(--orange)':'var(--sub)')+'">'+( inscrit?nbSuivis+' suivi(s) CLVUL':'Non inscrit au parcours')+'</div></div></div>';
+  });
+  h += '</div>';
+  h += '<div id="opco-detail"></div>';
+  c2.innerHTML = h;
+  var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selOPCO(first.id, c2.querySelector('.fsal-btn-op'));
+};
+
+window.selOPCO = function(salId, el){
+  document.querySelectorAll('.fsal-btn-op').forEach(function(b){b.style.borderColor='var(--border)';});
+  if(el) el.style.borderColor='var(--orange)';
+  window.opcoSalId = salId;
+  window.dossierSalActif = salId;
+  afficherOPCO(salId);
+};
+
+function afficherOPCO(salId){
+  var zone = document.getElementById('opco-detail'); if(!zone) return;
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var op = DB.opco[salId];
+
+  /* Onglets */
+  var h = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+  [['inscription','📋 Inscription'],['mensuel','📅 Suivi mensuel'],['3mois','🔵 Bilan 3 mois'],['6mois','🟢 Bilan 6 mois'],['examen','🏅 Examen final']].forEach(function(tab){
+    h += '<button onclick="showOPCOTab(\''+tab[0]+'\')" id="optab-'+tab[0]+'" class="btn btn-sm '+(tab[0]==='inscription'?'btn-primary':'btn-secondary')+'">'+tab[1]+'</button>';
+  });
+  h += '</div>';
+  h += '<div id="opco-tab-content">';
+  h += renderOPCOInscription(salId);
+  h += '</div>';
+  zone.innerHTML = h;
+}
+
+window.showOPCOTab = function(tab){
+  document.querySelectorAll('[id^="optab-"]').forEach(function(b){b.className='btn btn-sm btn-secondary';});
+  var btn=document.getElementById('optab-'+tab); if(btn) btn.className='btn btn-sm btn-primary';
+  var c=document.getElementById('opco-tab-content'); if(!c) return;
+  var sid=window.opcoSalId;
+  var r={inscription:renderOPCOInscription,mensuel:renderOPCOMensuel,'3mois':renderOPCO3Mois,'6mois':renderOPCO6Mois,examen:renderOPCOExamen};
+  c.innerHTML = r[tab]?r[tab](sid):'';
+};
+
+/* ── INSCRIPTION ── */
+function renderOPCOInscription(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return '';
+  var op=DB.opco[salId]||{};
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div class="card-title">📋 Inscription au parcours CLVUL</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:10px">';
+
+  var fields=[
+    {id:'inscrit_check', label:'Inscrit au parcours CLVUL', type:'check'},
+    {id:'date_inscription', label:'Date d\'inscription', type:'date'},
+    {id:'centre_examen', label:'Centre d\'examen', type:'text', ph:'Ex: AFPA Marseille'},
+    {id:'date_examen_prevue', label:'Date d\'examen prévue', type:'date'},
+    {id:'financement', label:'Financement OPCO', type:'text', ph:'Ex: OPCO Cohésion sociale — Plan de développement'},
+    {id:'tuteur', label:'Tuteur désigné', type:'text', ph:'Ex: Responsable logistique'},
+  ];
+
+  fields.forEach(function(f){
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    h+='<div style="width:180px;font-size:12px;font-weight:700;color:var(--text);flex-shrink:0">'+f.label+'</div>';
+    if(f.type==='check'){
+      h+='<input type="checkbox" id="op-'+f.id+'" '+(op.inscrit?'checked':'')+' style="width:18px;height:18px;accent-color:var(--orange);cursor:pointer">';
+    } else if(f.type==='date'){
+      h+='<input type="date" id="op-'+f.id+'" value="'+(op[f.id.replace('_check','')]||'')+'" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px">';
+    } else {
+      h+='<input type="text" id="op-'+f.id+'" value="'+(op[f.id]||'')+'" placeholder="'+(f.ph||'')+'" style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px">';
+    }
+    h+='</div>';
+  });
+
+  h+='</div>';
+  h+='<button class="btn btn-primary" style="margin-top:14px" onclick="sauverInscriptionOPCO('+salId+')">💾 Sauvegarder</button>';
+  h+='</div>';
+
+  /* Les 7 compétences à évaluer */
+  h+='<div class="card"><div class="card-title" style="color:var(--orange)">📚 Les 7 compétences officielles CLVUL à valider</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px">';
+  CLVUL_COMPETENCES.forEach(function(comp){
+    h+='<div style="display:flex;align-items:start;gap:12px;padding:12px 14px;border:1px solid '+comp.couleur+'33;border-radius:10px;background:'+comp.couleur+'08">';
+    h+='<span style="font-size:22px;flex-shrink:0">'+comp.icon+'</span>';
+    h+='<div><div style="font-size:12px;font-weight:800;color:var(--text)">'+comp.code+' — '+comp.titre+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub);margin-top:3px">'+comp.criteres.length+' critères officiels à évaluer</div></div></div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+window.sauverInscriptionOPCO=function(salId){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var op=DB.opco[salId];
+  var cb=document.getElementById('op-inscrit_check');
+  op.inscrit=cb&&cb.checked;
+  ['date_inscription','centre_examen','date_examen_prevue','financement','tuteur'].forEach(function(f){
+    var el=document.getElementById('op-'+f);
+    if(el) op[f]=el.value;
+  });
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Inscription sauvegardée ✅','ok');
+  if(typeof logAction==='function') logAction('Inscription CLVUL','salId '+salId);
+};
+
+/* ── SUIVI MENSUEL ── */
+function renderOPCOMensuel(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return '';
+  var op=DB.opco[salId]||{};
+  var suivis=op.suivis_mensuels||[];
+  var moisActuel=suivis.length+1;
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">📅 Grille de suivi mensuel — Mois '+moisActuel+'</div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="ouvrirGrilleMensuelle('+salId+')">+ Nouvelle grille</button></div>';
+
+  if(!suivis.length){
+    h+='<div style="color:var(--sub);font-size:12px;padding:10px">Aucun suivi mensuel enregistré. Cliquer sur "+ Nouvelle grille" pour commencer.</div>';
+  } else {
+    /* Historique */
+    suivis.slice().reverse().forEach(function(s2,i){
+      var moisNum=suivis.length-i;
+      var scores=s2.scores||{};
+      var moy=Object.values(scores).length?Math.round(Object.values(scores).reduce(function(a,b){return a+b;},0)/Object.values(scores).length*10)/10:0;
+      var col=moy>=3?'var(--green)':moy>=2?'var(--yellow)':'var(--red)';
+
+      h+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px">';
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+      h+='<div><div style="font-size:13px;font-weight:800;color:var(--text)">Mois '+moisNum+' — '+s2.date+'</div>';
+      h+='<div style="font-size:10px;color:var(--sub)">Signé: '+(s2.signe?'✅':'⏳ En attente')+'</div></div>';
+      h+='<div style="text-align:center"><div style="font-size:20px;font-weight:900;color:'+col+'">'+moy+'/4</div>';
+      h+='<div style="font-size:9px;color:var(--sub)">Moyenne</div></div></div>';
+
+      /* Mini-résumé compétences */
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+      CLVUL_COMPETENCES.forEach(function(comp){
+        var sc=scores[comp.id]||0;
+        var scCol=CLVUL_NIVEAUX[sc]?CLVUL_NIVEAUX[sc].col:'var(--border)';
+        h+='<div title="'+comp.titre+'" style="background:'+scCol+'22;border:1px solid '+scCol+'44;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;color:'+scCol+'">'+comp.code+':'+sc+'</div>';
+      });
+      h+='</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:10px">';
+      h+='<button class="btn btn-sm btn-secondary" onclick="imprimerSuiviMensuel('+salId+','+( suivis.length-1-i)+')">🖨️ Imprimer</button>';
+      h+='<button class="btn btn-sm btn-secondary" onclick="signerSuiviMensuel('+salId+','+(suivis.length-1-i)+')">✍️ Signer</button>';
+      h+='</div></div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+
+window.ouvrirGrilleMensuelle=function(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var moisNum=(op.suivis_mensuels||[]).length+1;
+
+  var ov=document.createElement('div');
+  ov.id='grille-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:20px';
+
+  var h='<div style="max-width:780px;margin:0 auto;background:var(--panel);border-radius:14px;padding:24px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  h+='<div><div style="font-size:16px;font-weight:900;color:var(--orange)">📅 Grille de suivi mensuel — Mois '+moisNum+'</div>';
+  h+='<div style="font-size:11px;color:var(--sub)">'+s.prenom+(s.nom?' '+s.nom:'')+' · Titre CLVUL · TP-00299</div></div>';
+  h+='<button onclick="document.getElementById(\'grille-overlay\').remove()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:6px 12px;cursor:pointer">✕</button>';
+  h+='</div>';
+
+  h+='<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:12px">Date de l\'évaluation</div>';
+  h+='<input type="date" id="grille-date" value="'+new Date().toISOString().slice(0,10)+'" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;margin-bottom:16px">';
+
+  CLVUL_COMPETENCES.forEach(function(comp){
+    h+='<div style="background:'+comp.couleur+'08;border:2px solid '+comp.couleur+'33;border-radius:12px;padding:14px;margin-bottom:10px">';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    h+='<span style="font-size:22px">'+comp.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--text)">'+comp.code+' — '+comp.titre+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub)">Critères officiels TP-00299</div></div>';
+    h+='<div style="display:flex;gap:4px" id="score-btns-'+comp.id+'">';
+    for(var v=1;v<=4;v++){
+      var nd=CLVUL_NIVEAUX[v];
+      h+='<button onclick="setScoreCLVUL(\''+comp.id+'\','+v+')" id="sc-'+comp.id+'-'+v+'" style="padding:5px 10px;border-radius:7px;border:2px solid var(--border);background:transparent;cursor:pointer;font-size:11px;font-weight:800;color:var(--sub)">'+v+'</button>';
+    }
+    h+='</div></div>';
+
+    /* Critères */
+    h+='<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">';
+    comp.criteres.forEach(function(crit){
+      h+='<div style="display:flex;align-items:start;gap-6px;font-size:11px;color:rgba(255,255,255,.6);padding:3px 0">→ '+crit+'</div>';
+    });
+    h+='</div>';
+
+    h+='<div><div style="font-size:10px;font-weight:800;color:var(--sub);margin-bottom:4px">Observations terrain</div>';
+    h+='<textarea id="obs-'+comp.id+'" placeholder="Observations spécifiques à cette compétence..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px;font-size:11px;resize:vertical;min-height:50px;box-sizing:border-box"></textarea>';
+    h+='</div></div>';
+  });
+
+  h+='<div style="margin-top:14px"><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:6px">Observations générales de la période</div>';
+  h+='<textarea id="obs-general" placeholder="Synthèse du mois — points forts, axes de progression, incidents..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box"></textarea>';
+  h+='</div>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:14px">';
+  h+='<button class="btn btn-primary" onclick="sauverGrilleMensuelle('+salId+')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-green" onclick="sauverEtImprimerGrille('+salId+')">🖨️ Sauver & Imprimer</button>';
+  h+='</div></div>';
+
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  window._scoresGrille={};
+};
+
+window.setScoreCLVUL=function(compId, val){
+  if(!window._scoresGrille) window._scoresGrille={};
+  window._scoresGrille[compId]=val;
+  var nd=CLVUL_NIVEAUX[val];
+  for(var v=1;v<=4;v++){
+    var btn=document.getElementById('sc-'+compId+'-'+v);
+    var nd2=CLVUL_NIVEAUX[v];
+    if(btn){
+      btn.style.borderColor=v===val?nd.col:'var(--border)';
+      btn.style.background=v===val?nd.col+'22':'transparent';
+      btn.style.color=v===val?nd.col:'var(--sub)';
+    }
+  }
+};
+
+window.sauverGrilleMensuelle=function(salId){
+  var date=document.getElementById('grille-date');
+  var obsGen=document.getElementById('obs-general');
+  var obsComp={};
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var el=document.getElementById('obs-'+comp.id);
+    if(el&&el.value) obsComp[comp.id]=el.value;
+  });
+
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  if(!DB.opco[salId].suivis_mensuels) DB.opco[salId].suivis_mensuels=[];
+  DB.opco[salId].suivis_mensuels.push({
+    date:date?date.value:new Date().toISOString().slice(0,10),
+    scores:window._scoresGrille||{},
+    obs_competences:obsComp,
+    obs_general:obsGen?obsGen.value:'',
+    signe:false
+  });
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Grille sauvegardée ✅','ok');
+  if(typeof logAction==='function') logAction('Grille mensuelle CLVUL','Mois '+(DB.opco[salId].suivis_mensuels.length)+' salId '+salId);
+  var ov=document.getElementById('grille-overlay'); if(ov)ov.remove();
+  showOPCOTab('mensuel');
+};
+
+window.sauverEtImprimerGrille=function(salId){
+  sauverGrilleMensuelle(salId);
+  var suivis=DB.opco[salId].suivis_mensuels||[];
+  setTimeout(function(){ imprimerSuiviMensuel(salId,suivis.length-1); },300);
+};
+
+window.signerSuiviMensuel=function(salId,idx){
+  if(!DB.opco[salId]||!DB.opco[salId].suivis_mensuels[idx])return;
+  DB.opco[salId].suivis_mensuels[idx].signe=true;
+  DB.opco[salId].suivis_mensuels[idx].date_signature=new Date().toLocaleDateString('fr-FR');
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Grille signée ✅','ok');
+  showOPCOTab('mensuel');
+};
+
+window.imprimerSuiviMensuel=function(salId,idx){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var suivi=(op.suivis_mensuels||[])[idx]; if(!suivi)return;
+  var moisNum=idx+1;
+  var scores=suivi.scores||{};
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}.header{display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid #f97316}.titre{font-size:18px;font-weight:900;color:#f97316}table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#0f1923;color:#fff;padding:8px;font-size:10px;text-align:left}td{border:1px solid #e2e8f0;padding:8px;vertical-align:top}.niv-1{color:#ef4444;font-weight:800}.niv-2{color:#f59e0b;font-weight:800}.niv-3{color:#22c55e;font-weight:800}.niv-4{color:#3b82f6;font-weight:800}.sig{display:flex;justify-content:space-between;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px}footer{font-size:9px;color:#94a3b8;margin-top:12px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+
+  var NOMS_NIV=['','1 - Insuffisant','2 - En progression','3 - Satisfaisant','4 - Maîtrisé'];
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div class="header"><div><div class="titre">Grille de suivi mensuel — CLVUL</div>';
+  html+='<div style="font-size:11px;color:#64748b">Titre Professionnel Conducteur Livreur sur VUL · Niveau 3 · TP-00299</div></div>';
+  html+='<div style="text-align:right;font-size:11px"><b>La Table de Cana</b><br>Marseille<br>'+new Date().toLocaleDateString('fr-FR')+'</div></div>';
+
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Mois :</b> '+moisNum+'</span>';
+  html+='<span><b>Date :</b> '+(typeof fmt==='function'?fmt(suivi.date):suivi.date)+'</span>';
+  html+='<span><b>Tuteur :</b> '+(op.tuteur||'—')+'</span></div>';
+
+  html+='<table><tr><th style="width:5%">Code</th><th style="width:25%">Compétence</th><th style="width:15%">Niveau (1-4)</th><th style="width:55%">Observations terrain</th></tr>';
+
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var sc=scores[comp.id]||0;
+    var obs=(suivi.obs_competences||{})[comp.id]||'';
+    var cls='niv-'+(sc||1);
+    html+='<tr><td style="text-align:center;font-weight:800">'+comp.code+'</td>';
+    html+='<td><b>'+comp.titre+'</b></td>';
+    html+='<td class="'+(sc?cls:'')+'">'+( sc?NOMS_NIV[sc]:'Non évalué')+'</td>';
+    html+='<td>'+obs+'</td></tr>';
+  });
+  html+='</table>';
+
+  if(suivi.obs_general){
+    html+='<div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:14px"><b>Observations générales :</b><br>'+suivi.obs_general+'</div>';
+  }
+
+  /* Calcul moyenne */
+  var vals=Object.values(scores).filter(function(v){return v>0;});
+  var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
+  html+='<div style="text-align:center;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:14px">';
+  html+='<span style="font-size:16px;font-weight:900;color:#f97316">Moyenne globale : '+moy+'/4</span></div>';
+
+  html+='<div class="sig">';
+  html+='<div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center"><b>Le tuteur / Responsable</b><div class="sig-line"></div><div>'+(op.tuteur||'La Table de Cana')+'</div></div>';
+  html+='</div>';
+  html+='<footer><span>La Table de Cana · CLVUL TP-00299 · Grille mensuelle mois '+moisNum+'</span><span>Document AFEST — Usage OPCO</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MODULE OPCO — PARTIE 2
+   Bilan 3 mois · Bilan 6 mois · Examen final
+   Slides CLVUL · QCM CLVUL · Router
+═══════════════════════════════════════════════════════════════ */
+
+/* ── BILAN 3 MOIS ── */
+function renderOPCO3Mois(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return '';
+  var op=DB.opco[salId]||{};
+  var b3=op.bilan_3mois||{};
+  var suivis=op.suivis_mensuels||[];
+
+  /* Calculer progression depuis mois 1 */
+  var moy1=suivis[0]?getMoyenne(suivis[0].scores):0;
+  var moy3=suivis[2]?getMoyenne(suivis[2].scores):(suivis[suivis.length-1]?getMoyenne(suivis[suivis.length-1].scores):0);
+  var progression=moy3-moy1;
+
+  var h='<div class="card" style="margin-bottom:14px;border-color:rgba(59,130,246,.3)">';
+  h+='<div class="card-title" style="color:var(--blue)">🔵 Bilan officiel à 3 mois — CLVUL</div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:14px">Évaluation intermédiaire obligatoire — à transmettre à l\'OPCO</div>';
+
+  if(suivis.length<2){
+    h+='<div style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:12px;font-size:12px;color:var(--orange)">⚠️ Il faut au moins 2 suivis mensuels pour générer le bilan 3 mois.</div>';
+    h+='</div>'; return h;
+  }
+
+  /* Scores par compétence sur 3 mois */
+  h+='<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">Progression par compétence sur 3 mois</div>';
+  h+='<table style="width:100%;border-collapse:collapse;margin-bottom:14px">';
+  h+='<tr style="background:var(--panel2)"><th style="padding:7px;text-align:left;font-size:11px;color:var(--sub)">Compétence</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Mois 1</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Dernier mois</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Évolution</th></tr>';
+
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var sc1=(suivis[0]&&suivis[0].scores)?suivis[0].scores[comp.id]||0:0;
+    var scN=(suivis[suivis.length-1]&&suivis[suivis.length-1].scores)?suivis[suivis.length-1].scores[comp.id]||0:0;
+    var evo=scN-sc1;
+    var evoCol=evo>0?'var(--green)':evo<0?'var(--red)':'var(--sub)';
+    var nd1=CLVUL_NIVEAUX[sc1]||CLVUL_NIVEAUX[0];
+    var ndN=CLVUL_NIVEAUX[scN]||CLVUL_NIVEAUX[0];
+    h+='<tr style="border-bottom:1px solid var(--border)">';
+    h+='<td style="padding:7px;font-size:11px;font-weight:700;color:var(--text)">'+comp.icon+' '+comp.code+'</td>';
+    h+='<td style="padding:7px;text-align:center;font-size:12px;font-weight:800;color:'+nd1.col+'">'+sc1+'/4</td>';
+    h+='<td style="padding:7px;text-align:center;font-size:12px;font-weight:800;color:'+ndN.col+'">'+scN+'/4</td>';
+    h+='<td style="padding:7px;text-align:center;font-size:13px;font-weight:900;color:'+evoCol+'">'+(evo>0?'+':'')+evo+'</td>';
+    h+='</tr>';
+  });
+  h+='</table>';
+
+  /* Synthèse */
+  h+='<div style="background:var(--panel2);border-radius:10px;padding:14px;margin-bottom:14px">';
+  h+='<div style="display:flex;gap:20px;justify-content:center">';
+  [{v:moy1.toFixed(1),l:'Moyenne mois 1',c:'var(--sub)'},{v:moy3.toFixed(1),l:'Moyenne actuelle',c:'var(--blue)'},{v:(progression>0?'+':'')+progression.toFixed(1),l:'Progression',c:progression>=0?'var(--green)':'var(--red)'}].forEach(function(k){
+    h+='<div style="text-align:center"><div style="font-size:22px;font-weight:900;color:'+k.c+'">'+k.v+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub)">'+k.l+'</div></div>';
+  });
+  h+='</div></div>';
+
+  /* Champs bilan */
+  h+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">';
+  var champsBilan=[
+    {id:'points_forts', label:'⭐ Points forts observés sur 3 mois', ph:'Compétences solides, comportement, initiatives...'},
+    {id:'axes_prog', label:'📈 Axes de progression prioritaires', ph:'Ce qui reste à travailler avant la fin du parcours...'},
+    {id:'incidents', label:'⚠️ Incidents notables et gestion', ph:'Difficultés rencontrées et comment elles ont été gérées...'},
+    {id:'objectifs_6mois', label:'🎯 Objectifs pour les 3 prochains mois', ph:'Ce qui doit être acquis avant le bilan 6 mois...'},
+    {id:'verdict_3mois', label:'📋 Verdict — Le salarié est-il sur la bonne voie ?', ph:'Oui / Oui avec réserves / Non — justification...'},
+  ];
+  champsBilan.forEach(function(f){
+    h+='<div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:4px">'+f.label+'</div>';
+    h+='<textarea id="b3-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box">'+(b3[f.id]||'')+'</textarea></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button class="btn btn-primary" onclick="sauverBilan3Mois('+salId+')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-blue" onclick="imprimerBilan3Mois('+salId+')">🖨️ Imprimer pour OPCO</button>';
+  h+='</div></div>';
+  return h;
+}
+
+function getMoyenne(scores){
+  var vals=Object.values(scores||{}).filter(function(v){return v>0;});
+  return vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:0;
+}
+
+window.sauverBilan3Mois=function(salId){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var b={date:new Date().toLocaleDateString('fr-FR')};
+  ['points_forts','axes_prog','incidents','objectifs_6mois','verdict_3mois'].forEach(function(f){
+    var el=document.getElementById('b3-'+f);
+    if(el) b[f]=el.value;
+  });
+  DB.opco[salId].bilan_3mois=b;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Bilan 3 mois sauvegardé ✅','ok');
+  if(typeof logAction==='function') logAction('Bilan OPCO 3 mois','salId '+salId);
+};
+
+window.imprimerBilan3Mois=function(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var b=op.bilan_3mois||{};
+  var suivis=op.suivis_mensuels||[];
+  sauverBilan3Mois(salId);
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:18px;color:#3b82f6;border-bottom:3px solid #3b82f6;padding-bottom:8px}h2{font-size:12px;font-weight:900;background:#eff6ff;padding:6px 12px;border-radius:6px;margin:12px 0 6px;color:#1d4ed8}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#1e3a5f;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:7px}.sig{display:flex;justify-content:space-between;margin-top:20px;padding-top:12px;border-top:2px solid #3b82f6}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:12px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#3b82f6;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:4px">Document AFEST — Usage OPCO Cohésion sociale</div>';
+  html+='<h1>🔵 Bilan intermédiaire à 3 mois — CLVUL</h1>';
+  html+='<div style="background:#eff6ff;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+(b.date||new Date().toLocaleDateString('fr-FR'))+'</span>';
+  html+='<span><b>Tuteur :</b> '+(op.tuteur||'—')+'</span></div>';
+
+  html+='<h2>📊 Scores par compétence — Évolution sur 3 mois</h2>';
+  html+='<table><tr><th>Code</th><th>Compétence</th><th>Mois 1</th><th>Mois 2</th><th>Mois 3</th><th>Évolution</th></tr>';
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var scs=[0,1,2].map(function(i){return suivis[i]?suivis[i].scores[comp.id]||0:0;});
+    var evo=scs[scs.filter(function(v){return v>0;}).length-1]-scs[0];
+    html+='<tr><td style="font-weight:800;text-align:center">'+comp.code+'</td><td>'+comp.titre+'</td>';
+    scs.forEach(function(v){html+='<td style="text-align:center;font-weight:800;color:'+(CLVUL_NIVEAUX[v]||CLVUL_NIVEAUX[0]).col.replace('var(--green)','#16a34a').replace('var(--yellow)','#ca8a04').replace('var(--red)','#dc2626').replace('var(--border)','#94a3b8')+'">'+(v||'—')+'</td>';});
+    html+='<td style="text-align:center;font-weight:900;color:'+(evo>0?'#16a34a':evo<0?'#dc2626':'#64748b')+'">'+(evo>0?'+':'')+evo+'</td></tr>';
+  });
+  html+='</table>';
+
+  if(b.points_forts){html+='<h2>⭐ Points forts</h2><p>'+b.points_forts+'</p>';}
+  if(b.axes_prog){html+='<h2>📈 Axes de progression</h2><p>'+b.axes_prog+'</p>';}
+  if(b.objectifs_6mois){html+='<h2>🎯 Objectifs pour les 3 prochains mois</h2><p>'+b.objectifs_6mois+'</p>';}
+  if(b.verdict_3mois){html+='<h2>📋 Verdict</h2><p style="font-weight:700">'+b.verdict_3mois+'</p>';}
+
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>Marseille<br>'+(b.date||new Date().toLocaleDateString('fr-FR'))+'</div>';
+  html+='<div style="text-align:center"><b>Le tuteur</b><div class="sig-line"></div><div>'+(op.tuteur||'La Table de Cana')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · CLVUL TP-00299 · Bilan 3 mois · Document AFEST OPCO</span><span>'+(b.date||new Date().toLocaleDateString('fr-FR'))+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── BILAN 6 MOIS ── */
+function renderOPCO6Mois(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return '';
+  var op=DB.opco[salId]||{};
+  var b6=op.bilan_6mois||{};
+  var suivis=op.suivis_mensuels||[];
+
+  var h='<div class="card" style="margin-bottom:14px;border-color:rgba(34,197,94,.3)">';
+  h+='<div class="card-title" style="color:var(--green)">🟢 Bilan officiel à 6 mois — CLVUL</div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:14px">Bilan de mi-parcours — préparation à l\'examen final</div>';
+
+  if(suivis.length<3){
+    h+='<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:12px;font-size:12px;color:var(--green)">Il faut au moins 3 suivis mensuels pour générer le bilan 6 mois.</div>';
+    h+='</div>'; return h;
+  }
+
+  /* Scores finaux */
+  var dernierSuivi=suivis[suivis.length-1]||{};
+  var scores=dernierSuivi.scores||{};
+
+  h+='<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">État des compétences au bilan 6 mois</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var sc=scores[comp.id]||0;
+    var nd=CLVUL_NIVEAUX[sc]||CLVUL_NIVEAUX[0];
+    var pct=sc/4*100;
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    h+='<span style="font-size:16px;flex-shrink:0">'+comp.icon+'</span>';
+    h+='<div style="width:80px;font-size:11px;font-weight:700;color:var(--text);flex-shrink:0">'+comp.code+'</div>';
+    h+='<div style="flex:1;background:var(--border);border-radius:4px;height:8px"><div style="width:'+pct+'%;height:8px;border-radius:4px;background:'+nd.col+'"></div></div>';
+    h+='<div style="font-size:12px;font-weight:900;color:'+nd.col+';width:24px;text-align:right">'+sc+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub);width:100px">'+nd.label+'</div></div>';
+  });
+  h+='</div>';
+
+  /* Compétences à valider avant examen */
+  var aValider=CLVUL_COMPETENCES.filter(function(c){return (scores[c.id]||0)<3;});
+  if(aValider.length){
+    h+='<div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:12px;margin-bottom:14px">';
+    h+='<div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:6px">⚠️ Compétences à consolider avant l\'examen</div>';
+    aValider.forEach(function(c){h+='<div style="font-size:11px;color:var(--text);padding:3px 0">'+c.icon+' '+c.code+' — '+c.titre+'</div>';});
+    h+='</div>';
+  } else {
+    h+='<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:12px;margin-bottom:14px;text-align:center">';
+    h+='<div style="font-size:14px;font-weight:900;color:var(--green)">🎉 Toutes les compétences sont à niveau satisfaisant !</div>';
+    h+='<div style="font-size:11px;color:var(--sub);margin-top:4px">Le salarié est prêt pour l\'examen final CLVUL</div>';
+    h+='</div>';
+  }
+
+  /* Champs bilan 6 mois */
+  var champs6=[
+    {id:'bilan_technique', label:'🔧 Bilan technique global', ph:'État des 7 compétences CLVUL après 6 mois...'},
+    {id:'bilan_comportemental', label:'🤝 Bilan comportemental', ph:'Ponctualité, esprit d\'équipe, communication...'},
+    {id:'preparation_examen', label:'📝 Préparation à l\'examen', ph:'Lacunes identifiées, révisions à faire, date envisagée...'},
+    {id:'recommandation', label:'💼 Recommandation pour l\'employeur', ph:'Ce que vous recommandez à un futur employeur...'},
+    {id:'verdict_6mois', label:'📋 Le salarié est-il prêt pour l\'examen ?', ph:'Oui / Oui avec conditions / Non — préciser...'},
+  ];
+
+  h+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">';
+  champs6.forEach(function(f){
+    h+='<div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:4px">'+f.label+'</div>';
+    h+='<textarea id="b6-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box">'+(b6[f.id]||'')+'</textarea></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button class="btn btn-green" onclick="sauverBilan6Mois('+salId+')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-primary" onclick="imprimerBilan6Mois('+salId+')">🖨️ Imprimer pour OPCO</button>';
+  h+='</div></div>';
+  return h;
+}
+
+window.sauverBilan6Mois=function(salId){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var b={date:new Date().toLocaleDateString('fr-FR')};
+  ['bilan_technique','bilan_comportemental','preparation_examen','recommandation','verdict_6mois'].forEach(function(f){
+    var el=document.getElementById('b6-'+f);
+    if(el) b[f]=el.value;
+  });
+  DB.opco[salId].bilan_6mois=b;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Bilan 6 mois sauvegardé ✅','ok');
+  if(typeof logAction==='function') logAction('Bilan OPCO 6 mois','salId '+salId);
+};
+
+window.imprimerBilan6Mois=function(salId){
+  sauverBilan6Mois(salId);
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var b=op.bilan_6mois||{};
+  var suivis=op.suivis_mensuels||[];
+  var dernierSuivi=suivis[suivis.length-1]||{};
+  var scores=dernierSuivi.scores||{};
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:18px;color:#16a34a;border-bottom:3px solid #22c55e;padding-bottom:8px}h2{font-size:12px;font-weight:900;background:#f0fdf4;padding:6px 12px;border-radius:6px;margin:12px 0 6px;color:#15803d}.barre-wrap{background:#e2e8f0;border-radius:4px;height:6px}.barre{height:6px;border-radius:4px}.sig{display:flex;justify-content:space-between;margin-top:20px;padding-top:12px;border-top:2px solid #22c55e}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:12px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#22c55e;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:4px">Document AFEST — Usage OPCO Cohésion sociale</div>';
+  html+='<h1>🟢 Bilan à 6 mois — Titre CLVUL</h1>';
+  html+='<div style="background:#f0fdf4;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+(b.date||new Date().toLocaleDateString('fr-FR'))+'</span>';
+  html+='<span><b>Inscrit :</b> '+( op.inscrit?'Oui':'Non')+'</span></div>';
+
+  html+='<h2>📊 État des 7 compétences CLVUL au bilan 6 mois</h2>';
+  CLVUL_COMPETENCES.forEach(function(comp){
+    var sc=scores[comp.id]||0;
+    var cols=['#94a3b8','#ef4444','#f59e0b','#22c55e','#3b82f6'];
+    var labels=['Non évalué','1-Insuffisant','2-En progression','3-Satisfaisant','4-Maîtrisé'];
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+    html+='<span style="font-size:14px">'+comp.icon+'</span>';
+    html+='<div style="width:220px;font-size:11px;font-weight:700">'+comp.code+' — '+comp.titre+'</div>';
+    html+='<div style="flex:1"><div class="barre-wrap"><div class="barre" style="width:'+sc/4*100+'%;background:'+cols[sc]+'"></div></div></div>';
+    html+='<span style="font-size:11px;font-weight:800;color:'+cols[sc]+';width:100px">'+sc+'/4 — '+labels[sc]+'</span></div>';
+  });
+
+  if(b.bilan_technique){html+='<h2>🔧 Bilan technique</h2><p>'+b.bilan_technique+'</p>';}
+  if(b.bilan_comportemental){html+='<h2>🤝 Bilan comportemental</h2><p>'+b.bilan_comportemental+'</p>';}
+  if(b.preparation_examen){html+='<h2>📝 Préparation à l\'examen</h2><p>'+b.preparation_examen+'</p>';}
+  if(b.recommandation){html+='<h2>💼 Recommandation</h2><p style="font-weight:700">'+b.recommandation+'</p>';}
+  if(b.verdict_6mois){html+='<h2>📋 Verdict</h2><p style="font-size:13px;font-weight:800;color:#16a34a">'+b.verdict_6mois+'</p>';}
+
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>Marseille</div>';
+  html+='<div style="text-align:center"><b>Le tuteur / Responsable</b><div class="sig-line"></div><div>'+(op.tuteur||'La Table de Cana')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · CLVUL TP-00299 · Bilan 6 mois · Document AFEST OPCO</span><span>'+(b.date||'')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── EXAMEN FINAL ── */
+function renderOPCOExamen(salId){
+  var op=DB.opco[salId]||{};
+  var res=op.resultat_final||{};
+
+  var h='<div class="card" style="margin-bottom:14px;border-color:rgba(249,115,22,.3)">';
+  h+='<div class="card-title" style="color:var(--orange)">🏅 Examen final CLVUL</div>';
+
+  h+='<div style="background:rgba(249,115,22,.06);border-radius:10px;padding:14px;margin-bottom:16px">';
+  h+='<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:8px">Structure de l\'épreuve officielle (4h05)</div>';
+  [
+    {t:'Questionnaire professionnel', d:'20 QCM — réglementation, sécurité, urbain', duree:'30 min'},
+    {t:'Partie 1 — Préparation tournée', d:'Organisation itinéraire + BL + documents', duree:'1h10'},
+    {t:'Partie 2 — Chargement et livraison', d:'Chargement + conduite + livraison réelle', duree:'1h10'},
+    {t:'Partie 3 — Constat amiable', d:'Remplir ou analyser un constat accident', duree:'25 min'},
+    {t:'Entretien technique', d:'Questions sur les choix de tournée + contexte urbain', duree:'30 min'},
+    {t:'Entretien final', d:'Dossier professionnel + compétences transversales', duree:'20 min'},
+  ].forEach(function(p){
+    h+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">';
+    h+='<div style="width:48px;font-size:10px;font-weight:800;color:var(--orange);flex-shrink:0;text-align:right">'+p.duree+'</div>';
+    h+='<div><div style="font-size:12px;font-weight:700;color:var(--text)">'+p.t+'</div>';
+    h+='<div style="font-size:10px;color:var(--sub)">'+p.d+'</div></div></div>';
+  });
+  h+='</div>';
+
+  h+='<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">Résultat de l\'examen</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;gap:10px"><div style="width:140px;font-size:12px;font-weight:700;color:var(--text)">Titre obtenu</div>';
+  h+='<input type="checkbox" id="ex-obtenu" '+(res.obtenu?'checked':'')+' style="width:18px;height:18px;accent-color:var(--orange)"></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px"><div style="width:140px;font-size:12px;font-weight:700;color:var(--text)">Date de l\'examen</div>';
+  h+='<input type="date" id="ex-date" value="'+(res.date||'')+'" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px"></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px"><div style="width:140px;font-size:12px;font-weight:700;color:var(--text)">Mention / Résultat</div>';
+  h+='<select id="ex-mention" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px">';
+  ['','Obtenu','Obtenu avec félicitations','Partiellement obtenu','Non obtenu'].forEach(function(m){h+='<option '+(res.mention===m?'selected':'')+'>'+m+'</option>';});
+  h+='</select></div></div>';
+  h+='<button class="btn btn-orange" onclick="sauverResultatExamen('+salId+')">💾 Sauvegarder le résultat</button>';
+
+  if(res.obtenu){
+    h+='<div style="margin-top:16px;background:rgba(34,197,94,.1);border:2px solid rgba(34,197,94,.4);border-radius:12px;padding:18px;text-align:center">';
+    h+='<div style="font-size:28px;margin-bottom:8px">🎉</div>';
+    h+='<div style="font-size:16px;font-weight:900;color:var(--green)">Titre CLVUL obtenu !</div>';
+    h+='<div style="font-size:11px;color:var(--sub);margin-top:6px">Conducteur Livreur sur Véhicule Utilitaire Léger — Niveau 3</div>';
+    h+='<button class="btn btn-green" style="margin-top:12px" onclick="genPasseportSortie('+salId+')">🏆 Générer le passeport de compétences</button>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+window.sauverResultatExamen=function(salId){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var cb=document.getElementById('ex-obtenu');
+  var dt=document.getElementById('ex-date');
+  var mn=document.getElementById('ex-mention');
+  DB.opco[salId].resultat_final={obtenu:cb&&cb.checked,date:dt?dt.value:'',mention:mn?mn.value:''};
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Résultat enregistré ✅','ok');
+  if(typeof logAction==='function') logAction('Résultat examen CLVUL','salId '+salId);
+  showOPCOTab('examen');
+};
+
+/* ── ROUTER ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById('content');
+    if(!c)return _old?_old(page):null;
+    if(page==='opco'){renderOPCO(c);return;}
+    if(_old)_old(page);
+  };
+
+  var sb=document.querySelector('.sb');
+  if(sb){
+    var secEl=document.createElement('div');
+    secEl.className='sb-sec'; secEl.textContent='OPCO & Certification';
+    sb.appendChild(secEl);
+    var items=[{p:'opco',ico:'🏅',lbl:'Module OPCO — CLVUL'}];
+    items.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d=document.createElement('div');
+        d.className='sb-item'; d.setAttribute('data-p',it.p);
+        d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick=function(){window.nav(it.p);}; sb.appendChild(d);
+      }
+    });
+  }
+})();
+
+console.log('Module OPCO CLVUL complet chargé ✅');
+
+</script>
