@@ -306,6 +306,7 @@ var SAL_ACTIF=null;
 var AI_H=[{role:'system',content:'Tu es un expert CIP spécialisé en insertion professionnelle logistique et transport (chauffeurs livreurs CDDI, ACI, EI). Expert en droit du travail insertion, dispositifs IAE, accompagnement socioprofessionnel. Réponds en français de façon très concrète et pratique. Après une évaluation, propose des conseils personnalisés. Analyse les risques. Propose des plans d\'action SMART. Connais la psychologie du travail.'}];
 
 var DB={salaries:[],entretiens:[],evaluations:[],plans:[],fiches_remplies:[],badges_attribues:[],alertes:[]};
+window.DB = DB; /* Exposer DB globalement */
 
 /* ═══ 5 SALARIÉS PRÉ-CHARGÉS ═══ */
 var SALARIES_DEFAULT=[
@@ -552,6 +553,10 @@ function render(page){
   if(pages[page])pages[page](c);
 }
 
+
+window.FICHES_TYPES = FICHES_TYPES;
+
+window.BADGES_DEFS = BADGES_DEFS;
 </script>
 <script>
 /* ═══ HELPERS FORM ═══ */
@@ -1476,6 +1481,13 @@ window.imprimerDossier=function(id){genDoc(id,'dossier');};
 function ouvrirModal(html){var b=document.getElementById('modal-box');if(b)b.innerHTML=html;document.getElementById('modal-bg').classList.add('on');}
 window.fermerModal=function(){document.getElementById('modal-bg').classList.remove('on');};
 
+
+/* Exposition globale des fonctions et données */
+window.fmt = fmt;
+window.avt = avt;
+window.scoreGlobal = scoreGlobal;
+window.toast = toast;
+window.nav = nav;
 </script>
 
 <script>
@@ -6160,6 +6172,8 @@ qcm:[
 ]}
 ]};
 
+
+window.ACADEMIE = ACADEMIE;
 </script>
 
 <script>
@@ -7156,6 +7170,8 @@ function renderTutorat(c2){
   }
 })();
 
+
+window.PROGRAMME_2ANS = PROGRAMME_2ANS;
 </script>
 
 <script>
@@ -11957,6 +11973,8 @@ window.imprimerAttestation2 = function(salId){
 
 console.log('Fiche progression chauffeur chargée');
 
+
+window.COMPETENCES_PROGRESSION = COMPETENCES_PROGRESSION;
 </script>
 
 <script>
@@ -21036,4 +21054,277 @@ console.log('Final Mega chargé — QCM tous blocs, Visites médicales, Dashboar
   }
   document.addEventListener('DOMContentLoaded',initDB);
 })();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   NOUVELLES SLIDES — 15 slides minimum par bloc
+   Marseille spécifique · Livraison difficile · Planning vendredi
+   Conduite hiver · Entretien embauche chauffeur
+═══════════════════════════════════════════════════════════════ */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  /* ── MARSEILLE — LA VILLE ── */
+  SLIDES_DATA.marseille = {
+    titre:'Marseille — Livrer dans la ville',
+    icon:'🌊',
+    couleur:'#0ea5e9',
+    slides:[
+      {type:'titre',titre:'Livrer à Marseille',sous:'La ville · Ses particularités · Ses pièges',icon:'🌊',couleur:'#0ea5e9'},
+      {type:'planning_base',titre:'Marseille en chiffres — ce que vous devez savoir',points:[
+        {txt:'860 000 habitants — 2e ville de France — 111 km² de superficie',icon:'🏙️',col:'#0ea5e9'},
+        {txt:'16 arrondissements numérotés — connaître les codes postaux 13001 à 13016',icon:'📮',col:'#3b82f6'},
+        {txt:'Le Vieux-Port : zone touristique — accès très restreint en journée',icon:'⚓',col:'#f97316'},
+        {txt:'Le Panier : quartier historique — rues très étroites — certaines impossibles en fourgon',icon:'🏚️',col:'#ef4444'},
+        {txt:'Zones industrielles : La Valentine, Arnavaux, Plan de Campagne — accès facile mais GPS souvent en erreur',icon:'🏭',col:'#22c55e'},
+      ]},
+      {type:'question_progressive',icon:'🚐',sous:'Avant de partir sur une nouvelle adresse à Marseille',question:'Vous avez une livraison dans le quartier du Panier pour la première fois. Que faites-vous avant de partir ?',items:[
+        '✅ Vérifier sur Google Street View que la rue est praticable pour votre véhicule',
+        '✅ Appeler le client pour l\'accès : code portail, interphone, accès particulier',
+        '✅ Repérer une place de stationnement à proximité sur Google Maps',
+        '✅ Partir 15 min plus tôt pour la première fois',
+        '❌ Ne jamais s\'engager dans une rue étroite sans savoir si vous pouvez en sortir',
+      ]},
+      {type:'stat_marseille',titre:'Les zones de livraison par type de client',zones:[
+        {nom:'Écoles / Crèches',access:'Horaires stricts — livraison avant 8h ou après 16h',solution:'Appeler la veille pour confirmer l\'heure et l\'accès exact',col:'#f59e0b'},
+        {nom:'Restaurants / Collectivités',access:'Livraison souvent 6h-10h — entrée de service obligatoire',solution:'Jamais l\'entrée principale — trouver l\'accès cuisine',col:'#3b82f6'},
+        {nom:'Hôtels Vieux-Port',access:'Zone très réglementée — livraison avant 8h30',solution:'Autorisation nécessaire ou créneau matinal strict',col:'#ef4444'},
+        {nom:'Événements privés / Mariages',access:'Variable — souvent domaines ou salles de réception',solution:'Repérage la veille vivement conseillé',col:'#a855f7'},
+        {nom:'Centres de loisirs',access:'Accès sécurisé — code ou badge',solution:'Appeler avant d\'arriver — jamais bloquer l\'accès pompiers',col:'#22c55e'},
+      ]},
+      {type:'question_progressive',icon:'🌬️',sous:'Le Mistral — danger spécifique Marseille',question:'Le mistral souffle fort ce matin (annoncé à 70 km/h). Vous avez une tournée vers les hauteurs. Que faites-vous ?',items:[
+        '✅ Informer l\'encadrant avant de partir — il valide ou adapte la tournée',
+        '✅ Réduire la vitesse de 20 km/h minimum en zone exposée',
+        '✅ Tenir le volant à deux mains dans les zones dégagées',
+        '✅ Vigilance absolue sur les ponts, crêtes, sorties de tunnels',
+        '❌ Si le camion dérive latéralement : s\'arrêter dans un endroit abrité immédiatement',
+        '❌ Jamais continuer si vous ne maîtrisez plus le véhicule',
+      ]},
+      {type:'planning_bonne_pratique',titre:'Les 5 règles d\'or pour livrer à Marseille',pratiques:[
+        {pratique:'Toujours repérer l\'adresse la première fois',detail:'Street View avant chaque nouvelle adresse — 2 minutes qui évitent 30 minutes de galère'},
+        {pratique:'Appeler les clients à accès difficile',detail:'"Bonjour, je livrerai demain — y a-t-il un accès particulier ?" Toujours utile'},
+        {pratique:'Prévoir du temps en plus sur le centre-ville',detail:'Centre-ville = 2x plus de temps qu\'en périphérie — toujours'},
+        {pratique:'Signaler les adresses impossibles',detail:'Chaque adresse difficile signalée améliore les tournées futures pour tout le monde'},
+        {pratique:'Ne jamais s\'engager dans une impasse avec un camion',detail:'Faire marche arrière dans le Panier avec un Transit = catastrophe garantie'},
+      ]},
+      {type:'question_progressive',icon:'🚨',sous:'Situation réelle — vous êtes coincé',question:'Vous vous êtes engagé dans une rue et vous ne pouvez plus avancer ni reculer facilement. Que faites-vous ?',items:[
+        '✅ Couper le moteur — ne pas paniquer',
+        '✅ Appeler l\'encadrant immédiatement',
+        '✅ Mettre les feux de détresse',
+        '✅ Demander aux riverains de l\'aide si possible',
+        '❌ Ne pas continuer en forçant — risque de casse véhicule et de dommages',
+        '❌ Ne pas partir sans avoir sécurisé le véhicule',
+      ]},
+      {type:'planning_base',titre:'Les horaires de livraison à connaître',points:[
+        {txt:'Centre-ville 1er-6e arr : livraisons souvent autorisées 6h-10h seulement',icon:'⏰',col:'#f97316'},
+        {txt:'Zones scolaires : jamais pendant les entrées/sorties (8h-8h30 / 11h30-13h30 / 16h-16h30)',icon:'🏫',col:'#ef4444'},
+        {txt:'Vieux-Port et zones touristiques : avant 8h30 — après 19h',icon:'⚓',col:'#3b82f6'},
+        {txt:'Zones industrielles : 7h-18h en général — certaines 24h/24',icon:'🏭',col:'#22c55e'},
+        {txt:'Événements traiteur : selon le programme — toujours confirmer avec le client la veille',icon:'🎉',col:'#a855f7'},
+        {txt:'Mercredis et vacances scolaires : centres de loisirs — livraisons dès 7h30',icon:'🌳',col:'#f59e0b'},
+      ]},
+      {type:'meteo_pluie',titre:'La pluie à Marseille — le piège du livreur',points:[
+        {txt:'Il pleut peu à Marseille mais fort quand ça arrive. Les premières minutes sont les plus dangereuses — huiles remontent.',icon:'🌧️',col:'#3b82f6'},
+        {txt:'Certaines rues du centre-ville s\'inondent rapidement. Ne jamais s\'engager dans une rue inondée.',icon:'💧',col:'#ef4444'},
+        {txt:'Les égouts peuvent déborder en quelques minutes après une forte pluie. Connaître les zones à risque.',icon:'🌊',col:'#f97316'},
+        {txt:'Après la pluie : chaussée glissante 30 min de plus. Ne pas relâcher la vigilance dès le soleil.',icon:'☀️',col:'#f59e0b'},
+      ]},
+      {type:'question_progressive',icon:'🏙️',sous:'Connaissance de la ville — quiz',question:'Dans quel arrondissement se situe le Vieux-Port de Marseille ?',items:[
+        '✅ Le Vieux-Port est dans le 1er arrondissement (13001)',
+        '✅ Les quartiers Nord (Belsunce, Belle-de-Mai) : 1er, 2e, 3e arrondissements',
+        '✅ Les quartiers Sud (Endoume, Estaque) : 7e, 16e arrondissements',
+        '✅ La Valentine, zone industrielle : 11e arrondissement (13011)',
+        '✅ Aubagne : pas Marseille mais souvent dans nos tournées',
+        'ℹ️ Connaître les codes postaux = saisir le GPS correctement du premier coup',
+      ]},
+      {type:'planning_bonne_pratique',titre:'Conduite en ville — les pièges spécifiques Marseille',pratiques:[
+        {pratique:'Les scooters et motos',detail:'À Marseille, les deux-roues sont partout — miroirs rétroviseurs vérifiés avant chaque changement de file'},
+        {pratique:'Les tramways lignes 2 et 3',detail:'Ne jamais croiser les rails en diagonale — tomber entre les rails avec un camion = catastrophe'},
+        {pratique:'Les autoroutes A7 et A50',detail:'Voies rapides pour rejoindre les zones industrielles — attention aux limitations pour les VUL'},
+        {pratique:'Le tunnel Vieux-Port',detail:'Hauteur limitée — vérifier le gabarit de votre véhicule avant d\'entrer'},
+        {pratique:'Le rond-point du Prado',detail:'Grande complexité — rester sur sa trajectoire, signaler tôt, vitesse réduite'},
+      ]},
+      {type:'stat_marseille',titre:'Les clients spéciaux de La Table de Cana',zones:[
+        {nom:'Centres de loisirs',access:'Mercredis + vacances — beaucoup d\'enfants présents',solution:'Comportement irréprochable — conduire très lentement dans l\'enceinte',col:'#22c55e'},
+        {nom:'EHPAD / Maisons de retraite',access:'Accès fléché — sonnette ou interphone',solution:'Discrétion et patience — personnel souvent occupé',col:'#3b82f6'},
+        {nom:'Entreprises traiteur',access:'Cuisine professionnelle — entrée de service',solution:'Jamais l\'entrée principale — trouver le quai de déchargement',col:'#f97316'},
+        {nom:'Associations / CCAS',access:'Horaires d\'ouverture variables',solution:'Confirmer la veille — certains ferment le midi',col:'#a855f7'},
+      ]},
+      {type:'question_progressive',icon:'📋',sous:'Fin de tournée Marseille — le compte-rendu',question:'Vous avez eu 3 problèmes aujourd\'hui : 1 client absent, 1 rue barrée par des travaux, 1 BL incorrect. Comment faites-vous votre compte-rendu ?',items:[
+        '✅ Client absent : heure de passage, tentatives d\'appel, action prise (retour dépôt)',
+        '✅ Rue barrée : rue concernée, heure, solution trouvée (détour, livraison reportée)',
+        '✅ BL incorrect : référence du BL, discordance constatée, action prise (appel encadrant)',
+        '✅ Structurer : Faits → Informations → Anomalies → Actions prises',
+        '✅ Jamais "tout s\'est mal passé" — toujours les faits précis',
+      ]},
+      {type:'recap',titre:'Marseille en résumé — ce qu\'il faut retenir',items:[
+        '🏙️ Repérer les nouvelles adresses AVANT de partir — Street View',
+        '📞 Appeler les clients à accès difficile — toujours',
+        '⏰ Prévoir le double du temps en centre-ville',
+        '🌬️ Mistral fort = réduire la vitesse, prévenir l\'encadrant',
+        '🌧️ Pluie = premières minutes les plus dangereuses',
+        '📋 Tout problème documenté = vous êtes protégé',
+        '🚐 Rues étroites = vérifier avant de s\'engager',
+      ],couleur:'#0ea5e9'},
+      {type:'question_progressive',icon:'🎯',sous:'Récapitulatif final',question:'Vous êtes maintenant chauffeur confirmé sur Marseille. Qu\'est-ce qui fait la différence entre un bon et un mauvais livreur dans cette ville ?',items:[
+        '✅ La préparation : repérage, appels clients, lecture de la feuille de route',
+        '✅ La communication : retards signalés, problèmes documentés, encadrant informé',
+        '✅ L\'anticipation : horaires, accès, mistral, pluie',
+        '✅ La patience : Marseille est une ville dense — la frustration ne sert à rien',
+        '✅ La connaissance de la ville s\'acquiert avec le temps — noter tout',
+      ]},
+    ]
+  };
+
+  /* ── ENTRETIEN D'EMBAUCHE CHAUFFEUR ── */
+  SLIDES_DATA.entretien_embauche = {
+    titre:'Se préparer à un entretien',
+    icon:'👔',
+    couleur:'#22c55e',
+    slides:[
+      {type:'titre',titre:'Décrocher un entretien\net le réussir',sous:'Chauffeur livreur · Logistique · Insertion professionnelle',icon:'👔',couleur:'#22c55e'},
+      {type:'planning_base',titre:'Avant l\'entretien — la préparation',points:[
+        {txt:'Rechercher l\'entreprise : activité, taille, valeurs, actualité récente',icon:'🔍',col:'#22c55e'},
+        {txt:'Relire l\'annonce : noter exactement ce qu\'ils cherchent et préparer vos exemples',icon:'📋',col:'#3b82f6'},
+        {txt:'Préparer son trajet : arriver 10-15 minutes en avance — jamais en retard à un entretien',icon:'⏰',col:'#f97316'},
+        {txt:'Tenue : propre, nette, adaptée. Pour un poste de chauffeur : pantalon propre, chemise, chaussures fermées',icon:'👔',col:'#a855f7'},
+        {txt:'Apporter : CV, justificatifs de formation, permis de conduire, attestations',icon:'📁',col:'#f59e0b'},
+      ]},
+      {type:'question_progressive',icon:'💬',sous:'Les questions les plus fréquentes',question:'"Parlez-moi de vous" — Comment répondre en 2 minutes ?',items:[
+        '✅ Structure : Parcours → Expérience logistique → Ce que vous avez appris → Pourquoi vous postulez ici',
+        '✅ Exemple : "J\'ai travaillé 18 mois à La Table de Cana comme chauffeur livreur..."',
+        '✅ Mentionner : permis B valide, expérience livraison, sens du service client',
+        '✅ Terminer par : "Ce poste m\'intéresse parce que..."',
+        '❌ Ne pas parler de ses problèmes personnels',
+        '❌ Ne pas dire du mal de son ancien employeur',
+      ]},
+      {type:'question_progressive',icon:'🤝',sous:'Questions difficiles — comment répondre',question:'"Vous avez eu un CDDI en insertion. Pourquoi devrait-on vous faire confiance ?"',items:[
+        '✅ Valoriser positivement : "J\'ai suivi une formation logistique complète..."',
+        '✅ Donner des chiffres : "J\'ai réalisé X livraisons, parcouru X km, 0 incident grave"',
+        '✅ Mentionner les compétences : "HACCP, gestion BL, relation client, éco-conduite"',
+        '✅ Montrer la progression : "Mon encadrant m\'a confié des tournées autonomes dès le 4e mois"',
+        '✅ Conclure positivement : "Ce parcours m\'a donné des bases solides que je veux confirmer ici"',
+      ]},
+      {type:'planning_bonne_pratique',titre:'Les questions à POSER à l\'employeur',pratiques:[
+        {pratique:'"Quels sont les secteurs de livraison ?"',detail:'Montre que vous connaissez le métier et pensez pratique'},
+        {pratique:'"Comment se passe la prise de poste ?"',detail:'Montre que vous êtes organisé et préparé'},
+        {pratique:'"Y a-t-il des formations prévues ?"',detail:'Montre votre volonté de progresser'},
+        {pratique:'"Quelle est la taille de l\'équipe ?"',detail:'Montre votre intérêt pour l\'environnement de travail'},
+        {pratique:'"Quels sont les horaires typiques ?"',detail:'Question pratique et légitime — pas de honte à la poser'},
+      ]},
+      {type:'question_progressive',icon:'📁',sous:'Le passeport de compétences — votre atout',question:'Comment présenter votre passeport de compétences La Table de Cana à un employeur ?',items:[
+        '✅ "J\'ai suivi une formation logistique complète de X mois — voici le document"',
+        '✅ Montrer les compétences validées avec les niveaux',
+        '✅ Mentionner les formations HACCP, sécurité, relation client',
+        '✅ Souligner les chiffres : livraisons, km, jours de formation',
+        '✅ "Mon encadrant peut être contacté comme référence"',
+        'ℹ️ Le passeport est généré automatiquement dans le CRM — demandez-le à votre CIP',
+      ]},
+      {type:'stat_marseille',titre:'Types d\'employeurs en logistique à Marseille',zones:[
+        {nom:'Entreprises de transport',access:'VUL, messagerie, derniers km',solution:'Valoriser : ponctualité, BL, GPS, relation client',col:'#3b82f6'},
+        {nom:'GMS / Grande distribution',access:'Livraison en magasin ou drive',solution:'Valoriser : CACES, préparation commandes, HACCP',col:'#22c55e'},
+        {nom:'Traiteurs événementiels',access:'Logistique traiteur, événements',solution:'Valoriser : expérience La Table de Cana directement',col:'#f97316'},
+        {nom:'Collectivités / CCAS',access:'Livraison repas, aide à domicile',solution:'Valoriser : sens du service, patience, discrétion',col:'#a855f7'},
+      ]},
+      {type:'planning_base',titre:'Les erreurs qui font rater un entretien',points:[
+        {txt:'Arriver en retard sans avoir prévenu — éliminatoire pour un chauffeur',icon:'❌',col:'#ef4444'},
+        {txt:'Tenue non soignée — première impression négative immédiate',icon:'❌',col:'#ef4444'},
+        {txt:'Ne pas connaître l\'entreprise — montre un manque de motivation',icon:'❌',col:'#ef4444'},
+        {txt:'Parler négativement de son ancien employeur',icon:'❌',col:'#ef4444'},
+        {txt:'Ne pas écouter les questions — répondre à côté',icon:'❌',col:'#ef4444'},
+        {txt:'Ne poser aucune question — montre un manque d\'intérêt',icon:'❌',col:'#ef4444'},
+      ]},
+      {type:'question_progressive',icon:'✅',sous:'Après l\'entretien',question:'L\'entretien s\'est bien passé. Que faites-vous dans les 24h qui suivent ?',items:[
+        '✅ Envoyer un email de remerciement dans la journée',
+        '✅ Recontacter si vous n\'avez pas de réponse dans 1 semaine',
+        '✅ Faire un débriefing avec votre CIP : ce qui a bien marché, ce à améliorer',
+        '✅ Si refus : demander un retour pour progresser',
+        '✅ Continuer à postuler en parallèle — ne pas tout miser sur un seul entretien',
+      ]},
+      {type:'question_progressive',icon:'🎯',sous:'Simulation — jeu de rôle',question:'Le recruteur vous demande : "Vous avez eu un problème avec un client. Donnez-moi un exemple concret et comment vous l\'avez géré."',items:[
+        '✅ Structure STAR : Situation → Tâche → Action → Résultat',
+        '✅ Exemple : "Un client a refusé une livraison car la quantité ne correspondait pas..."',
+        '✅ Action : "J\'ai vérifié le BL avec lui, appelé mon encadrant, trouvé une solution"',
+        '✅ Résultat : "La livraison a été régularisée le lendemain, le client était satisfait"',
+        '✅ Conclure : "J\'ai appris à toujours vérifier avant de décharger"',
+      ]},
+      {type:'planning_bonne_pratique',titre:'Votre CV — les points essentiels',pratiques:[
+        {pratique:'Permis B en évidence et date d\'obtention',detail:'C\'est votre premier critère de sélection — le mettre en haut'},
+        {pratique:'Expérience La Table de Cana détaillée',detail:'Mentionner : secteur, types de clients, km, responsabilités'},
+        {pratique:'Formations suivies',detail:'HACCP, sécurité, gestion de stress, relation client — liste complète'},
+        {pratique:'Certifications obtenues',detail:'CACES, SST, titre CLVUL — chaque certification est un atout'},
+        {pratique:'Pas de trou inexpliqué',detail:'CDDI = contrat de travail — le noter clairement et positivement'},
+      ]},
+      {type:'meteo_pluie',titre:'Vos droits pendant la recherche d\'emploi',points:[
+        {txt:'Votre CPF est actif — vous pouvez financer une formation pendant votre recherche d\'emploi',icon:'💼',col:'#3b82f6'},
+        {txt:'Pôle Emploi (France Travail) : inscription dès la fin du CDDI — ne pas attendre',icon:'🏢',col:'#f97316'},
+        {txt:'Votre CIP reste disponible pendant la période de recherche d\'emploi selon les structures',icon:'🤝',col:'#22c55e'},
+        {txt:'Mission Locale si moins de 26 ans — accompagnement spécialisé jeunes',icon:'🎓',col:'#a855f7'},
+      ]},
+      {type:'question_progressive',icon:'🚀',sous:'Récapitulatif final',question:'Vous avez un entretien demain pour un poste de chauffeur livreur. Checklist finale :',items:[
+        '✅ Tenue préparée ce soir',
+        '✅ Trajet vérifié — arrivée prévue 10 min en avance',
+        '✅ CV imprimé en 2 exemplaires',
+        '✅ Passeport de compétences et attestations dans un dossier',
+        '✅ 3 questions préparées à poser à l\'employeur',
+        '✅ Exemples concrets préparés pour "parlez-moi d\'une difficulté"',
+        '✅ Bonne nuit de sommeil — être reposé et alerte',
+      ]},
+      {type:'recap',titre:'Réussir son entretien — les 5 règles',items:[
+        '⏰ Arriver 10 min en avance — jamais en retard',
+        '👔 Tenue soignée — première impression décisive',
+        '🔍 Connaître l\'entreprise — montrer sa motivation',
+        '📁 Apporter son passeport de compétences et attestations',
+        '💬 Écouter les questions et répondre avec des exemples concrets',
+      ],couleur:'#22c55e'},
+    ]
+  };
+
+  /* ── SLIDE LIVRAISON DIFFICILE — 15 SLIDES ── */
+  // Enrichir la slide existante
+  if(SLIDES_DATA.livraison_difficile && SLIDES_DATA.livraison_difficile.slides.length < 10){
+    SLIDES_DATA.livraison_difficile.slides.push(
+      {type:'planning_base',titre:'Scénario 6 — Colis endommagé découvert à la livraison',points:[
+        {txt:'Photographier AVANT de décharger — preuve inattaquable avec horodatage',icon:'📸',col:'#f97316'},
+        {txt:'Informer le client de ce que vous avez constaté — transparence totale',icon:'💬',col:'#3b82f6'},
+        {txt:'Appeler l\'encadrant pour décision — vous ne décidez pas seul',icon:'📞',col:'#22c55e'},
+        {txt:'Jamais cacher la casse au client ou à l\'encadrant — toujours signaler',icon:'❌',col:'#ef4444'},
+        {txt:'Remplir un bon de casse avec date, heure, description, signature client',icon:'📋',col:'#a855f7'},
+      ]},
+      {type:'planning_base',titre:'Scénario 7 — Erreur de livraison (mauvais client)',points:[
+        {txt:'Vous avez livré chez le mauvais client — ça arrive, même aux meilleurs',icon:'⚠️',col:'#f97316'},
+        {txt:'Appeler l\'encadrant immédiatement — pas besoin de se justifier, juste informer',icon:'📞',col:'#3b82f6'},
+        {txt:'Retourner récupérer les marchandises si le bon client attend encore',icon:'🔄',col:'#22c55e'},
+        {txt:'Prévenir le bon client du retard avec explication honnête',icon:'💬',col:'#a855f7'},
+        {txt:'Documenter l\'erreur sur le rapport de tournée — apprendre et ne pas répéter',icon:'📋',col:'#f59e0b'},
+      ]},
+      {type:'question_progressive',icon:'🧠',sous:'Réflexion — la meilleure décision',question:'Vous avez un doute sur une livraison. La décision juste est de :',items:[
+        '✅ Appeler l\'encadrant AVANT de prendre une décision seul',
+        '✅ Documenter votre doute par écrit — SMS ou note sur le BL',
+        '✅ Agir selon l\'instruction reçue — pas selon votre propre jugement seul',
+        '❌ Improviser une solution sans en informer personne',
+        '❌ Ignorer le doute et livrer quand même',
+        'ℹ️ Un chauffeur qui appelle quand il doute est un bon chauffeur',
+      ]},
+      {type:'planning_bonne_pratique',titre:'La phrase magique dans les situations difficiles',pratiques:[
+        {pratique:'"Je comprends votre frustration"',detail:'Dit au client mécontent — désamorce immédiatement l\'agressivité'},
+        {pratique:'"Je vais contacter mon responsable immédiatement"',detail:'Montre que vous agissez — le client sait que quelque chose se passe'},
+        {pratique:'"Permettez-moi de noter exactement ce qui s\'est passé"',detail:'Montre votre rigueur — rassure le client'},
+        {pratique:'"Je vous rappelle dans X minutes avec une solution"',detail:'Engagement clair — respecter ABSOLUMENT ce délai'},
+        {pratique:'"Merci de votre patience"',detail:'Clôt la situation positivement — même si c\'était difficile'},
+      ]},
+      {type:'recap',titre:'La règle universelle pour TOUTES les situations difficiles',items:[
+        '📞 Appeler l\'encadrant AVANT de prendre une décision seul',
+        '📸 Photographier tout — preuve = protection',
+        '📋 Tout noter sur le BL avec l\'heure exacte',
+        '😌 Rester calme — le stress ne résout rien',
+        '🔄 Signaler = améliorer les prochaines tournées',
+      ],couleur:'#ef4444'}
+    );
+  }
+
+  console.log('Nouvelles slides chargées — Marseille (15 slides) + Entretien embauche (15 slides) ✅');
+})();
+
 </script>
