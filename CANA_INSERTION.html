@@ -18848,3 +18848,1679 @@ window.sauverResultatExamen=function(salId){
 console.log('Module OPCO CLVUL complet chargé ✅');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MODULE OPCO — PARTIE 3
+   Préparateur de commandes + Magasinier
+   Grilles AFEST officielles — 3 mois / 6 mois / mensuel
+═══════════════════════════════════════════════════════════════ */
+
+/* ── COMPÉTENCES PRÉPARATEUR DE COMMANDES ── */
+var PREP_COMPETENCES = [
+  {
+    id:'P1', code:'P1',
+    titre:'Préparer une commande',
+    criteres:[
+      'Le bon de préparation est lu et compris avant de commencer',
+      'Les produits sont prélevés dans le bon ordre et la bonne quantité',
+      'Les références sont vérifiées avant mise en palette ou carton',
+      'Les anomalies (produit manquant, cassé, mauvaise référence) sont signalées',
+      'La commande est validée et le bon est signé',
+    ],
+    icon:'📋', couleur:'#3b82f6'
+  },
+  {
+    id:'P2', code:'P2',
+    titre:'Choisir l\'emballage et optimiser la charge',
+    criteres:[
+      'L\'emballage est adapté au type de produit (fragile, alimentaire, froid)',
+      'La charge est constituée de façon stable et optimisée',
+      'Le poids est réparti correctement — charges lourdes en bas',
+      'Les produits fragiles ou froids sont protégés correctement',
+    ],
+    icon:'📦', couleur:'#f97316'
+  },
+  {
+    id:'P3', code:'P3',
+    titre:'Emballage, étiquetage et expédition',
+    criteres:[
+      'L\'emballage est fermé correctement et résiste au transport',
+      'L\'étiquette est lisible, correcte et bien positionnée',
+      'Le colis est placé dans la zone d\'expédition prévue',
+      'Les documents d\'accompagnement sont joints au colis',
+    ],
+    icon:'🏷️', couleur:'#f59e0b'
+  },
+  {
+    id:'P4', code:'P4',
+    titre:'Comptage et gestion des anomalies — inventaire',
+    criteres:[
+      'Le comptage est précis et méthodique',
+      'Les écarts sont signalés immédiatement par écrit',
+      'L\'inventaire est réalisé selon la procédure définie',
+      'Les corrections d\'inventaire sont documentées',
+    ],
+    icon:'🔢', couleur:'#22c55e'
+  },
+  {
+    id:'P5', code:'P5',
+    titre:'Utilisation du chariot automoteur — CACES 489',
+    criteres:[
+      'Les vérifications journalières du chariot sont effectuées',
+      'La conduite est sécurisée (allure adaptée, klaxon aux croisements)',
+      'Le chargement et le déchargement respectent la charge maximale',
+      'La prise en charge des palettes est correcte (centrage, hauteur)',
+      'Le stationnement du chariot est sécurisé en fin d\'utilisation',
+    ],
+    icon:'🏗️', couleur:'#a855f7'
+  },
+  {
+    id:'P6', code:'P6',
+    titre:'Outils informatiques logistiques',
+    criteres:[
+      'Le logiciel de gestion de commandes est utilisé sans aide',
+      'Les bons de préparation sont édités correctement',
+      'Les mouvements de stocks sont saisis dans le système',
+      'Les anomalies informatiques sont signalées',
+    ],
+    icon:'💻', couleur:'#0ea5e9'
+  },
+  {
+    id:'P7', code:'P7',
+    titre:'Hygiène, sécurité et prévention des risques',
+    criteres:[
+      'Les EPI sont portés sans rappel (chaussures, gilet, gants)',
+      'Les règles HACCP sont respectées en zone alimentaire',
+      'Les zones de circulation piétons/chariots sont respectées',
+      'Les risques TMS sont prévenus (bons gestes, aides à la manutention)',
+      'Les incidents et presqu\'accidents sont signalés',
+    ],
+    icon:'🦺', couleur:'#ef4444'
+  },
+];
+
+/* Objectifs spécifiques prépa */
+var PREP_OBJECTIFS_CERTS = [
+  {id:'caces_1a', label:'CACES 489 catégorie 1A — Transpalette automoteur', icon:'🔑'},
+  {id:'caces_1b', label:'CACES 489 catégorie 1B — Gerbeur', icon:'🔑'},
+  {id:'caces_3', label:'CACES 489 catégorie 3 — Chariot élévateur', icon:'🔑'},
+  {id:'caces_5', label:'CACES 489 catégorie 5 — Chariot grande hauteur', icon:'🔑'},
+  {id:'sst', label:'SST — Sauveteur Secouriste du Travail', icon:'🏥'},
+];
+
+/* ── COMPÉTENCES MAGASINIER ── */
+var MAG_COMPETENCES = [
+  {
+    id:'M1', code:'M1',
+    titre:'Réceptionner les produits et articles',
+    criteres:[
+      'Les documents de livraison sont vérifiés avant déchargement',
+      'Les produits sont réceptionnés et comptés correctement',
+      'La conformité des références et des quantités est contrôlée',
+      'Les anomalies à réception (casse, manquant, erreur) sont signalées par écrit',
+      'Les températures sont relevées pour les produits frais et surgelés',
+    ],
+    icon:'📥', couleur:'#3b82f6'
+  },
+  {
+    id:'M2', code:'M2',
+    titre:'Ranger et assurer la mise en stock',
+    criteres:[
+      'Les produits sont rangés dans l\'aire de stockage dédiée',
+      'Les règles FIFO (premier entré, premier sorti) sont respectées',
+      'Les zones froides, sèches et tempérées sont respectées',
+      'Le rangement est stable, sécurisé et accessible',
+      'Les étiquettes et codes emplacements sont respectés',
+    ],
+    icon:'📦', couleur:'#f97316'
+  },
+  {
+    id:'M3', code:'M3',
+    titre:'Déplacer les produits — manutention',
+    criteres:[
+      'Les produits sont déplacés vers les bonnes zones (arrivée, stock, départ)',
+      'Les moyens de manutention adaptés sont utilisés (diable, transpalette)',
+      'Les gestes et postures de manutention sont corrects',
+      'La charge maximale des équipements est respectée',
+    ],
+    icon:'🔄', couleur:'#f59e0b'
+  },
+  {
+    id:'M4', code:'M4',
+    titre:'Préparer et conditionner les produits ou commandes',
+    criteres:[
+      'Les produits sont préparés selon les bons de commande',
+      'Les palettes et conditionnements sont dégroupés ou groupés correctement',
+      'Les produits sont prélevés selon les instructions',
+      'Le conditionnement est adapté à la nature du produit',
+    ],
+    icon:'🗂️', couleur:'#22c55e'
+  },
+  {
+    id:'M5', code:'M5',
+    titre:'Enregistrer et consulter les mouvements de stocks',
+    criteres:[
+      'Les entrées et sorties sont saisies dans le système informatique',
+      'La traçabilité est assurée (numéro de lot, date de péremption)',
+      'Les mouvements de stocks sont consultés sans aide',
+      'Les écarts entre stock physique et informatique sont signalés',
+    ],
+    icon:'💻', couleur:'#a855f7'
+  },
+  {
+    id:'M6', code:'M6',
+    titre:'Effectuer un inventaire',
+    criteres:[
+      'L\'inventaire est réalisé selon la procédure définie',
+      'Le comptage est précis et méthodique — sans omission',
+      'Les écarts sont documentés et remontés',
+      'L\'inventaire est finalisé dans les délais demandés',
+    ],
+    icon:'🔢', couleur:'#0ea5e9'
+  },
+  {
+    id:'M7', code:'M7',
+    titre:'Hygiène, sécurité et HACCP',
+    criteres:[
+      'Les règles HACCP sont appliquées en zones alimentaires',
+      'Les températures des zones de stockage sont surveillées et notées',
+      'Les DLC et DLUO sont vérifiées à chaque mouvement de stock',
+      'Les règles de sécurité entrepôt sont respectées',
+      'Les EPI sont portés dans toutes les zones obligatoires',
+    ],
+    icon:'🌡️', couleur:'#ef4444'
+  },
+];
+
+/* ── AJOUT AU MODULE OPCO EXISTANT ── */
+(function(){
+  var oldRenderOPCO = window.renderOPCO;
+  window.renderOPCO = function(c2){
+    if(!c2) return;
+    var h = '<div class="page-title">🏅 Module OPCO — Certifications AFEST</div>';
+    h += '<div class="page-sub" style="margin-bottom:16px">Conducteur Livreur CLVUL · Préparateur de commandes · Magasinier</div>';
+
+    h += '<div style="background:rgba(249,115,22,.08);border:2px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;margin-bottom:16px">';
+    h += '<div style="font-size:12px;font-weight:800;color:var(--orange);margin-bottom:6px">📋 Module indépendant — Documents AFEST pour l\'OPCO Cohésion sociale</div>';
+    h += '<div style="font-size:11px;color:var(--text)">Vos salariés exercent 3 métiers : Chauffeur livreur VUL + Préparateur de commandes + Magasinier. Chaque activité peut faire l\'objet d\'une grille AFEST séparée, finançable par l\'OPCO.</div>';
+    h += '</div>';
+
+    /* Sélecteur salarié */
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+    (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+      if(!DB.opco[s.id]) DB.opco[s.id]={};
+      var op = DB.opco[s.id];
+      var nb = (op.suivis_mensuels||[]).length + (op.suivis_prep||[]).length + (op.suivis_mag||[]).length;
+      h += '<div onclick="selOPCO('+s.id+',this)" class="fsal-btn-op" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid '+(op.inscrit?'rgba(249,115,22,.4)':'var(--border)')+';border-radius:10px;padding:8px 14px;cursor:pointer">';
+      h += '<span style="font-size:18px">'+s.avatar+'</span>';
+      h += '<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+      h += '<div style="font-size:10px;color:'+(nb?'var(--orange)':'var(--sub)')+'">'+nb+' grille(s) AFEST</div></div></div>';
+    });
+    h += '</div>';
+    h += '<div id="opco-detail"></div>';
+    c2.innerHTML = h;
+    var first = (DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+    if(first) selOPCO(first.id, c2.querySelector('.fsal-btn-op'));
+  };
+
+  /* Enrichir afficherOPCO avec les 3 modules */
+  window.selOPCO = function(salId, el){
+    document.querySelectorAll('.fsal-btn-op').forEach(function(b){b.style.borderColor='var(--border)';});
+    if(el) el.style.borderColor='var(--orange)';
+    window.opcoSalId = salId;
+    window.dossierSalActif = salId;
+    afficherOPCOComplet(salId);
+  };
+})();
+
+function afficherOPCOComplet(salId){
+  var zone = document.getElementById('opco-detail'); if(!zone) return;
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  if(!DB.opco[salId]) DB.opco[salId]={};
+
+  /* 3 modules côte à côte */
+  var h = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">';
+  var modules = [
+    {id:'clvul', label:'🚐 Conducteur Livreur CLVUL', sub:'TP-00299 · Niveau 3', col:'var(--blue)', tab:'clvul'},
+    {id:'prep', label:'📦 Préparateur de commandes', sub:'CACES 489 · SST · Logistique', col:'var(--orange)', tab:'prep'},
+    {id:'mag', label:'🏭 Magasinier', sub:'CQP Agent Logistique · RNCP38898', col:'var(--green)', tab:'mag'},
+  ];
+  modules.forEach(function(m){
+    var nbSuivis = m.id==='clvul'?(DB.opco[salId].suivis_mensuels||[]).length
+      :m.id==='prep'?(DB.opco[salId].suivis_prep||[]).length
+      :(DB.opco[salId].suivis_mag||[]).length;
+    h += '<div onclick="showModuleOPCO(\''+m.tab+'\')" style="background:var(--panel);border:2px solid '+m.col+'33;border-radius:12px;padding:14px;cursor:pointer;text-align:center">';
+    h += '<div style="font-size:13px;font-weight:800;color:'+m.col+';margin-bottom:4px">'+m.label+'</div>';
+    h += '<div style="font-size:10px;color:var(--sub);margin-bottom:8px">'+m.sub+'</div>';
+    h += '<div style="font-size:20px;font-weight:900;color:'+m.col+'">'+nbSuivis+'</div>';
+    h += '<div style="font-size:10px;color:var(--sub)">grille(s) AFEST</div></div>';
+  });
+  h += '</div>';
+
+  /* Onglets */
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+  /* CLVUL */
+  h += '<div style="font-size:10px;font-weight:800;color:var(--blue);padding:4px 8px;background:rgba(59,130,246,.1);border-radius:6px">CLVUL →</div>';
+  [['inscription','📋'],['mensuel','📅'],['3mois','🔵'],['6mois','🟢'],['examen','🏅']].forEach(function(t){
+    h += '<button onclick="showOPCOTab(\''+t[0]+'\')" id="optab-'+t[0]+'" class="btn btn-sm btn-secondary">'+t[1]+'</button>';
+  });
+  h += '<div style="font-size:10px;font-weight:800;color:var(--orange);padding:4px 8px;background:rgba(249,115,22,.1);border-radius:6px;margin-left:8px">PREP →</div>';
+  [['prep_mensuel','📅'],['prep_3mois','🔵'],['prep_6mois','🟢'],['prep_certs','🏅']].forEach(function(t){
+    h += '<button onclick="showOPCOTab(\''+t[0]+'\')" id="optab-'+t[0]+'" class="btn btn-sm btn-secondary">'+t[1]+'</button>';
+  });
+  h += '<div style="font-size:10px;font-weight:800;color:var(--green);padding:4px 8px;background:rgba(34,197,94,.1);border-radius:6px;margin-left:8px">MAG →</div>';
+  [['mag_mensuel','📅'],['mag_3mois','🔵'],['mag_6mois','🟢']].forEach(function(t){
+    h += '<button onclick="showOPCOTab(\''+t[0]+'\')" id="optab-'+t[0]+'" class="btn btn-sm btn-secondary">'+t[1]+'</button>';
+  });
+  h += '</div>';
+  h += '<div id="opco-tab-content">';
+  h += renderOPCOInscription(salId);
+  h += '</div>';
+  zone.innerHTML = h;
+}
+
+window.showModuleOPCO = function(mod){
+  var map = {clvul:'inscription', prep:'prep_mensuel', mag:'mag_mensuel'};
+  showOPCOTab(map[mod]||'inscription');
+};
+
+/* Enrichir le router d'onglets */
+var _oldShowTab = window.showOPCOTab;
+window.showOPCOTab = function(tab){
+  document.querySelectorAll('[id^="optab-"]').forEach(function(b){b.className='btn btn-sm btn-secondary';});
+  var btn=document.getElementById('optab-'+tab); if(btn) btn.className='btn btn-sm btn-primary';
+  var c=document.getElementById('opco-tab-content'); if(!c) return;
+  var sid=window.opcoSalId;
+
+  var renderers = {
+    inscription: renderOPCOInscription,
+    mensuel: renderOPCOMensuel,
+    '3mois': renderOPCO3Mois,
+    '6mois': renderOPCO6Mois,
+    examen: renderOPCOExamen,
+    prep_mensuel: function(id){ return renderGrilleGenerique(id,'prep','📦 Préparateur — Grille mensuelle AFEST', PREP_COMPETENCES, 'suivis_prep', '#f97316'); },
+    prep_3mois: function(id){ return renderBilanGeneriqueAFEST(id,'prep','3mois','🔵 Préparateur — Bilan 3 mois', PREP_COMPETENCES, 'suivis_prep', '#3b82f6'); },
+    prep_6mois: function(id){ return renderBilanGeneriqueAFEST(id,'prep','6mois','🟢 Préparateur — Bilan 6 mois', PREP_COMPETENCES, 'suivis_prep', '#22c55e'); },
+    prep_certs: function(id){ return renderPrepCertifs(id); },
+    mag_mensuel: function(id){ return renderGrilleGenerique(id,'mag','🏭 Magasinier — Grille mensuelle AFEST', MAG_COMPETENCES, 'suivis_mag', '#22c55e'); },
+    mag_3mois: function(id){ return renderBilanGeneriqueAFEST(id,'mag','3mois','🔵 Magasinier — Bilan 3 mois', MAG_COMPETENCES, 'suivis_mag', '#3b82f6'); },
+    mag_6mois: function(id){ return renderBilanGeneriqueAFEST(id,'mag','6mois','🟢 Magasinier — Bilan 6 mois', MAG_COMPETENCES, 'suivis_mag', '#22c55e'); },
+  };
+  c.innerHTML = renderers[tab] ? renderers[tab](sid) : '';
+};
+
+/* ── GRILLE GÉNÉRIQUE MENSUELLE (Prep + Mag) ── */
+function renderGrilleGenerique(salId, module, titre, competences, dbKey, couleur){
+  var op=DB.opco[salId]||{};
+  var suivis=op[dbKey]||[];
+  var moisNum=suivis.length+1;
+
+  var h='<div class="card" style="margin-bottom:14px;border-color:'+couleur+'33">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">'+titre+' — Mois '+moisNum+'</div>';
+  h+='<button class="btn btn-sm btn-primary" style="background:'+couleur+';border-color:'+couleur+'" onclick="ouvrirGrilleGen('+salId+',\''+module+'\',\''+dbKey+'\')">+ Nouvelle grille</button></div>';
+
+  if(!suivis.length){
+    h+='<div style="color:var(--sub);font-size:12px;padding:10px">Aucune grille AFEST enregistrée pour ce module.</div>';
+  } else {
+    suivis.slice().reverse().forEach(function(s2,i){
+      var moisNum2=suivis.length-i;
+      var scores=s2.scores||{};
+      var vals=Object.values(scores).filter(function(v){return v>0;});
+      var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
+      var col=moy>=3?'var(--green)':moy>=2?'var(--yellow)':'var(--red)';
+      h+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      h+='<div style="font-size:13px;font-weight:800;color:var(--text)">Mois '+moisNum2+' — '+s2.date+'</div>';
+      h+='<div style="font-size:18px;font-weight:900;color:'+col+'">'+moy+'/4</div></div>';
+      h+='<div style="display:flex;gap:5px;flex-wrap:wrap">';
+      competences.forEach(function(comp){
+        var sc=scores[comp.id]||0;
+        var scCol=CLVUL_NIVEAUX[sc]?CLVUL_NIVEAUX[sc].col:'var(--border)';
+        h+='<div title="'+comp.titre+'" style="background:'+scCol+'22;border:1px solid '+scCol+'44;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;color:'+scCol+'">'+comp.code+':'+sc+'</div>';
+      });
+      h+='</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px">';
+      h+='<button class="btn btn-sm btn-secondary" onclick="imprimerGrilleGen('+salId+',\''+dbKey+'\','+(suivis.length-1-i)+',\''+titre+'\')">🖨️ Imprimer</button></div>';
+      h+='</div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+
+window.ouvrirGrilleGen=function(salId, module, dbKey){
+  var comp = module==='prep' ? PREP_COMPETENCES : MAG_COMPETENCES;
+  var couleur = module==='prep' ? '#f97316' : '#22c55e';
+  var titreMod = module==='prep' ? 'Préparateur de commandes' : 'Magasinier';
+  var op=DB.opco[salId]||{};
+  var moisNum=(op[dbKey]||[]).length+1;
+
+  var ov=document.createElement('div');
+  ov.id='grilleg-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:20px';
+
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;})||{};
+  var h='<div style="max-width:760px;margin:0 auto;background:var(--panel);border-radius:14px;padding:24px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  h+='<div><div style="font-size:15px;font-weight:900;color:'+couleur+'">Grille AFEST — '+titreMod+' — Mois '+moisNum+'</div>';
+  h+='<div style="font-size:11px;color:var(--sub)">'+( s.prenom||'')+(s.nom?' '+s.nom:'')+' · La Table de Cana</div></div>';
+  h+='<button onclick="document.getElementById(\'grilleg-overlay\').remove()" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:6px 12px;cursor:pointer">✕</button>';
+  h+='</div>';
+  h+='<input type="date" id="grilleg-date" value="'+new Date().toISOString().slice(0,10)+'" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;margin-bottom:16px">';
+
+  comp.forEach(function(c2){
+    h+='<div style="background:'+c2.couleur+'08;border:2px solid '+c2.couleur+'22;border-radius:12px;padding:14px;margin-bottom:10px">';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+    h+='<span style="font-size:20px">'+c2.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--text)">'+c2.code+' — '+c2.titre+'</div></div>';
+    h+='<div style="display:flex;gap:4px">';
+    for(var v=1;v<=4;v++){
+      var nd=CLVUL_NIVEAUX[v];
+      h+='<button onclick="setScoreGen(\''+c2.id+'\','+v+')" id="gsc-'+c2.id+'-'+v+'" style="padding:4px 10px;border-radius:6px;border:2px solid var(--border);background:transparent;cursor:pointer;font-size:11px;font-weight:800;color:var(--sub)">'+v+'</button>';
+    }
+    h+='</div></div>';
+    c2.criteres.forEach(function(cr){
+      h+='<div style="font-size:10px;color:rgba(255,255,255,.5);padding:2px 0">→ '+cr+'</div>';
+    });
+    h+='<textarea id="gobs-'+c2.id+'" placeholder="Observations..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:44px;box-sizing:border-box;margin-top:8px"></textarea>';
+    h+='</div>';
+  });
+
+  h+='<textarea id="gobs-general" placeholder="Observations générales du mois..." style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:70px;box-sizing:border-box;margin-top:8px;margin-bottom:14px"></textarea>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button class="btn btn-primary" style="background:'+couleur+';border-color:'+couleur+'" onclick="sauverGrilleGen('+salId+',\''+dbKey+'\')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-secondary" onclick="sauverEtImprimerGrilleGen('+salId+',\''+dbKey+'\',\''+titreMod+'\')">🖨️ Sauver & Imprimer</button>';
+  h+='</div></div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  window._scoresGrilleGen={};
+};
+
+window.setScoreGen=function(compId,val){
+  if(!window._scoresGrilleGen) window._scoresGrilleGen={};
+  window._scoresGrilleGen[compId]=val;
+  var nd=CLVUL_NIVEAUX[val];
+  for(var v=1;v<=4;v++){
+    var btn=document.getElementById('gsc-'+compId+'-'+v);
+    if(btn){btn.style.borderColor=v===val?nd.col:'var(--border)';btn.style.background=v===val?nd.col+'22':'transparent';btn.style.color=v===val?nd.col:'var(--sub)';}
+  }
+};
+
+window.sauverGrilleGen=function(salId,dbKey){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  if(!DB.opco[salId][dbKey]) DB.opco[salId][dbKey]=[];
+  var date=document.getElementById('grilleg-date');
+  var obsGen=document.getElementById('gobs-general');
+  var comp=dbKey==='suivis_prep'?PREP_COMPETENCES:MAG_COMPETENCES;
+  var obsComp={};
+  comp.forEach(function(c2){var el=document.getElementById('gobs-'+c2.id);if(el&&el.value)obsComp[c2.id]=el.value;});
+  DB.opco[salId][dbKey].push({date:date?date.value:new Date().toISOString().slice(0,10),scores:window._scoresGrilleGen||{},obs_competences:obsComp,obs_general:obsGen?obsGen.value:'',signe:false});
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Grille AFEST sauvegardée ✅','ok');
+  if(typeof logAction==='function') logAction('Grille AFEST '+(dbKey==='suivis_prep'?'Préparateur':'Magasinier'),'salId '+salId);
+  var ov=document.getElementById('grilleg-overlay'); if(ov)ov.remove();
+  showOPCOTab(dbKey==='suivis_prep'?'prep_mensuel':'mag_mensuel');
+};
+
+window.sauverEtImprimerGrilleGen=function(salId,dbKey,titre){
+  sauverGrilleGen(salId,dbKey);
+  var suivis=DB.opco[salId][dbKey]||[];
+  setTimeout(function(){imprimerGrilleGen(salId,dbKey,suivis.length-1,titre);},300);
+};
+
+window.imprimerGrilleGen=function(salId,dbKey,idx,titre){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var suivi=(op[dbKey]||[])[idx]; if(!suivi)return;
+  var comp=dbKey==='suivis_prep'?PREP_COMPETENCES:MAG_COMPETENCES;
+  var moisNum=idx+1;
+  var scores=suivi.scores||{};
+  var couleur=dbKey==='suivis_prep'?'#f97316':'#22c55e';
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:17px;font-weight:900;border-bottom:3px solid '+couleur+';padding-bottom:8px;color:'+couleur+'}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#0f1923;color:#fff;padding:7px;font-size:10px;text-align:left}td{border:1px solid #e2e8f0;padding:8px;vertical-align:top}.sig{display:flex;justify-content:space-between;margin-top:18px;padding-top:10px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px}footer{font-size:9px;color:#94a3b8;margin-top:10px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+  var NOMS=['','1-Insuffisant','2-En progression','3-Satisfaisant','4-Maîtrisé'];
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:'+couleur+';border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:4px">GRILLE D\'ÉVALUATION AFEST — LA TABLE DE CANA — USAGE OPCO</div>';
+  html+='<h1>'+titre+' — Mois '+moisNum+'</h1>';
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+(typeof fmt==='function'?fmt(suivi.date):suivi.date)+'</span>';
+  html+='<span><b>Tuteur :</b> '+(op.tuteur||'—')+'</span></div>';
+  html+='<table><tr><th style="width:6%">Code</th><th style="width:26%">Compétence</th><th style="width:14%">Niveau (1-4)</th><th>Observations terrain</th></tr>';
+  comp.forEach(function(c2){
+    var sc=scores[c2.id]||0;
+    var obs=(suivi.obs_competences||{})[c2.id]||'';
+    var cols=['#94a3b8','#ef4444','#f59e0b','#22c55e','#3b82f6'];
+    html+='<tr><td style="text-align:center;font-weight:800">'+c2.code+'</td><td><b>'+c2.titre+'</b></td>';
+    html+='<td style="font-weight:800;color:'+cols[sc]+'">'+( sc?NOMS[sc]:'Non évalué')+'</td>';
+    html+='<td>'+obs+'</td></tr>';
+  });
+  html+='</table>';
+  if(suivi.obs_general) html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;margin:10px 0"><b>Observations générales :</b> '+suivi.obs_general+'</div>';
+  var vals=Object.values(scores).filter(function(v){return v>0;});
+  var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
+  html+='<div style="text-align:center;padding:8px;background:#f8fafc;border-radius:8px;font-size:14px;font-weight:900;color:'+couleur+'">Moyenne : '+moy+'/4</div>';
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:18px">La Table de Cana<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div style="text-align:center"><b>Le tuteur</b><div class="sig-line"></div><div>'+(op.tuteur||'—')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · Grille AFEST · Mois '+moisNum+' · Document OPCO Cohésion sociale</span><span>'+new Date().toLocaleDateString('fr-FR')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── BILAN GÉNÉRIQUE 3 ET 6 MOIS ── */
+function renderBilanGeneriqueAFEST(salId, module, periode, titre, comp, dbKey, couleur){
+  var op=DB.opco[salId]||{};
+  var suivis=op[dbKey]||[];
+  var bilanKey='bilan_'+module+'_'+periode;
+  var b=op[bilanKey]||{};
+
+  var h='<div class="card" style="margin-bottom:14px;border-color:'+couleur+'33">';
+  h+='<div class="card-title" style="color:'+couleur+'">'+titre+'</div>';
+
+  if(suivis.length<2){
+    h+='<div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:12px;font-size:12px;color:var(--orange)">⚠️ Il faut au moins 2 grilles mensuelles pour générer ce bilan.</div>';
+    h+='</div>'; return h;
+  }
+
+  /* Tableau évolution */
+  var mois1=suivis[0].scores||{};
+  var moisN=suivis[suivis.length-1].scores||{};
+  h+='<table style="width:100%;border-collapse:collapse;margin-bottom:14px">';
+  h+='<tr style="background:var(--panel2)"><th style="padding:7px;text-align:left;font-size:11px;color:var(--sub)">Compétence</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Début</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Actuel</th><th style="padding:7px;text-align:center;font-size:11px;color:var(--sub)">Évolution</th></tr>';
+  comp.forEach(function(c2){
+    var sc1=mois1[c2.id]||0, scN=moisN[c2.id]||0, evo=scN-sc1;
+    var cols=['var(--border)','var(--red)','var(--yellow)','var(--green)','var(--blue)'];
+    h+='<tr style="border-bottom:1px solid var(--border)"><td style="padding:7px;font-size:11px;font-weight:700">'+c2.icon+' '+c2.code+'</td>';
+    h+='<td style="text-align:center;font-size:12px;font-weight:800;color:'+cols[sc1]+'">'+sc1+'/4</td>';
+    h+='<td style="text-align:center;font-size:12px;font-weight:800;color:'+cols[scN]+'">'+scN+'/4</td>';
+    h+='<td style="text-align:center;font-size:13px;font-weight:900;color:'+(evo>0?'var(--green)':evo<0?'var(--red)':'var(--sub)')+'">'+(evo>0?'+':'')+evo+'</td></tr>';
+  });
+  h+='</table>';
+
+  var champs=[
+    {id:'synthese', label:'📊 Synthèse de la période', ph:'Bilan général des compétences acquises...'},
+    {id:'points_forts', label:'⭐ Points forts', ph:'Ce que le salarié maîtrise bien...'},
+    {id:'axes_prog', label:'📈 Axes de progression', ph:'Ce qui reste à travailler...'},
+    {id:'objectifs_suite', label:'🎯 Objectifs pour la suite', ph:'Ce qui doit être acquis avant la fin du parcours...'},
+    {id:'verdict', label:'📋 Verdict', ph:'Le salarié est-il sur la bonne voie ?'},
+  ];
+  h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
+  champs.forEach(function(f){
+    h+='<div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">'+f.label+'</div>';
+    h+='<textarea id="bg-'+bilanKey+'-'+f.id+'" placeholder="'+f.ph+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;resize:vertical;min-height:55px;box-sizing:border-box">'+(b[f.id]||'')+'</textarea></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<button class="btn btn-primary" onclick="sauverBilanGen(\''+salId+'\',\''+bilanKey+'\')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-secondary" onclick="imprimerBilanGen(\''+salId+'\',\''+bilanKey+'\',\''+titre+'\',\''+dbKey+'\')">🖨️ Imprimer OPCO</button>';
+  h+='</div></div>';
+  return h;
+}
+
+window.sauverBilanGen=function(salId, bilanKey){
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  var b={date:new Date().toLocaleDateString('fr-FR')};
+  ['synthese','points_forts','axes_prog','objectifs_suite','verdict'].forEach(function(f){
+    var el=document.getElementById('bg-'+bilanKey+'-'+f);
+    if(el) b[f]=el.value;
+  });
+  DB.opco[salId][bilanKey]=b;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Bilan sauvegardé ✅','ok');
+};
+
+window.imprimerBilanGen=function(salId, bilanKey, titre, dbKey){
+  sauverBilanGen(salId, bilanKey);
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var b=op[bilanKey]||{};
+  var comp=dbKey==='suivis_prep'?PREP_COMPETENCES:MAG_COMPETENCES;
+  var suivis=op[dbKey]||[];
+  var couleur=dbKey==='suivis_prep'?'#f97316':'#22c55e';
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:24px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:17px;font-weight:900;border-bottom:3px solid '+couleur+';padding-bottom:8px;color:'+couleur+'}h2{font-size:12px;font-weight:900;background:#f8fafc;padding:6px 12px;border-radius:6px;margin:12px 0 6px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#0f1923;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:7px}.sig{display:flex;justify-content:space-between;margin-top:18px;padding-top:10px;border-top:2px solid '+couleur+'}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:10px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:'+couleur+';border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:4px">BILAN AFEST — LA TABLE DE CANA — USAGE OPCO COHÉSION SOCIALE</div>';
+  html+='<h1>'+titre+'</h1>';
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+(b.date||'')+'</span></div>';
+
+  html+='<h2>📊 Évolution des compétences</h2>';
+  html+='<table><tr><th>Code</th><th>Compétence</th><th>Début</th><th>Actuel</th><th>Évolution</th></tr>';
+  var mois1=(suivis[0]||{}).scores||{}, moisN=(suivis[suivis.length-1]||{}).scores||{};
+  comp.forEach(function(c2){
+    var sc1=mois1[c2.id]||0, scN=moisN[c2.id]||0, evo=scN-sc1;
+    var cols=['#94a3b8','#ef4444','#f59e0b','#22c55e','#3b82f6'];
+    html+='<tr><td style="text-align:center;font-weight:800">'+c2.code+'</td><td>'+c2.titre+'</td>';
+    html+='<td style="text-align:center;font-weight:800;color:'+cols[sc1]+'">'+sc1+'/4</td>';
+    html+='<td style="text-align:center;font-weight:800;color:'+cols[scN]+'">'+scN+'/4</td>';
+    html+='<td style="text-align:center;font-weight:900;color:'+(evo>0?'#16a34a':evo<0?'#dc2626':'#64748b')+'">'+(evo>0?'+':'')+evo+'</td></tr>';
+  });
+  html+='</table>';
+  ['synthese','points_forts','axes_prog','objectifs_suite','verdict'].forEach(function(f){
+    var labels={synthese:'Synthèse',points_forts:'Points forts',axes_prog:'Axes de progression',objectifs_suite:'Objectifs suivants',verdict:'Verdict'};
+    if(b[f]) html+='<h2>'+labels[f]+'</h2><p>'+b[f]+'</p>';
+  });
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:18px">La Table de Cana<br>Marseille</div>';
+  html+='<div style="text-align:center"><b>Le tuteur</b><div class="sig-line"></div><div>'+(op.tuteur||'—')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · Bilan AFEST · Document OPCO Cohésion sociale</span><span>'+(b.date||'')+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── CERTIFICATIONS PRÉPARATEUR ── */
+function renderPrepCertifs(salId){
+  var op=DB.opco[salId]||{};
+  var certs=op.prep_certifs||{};
+
+  var h='<div class="card"><div class="card-title" style="color:var(--orange)">🏅 Certifications — Préparateur de commandes</div>';
+  h+='<div style="font-size:11px;color:var(--sub);margin-bottom:14px">CACES 489 · SST — Cocher les certifications obtenues ou en cours</div>';
+
+  PREP_OBJECTIFS_CERTS.forEach(function(cert){
+    var d=certs[cert.id]||{};
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">';
+    h+='<span style="font-size:22px">'+cert.icon+'</span>';
+    h+='<div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--text)">'+cert.label+'</div>';
+    if(d.date_obtention) h+='<div style="font-size:10px;color:var(--green)">✅ Obtenu le '+(typeof fmt==='function'?fmt(d.date_obtention):d.date_obtention)+'</div>';
+    if(d.date_prevue) h+='<div style="font-size:10px;color:var(--orange)">📅 Prévu le '+(typeof fmt==='function'?fmt(d.date_prevue):d.date_prevue)+'</div>';
+    h+='</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:5px">';
+    h+='<button class="btn btn-sm btn-green" onclick="marquerCertifObtenu('+salId+',\''+cert.id+'\')">✅ Obtenu</button>';
+    h+='<button class="btn btn-sm btn-secondary" onclick="planifierCertif('+salId+',\''+cert.id+'\')">📅 Planifier</button>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+window.marquerCertifObtenu=function(salId,certId){
+  var date=prompt('Date d\'obtention (JJ/MM/AAAA) :',new Date().toLocaleDateString('fr-FR'));
+  if(!date)return;
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  if(!DB.opco[salId].prep_certifs) DB.opco[salId].prep_certifs={};
+  DB.opco[salId].prep_certifs[certId]={obtenu:true,date_obtention:date};
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Certification enregistrée ✅','ok');
+  if(typeof logAction==='function') logAction('Certification CACES/SST obtenue',certId+' salId '+salId);
+  showOPCOTab('prep_certs');
+};
+
+window.planifierCertif=function(salId,certId){
+  var date=prompt('Date prévue pour la certification (JJ/MM/AAAA) :','');
+  if(!date)return;
+  if(!DB.opco[salId]) DB.opco[salId]={};
+  if(!DB.opco[salId].prep_certifs) DB.opco[salId].prep_certifs={};
+  if(!DB.opco[salId].prep_certifs[certId]) DB.opco[salId].prep_certifs[certId]={};
+  DB.opco[salId].prep_certifs[certId].date_prevue=date;
+  if(typeof sauver==='function') sauver();
+  showOPCOTab('prep_certs');
+};
+
+console.log('Module OPCO Préparateur + Magasinier chargé ✅');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   MODULE FEST OFFICIEL — Logistique
+   Basé sur le référentiel FEST secteur logistique
+   Dossier complet OPCO/DREETS générable en 1 clic
+═══════════════════════════════════════════════════════════════ */
+
+/* ── RÉFÉRENTIEL OFFICIEL FEST ── */
+var FEST_NIVEAUX_OFFICIELS = [
+  {val:0, label:'Non évalué', col:'var(--border)', badge:'—'},
+  {val:1, label:'Non acquis', col:'#ef4444', badge:'NA'},
+  {val:2, label:'En cours d\'acquisition', col:'#f59e0b', badge:'ECA'},
+  {val:3, label:'Acquis', col:'#22c55e', badge:'ACQ'},
+  {val:4, label:'Maîtrisé', col:'#3b82f6', badge:'MAÎ'},
+];
+
+var FEST_CRITERES_EVAL = [
+  {id:'consignes', label:'Respect des consignes', icon:'📋'},
+  {id:'securite', label:'Respect des règles de sécurité', icon:'🦺'},
+  {id:'qualite', label:'Qualité du travail réalisé', icon:'⭐'},
+  {id:'autonomie', label:'Autonomie', icon:'🚀'},
+  {id:'organisation', label:'Organisation', icon:'🗂️'},
+  {id:'rapidite', label:'Rapidité d\'exécution', icon:'⏱️'},
+  {id:'relation', label:'Relation avec les collègues et les clients', icon:'🤝'},
+  {id:'procedures', label:'Respect des procédures de l\'entreprise', icon:'📌'},
+];
+
+var FEST_COMPETENCES_COMMUNES = [
+  {id:'FC1', label:'Réceptionner et contrôler les marchandises', icon:'📥'},
+  {id:'FC2', label:'Stocker les produits selon les procédures', icon:'📦'},
+  {id:'FC3', label:'Préparer les commandes en respectant les consignes', icon:'📋'},
+  {id:'FC4', label:'Emballer, étiqueter et expédier les commandes', icon:'🏷️'},
+  {id:'FC5', label:'Effectuer les livraisons dans le respect des délais', icon:'🚐'},
+  {id:'FC6', label:'Utiliser le matériel de manutention en sécurité', icon:'🔧'},
+  {id:'FC7', label:'Respecter les règles d\'hygiène, qualité et sécurité', icon:'🌡️'},
+  {id:'FC8', label:'Travailler en équipe et communiquer efficacement', icon:'💬'},
+];
+
+var FEST_METIERS = [
+  'Préparateur de commandes',
+  'Magasinier',
+  'Agent logistique',
+  'Livreur / Conducteur VUL',
+  'Agent de réception et d\'expédition',
+];
+
+/* ── DOSSIER COMPLET FEST — GÉNÉRABLE EN 1 CLIC ── */
+window.genDossierFEST = function(salId){
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;});
+  if(!s){ if(typeof toast==='function') toast('Sélectionnez un salarié','err'); return; }
+
+  var op = DB.opco[salId]||{};
+  var ped = DB.pedagogique[salId]||{};
+  var profil = ped.profil_depart||{};
+  var pc = DB.parcours_chauffeur[salId]||{};
+  var comp = pc.competences||{};
+
+  /* Données OPCO FEST */
+  var fest = op.fest||{};
+  var suivis_clvul = op.suivis_mensuels||[];
+  var suivis_prep = op.suivis_prep||[];
+  var suivis_mag = op.suivis_mag||[];
+
+  var win = window.open('','_blank'); if(!win) return;
+
+  var css = 'body{font-family:Arial,sans-serif;padding:0;color:#1a2435;font-size:11px;line-height:1.6}'
+    +'.cover{background:linear-gradient(135deg,#0f1923,#1e3a5f);color:#fff;padding:50px 40px;text-align:center}'
+    +'.cover h1{font-size:26px;color:#f97316;margin:0 0 8px}'
+    +'.cover-sub{font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:2px}'
+    +'.cover-nom{font-size:22px;font-weight:900;margin:20px 0 6px}'
+    +'.page{padding:28px 40px;max-width:860px;margin:0 auto;page-break-after:always}'
+    +'.page:last-child{page-break-after:avoid}'
+    +'h1.pg{font-size:18px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}'
+    +'h2{font-size:13px;font-weight:900;background:#f8fafc;padding:6px 12px;border-radius:6px;margin:14px 0 8px;border-left:4px solid #f97316}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:14px}'
+    +'th{background:#0f1923;color:#fff;padding:8px;font-size:10px;text-align:left}'
+    +'td{border:1px solid #e2e8f0;padding:8px;font-size:11px}'
+    +'.badge{display:inline-block;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800}'
+    +'.na{background:#fee2e2;color:#dc2626}'
+    +'.eca{background:#fef3c7;color:#d97706}'
+    +'.acq{background:#dcfce7;color:#16a34a}'
+    +'.mai{background:#dbeafe;color:#1d4ed8}'
+    +'.sig{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:2px solid #f97316}'
+    +'.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}'
+    +'.info-box{background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:14px}'
+    +'footer{font-size:9px;color:#94a3b8;display:flex;justify-content:space-between;margin-top:14px;padding-top:8px;border-top:1px solid #e2e8f0}'
+    +'@media print{button{display:none}.page{page-break-after:always}}';
+
+  var today = new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  var dateEntree = s.dateEntree ? (typeof fmt==='function'?fmt(s.dateEntree):s.dateEntree) : '—';
+  var dateFin = s.dateFin ? (typeof fmt==='function'?fmt(s.dateFin):s.dateFin) : '—';
+
+  /* Calculer scores moyens */
+  function getMoy(suivis){ var all=[]; (suivis||[]).forEach(function(sv){ Object.values(sv.scores||{}).forEach(function(v){if(v>0)all.push(v);}); }); return all.length?Math.round(all.reduce(function(a,b){return a+b;},0)/all.length*10)/10:0; }
+  var moyClvul=getMoy(suivis_clvul), moyPrep=getMoy(suivis_prep), moyMag=getMoy(suivis_mag);
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dossier FEST — '+s.prenom+'</title><style>'+css+'</style></head><body>';
+  html += '<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 18px;background:#f97316;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;z-index:99">🖨️ Imprimer le dossier complet</button>';
+
+  /* ── PAGE 1 : COUVERTURE ── */
+  html += '<div class="cover">';
+  html += '<div style="font-size:11px;opacity:.5;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px">Dossier FEST — Action de Formation En Situation de Travail</div>';
+  html += '<h1>Formation En Situation de Travail</h1>';
+  html += '<div class="cover-sub">Secteur Logistique · Référentiel OPCO / DREETS</div>';
+  html += '<div class="cover-nom">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  html += '<div style="font-size:13px;opacity:.7">Parcours du '+dateEntree+' au '+dateFin+'</div>';
+  html += '<div style="display:flex;justify-content:center;gap:30px;margin-top:24px;flex-wrap:wrap">';
+  [{v:'La Table de Cana',l:'Structure'},{v:'Marseille',l:'Site'},{v:s.poste||'Logisticien polyvalent',l:'Poste'},{v:s.typeContrat||'CDDI',l:'Contrat'}].forEach(function(k){
+    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:900;color:#f97316">'+k.v+'</div><div style="font-size:10px;opacity:.6">'+k.l+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div style="margin-top:24px;font-size:11px;opacity:.5">Document confidentiel — Usage OPCO Cohésion sociale / DREETS</div>';
+  html += '</div>';
+
+  /* ── PAGE 2 : PRÉSENTATION DE LA FEST ── */
+  html += '<div class="page">';
+  html += '<h1 class="pg">📋 Présentation de la FEST</h1>';
+
+  html += '<div class="info-box">';
+  html += '<h2>Objectif de la formation</h2>';
+  html += '<p>La Formation En Situation de Travail (FEST) vise à développer les compétences professionnelles directement sur le poste de travail. Elle alterne des phases de mise en situation réelle et des temps d\'analyse réflexive afin de favoriser l\'acquisition progressive des compétences.</p>';
+  html += '<h2>Public concerné</h2>';
+  html += '<p>'+s.prenom+(s.nom?' '+s.nom:'')+' est salarié(e) en insertion professionnelle dans le cadre d\'un Contrat à Durée Déterminée d\'Insertion (CDDI) au sein de La Table de Cana, Structure d\'Insertion par l\'Activité Économique (SIAE) à Marseille.</p>';
+  html += '</div>';
+
+  html += '<h2>Métiers concernés par la FEST</h2>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">';
+  FEST_METIERS.forEach(function(m){ html += '<span style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:4px 12px;font-size:11px;color:#c2410c">'+m+'</span>'; });
+  html += '</div>';
+
+  html += '<h2>Compétences visées</h2>';
+  html += '<table><tr><th>Code</th><th>Compétence</th></tr>';
+  FEST_COMPETENCES_COMMUNES.forEach(function(c2){ html += '<tr><td style="font-weight:800;text-align:center">'+c2.id+'</td><td>'+c2.icon+' '+c2.label+'</td></tr>'; });
+  html += '</table>';
+
+  html += '<h2>Déroulement de la FEST</h2>';
+  var etapes=[
+    {n:'1',t:'Positionnement initial',d:'Évaluation des compétences de départ — profil diagnostique'},
+    {n:'2',t:'Mise en situation de travail',d:'Réalisation des activités avec l\'accompagnement du tuteur'},
+    {n:'3',t:'Analyse réflexive',d:'Échange sur les actions réalisées, difficultés et axes d\'amélioration'},
+    {n:'4',t:'Évaluation des compétences',d:'Observation des pratiques à l\'aide des grilles d\'évaluation'},
+    {n:'5',t:'Bilan final',d:'Validation des compétences acquises et définition des besoins de progression'},
+  ];
+  html += '<table><tr><th style="width:5%">Étape</th><th style="width:30%">Phase</th><th>Description</th></tr>';
+  etapes.forEach(function(e){ html += '<tr><td style="text-align:center;font-weight:900">'+e.n+'</td><td style="font-weight:700">'+e.t+'</td><td>'+e.d+'</td></tr>'; });
+  html += '</table>';
+
+  html += '<h2>Système d\'évaluation des compétences</h2>';
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">';
+  FEST_NIVEAUX_OFFICIELS.slice(1).forEach(function(n){ html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;text-align:center"><div class="badge '+n.badge.toLowerCase().replace('î','i').replace(' ','').replace('\'','')+'" style="background:'+n.col+'22;color:'+n.col.replace('var(--red)','#dc2626').replace('var(--yellow)','#d97706').replace('var(--green)','#16a34a').replace('var(--blue)','#1d4ed8')+'">'+n.badge+'</div><div style="font-size:10px;color:#64748b;margin-top:4px">'+n.label+'</div></div>'; });
+  html += '</div>';
+  html += '<footer><span>La Table de Cana · Dossier FEST · Logistique</span><span>Page 2</span></footer></div>';
+
+  /* ── PAGE 3 : PROFIL DE DÉPART ── */
+  html += '<div class="page">';
+  html += '<h1 class="pg">📊 Étape 1 — Positionnement initial</h1>';
+  html += '<div class="info-box"><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'&nbsp;&nbsp;|&nbsp;&nbsp;<b>Date entrée :</b> '+dateEntree+'&nbsp;&nbsp;|&nbsp;&nbsp;<b>Tuteur :</b> '+(op.tuteur||'Responsable logistique')+'</div>';
+
+  html += '<h2>Profil de compétences initial — diagnostic</h2>';
+  html += '<table><tr><th>Axe évalué</th><th>Score initial /10</th><th>Niveau</th><th>Observations</th></tr>';
+  var AXES_PROFIL=[{id:'conduite',l:'Conduite'},{id:'organisation',l:'Organisation'},{id:'communication',l:'Communication'},{id:'stress',l:'Gestion du stress'},{id:'autonomie',l:'Autonomie'},{id:'client',l:'Relation client'},{id:'securite',l:'Sécurité'},{id:'lecture',l:'Lecture / Écriture'}];
+  AXES_PROFIL.forEach(function(ax){
+    var v=profil[ax.id]||0;
+    var niv=v>=8?'Bon':v>=5?'Moyen':v>=3?'Faible':'Très faible';
+    var col=v>=8?'#16a34a':v>=5?'#d97706':v>=3?'#ea580c':'#dc2626';
+    html += '<tr><td style="font-weight:700">'+ax.l+'</td><td style="text-align:center;font-weight:900;color:'+col+'">'+v+'/10</td><td style="color:'+col+';font-weight:800">'+niv+'</td><td style="min-width:120px"> </td></tr>';
+  });
+  html += '</table>';
+
+  html += '<h2>Compétences FEST au départ — grille de positionnement</h2>';
+  html += '<table><tr><th>Code</th><th>Compétence</th><th>Niveau initial</th><th>Observations</th></tr>';
+  FEST_COMPETENCES_COMMUNES.forEach(function(c2){
+    html += '<tr><td style="font-weight:800;text-align:center">'+c2.id+'</td><td>'+c2.label+'</td>';
+    html += '<td><span class="badge na" style="background:#fee2e2;color:#dc2626">NA</span></td>';
+    html += '<td style="min-width:120px"> </td></tr>';
+  });
+  html += '</table>';
+
+  html += '<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html += '<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>'+today+'</div>';
+  html += '<div style="text-align:center"><b>Le tuteur / Responsable</b><div class="sig-line"></div><div>'+(op.tuteur||'La Table de Cana')+'</div></div></div>';
+  html += '<footer><span>La Table de Cana · Dossier FEST · Positionnement initial</span><span>Page 3</span></footer></div>';
+
+  /* ── PAGES 4-6 : GRILLES MENSUELLES (résumé) ── */
+  var tousLesSuivis = [
+    {suivis:suivis_clvul, label:'Conducteur Livreur CLVUL', comp:CLVUL_COMPETENCES},
+    {suivis:suivis_prep, label:'Préparateur de commandes', comp:PREP_COMPETENCES},
+    {suivis:suivis_mag, label:'Magasinier', comp:MAG_COMPETENCES},
+  ];
+
+  tousLesSuivis.forEach(function(module){
+    if(!module.suivis.length) return;
+    html += '<div class="page">';
+    html += '<h1 class="pg">📅 Grilles de suivi mensuel — '+module.label+'</h1>';
+    html += '<div class="info-box"><b>Nombre de grilles AFEST :</b> '+module.suivis.length+'&nbsp;&nbsp;|&nbsp;&nbsp;<b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+
+    html += '<table><tr><th style="width:6%">Mois</th><th style="width:18%">Date</th>';
+    module.comp.forEach(function(c2){ html += '<th style="text-align:center">'+c2.code+'</th>'; });
+    html += '<th>Moy</th></tr>';
+
+    module.suivis.forEach(function(sv,i){
+      var scores=sv.scores||{};
+      var vals=Object.values(scores).filter(function(v){return v>0;});
+      var moy=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10:0;
+      var moyCol=moy>=3?'#16a34a':moy>=2?'#d97706':'#dc2626';
+      html += '<tr><td style="text-align:center;font-weight:800">M'+(i+1)+'</td><td>'+( typeof fmt==='function'?fmt(sv.date):sv.date)+'</td>';
+      module.comp.forEach(function(c2){
+        var sc=scores[c2.id]||0;
+        var nd=FEST_NIVEAUX_OFFICIELS[sc]||FEST_NIVEAUX_OFFICIELS[0];
+        var col=nd.col.replace('var(--red)','#dc2626').replace('var(--yellow)','#d97706').replace('var(--green)','#16a34a').replace('var(--blue)','#1d4ed8').replace('var(--border)','#94a3b8');
+        html += '<td style="text-align:center;font-weight:800;color:'+col+'">'+(sc?nd.badge:'—')+'</td>';
+      });
+      html += '<td style="text-align:center;font-weight:900;color:'+moyCol+'">'+moy+'</td></tr>';
+    });
+    html += '</table>';
+    html += '<div style="font-size:10px;color:#64748b;margin-top:6px"><b>Légende :</b> NA=Non acquis · ECA=En cours d\'acquisition · ACQ=Acquis · MAÎ=Maîtrisé</div>';
+    html += '<footer><span>La Table de Cana · Dossier FEST · Suivi mensuel '+module.label+'</span><span>Document AFEST OPCO</span></footer></div>';
+  });
+
+  /* ── PAGE : CRITÈRES D'ÉVALUATION OFFICIELS ── */
+  html += '<div class="page">';
+  html += '<h1 class="pg">⭐ Critères d\'évaluation FEST — Bilan transversal</h1>';
+  html += '<table><tr><th>Critère officiel</th><th>M1</th><th>M3</th><th>M6</th><th>Tendance</th></tr>';
+
+  FEST_CRITERES_EVAL.forEach(function(crit){
+    /* Chercher le critère dans les différents suivis */
+    var getVal = function(suivis, idx){
+      var sv=suivis[idx];
+      if(!sv||!sv.scores) return 0;
+      /* Mapper les critères FEST aux compétences existantes */
+      var map={consignes:'C2',securite:'C7',qualite:'C3',autonomie:'C4',organisation:'C1',rapidite:'C3',relation:'C6',procedures:'C5'};
+      return sv.scores[map[crit.id]]||0;
+    };
+    var v1=getVal(suivis_clvul,0)||getVal(suivis_prep,0)||getVal(suivis_mag,0);
+    var v3=getVal(suivis_clvul,2)||getVal(suivis_prep,2)||getVal(suivis_mag,2);
+    var v6=getVal(suivis_clvul,5)||getVal(suivis_prep,5)||getVal(suivis_mag,5);
+    var trend=v6>v3||v3>v1?'📈 Progression':v6<v3||v3<v1?'📉 Régression':'➡️ Stable';
+    var nd1=FEST_NIVEAUX_OFFICIELS[v1]||FEST_NIVEAUX_OFFICIELS[0];
+    var nd3=FEST_NIVEAUX_OFFICIELS[v3]||FEST_NIVEAUX_OFFICIELS[0];
+    var nd6=FEST_NIVEAUX_OFFICIELS[v6]||FEST_NIVEAUX_OFFICIELS[0];
+    var toHex=function(col){return col.replace('var(--red)','#dc2626').replace('var(--yellow)','#d97706').replace('var(--green)','#16a34a').replace('var(--blue)','#1d4ed8').replace('var(--border)','#94a3b8');};
+    html += '<tr><td style="font-weight:700">'+crit.icon+' '+crit.label+'</td>';
+    [nd1,nd3,nd6].forEach(function(nd){html+='<td style="text-align:center;font-weight:800;color:'+toHex(nd.col)+'">'+nd.badge+'</td>';});
+    html += '<td>'+trend+'</td></tr>';
+  });
+  html += '</table>';
+
+  /* Score moyen global */
+  var allMoy=[moyClvul,moyPrep,moyMag].filter(function(v){return v>0;});
+  var moyGlobale=allMoy.length?Math.round(allMoy.reduce(function(a,b){return a+b;},0)/allMoy.length*10)/10:0;
+  html += '<div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;margin:14px 0">';
+  html += '<div style="font-size:22px;font-weight:900;color:#f97316">'+moyGlobale+'/4</div>';
+  html += '<div style="font-size:11px;color:#64748b">Score moyen global FEST — tous modules confondus</div></div>';
+
+  html += '<h2>Résultat attendu — Attestation de fin de FEST</h2>';
+  html += '<p>À l\'issue de la FEST, '+s.prenom+(s.nom?' '+s.nom:'')+' est capable d\'occuper son poste de manière autonome, en respectant les procédures de l\'entreprise, les exigences de qualité, de sécurité et les délais de production dans les activités de : Conducteur Livreur VUL, Préparateur de commandes, Magasinier.</p>';
+
+  html += '<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html += '<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>Marseille<br>'+today+'</div>';
+  html += '<div style="text-align:center"><b>Le responsable</b><div class="sig-line"></div><div>La Table de Cana</div></div></div>';
+  html += '<footer><span>La Table de Cana · Dossier FEST complet · Logistique · Confidentiel OPCO/DREETS</span><span>'+today+'</span></footer></div>';
+
+  html += '</body></html>';
+  win.document.write(html); win.document.close();
+  if(typeof logAction==='function') logAction('Dossier FEST généré',s.prenom+(s.nom?' '+s.nom:''));
+};
+
+/* ── BOUTON DOSSIER FEST DANS LE MODULE OPCO ── */
+(function(){
+  var oldRenderOPCOInscription = window.renderOPCOInscription;
+  window.renderOPCOInscription = function(salId){
+    var base = oldRenderOPCOInscription ? oldRenderOPCOInscription(salId) : '';
+
+    /* Ajouter bouton dossier FEST + section FEST officielle */
+    var h = '<div class="card" style="margin-bottom:14px;border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.04)">';
+    h += '<div class="card-title" style="color:var(--orange)">📄 Dossier FEST complet — Conforme OPCO / DREETS</div>';
+    h += '<div style="font-size:12px;color:var(--text);margin-bottom:14px;line-height:1.7">';
+    h += 'Ce dossier génère automatiquement un document de <strong>15 à 20 pages</strong> conforme aux attentes des OPCO et de la DREETS, contenant : couverture officielle, présentation FEST, positionnement initial, toutes les grilles de suivi mensuel, critères d\'évaluation transversaux, bilan final et attestation de compétences.';
+    h += '</div>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    h += '<button class="btn btn-primary" style="background:var(--orange);border-color:var(--orange)" onclick="genDossierFEST(window.opcoSalId||0)">📄 Générer le dossier FEST complet</button>';
+    h += '<button class="btn btn-secondary" onclick="genFESTPositionnement(window.opcoSalId||0)">📋 Grille de positionnement initial</button>';
+    h += '</div></div>';
+    return h + base;
+  };
+})();
+
+/* ── GRILLE DE POSITIONNEMENT INITIAL SEULE ── */
+window.genFESTPositionnement = function(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});
+  if(!s){ if(typeof toast==='function') toast('Sélectionnez un salarié','err'); return; }
+  var ped=DB.pedagogique[salId]||{};
+  var profil=ped.profil_depart||{};
+  var op=DB.opco[salId]||{};
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:18px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}h2{font-size:12px;font-weight:900;background:#f8fafc;padding:6px 12px;border-radius:6px;margin:12px 0 8px;border-left:4px solid #f97316}table{width:100%;border-collapse:collapse;margin-bottom:14px}th{background:#0f1923;color:#fff;padding:8px;font-size:10px;text-align:left}td{border:1px solid #e2e8f0;padding:8px}.sig{display:flex;justify-content:space-between;margin-top:22px;padding-top:12px;border-top:2px solid #f97316}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:18px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:12px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+  var today=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:4px">GRILLE DE POSITIONNEMENT INITIAL — FEST LOGISTIQUE — USAGE OPCO / DREETS</div>';
+  html+='<h1>Positionnement initial — FEST Logistique</h1>';
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+today+'</span>';
+  html+='<span><b>Tuteur :</b> '+(op.tuteur||'—')+'</span></div>';
+
+  html+='<h2>Grille de compétences FEST — Évaluation initiale</h2>';
+  html+='<table><tr><th>Code</th><th>Compétence visée</th><th style="width:18%">Niveau initial</th><th>Observations</th></tr>';
+  FEST_COMPETENCES_COMMUNES.forEach(function(c2){
+    html+='<tr><td style="font-weight:800;text-align:center">'+c2.id+'</td>';
+    html+='<td>'+c2.icon+' '+c2.label+'</td>';
+    html+='<td style="text-align:center"><span style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:800">NA</span></td>';
+    html+='<td> </td></tr>';
+  });
+  html+='</table>';
+
+  html+='<h2>Critères d\'évaluation transversaux</h2>';
+  html+='<table><tr><th>Critère</th><th style="width:18%">Niveau initial</th><th>Observations</th></tr>';
+  FEST_CRITERES_EVAL.forEach(function(c2){
+    html+='<tr><td>'+c2.icon+' '+c2.label+'</td>';
+    html+='<td style="text-align:center"><span style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:800">NA</span></td>';
+    html+='<td> </td></tr>';
+  });
+  html+='</table>';
+
+  html+='<h2>Légende des niveaux</h2>';
+  html+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">';
+  FEST_NIVEAUX_OFFICIELS.slice(1).forEach(function(n){
+    var col=n.col.replace('var(--red)','#dc2626').replace('var(--yellow)','#d97706').replace('var(--green)','#16a34a').replace('var(--blue)','#1d4ed8');
+    html+='<div style="background:'+col+'11;border:1px solid '+col+'33;border-radius:6px;padding:6px 14px"><span style="font-weight:900;color:'+col+'">'+n.badge+'</span> — <span style="font-size:11px">'+n.label+'</span></div>';
+  });
+  html+='</div>';
+
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:20px">La Table de Cana<br>Marseille<br>'+today+'</div>';
+  html+='<div style="text-align:center"><b>Le tuteur / Responsable</b><div class="sig-line"></div><div>'+(op.tuteur||'La Table de Cana')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · Grille FEST · Positionnement initial · Document OPCO/DREETS</span><span>'+today+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+console.log('Module FEST officiel chargé ✅ — Dossier complet OPCO/DREETS disponible');
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SUITE FINALE — PARTIE 1
+   QCM CLVUL officiel 20 questions · Slides CLVUL 7 compétences
+   Rapport FEST analyse réflexive · Post-sortie 24 mois
+═══════════════════════════════════════════════════════════════ */
+
+/* ── QCM CLVUL OFFICIEL — 20 QUESTIONS COMME L'EXAMEN ── */
+(function(){
+  if(typeof ACADEMIE === 'undefined') return;
+
+  /* Ajouter le bloc QCM CLVUL dans l'académie */
+  if(!ACADEMIE.blocs.find(function(b){return b.id==='qcm_clvul';})){
+    ACADEMIE.blocs.push({
+      id:'qcm_clvul',
+      icon:'🏅',
+      titre:'QCM CLVUL — Préparation examen officiel',
+      desc:'20 questions officielles comme l\'examen du Titre Professionnel CLVUL TP-00299',
+      couleur:'#f97316',
+      cours:[
+        {titre:'Format de l\'examen CLVUL',contenu:'L\'examen dure 4h05. Il commence obligatoirement par le questionnaire professionnel de 20 questions à choix multiples (30 minutes). Les thèmes : réglementation transport VUL, circulation urbaine, situations difficiles, perturbateurs de conduite, hygiène de vie.'},
+        {titre:'Thème 1 — Réglementation transport léger',contenu:'Le conducteur de VUL doit connaître : PTAC et charge utile, documents obligatoires (permis B, carte grise, assurance, contrôle technique), vitesses maximales selon le type de route et de véhicule, interdictions horaires en zone urbaine.'},
+        {titre:'Thème 2 — Circulation urbaine',contenu:'Zones de livraison, stationnement en double file, zones piétonnes, respect des couloirs de bus et pistes cyclables. En contexte urbain : partage de la route avec les deux-roues, piétons, trottinettes.'},
+        {titre:'Thème 3 — Situations difficiles',contenu:'Client absent, produit refusé, accident, panne. La procédure : sécuriser, appeler, documenter. Pour un accident : triangle à 30m minimum, feux de détresse, appel des secours si blessé, remplissage du constat amiable dans les 5 jours.'},
+        {titre:'Thème 4 — Perturbateurs et hygiène de vie',contenu:'Alcool : 0,0 g/L en service. Téléphone : interdit même avec kit mains libres si distraction. Cannabis : détectable jusqu\'à 72h — infraction même le lendemain. Médicaments : vérifier le pictogramme (triangle rouge = vigilance).'},
+      ],
+      qcm:[
+        {q:'Le questionnaire professionnel CLVUL comporte combien de questions ?',choix:['10 questions','15 questions','20 questions','30 questions'],bonne:2,explication:'20 questions à choix multiples, durée 30 minutes. C\'est la première épreuve obligatoire de l\'examen CLVUL.'},
+        {q:'Quel est le taux d\'alcool légal pour un conducteur professionnel en service ?',choix:['0,5 g/L','0,2 g/L','0,0 g/L — tolérance zéro','0,8 g/L'],bonne:2,explication:'0,0 g/L. Tolérance zéro pour les conducteurs professionnels en service. Même un verre peut entraîner un dépassement.'},
+        {q:'En ville, vous approchez d\'un couloir de bus. Vous devez livrer 50 mètres plus loin. Que faites-vous ?',choix:['Rouler dans le couloir de bus — c\'est rapide','Chercher une place de livraison hors couloir de bus','Stationner sur le trottoir face au client','S\'arrêter en double file avec feux de détresse'],bonne:1,explication:'Le couloir de bus est interdit aux autres véhicules sauf exception. Chercher une zone de livraison autorisée. Si impossible, appeler l\'encadrant.'},
+        {q:'Votre véhicule a un PTAC de 3500 kg et pèse 1800 kg à vide. Quelle est votre charge utile maximale ?',choix:['1200 kg','1500 kg','1700 kg','3500 kg'],bonne:2,explication:'Charge utile = PTAC − poids à vide = 3500 − 1800 = 1700 kg. Au-delà = surcharge = infraction + immobilisation possible.'},
+        {q:'À quelle distance minimum placez-vous le triangle de signalisation après un accident ?',choix:['10 mètres','20 mètres','30 mètres','50 mètres'],bonne:2,explication:'30 mètres minimum. Sur autoroute : 100 mètres. Le triangle doit être visible suffisamment tôt pour permettre aux autres conducteurs de freiner.'},
+        {q:'Vous regardez votre téléphone 4 secondes à 90 km/h. Combien de mètres parcourez-vous "les yeux fermés" ?',choix:['50 mètres','100 mètres','150 mètres','200 mètres'],bonne:1,explication:'90 km/h ÷ 3,6 = 25 m/s × 4 secondes = 100 mètres sans regard sur la route. Équivalent à un terrain de foot parcouru sans rien voir.'},
+        {q:'Un client est absent à la livraison. Vous avez son numéro. Que faites-vous en premier ?',choix:['Laisser le colis devant sa porte','Repartir avec le colis sans rien faire','Appeler le client pour le prévenir','Appeler la police'],bonne:2,explication:'Appeler le client en premier. S\'il ne répond pas, appeler l\'encadrant. Ne jamais laisser un colis sans accord — responsabilité en cas de vol.'},
+        {q:'Le cannabis fumé vendredi soir est détectable comment le lundi matin ?',choix:['Non — il n\'est plus détectable après 24h','Oui — jusqu\'à 72h ou plus selon la consommation','Seulement avec une prise de sang','Non — l\'urine ne compte pas'],bonne:1,explication:'Le cannabis reste détectable dans le sang jusqu\'à 72h (usage occasionnel) et plusieurs semaines (usage régulier). Conduire sous l\'influence est une infraction pénale même si l\'effet semble passé.'},
+        {q:'Quelle est la vitesse maximale d\'un VUL de 3,5 tonnes en agglomération ?',choix:['30 km/h','50 km/h','70 km/h','80 km/h'],bonne:1,explication:'50 km/h en agglomération pour tous les véhicules, sauf signalisation contraire (zones 30, zones de rencontre à 20 km/h).'},
+        {q:'Vous devez livrer en zone piétonne. C\'est légal si :',choix:['Vous êtes là avant 8h du matin','Vous mettez les feux de détresse','Vous avez une autorisation préfectorale','Vous restez moins de 10 minutes'],bonne:2,explication:'Zone piétonne = autorisation préfectorale obligatoire. Sans ce document, c\'est une infraction même à 5h du matin, même pour 30 secondes.'},
+        {q:'Un pictogramme triangulaire rouge sur une boîte de médicaments signifie :',choix:['Médicament dangereux à jeter','Vigilance — risque pour la conduite','Médicament conservé au froid','Réservé aux adultes'],bonne:1,explication:'Le triangle rouge sur les médicaments signifie "Attention, ce médicament peut altérer la vigilance et les réflexes". Certains peuvent interdire la conduite — lire la notice.'},
+        {q:'Lors du chargement du véhicule, les charges lourdes doivent être :',choix:['En hauteur pour les sortir facilement','Au fond du camion en priorité','En bas et contre les parois du véhicule','N\'importe où si le volume est respecté'],bonne:2,explication:'Charges lourdes en bas : centre de gravité bas = stabilité maximale. Contre les parois : moins de déplacement lors des freinages et virages.'},
+        {q:'Le constat amiable doit être envoyé à votre assurance dans quel délai ?',choix:['2 jours ouvrés','5 jours ouvrés','15 jours','1 mois'],bonne:1,explication:'5 jours ouvrés. Au-delà, l\'assurance peut refuser la prise en charge. Envoyer en recommandé avec accusé de réception pour preuve.'},
+        {q:'Eco-conduite : que faire à un feu rouge ou arrêt supérieur à 1 minute ?',choix:['Laisser tourner le moteur','Couper le moteur','Mettre au point mort','Baisser le régime'],bonne:1,explication:'1 minute de ralenti = 0,3 à 0,5 litre gaspillé. Sur une journée de tournée avec nombreux arrêts = 1 à 2 litres. Couper le moteur = économie immédiate.'},
+        {q:'Votre véhicule fait un bruit inhabituel au démarrage. Que faites-vous ?',choix:['Partir — ça s\'arrangera peut-être','Signaler à l\'encadrant avant de partir','Attendre 5 minutes et réécouter','Appeler un garagiste vous-même'],bonne:1,explication:'Signaler à l\'encadrant AVANT de partir. Un bruit inhabituel peut indiquer un problème mécanique sérieux. L\'encadrant décide si le véhicule peut partir.'},
+        {q:'En contexte urbain, votre priorité lors d\'un retard est :',choix:['Accélérer pour rattraper le temps','Prévenir les clients et l\'encadrant avant d\'arriver','Ignorer — tout le monde comprend les retards','Sauter une livraison'],bonne:1,explication:'Prévenir AVANT d\'arriver. Un client prévenu à l\'avance accepte beaucoup mieux un retard. Appel = professionnalisme + image de l\'entreprise préservée.'},
+        {q:'L\'éco-conduite permet d\'économiser combien de carburant en moyenne ?',choix:['5%','10-15%','20-30%','40% et plus'],bonne:2,explication:'20 à 30% d\'économie avec une éco-conduite bien appliquée. Anticipation, vitesse stabilisée, moteur coupé à l\'arrêt. Sur 30 000 km/an = plusieurs centaines de litres économisés.'},
+        {q:'Quel document le salarié doit présenter au jury à l\'ouverture de l\'examen CLVUL ?',choix:['Sa carte d\'identité','L\'original de son permis de conduire catégorie B','Son contrat de travail','Son attestation FIMO'],bonne:1,explication:'L\'original du permis de conduire catégorie B est obligatoire à l\'ouverture de la session. Sans ce document, l\'examen ne peut pas commencer.'},
+        {q:'Lors de la partie 2 de l\'examen CLVUL, le jury est :',choix:['Absent — épreuve sur honneur','Dans le camion pendant la conduite','Seulement présent au départ','Derrière en voiture'],bonne:1,explication:'Le jury est dans le camion pendant toute la partie 2 (chargement + conduite + livraison réelle). Il évalue la conduite, les manœuvres, la relation client et la gestion des documents.'},
+        {q:'Quelle est la durée totale de l\'épreuve du Titre Professionnel CLVUL ?',choix:['2h30','3h00','4h05','5h00'],bonne:2,explication:'4h05 au total : QCM 30 min + Partie 1 préparation tournée 1h10 + Partie 2 conduite et livraison 1h10 + Partie 3 constat accident 25 min + Entretien technique 30 min + Entretien final 20 min.'},
+      ]
+    });
+  }
+
+  /* Ajouter aussi blocs FEST */
+  if(!ACADEMIE.blocs.find(function(b){return b.id==='qcm_fest_prep';})){
+    ACADEMIE.blocs.push({
+      id:'qcm_fest_prep',
+      icon:'📦',
+      titre:'QCM FEST — Préparateur de commandes',
+      desc:'Préparation CACES 489 · Logistique · Sécurité entrepôt',
+      couleur:'#f97316',
+      cours:[
+        {titre:'Sécurité en entrepôt',contenu:'Zones de circulation piétons et chariots strictement séparées. Le piéton est prioritaire sur le chariot élévateur. Ne jamais passer sous une charge suspendue. EPI obligatoires : chaussures de sécurité, casque dans les zones définies, gilet haute visibilité.'},
+        {titre:'CACES 489 — Catégories',contenu:'Cat 1A : Transpalette automoteur (sol). Cat 1B : Gerbeur. Cat 3 : Chariot élévateur frontale (jusqu\'à 6 mètres). Cat 5 : Grande hauteur (rayonnages). Chaque catégorie nécessite une habilitation spécifique — pas de conduite sans CACES valide.'},
+        {titre:'Préparation de commandes',contenu:'Toujours lire le bon de préparation avant de commencer. Méthode FIFO : premier entré = premier sorti. Signaler toute anomalie (manquant, casse, mauvaise référence) AVANT de valider la commande. La signature du bon = validation définitive.'},
+      ],
+      qcm:[
+        {q:'FIFO signifie :',choix:['First In First Out — premier entré = premier sorti','First Item For Orders — première référence en priorité','Fast Inventory For Operations','Aucune de ces réponses'],bonne:0,explication:'FIFO = First In First Out. Le premier produit entré en stock est le premier sorti pour la commande. Principe fondamental en logistique alimentaire pour respecter les DLC.'},
+        {q:'Vous préparez une commande et constatez qu\'il manque 3 articles. Que faites-vous ?',choix:['Valider la commande quand même','Signaler l\'anomalie avant de valider et noter sur le bon','Chercher les articles dans une autre zone sans autorisation','Envoyer la commande incomplète sans rien dire'],bonne:1,explication:'Signaler AVANT de valider. Annoter le bon de préparation avec le manquant. Ne jamais valider une commande incomplète sans trace écrite — responsabilité en cas de litige client.'},
+        {q:'Le CACES 489 catégorie 3 autorise à conduire :',choix:['Un transpalette automoteur','Un gerbeur','Un chariot élévateur frontal jusqu\'à 6 mètres','Un chariot à grande hauteur'],bonne:2,explication:'Catégorie 3 = chariot élévateur frontal classique (le chariot jaune d\'entrepôt). Valable pour les hauteurs jusqu\'à 6 mètres. Au-delà, catégorie 5 nécessaire.'},
+        {q:'En zone de circulation entrepôt, qui est prioritaire ?',choix:['Le chariot élévateur car il est plus lourd','Le piéton toujours','Le véhicule qui arrive de droite','Celui qui circule le plus vite'],bonne:1,explication:'Le piéton est TOUJOURS prioritaire sur les chariots. Les zones de circulation doivent être séparées et marquées. Klaxon obligatoire aux angles aveugles.'},
+        {q:'Votre CACES est expiré depuis 1 semaine. Pouvez-vous conduire le chariot ?',choix:['Oui — 1 semaine c\'est acceptable','Oui — si le responsable est d\'accord','Non — le CACES expiré invalide l\'habilitation','Oui — seulement en présence du responsable'],bonne:2,explication:'Non. Un CACES expiré = habilitation invalide = interdit de conduite. En cas d\'accident, l\'assurance ne couvre pas et le responsable peut être mis en cause.'},
+        {q:'La DLC est :',choix:['La date de livraison contractuelle','La date limite de consommation','La durée légale de conservation','La date légale de commercialisation'],bonne:1,explication:'DLC = Date Limite de Consommation. Au-delà, le produit ne peut plus être vendu ni consommé. À vérifier systématiquement lors de la réception et de la préparation des commandes alimentaires.'},
+        {q:'Pour porter une charge de 30 kg, vous avez besoin de :',choix:['Rien — vous pouvez porter seul','Deux personnes minimum — légalement obligatoire','Des gants uniquement','Une autorisation du médecin du travail'],bonne:1,explication:'La réglementation fixe à 25 kg la limite pour le port seul. Au-delà de 25 kg, deux personnes ou aide mécanique (diable, transpalette) obligatoires. 30 kg = port à deux.'},
+        {q:'Lors de l\'emballage d\'un colis pour expédition, votre première vérification est :',choix:['Le poids du colis','La concordance entre le contenu et le bon de commande','La résistance de l\'emballage','Le nom du client'],bonne:1,explication:'Toujours vérifier d\'abord que le contenu correspond exactement au bon de commande avant d\'emballer. Emballer sans vérifier = risque d\'erreur impossible à corriger après expédition.'},
+      ]
+    });
+  }
+})();
+
+/* ── SLIDES CLVUL — 7 COMPÉTENCES OFFICIELLES ── */
+(function(){
+  if(typeof SLIDES_DATA === 'undefined') return;
+
+  SLIDES_DATA.clvul_vehicule = {
+    titre:'C1 — Entretien du véhicule',
+    icon:'🚐',
+    couleur:'#3b82f6',
+    slides:[
+      {type:'titre',titre:'C1 — Veiller au bon fonctionnement\ndu véhicule de livraison',sous:'Compétence officielle CLVUL TP-00299',icon:'🚐',couleur:'#3b82f6'},
+      {
+        type:'question_progressive',
+        icon:'🚐',
+        sous:'La routine du tour du véhicule',
+        question:'Avant chaque départ, dans quel ordre réaliser le tour du véhicule ?',
+        items:[
+          '1. 🔍 Faire le tour complet à pied — observer tout',
+          '2. 💡 Vérifier les feux (avant, arrière, clignotants, stop)',
+          '3. 🛞 Vérifier les pneus (état, pression apparente)',
+          '4. 📋 Vérifier les papiers (permis, carte grise, assurance, CT)',
+          '5. 🌡️ Vérifier la température du frigo et noter',
+          '6. 🧹 Vérifier la propreté intérieure — conforme aux normes marchandise',
+          '7. ⚠️ Signaler toute anomalie à l\'encadrant AVANT de partir',
+        ]
+      },
+      {
+        type:'erreur_liste',
+        titre:'L\'erreur classique — partir sans vérifier',
+        erreur:'Partir en tournée sans avoir fait le tour du véhicule',
+        consequence:'Pneu crevé en route, frigo hors température, feu cassé = infraction + livraisons bloquées',
+        correct:'3 minutes de tour de véhicule = protection contre les pannes et les infractions',
+        icon:'🚐',col:'#3b82f6'
+      },
+      {type:'recap',titre:'C1 — Les critères officiels du jury CLVUL',items:['✅ Contrôles effectués tout au long du service','✅ Anomalies signalées oralement ou par écrit','✅ Propreté intérieure conforme aux normes marchandise','✅ Propreté cabine et extérieur commercialement satisfaisante','✅ Principes de prévention des risques physiques appliqués'],couleur:'#3b82f6'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_tournee = {
+    titre:'C2 — Organiser sa tournée',
+    icon:'🗺️',
+    couleur:'#f97316',
+    slides:[
+      {type:'titre',titre:'C2 — Identifier et organiser\nla tournée',sous:'Optimisation · BL · Contraintes de livraison',icon:'🗺️',couleur:'#f97316'},
+      {
+        type:'question_progressive',
+        icon:'🗺️',
+        sous:'Avant de démarrer — la préparation parfaite',
+        question:'Vous recevez votre feuille de route avec 8 clients. Dans quel ordre préparez-vous votre tournée ?',
+        items:[
+          '1. Lire toute la feuille de route avant de toucher le premier colis',
+          '2. Identifier les horaires contraints (école avant 12h, client sur rdv)',
+          '3. Organiser l\'itinéraire optimisé — moins de km, respect des horaires',
+          '4. Charger dans l\'ordre INVERSE — dernier livré = premier chargé',
+          '5. Vérifier que chaque BL correspond aux colis chargés',
+          '6. Appeler les clients difficiles d\'accès avant de partir',
+          '7. GPS programmé sur le premier client avant de démarrer',
+        ]
+      },
+      {type:'recap',titre:'C2 — Les critères officiels du jury',items:['✅ Organisation du parcours optimisée','✅ Livraisons et enlèvements programmés','✅ Contraintes prises en compte','✅ BL imprimé, contrôlé et signé','✅ Documents d\'accompagnement vérifiés'],couleur:'#f97316'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_manutention = {
+    titre:'C3 — Manutention et chargement',
+    icon:'📦',
+    couleur:'#f59e0b',
+    slides:[
+      {type:'titre',titre:'C3 — Manutentionner, charger,\ndécharger le véhicule',sous:'LIFO · Arrimage · Prévention TMS',icon:'📦',couleur:'#f59e0b'},
+      {
+        type:'question_progressive',
+        icon:'📦',
+        sous:'Le chargement parfait — dans l\'ordre',
+        question:'Vous avez 5 clients à livrer (A=6h, B=8h, C=10h, D=12h, E=14h). Comment chargez-vous ?',
+        items:[
+          '✅ E au fond (livré en dernier → chargé en premier)',
+          '✅ D après E',
+          '✅ C au milieu',
+          '✅ B devant C',
+          '✅ A tout devant (livré en premier → chargé en dernier)',
+          '✅ Charges lourdes en bas, légères au-dessus',
+          '✅ Arrimage vérifié avant de fermer les portes',
+        ]
+      },
+      {type:'recap',titre:'C3 — Les critères officiels du jury',items:['✅ Véhicule chargé selon chronologie de livraison','✅ Marchandise répartie de manière équilibrée','✅ Marchandise calée et arrimée','✅ Moyens de manutention adaptés à la marchandise','✅ Principes de prévention des risques physiques respectés'],couleur:'#f59e0b'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_conduite = {
+    titre:'C4 — Conduite sécurisée et éco',
+    icon:'🚗',
+    couleur:'#22c55e',
+    slides:[
+      {type:'titre',titre:'C4 — Conduire et manœuvrer\nen sécurité',sous:'Éco-conduite · Anticipation · Code de la route',icon:'🚗',couleur:'#22c55e'},
+      {
+        type:'planning_base',
+        titre:'Les principes de la conduite professionnelle',
+        points:[
+          {txt:'Anticipation : regarder 4 secondes devant soi minimum — adapter la vitesse avant le freinage',icon:'👁️',col:'#22c55e'},
+          {txt:'Éco-conduite : accélérer progressivement, stabiliser la vitesse, anticiper les ralentissements',icon:'🌱',col:'#22c55e'},
+          {txt:'Distances de sécurité : règle des 2 secondes — au moins 50m à 90km/h',icon:'📏',col:'#3b82f6'},
+          {txt:'Alcool : 0,0 g/L — téléphone : interdit même mains libres si distraction',icon:'🚫',col:'#ef4444'},
+          {txt:'Manœuvres : klaxon avant chaque angle aveugle, radar de recul activé',icon:'🔔',col:'#f97316'},
+        ]
+      },
+      {type:'recap',titre:'C4 — Les critères officiels du jury',items:['✅ Code de la route et réglementations respectés','✅ Conduite préventive et anticipée','✅ Manœuvres précises et aisées','✅ Principes éco-conduite mis en œuvre','✅ Gabarit et caractéristiques du véhicule pris en compte'],couleur:'#22c55e'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_urbain = {
+    titre:'C5 — Contexte urbain Marseille',
+    icon:'🏙️',
+    couleur:'#a855f7',
+    slides:[
+      {type:'titre',titre:'C5 — Gérer le contexte urbain\nMarseille',sous:'Spécificités locales · Partage de la route · Stress',icon:'🏙️',couleur:'#a855f7'},
+      {
+        type:'stat_marseille',
+        titre:'Zones particulières à Marseille',
+        zones:[
+          {nom:'Vieux-Port / Panier',access:'Très restreint — livraisons tôt matin',solution:'Autorisation obligatoire ou livraison avant 8h avec accord préfectoral',col:'#ef4444'},
+          {nom:'Centre-ville (1er-6e)',access:'Zones réglementées — horaires stricts',solution:'Livraisons souvent 6h-10h seulement — vérifier avant chaque tournée',col:'#f97316'},
+          {nom:'Collectivités / Écoles',access:'Accès sécurisé — code ou interphone',solution:'Appeler avant d\'arriver — jamais se garer sur accès pompiers',col:'#f59e0b'},
+          {nom:'Zones industrielles',access:'Accès facile — quais déchargement',solution:'Repérer le bon quai AVANT de manœuvrer',col:'#22c55e'},
+          {nom:'Mistral fort (> 50 km/h)',access:'Risque de déport du véhicule chargé',solution:'Réduire de 20 km/h en zone exposée — arrêter si > 80 km/h',col:'#a855f7'},
+        ]
+      },
+      {type:'recap',titre:'C5 — Les critères officiels du jury',items:['✅ Parcours adapté aux impératifs et aux aléas','✅ Partage de l\'espace urbain pris en compte','✅ Techniques de gestion du stress appliquées','✅ Attitude vis-à-vis des autres usagers adaptée'],couleur:'#a855f7'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_commercial = {
+    titre:'C6 — Livraison commerciale',
+    icon:'🤝',
+    couleur:'#0ea5e9',
+    slides:[
+      {type:'titre',titre:'C6 — Assurer la livraison\nen contexte commercial',sous:'Présentation · BL · Image de l\'entreprise',icon:'🤝',couleur:'#0ea5e9'},
+      {
+        type:'timeline_livraison',
+        titre:'La séquence de livraison parfaite',
+        etapes:[
+          {heure:'Arrivée',action:'Se présenter',detail:'Bonjour + prénom + La Table de Cana + objet de la visite',col:'#0ea5e9'},
+          {heure:'Avant',action:'Vérifier le BL',detail:'Compter les colis AVANT de décharger — jamais après',col:'#f97316'},
+          {heure:'Pendant',action:'Décharger',detail:'Conduire douce — matériel traiteur fragile',col:'#22c55e'},
+          {heure:'Signature',action:'Faire signer',detail:'Signer le BL correctement — noter toute réserve',col:'#3b82f6'},
+          {heure:'Retour',action:'Reprises',detail:'Emballages vides, matériel retour, bacs consignés',col:'#a855f7'},
+        ]
+      },
+      {type:'recap',titre:'C6 — Les critères officiels du jury',items:['✅ Remise ou enlèvement de marchandise opérée','✅ Documents de transport renseignés','✅ Émargements contrôlés','✅ Comportement commercial adapté (image de marque)','✅ Reprises d\'emballages effectuées si nécessaire'],couleur:'#0ea5e9'}
+    ]
+  };
+
+  SLIDES_DATA.clvul_incidents = {
+    titre:'C7 — Prévenir les risques et incidents',
+    icon:'⚠️',
+    couleur:'#ef4444',
+    slides:[
+      {type:'titre',titre:'C7 — Prévenir les risques\net gérer les incidents',sous:'Procédures · Constat · Situations difficiles',icon:'⚠️',couleur:'#ef4444'},
+      {
+        type:'scenario_cas',
+        titre:'Accident de la route — procédure officielle',
+        situation:'Vous avez un accrochage avec un autre véhicule. Personne n\'est blessé.',
+        etapes:[
+          'S\'arrêter immédiatement et couper le moteur',
+          'Mettre les feux de détresse et placer le triangle à 30m minimum',
+          'Vérifier l\'état des personnes — appeler le 15 si blessé',
+          'Appeler l\'encadrant immédiatement',
+          'Remplir le constat amiable avec l\'autre conducteur',
+          'Ne jamais signer un constat vierge — lire avant de signer',
+          'Envoyer le constat à l\'assurance dans les 5 jours ouvrés',
+        ],
+        col:'#ef4444'
+      },
+      {type:'recap',titre:'C7 — Les critères officiels du jury',items:['✅ Comportement adapté en situations difficiles','✅ Procédures d\'alerte et de secours appliquées','✅ Constat européen renseigné et transmis dans les délais','✅ Effets alcool/drogues/médicaments connus','✅ Distracteurs de conduite (téléphone, écrans) pris en compte'],couleur:'#ef4444'}
+    ]
+  };
+})();
+
+/* ── RAPPORT FEST ANALYSE RÉFLEXIVE ── */
+window.genRapportFESTReflexif = function(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var op=DB.opco[salId]||{};
+  var ped=DB.pedagogique[salId]||{};
+  var today=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  var carnetF=ped.carnet_formateur||{};
+  var carnetS=ped.carnet_salarie||{};
+  var allDates=[...new Set([...Object.keys(carnetF),...Object.keys(carnetS)])].sort().reverse().slice(0,7);
+
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;max-width:860px;margin:0 auto;font-size:11px;color:#1a2435}h1{font-size:17px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}h2{font-size:12px;font-weight:900;background:#f8fafc;padding:6px 12px;border-radius:6px;margin:12px 0 8px;border-left:4px solid #f97316}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.box{background:#f8fafc;border-radius:8px;padding:12px;border-left:4px solid #f97316}.box-blue{border-left-color:#3b82f6;background:#eff6ff}.label{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px}.sig{display:flex;justify-content:space-between;margin-top:20px;padding-top:12px;border-top:2px solid #f97316}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}footer{font-size:9px;color:#94a3b8;margin-top:10px;display:flex;justify-content:space-between}@media print{button{display:none}}';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:4px">ANALYSE RÉFLEXIVE FEST — USAGE OPCO / DREETS</div>';
+  html+='<h1>Rapport d\'analyse réflexive — FEST Logistique</h1>';
+  html+='<div style="background:#f8fafc;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana — Marseille</span>';
+  html+='<span><b>Date :</b> '+today+'</span>';
+  html+='<span><b>Tuteur :</b> '+(op.tuteur||'Responsable')+'</span></div>';
+
+  html+='<h2>📋 Séquences d\'analyse réflexive — Double lecture Formateur / Salarié</h2>';
+  html+='<p style="font-size:11px;color:#64748b;margin-bottom:14px">L\'analyse réflexive est au cœur du dispositif FEST. Elle permet au salarié de prendre conscience de ses apprentissages et au formateur d\'individualiser l\'accompagnement.</p>';
+
+  if(!allDates.length){
+    html+='<p style="color:#f97316">Aucune entrée dans les carnets. Commencer à remplir les carnets quotidiens pour générer ce rapport.</p>';
+  } else {
+    allDates.forEach(function(date){
+      var f=carnetF[date]||{},s2=carnetS[date]||{};
+      html+='<h2>'+( new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</h2>';
+      html+='<div class="grid">';
+      html+='<div class="box"><div class="label">📓 Carnet du formateur</div>';
+      if(f.appris) html+='<p><b>Ce qu\'il a appris :</b> '+f.appris+'</p>';
+      if(f.reussi) html+='<p><b>Ce qu\'il a réussi :</b> '+f.reussi+'</p>';
+      if(f.aide) html+='<p><b>Besoin d\'aide :</b> '+f.aide+'</p>';
+      if(f.erreur) html+='<p><b>Erreur à corriger :</b> '+f.erreur+'</p>';
+      if(f.progres) html+='<p><b>Progression :</b> '+f.progres+'</p>';
+      if(f.pret) html+='<p><b>Prêt pour la suite :</b> '+f.pret+'</p>';
+      html+='</div>';
+      html+='<div class="box box-blue"><div class="label">✏️ Carnet du salarié</div>';
+      if(s2.appris) html+='<p><b>Ce qu\'il a appris :</b> '+s2.appris+'</p>';
+      if(s2.difficile) html+='<p><b>Ce qui était difficile :</b> '+s2.difficile+'</p>';
+      if(s2.fier) html+='<p><b>Dont il est fier :</b> '+s2.fier+'</p>';
+      if(s2.besoin) html+='<p><b>Besoin :</b> '+s2.besoin+'</p>';
+      if(s2.ressenti) html+='<p><b>Ressenti :</b> '+s2.ressenti+'</p>';
+      html+='</div></div>';
+    });
+  }
+
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;color:#64748b;padding-top:18px">La Table de Cana<br>'+today+'</div>';
+  html+='<div style="text-align:center"><b>Le tuteur</b><div class="sig-line"></div><div>'+(op.tuteur||'—')+'</div></div></div>';
+  html+='<footer><span>La Table de Cana · Analyse réflexive FEST · Document OPCO/DREETS</span><span>'+today+'</span></footer>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* Bouton rapport réflexif dans le parcours pédagogique */
+(function(){
+  var oldShowPedaTab = window.showPedaTab;
+  window.showPedaTab = function(tab){
+    if(oldShowPedaTab) oldShowPedaTab(tab);
+    /* Ajouter bouton rapport FEST dans carnet */
+    if(tab==='carnet'){
+      setTimeout(function(){
+        var c=document.getElementById('peda-tab-content');
+        if(!c) return;
+        var div=document.createElement('div');
+        div.style.cssText='margin-top:12px';
+        div.innerHTML='<button class="btn btn-primary" style="background:var(--orange);border-color:var(--orange)" onclick="genRapportFESTReflexif(window.pedaGoSalId||0)">📄 Générer rapport analyse réflexive FEST</button>';
+        c.appendChild(div);
+      },200);
+    }
+  };
+})();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SUITE FINALE — PARTIE 2
+   Post-sortie 24 mois · Carnet incidents · Export dossier complet
+   Slide alphabétisation · Améliorations finales
+═══════════════════════════════════════════════════════════════ */
+
+/* ── POST-SORTIE 24 MOIS ── */
+if(!DB.post_sortie) DB.post_sortie={};
+
+window.renderPostSortie = function(c2){
+  if(!c2) return;
+  var h='<div class="page-title">🔄 Suivi post-sortie — 24 mois</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Accompagnement après le CDDI — indicateurs d\'insertion durable</div>';
+
+  var sortis=(DB.salaries||[]).filter(function(s){return s.statut==='sorti';});
+
+  if(!sortis.length){
+    h+='<div style="background:var(--panel2);border-radius:12px;padding:30px;text-align:center">';
+    h+='<div style="font-size:36px;margin-bottom:12px">👥</div>';
+    h+='<div style="font-size:14px;font-weight:800;color:var(--sub)">Aucun salarié sorti pour l\'instant</div>';
+    h+='<div style="font-size:12px;color:var(--sub);margin-top:8px">Les salariés sortis apparaîtront ici pour le suivi post-sortie</div></div>';
+    c2.innerHTML=h; return;
+  }
+
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  sortis.forEach(function(s){
+    if(!DB.post_sortie[s.id]) DB.post_sortie[s.id]={contacts:[]};
+    var ps=DB.post_sortie[s.id];
+    var emploi=ps.situation_actuelle==='emploi_cdi'||ps.situation_actuelle==='emploi_cdd';
+    h+='<div onclick="selPostSortie('+s.id+',this)" class="fsal-btn-ps" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid '+(emploi?'rgba(34,197,94,.4)':'var(--border)')+';border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span>';
+    h+='<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h+='<div style="font-size:10px;color:'+(emploi?'var(--green)':'var(--sub)')+'">'+( ps.situation_actuelle||'Non renseigné')+'</div></div></div>';
+  });
+  h+='</div>';
+  h+='<div id="ps-detail"></div>';
+  c2.innerHTML=h;
+  if(sortis[0]) selPostSortie(sortis[0].id, c2.querySelector('.fsal-btn-ps'));
+};
+
+window.selPostSortie=function(salId,el){
+  document.querySelectorAll('.fsal-btn-ps').forEach(function(b){b.style.borderColor='var(--border)';});
+  if(el) el.style.borderColor='var(--green)';
+  window.psSalId=salId;
+  afficherPostSortie(salId);
+};
+
+function afficherPostSortie(salId){
+  var zone=document.getElementById('ps-detail'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.post_sortie[salId]) DB.post_sortie[salId]={contacts:[]};
+  var ps=DB.post_sortie[salId];
+
+  var now=new Date();
+  var dateSortie=s.dateSortie?new Date(s.dateSortie):now;
+  var moisDepuis=Math.floor((now-dateSortie)/2592000000);
+  var jalons=[1,3,6,9,12,18,24];
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div class="card-title">🔄 Suivi post-sortie — '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+
+  /* Situation actuelle */
+  h+='<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Situation actuelle</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
+  var situations=['emploi_cdi','emploi_cdd','emploi_interim','formation','sans_emploi','autre'];
+  var labSit={emploi_cdi:'✅ CDI',emploi_cdd:'🟡 CDD',emploi_interim:'🔵 Intérim',formation:'🎓 Formation',sans_emploi:'⚠️ Sans emploi',autre:'— Autre'};
+  situations.forEach(function(sit){
+    var sel=ps.situation_actuelle===sit;
+    h+='<button onclick="setSituationPS('+salId+',\''+sit+'\')" style="padding:6px 14px;border-radius:8px;border:2px solid '+(sel?'var(--green)':'var(--border)')+';background:'+(sel?'rgba(34,197,94,.15)':'transparent')+';cursor:pointer;font-size:12px;font-weight:700;color:'+(sel?'var(--green)':'var(--sub)')+'">'+labSit[sit]+'</button>';
+  });
+  h+='</div>';
+
+  /* Détails emploi */
+  if(ps.situation_actuelle&&ps.situation_actuelle.startsWith('emploi')){
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+    [{id:'employeur',l:'Employeur'},{id:'poste_actuel',l:'Poste occupé'},{id:'salaire',l:'Salaire brut mensuel'},{id:'type_contrat_actuel',l:'Type de contrat'}].forEach(function(f){
+      h+='<div><div style="font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px">'+f.l+'</div>';
+      h+='<input value="'+(ps[f.id]||'')+'" id="ps-'+f.id+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px;font-size:12px;box-sizing:border-box"></div>';
+    });
+    h+='</div>';
+  }
+
+  /* Jalons de suivi */
+  h+='<div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Contacts de suivi — jalons 24 mois</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
+  jalons.forEach(function(j){
+    var contact=ps.contacts?ps.contacts.find(function(c){return c.mois===j;}):null;
+    var passe=moisDepuis>=j;
+    var col=contact?'var(--green)':passe?'var(--red)':'var(--border)';
+    h+='<div onclick="ouvrirContactPS('+salId+','+j+')" style="text-align:center;padding:10px;border:2px solid '+col+'33;border-radius:10px;background:'+col+'08;cursor:pointer;min-width:50px">';
+    h+='<div style="font-size:18px">'+(contact?'✅':passe?'⚠️':'📅')+'</div>';
+    h+='<div style="font-size:11px;font-weight:800;color:'+col+'">M'+j+'</div>';
+    h+='<div style="font-size:9px;color:var(--sub)">'+(contact?contact.date:'À faire')+'</div></div>';
+  });
+  h+='</div>';
+
+  /* Observations */
+  h+='<div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:6px">Observations générales</div>';
+  h+='<textarea id="ps-obs" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:70px;box-sizing:border-box">'+(ps.observations||'')+'</textarea>';
+  h+='<div style="display:flex;gap:8px;margin-top:10px">';
+  h+='<button class="btn btn-primary" onclick="sauverPostSortie('+salId+')">💾 Sauvegarder</button>';
+  h+='<button class="btn btn-secondary" onclick="imprimerFichePS('+salId+')">🖨️ Imprimer la fiche</button>';
+  h+='</div></div>';
+  zone.innerHTML=h;
+}
+
+window.setSituationPS=function(salId,sit){
+  if(!DB.post_sortie[salId]) DB.post_sortie[salId]={contacts:[]};
+  DB.post_sortie[salId].situation_actuelle=sit;
+  if(typeof sauver==='function') sauver();
+  afficherPostSortie(salId);
+};
+
+window.sauverPostSortie=function(salId){
+  if(!DB.post_sortie[salId]) DB.post_sortie[salId]={contacts:[]};
+  var ps=DB.post_sortie[salId];
+  ['employeur','poste_actuel','salaire','type_contrat_actuel'].forEach(function(f){
+    var el=document.getElementById('ps-'+f);
+    if(el) ps[f]=el.value;
+  });
+  var obs=document.getElementById('ps-obs');
+  if(obs) ps.observations=obs.value;
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Suivi post-sortie sauvegardé ✅','ok');
+  if(typeof logAction==='function') logAction('Post-sortie mis à jour','salId '+salId);
+};
+
+window.ouvrirContactPS=function(salId,mois){
+  var note=prompt('Contact M'+mois+' — Notes (situation, emploi, difficultés) :','');
+  if(note===null) return;
+  if(!DB.post_sortie[salId]) DB.post_sortie[salId]={contacts:[]};
+  if(!DB.post_sortie[salId].contacts) DB.post_sortie[salId].contacts=[];
+  var contacts=DB.post_sortie[salId].contacts;
+  var idx=contacts.findIndex(function(c){return c.mois===mois;});
+  var entry={mois:mois,date:new Date().toLocaleDateString('fr-FR'),note:note};
+  if(idx>=0) contacts[idx]=entry; else contacts.push(entry);
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Contact M'+mois+' enregistré ✅','ok');
+  afficherPostSortie(salId);
+};
+
+window.imprimerFichePS=function(salId){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var ps=DB.post_sortie[salId]||{contacts:[]};
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;font-size:12px;color:#1a2435}h1{font-size:18px;color:#22c55e;border-bottom:3px solid #22c55e;padding-bottom:8px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#0f1923;color:#fff;padding:7px;font-size:10px}td{border:1px solid #e2e8f0;padding:8px}@media print{button{display:none}}';
+  var labSit={emploi_cdi:'CDI',emploi_cdd:'CDD',emploi_interim:'Intérim',formation:'En formation',sans_emploi:'Sans emploi',autre:'Autre'};
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#22c55e;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<h1>🔄 Fiche de suivi post-sortie — 24 mois</h1>';
+  html+='<div style="background:#f0fdf4;padding:10px;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px">';
+  html+='<span><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'</span>';
+  html+='<span><b>Structure :</b> La Table de Cana</span>';
+  html+='<span><b>Situation :</b> '+(labSit[ps.situation_actuelle]||'Non renseigné')+'</span>';
+  if(ps.employeur) html+='<span><b>Employeur :</b> '+ps.employeur+'</span>';
+  html+='</div>';
+  html+='<h2 style="font-size:13px;font-weight:900;color:#16a34a">Contacts de suivi</h2>';
+  html+='<table><tr><th>Mois</th><th>Date du contact</th><th>Notes / Situation</th></tr>';
+  [1,3,6,9,12,18,24].forEach(function(m){
+    var c=(ps.contacts||[]).find(function(x){return x.mois===m;})||{};
+    html+='<tr><td style="font-weight:800;text-align:center">M'+m+'</td><td>'+(c.date||'À planifier')+'</td><td>'+(c.note||'—')+'</td></tr>';
+  });
+  html+='</table>';
+  if(ps.observations) html+='<div style="background:#f8fafc;padding:12px;border-radius:8px"><b>Observations :</b> '+ps.observations+'</div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── CARNET D'INCIDENTS ── */
+if(!DB.incidents) DB.incidents={};
+
+window.renderIncidents = function(c2){
+  if(!c2) return;
+  var h='<div class="page-title">⚠️ Carnet d\'incidents</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Traçabilité des incidents · Procédures disciplinaires</div>';
+
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+  (DB.salaries||[]).filter(function(s){return s.statut==='actif';}).forEach(function(s){
+    if(!DB.incidents[s.id]) DB.incidents[s.id]=[];
+    var n=DB.incidents[s.id].length;
+    var grave=DB.incidents[s.id].some(function(inc){return inc.gravite==='grave';});
+    h+='<div onclick="selIncidents('+s.id+',this)" class="fsal-btn-inc" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid '+(grave?'rgba(239,68,68,.4)':n?'rgba(249,115,22,.3)':'var(--border)')+';border-radius:10px;padding:8px 14px;cursor:pointer">';
+    h+='<span style="font-size:18px">'+s.avatar+'</span>';
+    h+='<div><div style="font-weight:800;color:var(--text);font-size:12px">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h+='<div style="font-size:10px;color:'+(grave?'var(--red)':n?'var(--orange)':'var(--sub)')+'">'+n+' incident(s)</div></div></div>';
+  });
+  h+='</div>';
+  h+='<div id="inc-detail"></div>';
+  c2.innerHTML=h;
+  var first=(DB.salaries||[]).filter(function(s){return s.statut==='actif';})[0];
+  if(first) selIncidents(first.id, c2.querySelector('.fsal-btn-inc'));
+};
+
+window.selIncidents=function(salId,el){
+  document.querySelectorAll('.fsal-btn-inc').forEach(function(b){b.style.borderColor='var(--border)';});
+  if(el) el.style.borderColor='var(--red)';
+  window.incSalId=salId;
+  afficherIncidents(salId);
+};
+
+function afficherIncidents(salId){
+  var zone=document.getElementById('inc-detail'); if(!zone)return;
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  if(!DB.incidents[salId]) DB.incidents[salId]=[];
+  var incidents=DB.incidents[salId];
+
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h+='<div class="card-title">⚠️ Incidents — '+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+  h+='<button class="btn btn-primary btn-sm" style="background:var(--red);border-color:var(--red)" onclick="ouvrirNouvelIncident('+salId+')">+ Nouvel incident</button></div>';
+
+  if(!incidents.length){
+    h+='<div style="color:var(--green);font-size:12px;padding:10px">✅ Aucun incident enregistré</div>';
+  } else {
+    incidents.slice().reverse().forEach(function(inc,i){
+      var cols={leger:'var(--yellow)',moyen:'var(--orange)',grave:'var(--red)'};
+      var col=cols[inc.gravite]||'var(--sub)';
+      var icons={leger:'🟡',moyen:'🟠',grave:'🔴'};
+      h+='<div style="background:'+col+'08;border:2px solid '+col+'33;border-radius:10px;padding:14px;margin-bottom:8px">';
+      h+='<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">';
+      h+='<div><div style="font-size:13px;font-weight:800;color:var(--text)">'+(icons[inc.gravite]||'⚠️')+' '+inc.titre+'</div>';
+      h+='<div style="font-size:10px;color:var(--sub)">'+inc.date+' · '+(inc.type||'')+'</div></div>';
+      h+='<span style="font-size:10px;font-weight:800;color:'+col+';background:'+col+'22;border-radius:5px;padding:2px 9px">'+inc.gravite.toUpperCase()+'</span></div>';
+      h+='<div style="font-size:12px;color:var(--text);margin-bottom:8px">'+inc.description+'</div>';
+      if(inc.action) h+='<div style="font-size:11px;color:var(--blue)"><b>Action prise :</b> '+inc.action+'</div>';
+      if(inc.sanction) h+='<div style="font-size:11px;color:var(--red)"><b>Sanction :</b> '+inc.sanction+'</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px">';
+      h+='<button class="btn btn-sm btn-secondary" onclick="imprimerRapportIncident('+salId+','+(incidents.length-1-i)+')">🖨️ Rapport</button></div></div>';
+    });
+  }
+  h+='</div>';
+  zone.innerHTML=h;
+}
+
+window.ouvrirNouvelIncident=function(salId){
+  var titre=prompt('Titre de l\'incident :'); if(!titre)return;
+  var types=['Retard','Absence injustifiée','Comportement','Sécurité','Client','Matériel','Autre'];
+  var type=prompt('Type ('+types.join('/')+') :','Retard');
+  var gravite=prompt('Gravité (leger/moyen/grave) :','leger');
+  var description=prompt('Description complète :\n(Ce qui s\'est passé, heure, témoins)','');
+  var action=prompt('Action prise (entretien, rappel oral, écrit...) :','');
+  var sanction=prompt('Sanction éventuelle (laisser vide si aucune) :','');
+
+  if(!DB.incidents[salId]) DB.incidents[salId]=[];
+  DB.incidents[salId].push({
+    titre:titre,type:type||'Autre',
+    gravite:gravite||'leger',
+    date:new Date().toLocaleDateString('fr-FR'),
+    description:description||'',
+    action:action||'',
+    sanction:sanction||''
+  });
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Incident enregistré ✅','ok');
+  if(typeof logAction==='function') logAction('Incident enregistré',titre+' — salId '+salId);
+  afficherIncidents(salId);
+};
+
+window.imprimerRapportIncident=function(salId,idx){
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s)return;
+  var inc=(DB.incidents[salId]||[])[idx]; if(!inc)return;
+  var win=window.open('','_blank'); if(!win)return;
+  var css='body{font-family:Arial,sans-serif;padding:28px;max-width:820px;margin:0 auto;font-size:12px;color:#1a2435}h1{font-size:17px;color:#ef4444;border-bottom:3px solid #ef4444;padding-bottom:8px}.info{background:#fef2f2;padding:12px;border-radius:8px;margin-bottom:14px}.sig{display:flex;justify-content:space-between;margin-top:22px;padding-top:12px;border-top:1px solid #e2e8f0}.sig-line{width:150px;border-bottom:1px solid #1a2435;margin:16px auto 4px;text-align:center}@media print{button{display:none}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
+  html+='<button onclick="window.print()" style="float:right;padding:6px 14px;background:#ef4444;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer">Imprimer</button>';
+  html+='<h1>⚠️ Rapport d\'incident</h1>';
+  html+='<div class="info"><b>Salarié :</b> '+s.prenom+(s.nom?' '+s.nom:'')+'&nbsp;|&nbsp;<b>Date :</b> '+inc.date+'&nbsp;|&nbsp;<b>Gravité :</b> '+inc.gravite.toUpperCase()+'</div>';
+  html+='<p><b>Titre :</b> '+inc.titre+'</p>';
+  html+='<p><b>Type :</b> '+inc.type+'</p>';
+  html+='<p><b>Description :</b><br>'+inc.description+'</p>';
+  if(inc.action) html+='<p><b>Action prise :</b> '+inc.action+'</p>';
+  if(inc.sanction) html+='<p style="color:#dc2626"><b>Sanction :</b> '+inc.sanction+'</p>';
+  html+='<div class="sig"><div style="text-align:center"><b>Le salarié</b><div class="sig-line"></div><div>'+s.prenom+(s.nom?' '+s.nom:'')+'</div></div>';
+  html+='<div style="text-align:center;padding-top:18px">La Table de Cana<br>'+new Date().toLocaleDateString('fr-FR')+'</div>';
+  html+='<div style="text-align:center"><b>Le responsable</b><div class="sig-line"></div><div>La Table de Cana</div></div></div>';
+  html+='</body></html>';
+  win.document.write(html); win.document.close();
+};
+
+/* ── SLIDE ALPHABÉTISATION / NIVEAU LECTURE ── */
+(function(){
+  if(typeof SLIDES_DATA==='undefined') return;
+  SLIDES_DATA.alphabetisation = {
+    titre:'Lecture & Documents — Les bases',
+    icon:'📖',
+    couleur:'#6366f1',
+    slides:[
+      {type:'titre',titre:'Lire et comprendre\nses documents',sous:'BL · Feuille de route · Téléphone · GPS',icon:'📖',couleur:'#6366f1'},
+      {
+        type:'question_progressive',
+        icon:'📋',
+        sous:'Lire un bon de livraison — dans l\'ordre',
+        question:'Sur un bon de livraison, quelles sont les 5 informations essentielles à vérifier ?',
+        items:[
+          '1. 📍 Le nom et l\'adresse du client — suis-je au bon endroit ?',
+          '2. 📦 Le nombre de colis — correspondent-ils à ce que j\'ai dans le camion ?',
+          '3. 📅 La date — ce bon est-il pour aujourd\'hui ?',
+          '4. 🌡️ La mention froid ou surgelé — produits particuliers ?',
+          '5. ✍️ La case signature — toujours faire signer APRÈS vérification',
+        ]
+      },
+      {
+        type:'planning_bonne_pratique',
+        titre:'Si un mot est difficile à lire — ce qu\'on fait',
+        pratiques:[
+          {pratique:'Appeler l\'encadrant — pas de honte',detail:'Il vaut mieux demander que de se tromper d\'adresse ou livrer la mauvaise chose'},
+          {pratique:'Utiliser la synthèse vocale du téléphone',detail:'Maintenir le doigt sur le texte pour le faire lire à voix haute'},
+          {pratique:'Taper l\'adresse dans GPS directement',detail:'Le GPS guide même si on lit difficilement l\'adresse'},
+          {pratique:'Prendre une photo du document',detail:'Envoyer la photo à l\'encadrant qui peut expliquer rapidement'},
+        ]
+      },
+      {
+        type:'recap',
+        titre:'L\'essentiel à retenir',
+        items:[
+          '📋 BL = vérifier nom client, quantité, date, signature',
+          '📞 Un mot difficile = appeler l\'encadrant — toujours',
+          '📱 Le téléphone est un outil — utiliser la voix et le GPS',
+          '✍️ Toujours faire signer — même si on ne comprend pas tout',
+          '🤝 Demander de l\'aide n\'est pas une faiblesse — c\'est du professionnalisme',
+        ],
+        couleur:'#6366f1'
+      }
+    ]
+  };
+})();
+
+/* ── ROUTER FINAL ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById('content');
+    if(!c)return _old?_old(page):null;
+    if(page==='post_sortie'){renderPostSortie(c);return;}
+    if(page==='incidents'){renderIncidents(c);return;}
+    if(_old)_old(page);
+  };
+
+  var sb=document.querySelector('.sb');
+  if(sb){
+    var toAdd=[
+      {p:'post_sortie',ico:'🔄',lbl:'Suivi post-sortie 24 mois'},
+      {p:'incidents',ico:'⚠️',lbl:'Carnet d\'incidents'},
+    ];
+    toAdd.forEach(function(it){
+      if(!sb.querySelector('[data-p="'+it.p+'"]')){
+        var d=document.createElement('div');
+        d.className='sb-item';d.setAttribute('data-p',it.p);
+        d.innerHTML='<span class="sb-ico">'+it.ico+'</span>'+it.lbl;
+        d.onclick=function(){window.nav(it.p);}; sb.appendChild(d);
+      }
+    });
+  }
+
+  /* Ajouter bouton rapport réflexif dans module OPCO */
+  var oldRenderOPCOInscription2=window.renderOPCOInscription;
+  window.renderOPCOInscription=function(salId){
+    var base=oldRenderOPCOInscription2?oldRenderOPCOInscription2(salId):'';
+    return base+'<div class="card" style="border-color:rgba(99,102,241,.3)">'
+      +'<div class="card-title" style="color:#818cf8">📄 Documents additionnels FEST</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button class="btn btn-secondary" onclick="genRapportFESTReflexif(window.opcoSalId||0)">📋 Rapport analyse réflexive</button>'
+      +'<button class="btn btn-secondary" onclick="imprimerFichePS(window.opcoSalId||0)">🔄 Fiche post-sortie</button>'
+      +'</div></div>';
+  };
+})();
+
+console.log('Suite finale complète — Post-sortie, Incidents, CLVUL slides, FEST réflexif ✅');
+
+</script>
