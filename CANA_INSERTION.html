@@ -20524,3 +20524,430 @@ window.imprimerRapportIncident=function(salId,idx){
 console.log('Suite finale complète — Post-sortie, Incidents, CLVUL slides, FEST réflexif ✅');
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FINAL MEGA — Tout ce qui reste
+   QCM enrichis 15q · Visites médicales · Dashboard accueil
+   Export dossier complet · Mode clair/sombre · Notifications
+   Rapport mensuel · Planning semaine
+═══════════════════════════════════════════════════════════════ */
+
+/* ── QCM ENRICHIS TOUS LES BLOCS MANQUANTS ── */
+(function(){
+  if(typeof ACADEMIE === 'undefined') return;
+  function setQCM(id, questions){
+    var bloc = ACADEMIE.blocs.find(function(b){return b.id===id;}); if(!bloc) return;
+    bloc.qcm = questions;
+  }
+
+  setQCM('gestion_stress',[
+    {q:'La technique de respiration 4-7-8 consiste à :',choix:['Inspirer 4s, expirer 7s, bloquer 8s','Inspirer 4s, bloquer 7s, expirer 8s','4 inspirations, 7 expirations, 8 blocages','Respirer 4 fois en 7 secondes'],bonne:1,explication:'4-7-8 : inspirer 4 secondes, bloquer la respiration 7 secondes, expirer lentement 8 secondes. Répéter 3 fois. Active le système parasympathique et calme le stress en moins de 90 secondes.'},
+    {q:'Un client vous crie dessus à tort. Votre première action :',choix:['Crier en retour','Partir sans rien dire','Écouter sans interrompre 30 à 60 secondes','Appeler la police'],bonne:2,explication:'Écouter sans interrompre. Le client se calme souvent seul. Méthode ERAC : Écouter, Reconnaître, Agir, Confirmer. Ne jamais interrompre un client mécontent.'},
+    {q:'Vous avez 20 min de retard prévisible. Que faites-vous en premier ?',choix:['Accélérer','Appeler le client ET l\'encadrant avant d\'arriver','Ignorer — ça arrive','Sauter une livraison'],bonne:1,explication:'Prévenir AVANT d\'arriver. Un client prévenu accepte mieux un retard. La frustration arrive quand on est surpris. Appel = professionnalisme.'},
+    {q:'Le recadrage cognitif consiste à :',choix:['Recadrer le client agressif','Changer sa façon de voir une situation stressante','Cadrer la photo de son camion','Appeler l\'encadrant pour recadrer'],bonne:1,explication:'Recadrage cognitif = changer de perspective. Exemple : "Je suis en retard" → "J\'ai prévenu, la situation est gérée". Change l\'émotion sans changer les faits.'},
+    {q:'Un retard de livraison augmente le stress. La meilleure stratégie :',choix:['Rouler plus vite','Accepter le retard et communiquer','S\'énerver contre le trafic','Annuler les livraisons suivantes'],bonne:1,explication:'Accepter ce qu\'on ne contrôle pas (trafic) et agir sur ce qu\'on contrôle (communication). Prévenir clients et encadrant réduit immédiatement le stress.'},
+    {q:'Signe physique que vous êtes trop stressé pour conduire en sécurité :',choix:['Vous chantez en conduisant','Mains qui tremblent, vision rétrécie, raisonnement altéré','Vous êtes de bonne humeur','Vous conduisez plus lentement'],bonne:1,explication:'Tremblements, vision rétrécie (effet tunnel), difficultés à raisonner = stress trop élevé. S\'arrêter dans un endroit sûr. Appeler l\'encadrant.'},
+    {q:'ERAC signifie :',choix:['Écouter, Répondre, Agir, Confirmer','Écouter, Reconnaître, Agir, Confirmer','Expliquer, Reconnaître, Agir, Conclure','Écouter, Résoudre, Argumenter, Conclure'],bonne:1,explication:'ERAC = Écouter (sans interrompre), Reconnaître (la frustration, pas la faute), Agir (proposer une solution), Confirmer (que c\'est résolu). Méthode universelle pour les situations conflictuelles.'},
+    {q:'Après une journée difficile, que faire avant de rentrer ?',choix:['Garder tout pour soi','Faire un compte-rendu oral à l\'encadrant et débriefer','Rentrer directement sans rien dire','Envoyer un message d\'excuses aux clients'],bonne:1,explication:'Débriefer avec l\'encadrant permet de poser les événements difficiles, d\'analyser, d\'apprendre. Garder pour soi = stress accumulé. Parler = libération et apprentissage.'},
+    {q:'Fatigue et stress : quelle est la relation ?',choix:['Aucune relation','La fatigue augmente la sensibilité au stress','Le stress supprime la fatigue','Ce sont des états indépendants'],bonne:1,explication:'La fatigue multiplie l\'effet du stress. Un événement mineur devient une catastrophe quand on est fatigué. Reconnaître sa fatigue = première étape de la gestion du stress.'},
+    {q:'Vous avez eu un accrochage léger. Vous avez géré. Que faites-vous pour la suite de la journée ?',choix:['Continuer comme si rien ne s\'était passé','Prévenir l\'encadrant et prendre quelques minutes pour récupérer','Rentrer au dépôt immédiatement','Conduire plus lentement toute la journée'],bonne:1,explication:'Prévenir l\'encadrant (obligation légale et sécuritaire), puis prendre 5-10 minutes pour récupérer émotionnellement avant de reprendre la route. L\'adrénaline prend du temps à se dissiper.'},
+    {q:'Technique de décompression rapide au volant (à l\'arrêt) :',choix:['Allumer la radio fort','5 respirations profondes lentes et conscience de 5 choses visibles','Boire un café','Appeler quelqu\'un'],bonne:1,explication:'Respiration profonde + ancrage sensoriel (voir 5 choses, entendre 4, toucher 3) ramène au moment présent et coupe le cycle des pensées stressantes. Efficace en 2 minutes.'},
+    {q:'Un collègue semble très stressé et fait des erreurs. Vous faites :',choix:['Ignorer — c\'est son problème','Le signaler à l\'encadrant avec bienveillance','Le critiquer devant l\'équipe','Faire son travail à sa place'],bonne:1,explication:'Signaler à l\'encadrant avec bienveillance. Pas pour dénoncer — pour aider. Un collègue en difficulté peut mettre en danger sa sécurité et celle des autres.'},
+    {q:'Le stress chronique sur plusieurs mois peut provoquer :',choix:['Plus de motivation','Burn-out, problèmes de santé, erreurs professionnelles graves','Amélioration des performances','Aucun effet à long terme'],bonne:1,explication:'Burn-out, hypertension, troubles du sommeil, erreurs de jugement. Le stress chronique non traité est dangereux. En CDDI, le CIP et l\'encadrant sont là pour aider avant d\'en arriver là.'},
+    {q:'Quelle phrase dit au salarié que l\'encadrant est à l\'écoute ?',choix:['"Tu n\'aurais pas dû stresser pour ça"','"Je comprends que c\'est difficile — qu\'est-ce qui s\'est passé exactement ?"','"Les autres n\'ont pas ce problème"','"Tu aurais dû anticiper"'],bonne:1,explication:'"Je comprends + question ouverte" = écoute active. Les autres phrases ferment le dialogue ou minimisent. Un encadrant qui écoute vraiment est le meilleur outil contre le stress au travail.'},
+    {q:'Vous gérez bien votre stress si :',choix:['Vous ne ressentez jamais de stress','Vous pouvez reconnaître le stress, communiquer et agir','Vous ignorez les situations difficiles','Vous terminez toujours votre journée sans problème'],bonne:1,explication:'Gérer le stress ne veut pas dire ne pas en ressentir. Ça veut dire : reconnaître le signal, nommer l\'émotion, communiquer, utiliser des outils concrets. C\'est une compétence qui s\'apprend.'},
+  ]);
+
+  setQCM('calculs_metier',[
+    {q:'Vous livrez 6 clients, 12 min chacun, 1h45 de trajet. Durée totale ?',choix:['2h57','3h17','2h45','3h00'],bonne:0,explication:'6×12min = 72min = 1h12. + 1h45 trajet = 2h57. Toujours calculer avant de partir pour savoir si c\'est réalisable dans les horaires.'},
+    {q:'PTAC 3500 kg, poids à vide 2050 kg. Charge utile ?',choix:['1200 kg','1350 kg','1450 kg','1500 kg'],bonne:2,explication:'3500 - 2050 = 1450 kg de charge utile. Au-dessus = surcharge = infraction + immobilisation possible.'},
+    {q:'Vous avez 85 caisses de 15 kg. Charge utile = 1300 kg. Êtes-vous en règle ?',choix:['Oui : 85×15=1275 < 1300','Non : 85×15=1275 > 1300','Oui mais c\'est juste','Non mais 25 kg c\'est acceptable'],bonne:0,explication:'85×15 = 1275 kg < 1300 kg. Vous êtes en règle mais avec seulement 25 kg de marge. Prudence : les caisses pèsent souvent plus que prévu.'},
+    {q:'Vous partez à 5h30, 7 livraisons de 15 min, 2h20 de route. Heure de fin estimée ?',choix:['9h15','9h45','10h05','9h55'],bonne:2,explication:'7×15min=1h45 + 2h20 route = 4h05. 5h30 + 4h05 = 9h35 arrondi. Ajouter 20% de marge = 9h35 + ~30min ≈ 10h05 réaliste.'},
+    {q:'Distance 180 km à 70 km/h de moyenne. Durée de trajet ?',choix:['2h00','2h30','2h34','3h00'],bonne:2,explication:'180 ÷ 70 = 2,57h = 2h34. Règle rapide : distance ÷ vitesse moyenne = durée en heures.'},
+    {q:'Un chafing dish coûte 150€. Vous en perdez 2 par mois. Coût annuel ?',choix:['300€','1800€','3600€','900€'],bonne:2,explication:'2 × 150€ = 300€/mois × 12 = 3600€/an. La perte de matériel a un coût réel pour l\'entreprise. Inventaire rigoureux au retour de chaque événement.'},
+    {q:'Votre consommation habituelle est 8,5L/100km. Vous faites 250 km. Combien de litres ?',choix:['18L','20L','21,25L','25L'],bonne:2,explication:'8,5 × 250 ÷ 100 = 21,25 litres. Vérifier que le réservoir est suffisant avant de partir sur une longue tournée.'},
+    {q:'3 palettes de 280 kg chacune + 45 caisses de 12 kg. Poids total chargé ?',choix:['1380 kg','1380 kg','1380 kg','1400 kg'],bonne:0,explication:'3×280 = 840 kg + 45×12 = 540 kg. Total = 1380 kg. Toujours calculer le poids total avant de partir.'},
+    {q:'Vous avez 20% de marge de temps sur une tournée de 3h. Durée avec marge ?',choix:['3h20','3h36','4h00','3h30'],bonne:1,explication:'3h × 1,2 = 3,6h = 3h36. Toujours prévoir 20% de marge sur les tournées pour gérer les imprévus sans stress.'},
+    {q:'Un bac GN 1/1 pèse vide 5 kg, plein 18 kg. Vous en avez 24. Poids total ?',choix:['120 kg','312 kg','432 kg','480 kg'],bonne:2,explication:'24 × 18 kg = 432 kg. Si vous n\'avez que la charge utile vide des bacs : 24 × 5 = 120 kg, mais chargés c\'est 432 kg.'},
+    {q:'Marge horaire : votre dernière livraison est à 14h30, il est 11h45, trajet = 1h20. Temps libre ?',choix:['1h25','1h15','1h05','1h30'],bonne:0,explication:'Départ nécessaire au plus tard : 14h30 - 1h20 = 13h10. Il est 11h45. Temps libre = 13h10 - 11h45 = 1h25.'},
+    {q:'Score QCM : 11 bonnes sur 15. Quel est votre pourcentage ?',choix:['70%','73%','75%','80%'],bonne:1,explication:'11 ÷ 15 × 100 = 73,3%. Arrondi à 73%. Le seuil de réussite dans l\'académie est 70%. Vous passez.'},
+    {q:'Eco-conduite : vous consommez 9L/100 avant. Après formation : 7,5L/100. Économie sur 25 000 km ?',choix:['375 L','250 L','187 L','500 L'],bonne:0,explication:'9 - 7,5 = 1,5L économisés par 100 km. 1,5 × 250 = 375 litres économisés sur 25 000 km. À 1,80€/L = 675€ économisés par an.'},
+    {q:'Vous avez 40 minutes pour charger 65 caisses. Rythme nécessaire ?',choix:['1 caisse/min','1,6 caisse/min','2 caisses/min','1,3 caisse/min'],bonne:1,explication:'65 ÷ 40 = 1,625 caisses par minute. Soit une caisse toutes les 37 secondes environ. Faisable avec un bon rythme et un chariot.'},
+    {q:'Livraison de 8 clients. 3 sont fermés à l\'arrivée. Vous avez livré 5. Taux de réussite ?',choix:['37,5%','62,5%','50%','75%'],bonne:1,explication:'5 livrés ÷ 8 prévus × 100 = 62,5%. Les 3 clients fermés sont des échecs de livraison — à signaler et replanifier.'},
+  ]);
+
+  setQCM('prise_de_poste',[
+    {q:'La prise de poste idéale commence à quelle heure si le départ est à 5h30 ?',choix:['5h30 exactement','5h15 — 15 min d\'avance','5h20 — 10 min d\'avance','6h00'],bonne:1,explication:'15 minutes d\'avance minimum pour faire le tour du véhicule, lire la feuille de route, vérifier le chargement. Arriver à l\'heure = arriver en retard dans ce métier.'},
+    {q:'Première vérification à faire en arrivant au dépôt :',choix:['Allumer son téléphone','Lire la feuille de route complète avant de toucher quoi que ce soit','Commencer à charger directement','Vérifier les messages'],bonne:1,explication:'Lire la feuille de route EN PREMIER. Comprendre l\'ensemble de la tournée avant de charger évite les erreurs d\'ordre de chargement impossibles à corriger une fois en route.'},
+    {q:'Le voyant de réserve carburant s\'allume au départ. Que faites-vous ?',choix:['Partir — ça suffira peut-être','Faire le plein AVANT de partir et noter le kilométrage','Appeler l\'encadrant pour qu\'il gère','Ignorer — le voyant est parfois capricieux'],bonne:1,explication:'Faire le plein AVANT de partir. Tomber en panne = tournée bloquée, clients non livrés, coût de dépannage. Note le kilométrage pour le carnet de bord.'},
+    {q:'Votre téléphone professionnel n\'est pas chargé à la prise de poste. Que faites-vous ?',choix:['Partir avec le téléphone mort','Brancher sur le chargeur du camion et utiliser votre téléphone perso en attendant','Demander un délai de départ à l\'encadrant pour charger','Utiliser uniquement votre téléphone perso toute la journée'],bonne:1,explication:'Brancher sur le chargeur camion + téléphone perso en backup. Prévenir l\'encadrant. Le téléphone professionnel doit être chargé CHAQUE SOIR avant de rentrer — c\'est une règle de base.'},
+    {q:'Vous arrivez au dépôt et il y a un problème sur votre véhicule habituel. Que faites-vous ?',choix:['Prendre le véhicule quand même','Signaler à l\'encadrant immédiatement et attendre sa décision','Prendre un autre véhicule sans autorisation','Rentrer chez vous'],bonne:1,explication:'Toujours signaler et attendre la décision de l\'encadrant. Il peut autoriser un autre véhicule, reprogrammer des livraisons, ou confirmer que le problème est mineur. Pas de décision unilatérale sur les véhicules.'},
+    {q:'La feuille de route indique un client "RDV obligatoire 9h précises". Il est 8h20 et vous êtes à 45 min. Que faites-vous ?',choix:['Partir normalement','Appeler le client pour confirmer que vous serez là à temps','Accélérer','Prévenir l\'encadrant et appeler le client'],bonne:3,explication:'Appeler l\'encadrant ET le client. L\'encadrant sait si le RDV est critique. Le client appréciera la confirmation. Arriver à l\'heure est fondamental — mais communiquer l\'est aussi.'},
+    {q:'Au tour du véhicule, vous constatez un impact sur la carrosserie que vous n\'avez pas causé. Que faites-vous ?',choix:['Ignorer — ce n\'est pas vous','Le noter et le photographier avant de partir','Attendre que quelqu\'un le signale','Réparer vous-même'],bonne:1,explication:'Photographier et signaler à l\'encadrant AVANT de partir. Documenté = preuve que vous n\'êtes pas responsable. Non signalé = risque d\'être considéré responsable plus tard.'},
+    {q:'Vous vous réveillez malade le matin d\'une prise de poste. Que faites-vous ?',choix:['Venir quand même — les livraisons ne peuvent pas attendre','Appeler AVANT l\'heure de prise de poste','Envoyer un SMS','Appeler après l\'heure de prise de poste'],bonne:1,explication:'Appeler AVANT l\'heure de prise de poste — pas après, pas pendant. L\'encadrant a besoin de temps pour réorganiser les tournées. Règle absolue : prévenir le plus tôt possible.'},
+    {q:'La feuille de route mentionne un client que vous connaissez comme "difficile". Que faites-vous avant de partir ?',choix:['Rien — on verra sur place','Préparer mentalement la gestion du client et revoir la méthode ERAC','Demander à un collègue d\'y aller','Signaler à l\'encadrant que vous ne voulez pas y aller'],bonne:1,explication:'Préparer mentalement = réduction du stress et meilleure gestion sur place. Revoir ERAC (Écouter, Reconnaître, Agir, Confirmer). Les clients difficiles se gèrent mieux quand on est préparé.'},
+    {q:'Vous avez deux BL pour le même client mais des quantités différentes. Que faites-vous ?',choix:['Livrer la quantité qui vous semble correcte','Appeler l\'encadrant AVANT de partir pour clarifier','Livrer les deux quantités','Ignorer un des BL'],bonne:1,explication:'Anomalie sur les documents = appeler avant de partir. Une fois en route, c\'est trop tard pour corriger sans perdre du temps. L\'encadrant clarife et vous donne la bonne instruction.'},
+    {q:'Fin de prise de poste. Votre véhicule a besoin de carburant pour demain. Que faites-vous ?',choix:['Laisser l\'encadrant gérer','Faire le plein avant de garer le véhicule','Laisser un mot sur le tableau de bord','Attendre que le prochain chauffeur le fasse'],bonne:1,explication:'Faire le plein fait partie de la prise en charge du véhicule. Le prochain chauffeur repart chargé et à l\'heure — pas en allant faire le plein. Esprit d\'équipe.'},
+    {q:'Vous avez terminé votre tournée. Avant de rendre les clés, vous vérifiez :',choix:['Rien — vous êtes fatigué','BL remis, camion propre, fuel, portes fermées, clés rendues','Seulement les BL','Seulement que le camion est garé'],bonne:1,explication:'Checklist de fin de tournée : BL remis à l\'encadrant, camion propre intérieur et extérieur, faire le plein si besoin, portes fermées à clé, clés rendues au bon endroit. Responsabilité jusqu\'au dernier geste.'},
+    {q:'Au démarrage, votre GPS ne capte pas le signal. Que faites-vous ?',choix:['Partir sans GPS','Attendre 2-3 minutes que le signal arrive — courant en zone dense','Appeler l\'encadrant immédiatement','Utiliser uniquement les plans papier'],bonne:1,explication:'Attendre 2-3 minutes — le GPS capte souvent après un moment en zone dense. Si toujours rien après 5 minutes : utiliser le téléphone perso en backup et signaler à l\'encadrant.'},
+    {q:'L\'ordre de chargement optimal pour 4 livraisons est :',choix:['Client 1 en premier, Client 4 au fond','Client 4 en premier (au fond), Client 1 devant','N\'importe quel ordre','Par taille de colis'],bonne:1,explication:'LIFO = Last In First Out. Le premier client livré (Client 1) est chargé EN DERNIER (devant). Le dernier client livré (Client 4) est chargé EN PREMIER (au fond). Sinon : tout déplacer à chaque livraison.'},
+    {q:'Vous avez 5 minutes de retard sur votre horaire de départ. L\'encadrant n\'est pas là. Que faites-vous ?',choix:['Partir sans rien dire','Partir en laissant un message','Appeler ou envoyer un message à l\'encadrant','Attendre qu\'il revienne'],bonne:2,explication:'Appeler ou envoyer un message — laisser une trace. L\'encadrant doit savoir que vous êtes parti avec 5 min de retard pour ajuster si nécessaire les horaires de livraison.'},
+  ]);
+
+  setQCM('gps_navigation',[
+    {q:'Le GPS vous annonce 35 minutes mais vous connaissez un raccourci de 15 minutes. Que faites-vous ?',choix:['Toujours suivre le GPS aveuglément','Prendre le raccourci si praticable pour un utilitaire','Appeler l\'encadrant pour valider','Faire les deux et comparer'],bonne:1,explication:'Le GPS est un outil, pas une autorité. Votre expérience compte. Si vous connaissez le raccourci et qu\'il est praticable (gabarit, poids), utilisez-le. Gagner 20 minutes = une livraison de plus.'},
+    {q:'Le GPS vous envoie dans une rue en travaux complètement bloquée. Que faites-vous ?',choix:['Attendre que ça dégage','Rebrousser chemin et recalculer l\'itinéraire','Monter sur le trottoir','Appeler les travaux'],bonne:1,explication:'Rebrousser chemin et recalculer. Le GPS propose souvent un itinéraire alternatif. Si pas d\'alternative : appeler l\'encadrant et le client pour prévenir du retard.'},
+    {q:'Vous n\'avez plus de réseau téléphonique dans une zone reculée. Le GPS plante. Que faites-vous ?',choix:['Paniquer','Continuer sur la direction générale mémorisée et chercher le réseau','Attendre en place','Rebrousser chemin vers le dépôt'],bonne:1,explication:'Mémoriser la direction générale avant de perdre le signal. Continuer vers la zone prévue en cherchant le réseau. Le réseau revient souvent après quelques kilomètres. Carte papier = toujours utile en backup.'},
+    {q:'Le GPS vous indique "Destination atteinte" mais vous êtes dans une rue sans numéro visible. Que faites-vous ?',choix:['Sonner à toutes les portes','Chercher le numéro de rue à pied, appeler le client si besoin','Repartir','Laisser le colis dans la rue'],bonne:1,explication:'Chercher le numéro à pied d\'abord. Si introuvable en 2 minutes : appeler le client ("Je suis dans votre rue, pouvez-vous m\'aider à trouver ?"). Clients habitués à aider les livreurs.'},
+    {q:'Vous devez livrer dans le Vieux-Port de Marseille. Le GPS vous conseille un itinéraire par le centre. Vous savez qu\'il y a une zone piétonne. Que faites-vous ?',choix:['Suivre le GPS aveuglément','Vérifier les autorisations de livraison avant de partir','Entrer en zone piétonne — le GPS dit que c\'est OK','Éviter complètement le Vieux-Port'],bonne:1,explication:'Vérifier AVANT de partir. Le GPS ne connaît pas les réglementations locales spéciales ni vos autorisations. Zone piétonne sans autorisation = infraction même si le GPS dit d\'y aller.'},
+    {q:'Votre GPS propose d\'emprunter un pont avec limitation à 3,5 tonnes. Votre véhicule pèse 3,2 tonnes à vide. Avec le chargement vous êtes à 3,4 tonnes. Que faites-vous ?',choix:['Passer — 3,4 < 3,5','Ne pas passer — trop risqué','Vérifier avec l\'encadrant','Attendre que quelqu\'un d\'autre passe en premier'],bonne:2,explication:'3,4 tonnes < 3,5 tonnes limite, mais prudence : les limites de pont incluent une marge de sécurité. Vérifier avec l\'encadrant si vous avez un doute. Le GPS ne connaît pas votre poids réel chargé.'},
+    {q:'Comment sauvegarder une adresse difficile dans le GPS pour ne pas la chercher la prochaine fois ?',choix:['Mémoriser de tête','Créer un favori ou une adresse enregistrée dans le GPS','Écrire sur un papier','Demander à chaque fois'],bonne:1,explication:'Créer un favori. Chaque adresse difficile mémorisée = temps gagné à la prochaine livraison. Partager avec l\'encadrant pour mettre à jour la feuille de route.'},
+    {q:'Le GPS recalcule l\'itinéraire toutes les 2 minutes à cause d\'une anomalie. Que faites-vous ?',choix:['Suivre chaque recalcul','Trouver un endroit sûr pour s\'arrêter, vérifier l\'adresse saisie et recalculer manuellement','Continuer en ignorant','Appeler le support GPS'],bonne:1,explication:'Recalculs répétés = adresse saisie incorrecte ou GPS en erreur. S\'arrêter en sécurité, vérifier que l\'adresse est correctement saisie (code postal, numéro, ville). Souvent une faute de frappe suffit à tout bloquer.'},
+    {q:'Utilisation du téléphone comme GPS : que faut-il vérifier avant de partir ?',choix:['La batterie uniquement','Batterie chargée, données mobiles activées, téléphone branché sur le support','Le réseau social du téléphone','La sonnerie'],bonne:1,explication:'Batterie = pleine ou en charge. Données mobiles = activées pour le calcul d\'itinéraire. Support voiture = téléphone fixé correctement (légal) et mains libres. Sans ça, le GPS peut s\'éteindre en route.'},
+    {q:'Vous êtes en retard et le GPS propose un raccourci par une voie sans issue supposée. Que faites-vous ?',choix:['Prendre le raccourci — on gagne du temps','Ne pas prendre — risque de se retrouver bloqué avec un camion','Appeler l\'encadrant','Faire marche arrière dans la voie sans issue si nécessaire'],bonne:1,explication:'Ne jamais s\'engager dans une voie sans issue avec un utilitaire en espérant passer. Manœuvrer en marche arrière dans une rue étroite avec un camion chargé = accidents, dommages, perte de temps bien plus importante.'},
+    {q:'Quelle information le GPS ne peut pas vous donner en temps réel ?',choix:['Le trafic','La météo','Vos autorisations de livraison spécifiques à votre client','Les travaux récents'],bonne:2,explication:'Le GPS ne connaît pas vos autorisations spécifiques (codes d\'accès, horaires particuliers, accès réservés). Ces informations viennent de votre feuille de route et de l\'encadrant.'},
+    {q:'Vous entrez dans un tunnel et perdez le signal GPS. Comment continuez-vous ?',choix:['Vous arrêtez dans le tunnel','Vous continuez dans la direction dans laquelle vous étiez avant le tunnel','Vous faites demi-tour','Vous appelez l\'encadrant'],bonne:1,explication:'Le GPS reprend le signal à la sortie du tunnel. Continuer dans la direction pré-tunnel. Le GPS recalcule automatiquement à la sortie. Normale et prévisible dans les grandes agglomérations.'},
+    {q:'Votre GPS ne connaît pas une nouvelle rue. Que faites-vous ?',choix:['Déclarer que la livraison est impossible','Utiliser le code postal et chercher la rue à l\'arrivée dans le quartier','Appeler le client pour qu\'il vienne vous chercher','Annuler la livraison'],bonne:1,explication:'Saisir le code postal et s\'approcher du quartier. Chercher la rue sur place ou appeler le client. Les GPS ne sont pas toujours à jour — surtout dans les nouveaux lotissements ou zones industrielles récentes.'},
+    {q:'Mode économie d\'énergie du GPS actif. Quelle conséquence ?',choix:['Aucune','Recalcul plus lent et possible coupure du GPS','GPS plus précis','Moins de données consommées uniquement'],bonne:1,explication:'Mode économie d\'énergie = processeur ralenti = recalcul GPS plus lent + risque de coupure si batterie faible. Désactiver le mode économie d\'énergie pour le GPS pendant les tournées.'},
+    {q:'Vous arrivez dans une zone industrielle et votre GPS affiche une carte vide. Que faites-vous ?',choix:['Partir en explorant au hasard','Chercher le plan de la zone sur Google Maps ou appeler le client pour l\'accès','Rebrousser chemin','Attendre'],bonne:1,explication:'Google Maps Street View ou appel client. Les zones industrielles ont souvent des plans d\'accès sur leur site internet ou le gardien peut guider. Le GPS seul ne suffit pas toujours en zone industrielle.'},
+  ]);
+
+  setQCM('droit_travail_insertion',[
+    {q:'CDDI signifie :',choix:['Contrat à Durée Déterminée d\'Insertion','Contrat De Développement Individuel','Contrat Déterminé Dans l\'Insertion','Certificat De Droit Individuel'],bonne:0,explication:'CDDI = Contrat à Durée Déterminée d\'Insertion. Contrat spécifique aux structures d\'insertion par l\'activité économique (SIAE). Maximum 24 mois renouvelables. Ouvre les droits au chômage à la sortie.'},
+    {q:'Congés payés en CDDI : combien de jours accumulés après 8 mois ?',choix:['0 jour','10 jours','20 jours','5 jours'],bonne:2,explication:'2,5 jours par mois travaillé × 8 mois = 20 jours de congés payés. Les congés payés s\'appliquent dans TOUS les contrats de travail, y compris le CDDI.'},
+    {q:'En cas d\'accident du travail, vous devez informer votre employeur dans quel délai ?',choix:['Dans la semaine','Dans la journée — le plus tôt possible','Dans les 24h','Dans les 3 jours'],bonne:1,explication:'Dans la journée même — le plus tôt possible. L\'employeur a ensuite 48h pour déclarer l\'accident à la CPAM. Au-delà de 48h, des droits peuvent être perdus.'},
+    {q:'Le CPF (Compte Personnel de Formation) :',choix:['Disparaît quand on change d\'employeur','Vous appartient à vie quelle que soit votre situation professionnelle','Ne s\'accumule qu\'en CDI','Sert uniquement pendant le CDDI'],bonne:1,explication:'Le CPF est personnel et personnel. Il vous suit toute votre carrière, de l\'employeur A à l\'employeur B, du CDDI au CDI, même pendant une période de chômage. Il finance uniquement des formations reconnues.'},
+    {q:'Droit de retrait : vous pouvez quitter une situation dangereuse sans sanction si :',choix:['N\'importe quand — vous décidez','Il y a un danger grave et imminent pour votre vie ou votre santé','Vous êtes fatigué','Le travail est trop difficile'],bonne:1,explication:'Droit de retrait = quitter une situation de danger GRAVE et IMMINENT. L\'employeur ne peut pas vous sanctionner. C\'est un droit légal inscrit dans le Code du travail. À utiliser avec discernement.'},
+    {q:'SIAE signifie :',choix:['Service d\'Assistance aux Emplois Aidés','Structure d\'Insertion par l\'Activité Économique','Salaire d\'Insertion et Aide à l\'Emploi','Service Individuel d\'Accompagnement à l\'Emploi'],bonne:1,explication:'SIAE = Structure d\'Insertion par l\'Activité Économique. Entreprises d\'Insertion, Associations Intermédiaires, Ateliers et Chantiers d\'Insertion. La Table de Cana est une SIAE.'},
+    {q:'Durée maximale d\'un CDDI :',choix:['12 mois','18 mois','24 mois','36 mois'],bonne:2,explication:'24 mois maximum, par renouvellements successifs. Peut être prolongé dans certains cas (maladie, accident du travail, formation). À la sortie, ouverture des droits au chômage si les conditions sont remplies.'},
+    {q:'Votre visite médicale d\'embauche est à la charge de :',choix:['Le salarié','L\'employeur — prise en charge totale','La Sécurité sociale','La mutuelle'],bonne:1,explication:'La visite médicale d\'embauche est obligatoire et entièrement à la charge de l\'employeur. Vous n\'avez rien à payer. Elle a lieu généralement dans les 3 mois suivant l\'embauche.'},
+    {q:'OPCO Cohésion sociale finance :',choix:['Votre salaire pendant le CDDI','Les formations professionnelles (permis C, FIMO, FCO, CACES...)','Vos repas pendant la formation','Votre transport pendant le CDDI'],bonne:1,explication:'L\'OPCO (Opérateur de Compétences) Cohésion sociale finance les formations professionnelles des salariés des SIAE. Permis C, FIMO, FCO, CACES, SST, formations métier. Contactez votre CIP pour une prise en charge.'},
+    {q:'Mutuelle d\'entreprise en CDDI :',choix:['Pas de mutuelle en CDDI','Mutuelle obligatoire — l\'employeur paie au moins 50%','Mutuelle optionnelle au choix du salarié','Mutuelle uniquement après 6 mois'],bonne:1,explication:'La mutuelle d\'entreprise est obligatoire pour tous les salariés, y compris en CDDI. L\'employeur doit prendre en charge au minimum 50% de la cotisation. Vous payez l\'autre moitié sur votre salaire.'},
+    {q:'Vous voulez prendre des congés. Que devez-vous faire ?',choix:['Prendre vos congés quand vous voulez','Demander à l\'encadrant avec un préavis raisonnable','Envoyer un message la veille','Rien — les congés sont automatiques'],bonne:1,explication:'Demander à l\'encadrant avec un préavis raisonnable (en général 2 semaines minimum selon les usages). L\'employeur peut refuser pour raisons d\'organisation. Les congés sont un droit, pas unilatéral.'},
+    {q:'Arrêt maladie : dans quel délai devez-vous prévenir votre employeur ?',choix:['Dans la semaine','Le jour même ou le lendemain au plus tard','Dans les 48h','Dans les 3 jours'],bonne:1,explication:'Le jour même ou le lendemain au plus tard. Et envoyer le certificat médical à l\'employeur ET à la CPAM dans les 48h suivant la visite médicale. Délai dépassé = possible perte d\'indemnités journalières.'},
+    {q:'FCO signifie :',choix:['Formation Continue Obligatoire','Formation Certifiée par l\'OPCO','Formation Complémentaire Optionnelle','Fond de Compensation Obligatoire'],bonne:0,explication:'FCO = Formation Continue Obligatoire. Renouvellement obligatoire tous les 5 ans pour maintenir la carte de qualification conducteur (CQC) pour les conducteurs poids lourd. Finançable OPCO + CPF.'},
+    {q:'Bulletin de salaire : quelle ligne vérifier en priorité ?',choix:['Le nom de l\'entreprise','Net à payer et total des heures travaillées','La date de naissance','Le numéro de sécurité sociale'],bonne:1,explication:'Net à payer (vous recevez combien) + heures travaillées (correspondent-elles à vos heures réelles). Si anomalie : signaler immédiatement à l\'encadrant ou au RH. Ne jamais laisser passer une erreur de paie.'},
+    {q:'Sanction disciplinaire : l\'employeur doit vous convoquer à un entretien avant de vous sanctionner. C\'est :',choix:['Facultatif selon la faute','Obligatoire pour toute sanction sauf avertissement oral','Obligatoire uniquement pour le licenciement','Facultatif si la faute est grave'],bonne:1,explication:'Entretien préalable obligatoire pour toute sanction écrite (avertissement, mise à pied, licenciement). Vous avez le droit d\'être accompagné d\'un représentant du personnel ou d\'un conseiller.'},
+  ]);
+
+  setQCM('documents',[
+    {q:'BL signifie :',choix:['Bon de Livraison','Bordereau de Livraison','Bon de Liaison','Bulletin de Livraison'],bonne:0,explication:'BL = Bon de Livraison. Document contractuel qui prouve la livraison. Sans BL signé, aucune preuve que la livraison a eu lieu. En cas de litige client, le BL signé est votre seule protection.'},
+    {q:'Que vérifier sur le BL AVANT de décharger ?',choix:['Seulement le nom du client','Le nom du client, l\'adresse, la quantité, et la date','Seulement la date','Seulement la quantité'],bonne:1,explication:'Les 4 vérifications obligatoires AVANT de toucher un colis : bon client, bonne adresse, bonne quantité, bonne date. Après déchargement il est trop tard pour contester une erreur.'},
+    {q:'Un client dit "j\'ai pas le temps de signer, laissez là". Que faites-vous ?',choix:['Laisser les colis sans signature','Chercher une autre personne habilitée dans l\'établissement','Forcer la signature','Repartir avec les colis'],bonne:1,explication:'Chercher une autre personne dans l\'établissement (directeur adjoint, secrétaire, réceptionniste). Si vraiment impossible : noter "Refus de signature — client occupé" avec l\'heure + appeler l\'encadrant.'},
+    {q:'Vous oubliez de faire signer un BL. Vous êtes déjà parti. Que faites-vous ?',choix:['Signer vous-même à la place du client','Rien — personne ne verra','Appeler l\'encadrant immédiatement pour signaler l\'oubli','Retourner seulement si c\'est proche'],bonne:2,explication:'Appeler l\'encadrant immédiatement. Il décidera : retourner, envoyer le BL par email pour signature, ou trouver une autre solution. Signer à la place du client = falsification de document.'},
+    {q:'Qu\'est-ce qu\'une réserve sur un BL ?',choix:['Une zone de stockage réservée','Une mention écrite signalant une anomalie constatée à la livraison','Un acompte sur la commande','Une zone de signature'],bonne:1,explication:'Réserve = mention écrite sur le BL signalant une anomalie (colis abîmé, manquant, température non conforme). La réserve protège juridiquement l\'entreprise. Sans réserve, le client ne peut pas contester après signature.'},
+    {q:'La feuille de route contient :',choix:['Seulement les adresses','Adresses, horaires, quantités, notes spéciales, contacts clients','Seulement les horaires','Les noms des clients uniquement'],bonne:1,explication:'La feuille de route est votre guide complet de la journée. Elle contient : adresses complètes, horaires de livraison, quantités par client, notes spéciales (accès, codes), contacts téléphoniques clients.'},
+    {q:'Vous avez un BL avec une quantité incorrecte. Avant de décharger :',choix:['Décharger quand même','Appeler l\'encadrant pour instruction avant de toucher quoi que ce soit','Corriger vous-même sur le BL','Faire signer tel quel'],bonne:1,explication:'Ne jamais décharger avec un BL incorrect. Appeler l\'encadrant AVANT. Il peut corriger le document, autoriser la livraison partielle, ou annuler. Décharger avec un BL incorrect = responsabilité engagée.'},
+    {q:'Constat amiable : sous combien de jours l\'envoyer à l\'assurance ?',choix:['2 jours','5 jours ouvrés','15 jours','1 mois'],bonne:1,explication:'5 jours ouvrés maximum. Envoyer en recommandé avec accusé de réception. Au-delà, l\'assurance peut refuser la prise en charge du sinistre.'},
+    {q:'Le livret individuel de contrôle du conducteur doit être :',choix:['Laissé au dépôt','Toujours dans le véhicule pendant le service','Remis à l\'encadrant chaque soir','Envoyé à la préfecture'],bonne:0,explication:'Le livret individuel de contrôle reste dans le véhicule pendant toute la durée du service. En cas de contrôle routier, il doit être présentable immédiatement avec les autres documents.'},
+    {q:'Un document de transport manquant pendant un contrôle routier peut entraîner :',choix:['Un simple avertissement','Une amende + immobilisation possible du véhicule','Rien si vous expliquez','Seulement un PV de la société'],bonne:1,explication:'Documents manquants = amende + risque d\'immobilisation du véhicule jusqu\'à régularisation. La tournée est alors bloquée. Vérifier TOUS les documents AVANT de partir.'},
+    {q:'Pourquoi noter l\'heure de départ ET la température sur le relevé thermique ?',choix:['C\'est une formalité administrative','Pour prouver la durée d\'exposition en cas de problème sanitaire','Pour la facturation','Pour le GPS'],bonne:1,explication:'Date + heure + température = traçabilité complète. En cas d\'intoxication alimentaire d\'un client, vous prouvez que les produits étaient à bonne température au départ. Protection légale pour vous et l\'entreprise.'},
+    {q:'Un client veut un double du BL que vous n\'avez pas. Que faites-vous ?',choix:['Lui remettre votre exemplaire original','Lui proposer de le photographier','Lui dire que vous n\'avez pas de double','Lui faire signer votre exemplaire et le lui laisser'],bonne:1,explication:'Proposer de photographier le BL avec son téléphone. L\'original doit être rapporté au dépôt. Si le client a besoin d\'un double officiel, l\'encadrant peut en émettre un depuis le bureau.'},
+    {q:'CMR signifie dans le transport :',choix:['Contrôle de Marchandise Routière','Convention relative au contrat de transport international de Marchandises par Route','Certificat de Marchandise Réfrigérée','Contrôle Mensuel des Retours'],bonne:1,explication:'CMR = Convention relative au contrat de transport international de Marchandises par Route. Document obligatoire pour les transports internationaux. Pas courant à votre niveau mais à connaître pour la culture métier.'},
+    {q:'Quand signer le BL de retour d\'un colis non livré ?',choix:['Ne pas signer','Signer avec la mention "Non livré — client absent à [heure]" + votre signature','Signer comme une livraison normale','Signer uniquement si l\'encadrant l\'autorise'],bonne:1,explication:'Toujours noter la raison du non-livraison avec l\'heure exacte et votre signature. Cette mention est votre preuve que vous êtes bien allé chez le client et que l\'échec de livraison n\'est pas de votre fait.'},
+    {q:'Vous constatez à l\'arrivée chez un client que ses colis ont été endommagés pendant le transport. Avant toute chose :',choix:['Livrer quand même et laisser le client se plaindre','Photographier les dommages AVANT de décharger + appeler l\'encadrant','Repartir avec les colis','Demander au client s\'il veut quand même les produits'],bonne:1,explication:'Photographier AVANT de décharger. La photo horodatée est une preuve inattaquable. Appeler l\'encadrant pour instruction. Ne jamais livrer des produits manifestement endommagés sans accord préalable.'},
+  ]);
+
+  setQCM('traiteur',[
+    {q:'GN 1/1 signifie :',choix:['Gamelle Normalisée première','Gastronorme 1/1 — bac standard 530×325 mm','Gabarit Normalisé premier choix','Rien — abréviation interne'],bonne:1,explication:'GN = Gastronorme. Le 1/1 est la taille standard (530×325 mm). Il existe des 1/2, 1/3, 1/4, 1/6. Ce système est international — les cuisiniers professionnels du monde entier l\'utilisent.'},
+    {q:'Chafing dish : à quoi sert-il ?',choix:['Laver les bacs GN','Maintenir les plats chauds pendant le service grâce à l\'eau chaude ou au gel combustible','Refroidir rapidement les préparations','Transporter les plats froids'],bonne:1,explication:'Chafing dish = présentoir avec bain-marie pour maintenir les plats chauds pendant le service. Prix unitaire : 80 à 200€. Fragile. Conduire en douceur.'},
+    {q:'Comportement lors d\'un mariage (invités présents) :',choix:['Comportement identique à une livraison ordinaire','Tenue irréprochable, discrétion totale, zéro téléphone, zéro dégustation','Parler avec les invités si l\'occasion se présente','Goûter les plats si les invités proposent'],bonne:1,explication:'Un mariage = représentation de La Table de Cana devant des dizaines de personnes. Tenue impeccable, discret, souriant, zéro téléphone visible, jamais goûter les plats des clients.'},
+    {q:'Au retour d\'un événement, vous constatez 3 bacs GN manquants. Que faites-vous ?',choix:['Rien — ils se retrouveront','Signaler immédiatement à l\'encadrant + contacter le client','Attendre de voir si le client les signale','Les noter dans un coin de votre tête'],bonne:1,explication:'Signaler immédiatement à l\'encadrant + contacter le client pour récupération. 3 bacs GN = environ 60€. Sur l\'année, les pertes de matériel représentent un coût significatif pour l\'entreprise.'},
+    {q:'Conduite douce traiteur : pourquoi est-elle particulièrement importante ?',choix:['Elle n\'est pas plus importante que d\'habitude','Le matériel de présentation (chafing dish, assiettes) peut casser et les plats se renverser','Pour économiser le carburant','Par respect des clients'],bonne:1,explication:'Assiettes, verres, plats en sauce, chafing dish — tout peut se renverser ou se casser en virage ou freinage brusque. Conduire en douceur = protéger le matériel = éviter les pertes financières.'},
+    {q:'Inventaire de retour d\'événement. Vous avez 2 chafing dish de moins. Valeur non récupérée :',choix:['100€','200-400€','50€','1000€'],bonne:1,explication:'2 chafing dish × 100-200€ l\'unité = 200 à 400€. Sur l\'année, si cela se produit régulièrement, c\'est un budget conséquent. L\'inventaire rigoureux au départ ET au retour est obligatoire.'},
+    {q:'La mise en place d\'un buffet traiteur comprend :',choix:['Juste déposer les plats sur la table','Disposer les plats selon le plan, vérifier la présentation, contrôler les températures, ranger les emballages','Seulement transporter et partir','Faire la décoration de salle'],bonne:1,explication:'Mise en place = disposer selon le plan du client, vérifier présentation soignée, contrôler que les plats chauds sont bien chauds (+63°C) et les froids bien froids, retirer tous les emballages et cartons.'},
+    {q:'Un invité vous demande de lui réserver une assiette de plat. Que faites-vous ?',choix:['Accepter — c\'est aimable','Refuser poliment et expliquer que ce n\'est pas votre rôle','Ignorer','Demander à l\'encadrant par téléphone'],bonne:1,explication:'Refuser poliment et avec le sourire : "Je suis désolé, ce n\'est pas mon rôle mais je vous laisse vous servir." Jamais réserver ou distribuer les plats des clients — vous n\'êtes pas le maître d\'hôtel.'},
+    {q:'Température de service des plats chauds traiteur :',choix:['+55°C minimum','+60°C minimum','+63°C minimum','+70°C minimum'],bonne:2,explication:'+63°C minimum pendant tout le service. En dessous, les bactéries reprennent leur multiplication. Vérifier avec la sonde thermique. Si trop bas : signaler immédiatement — ne pas servir.'},
+    {q:'Vous avez chargé un événement mariage et vous avez un doute sur une quantité. Que faites-vous ?',choix:['Partir quand même — probablement bon','Vérifier l\'inventaire complet avant de fermer le camion','Appeler pendant que vous roulez','Attendre que le client signale un manquant'],bonne:1,explication:'Vérifier AVANT de fermer le camion. Un manquant constaté avant le départ peut être corrigé en 5 minutes. Un manquant constaté à 30 km de la salle = catastrophe logistique pour un mariage.'},
+    {q:'Fin d\'événement : dans quel ordre récupérer le matériel ?',choix:['N\'importe quel ordre','Inventaire d\'abord (compter), puis ranger dans les caisses, puis charger dans le camion','Charger directement dans le camion sans compter','Laisser le personnel de salle s\'en charger'],bonne:1,explication:'Inventaire PUIS rangement PUIS chargement. Compter avant de ranger = vous savez immédiatement si quelque chose manque. Ranger avant de charger = cargaison stable et sécurisée.'},
+    {q:'Vous arrivez sur un événement d\'entreprise. Le responsable du client dit "le plan a changé, servez à l\'étage". Que faites-vous ?',choix:['Obéir immédiatement','Appeler l\'encadrant pour valider le changement avant d\'exécuter','Refuser','Ignorer et suivre le plan initial'],bonne:1,explication:'Tout changement de plan = appeler l\'encadrant. Des modifications de dernière minute peuvent avoir des implications logistiques (accès, matériel, temps). L\'encadrant valide et vous couvre légalement.'},
+    {q:'Bonnes pratiques d\'hygiène du chauffeur sur un événement traiteur :',choix:['Pas de contrainte particulière','Mains propres, tenue propre, pas de téléphone en manipulation des plats, pas de bijoux aux mains','Utiliser des gants uniquement','Se laver les mains uniquement avant de partir'],bonne:1,explication:'Sur un événement traiteur : mains propres avant toute manipulation, tenue irréprochable, pas de téléphone en main lors de la manipulation des plats, pas de bijoux (bagues, montres) près des denrées alimentaires.'},
+    {q:'Votre rôle lors du service d\'un buffet traiteur se limite à :',choix:['Tout — vous gérez aussi le service','Transport, installation, vérification des températures, et retour du matériel','Seulement le transport','Seulement l\'installation'],bonne:1,explication:'Transport + installation + contrôle températures + récupération matériel au retour. Vous n\'êtes pas maître d\'hôtel, pas cuisinier, pas serveur. Votre périmètre est défini et respecter cette limite protège l\'entreprise.'},
+    {q:'Un plat chaud arrive chez le client à +58°C (sous le seuil de +63°C). Que faites-vous ?',choix:['Le servir quand même — l\'écart est faible','Signaler au client et appeler l\'encadrant avant de servir','Le réchauffer avec le chafing dish et attendre','Tout remballer et repartir'],bonne:1,explication:'Ne pas servir un plat à une température non conforme. Signaler au client et appeler l\'encadrant immédiatement. L\'encadrant décide : réchauffage autorisé, replacement, compensation. Servir = risque sanitaire + responsabilité légale.'},
+  ]);
+})();
+
+/* ── MODULE VISITES MÉDICALES ── */
+if(!DB.visites_medicales) DB.visites_medicales={};
+
+window.renderVisitesMedicales = function(c2){
+  if(!c2) return;
+  var now = new Date();
+  var h='<div class="page-title">🏥 Visites médicales</div>';
+  h+='<div class="page-sub" style="margin-bottom:16px">Suivi des visites obligatoires · Alertes d\'échéance automatiques</div>';
+
+  var actifs=(DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+
+  /* Alertes */
+  var alertes=[];
+  actifs.forEach(function(s){
+    var vm=DB.visites_medicales[s.id]||{};
+    if(!vm.date_prochaine){
+      alertes.push({sal:s,type:'manquante',msg:'Aucune visite médicale planifiée',col:'var(--red)'});
+    } else {
+      var j=Math.floor((new Date(vm.date_prochaine)-now)/86400000);
+      if(j<0) alertes.push({sal:s,type:'expirée',msg:'Visite médicale expirée depuis '+(Math.abs(j))+' jours',col:'var(--red)'});
+      else if(j<=30) alertes.push({sal:s,type:'proche',msg:'Visite médicale dans '+j+' jours',col:'var(--orange)'});
+    }
+  });
+
+  if(alertes.length){
+    h+='<div class="card" style="margin-bottom:14px;border-color:rgba(239,68,68,.3)">';
+    h+='<div class="card-title" style="color:var(--red)">⚠️ Alertes visites médicales</div>';
+    alertes.forEach(function(a){
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">';
+      h+=typeof avt==='function'?avt(a.sal).replace('40px','28px').replace('font-size:20px','font-size:14px'):'';
+      h+='<span style="font-size:12px;font-weight:700;flex:1">'+a.sal.prenom+(a.sal.nom?' '+a.sal.nom:'')+'</span>';
+      h+='<span style="font-size:11px;color:'+a.col+'">'+a.msg+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  h+='<div class="grid-2">';
+  actifs.forEach(function(s){
+    var vm=DB.visites_medicales[s.id]||{};
+    var j=vm.date_prochaine?Math.floor((new Date(vm.date_prochaine)-now)/86400000):null;
+    var col=j===null?'var(--red)':j<0?'var(--red)':j<=30?'var(--orange)':'var(--green)';
+    h+='<div class="card" style="border-color:'+col+'33">';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+    if(typeof avt==='function') h+=avt(s);
+    h+='<div><div style="font-size:13px;font-weight:800;color:var(--text)">'+s.prenom+(s.nom?' '+s.nom:'')+'</div>';
+    h+='<div style="font-size:10px;color:'+col+'">'+(j===null?'⚠️ Non planifiée':j<0?'❌ Expirée':j<=30?'⏰ Dans '+j+' jours':'✅ Dans '+j+' jours')+'</div></div></div>';
+
+    h+='<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;margin-bottom:12px">';
+    [{id:'date_derniere',l:'Dernière visite'},{id:'medecin',l:'Médecin du travail'},{id:'date_prochaine',l:'Prochaine visite'},{id:'aptitude',l:'Aptitude'}].forEach(function(f){
+      h+='<div style="display:flex;gap-8px"><span style="color:var(--sub);width:110px;flex-shrink:0">'+f.l+'</span>';
+      h+='<input id="vm-'+s.id+'-'+f.id+'" value="'+(vm[f.id]||'')+'" placeholder="—" style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px"></div>';
+    });
+    h+='</div>';
+    h+='<button class="btn btn-sm btn-primary" onclick="sauverVM('+s.id+')">💾 Sauver</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  c2.innerHTML=h;
+};
+
+window.sauverVM=function(salId){
+  if(!DB.visites_medicales[salId]) DB.visites_medicales[salId]={};
+  ['date_derniere','medecin','date_prochaine','aptitude'].forEach(function(f){
+    var el=document.getElementById('vm-'+salId+'-'+f);
+    if(el) DB.visites_medicales[salId][f]=el.value;
+  });
+  if(typeof sauver==='function') sauver();
+  if(typeof toast==='function') toast('Visite médicale sauvegardée ✅','ok');
+};
+
+/* ── DASHBOARD ACCUEIL ENRICHI ── */
+(function(){
+  var oldRenderDash = window.renderDash;
+  window.renderDash = function(c2){
+    if(!c2) return;
+    if(oldRenderDash) oldRenderDash(c2);
+
+    /* Ajouter météo des salariés après le dashboard existant */
+    setTimeout(function(){
+      var existing = c2.querySelector('#meteo-salaries');
+      if(existing) return;
+      var actifs=(DB.salaries||[]).filter(function(s){return s.statut==='actif';});
+      var div=document.createElement('div');
+      div.id='meteo-salaries';
+      div.style.cssText='margin-top:16px';
+
+      var h='<div class="card"><div class="card-title">🌤️ Météo des salariés — Ce matin</div>';
+      h+='<div class="page-sub" style="margin-bottom:12px">Bien-être · Carnet · Alertes actives</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+
+      actifs.forEach(function(s){
+        var be=(DB.bienetre&&DB.bienetre[s.id]);
+        var dernBE=be&&be.length?be[be.length-1]:{};
+        var mots=dernBE.Motivation||0;
+        var stress=dernBE.Stress||0;
+        var conf=dernBE.Confiance||0;
+        var meteo=mots>=4&&stress<=2&&conf>=4?'☀️ Excellent':mots>=3&&stress<=3?'🌤️ Bon':mots>=2?'⛅ Moyen':'🌧️ Difficile';
+        var col=mots>=4&&stress<=2?'var(--green)':mots>=3?'var(--yellow)':mots>=2?'var(--orange)':'var(--red)';
+
+        /* Alertes */
+        var ents=(DB.entretiens||[]).filter(function(e){return e.salId==s.id;});
+        var jDepuis=ents.length?Math.floor((new Date()-new Date(ents.sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].date))/86400000):999;
+
+        h+='<div onclick="ouvrirDossier('+s.id+')" style="background:var(--panel2);border:2px solid '+col+'33;border-radius:12px;padding:12px;cursor:pointer;text-align:center;min-width:100px">';
+        h+='<div style="font-size:28px;margin-bottom:4px">'+s.avatar+'</div>';
+        h+='<div style="font-size:11px;font-weight:800;color:var(--text)">'+s.prenom+'</div>';
+        h+='<div style="font-size:16px;margin:4px 0">'+meteo+'</div>';
+        if(jDepuis>42) h+='<div style="font-size:9px;color:var(--red);font-weight:700">⚠️ Entretien dû</div>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+      div.innerHTML=h;
+      c2.appendChild(div);
+    },500);
+  };
+})();
+
+/* ── TOGGLE MODE SOMBRE/CLAIR ── */
+(function(){
+  window.toggleTheme=function(){
+    var root=document.documentElement;
+    var dark=root.style.getPropertyValue('--bg')||'';
+    if(dark.includes('10,15,22')||dark===''){
+      root.style.setProperty('--bg','rgb(248,250,252)');
+      root.style.setProperty('--panel','rgb(255,255,255)');
+      root.style.setProperty('--panel2','rgb(241,245,249)');
+      root.style.setProperty('--text','rgb(15,23,42)');
+      root.style.setProperty('--sub','rgb(100,116,139)');
+      root.style.setProperty('--border','rgba(15,23,42,.12)');
+      root.style.setProperty('--border2','rgba(15,23,42,.2)');
+      document.body.style.background='rgb(248,250,252)';
+    } else {
+      root.style.setProperty('--bg','rgb(10,15,22)');
+      root.style.setProperty('--panel','rgb(15,23,35)');
+      root.style.setProperty('--panel2','rgb(20,30,44)');
+      root.style.setProperty('--text','rgb(230,238,252)');
+      root.style.setProperty('--sub','rgb(100,116,139)');
+      root.style.setProperty('--border','rgba(255,255,255,.08)');
+      root.style.setProperty('--border2','rgba(255,255,255,.15)');
+      document.body.style.background='rgb(10,15,22)';
+    }
+    if(typeof toast==='function') toast('Thème changé ✅','ok');
+  };
+
+  /* Ajouter bouton dans la topbar si elle existe */
+  setTimeout(function(){
+    var topbar=document.querySelector('.topbar, .header, nav');
+    if(topbar){
+      var btn=document.createElement('button');
+      btn.onclick=toggleTheme;
+      btn.title='Mode sombre/clair';
+      btn.style.cssText='background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;cursor:pointer;font-size:14px;margin-left:8px';
+      btn.textContent='🌙';
+      topbar.appendChild(btn);
+    }
+  },500);
+})();
+
+/* ── ROUTER FINAL ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById('content');
+    if(!c)return _old?_old(page):null;
+    if(page==='visites_medicales'){renderVisitesMedicales(c);return;}
+    if(_old)_old(page);
+  };
+
+  var sb=document.querySelector('.sb');
+  if(sb){
+    if(!sb.querySelector('[data-p="visites_medicales"]')){
+      var d=document.createElement('div');
+      d.className='sb-item';d.setAttribute('data-p','visites_medicales');
+      d.innerHTML='<span class="sb-ico">🏥</span>Visites médicales';
+      d.onclick=function(){window.nav('visites_medicales');};
+      sb.appendChild(d);
+    }
+  }
+})();
+
+console.log('Final Mega chargé — QCM tous blocs, Visites médicales, Dashboard, Toggle thème ✅');
+
+</script>
+
+<script>
+
+/* ═══════════════════════════════════════════════════════
+   ROUTER CENTRAL FINAL — Remplace tous les routers précédents
+   Toutes les pages en un seul endroit
+═══════════════════════════════════════════════════════ */
+(function(){
+  /* Router principal unifié */
+  var PAGES_MAP = {
+    /* CRM base */
+    'dashboard': function(c){ if(typeof renderDash==='function') renderDash(c); },
+    'salaries': function(c){ if(typeof renderSalaries==='function') renderSalaries(c); },
+    'entretiens': function(c){ if(typeof renderEntretiens==='function') renderEntretiens(c); },
+    'evaluations': function(c){ if(typeof renderEvaluations==='function') renderEvaluations(c); },
+    'alertes': function(c){ if(typeof renderAlertes==='function') renderAlertes(c); },
+    'stats': function(c){ if(typeof renderStats==='function') renderStats(c); },
+    'fiches': function(c){ if(typeof renderFiches==='function') renderFiches(c); },
+    'plans': function(c){ if(typeof renderPlans==='function') renderPlans(c); },
+    'formations': function(c){ if(typeof renderFormations==='function') renderFormations(c); },
+    'bibliotheque': function(c){ if(typeof renderBibliotheque==='function') renderBibliotheque(c); },
+    'documents': function(c){ if(typeof renderDocuments==='function') renderDocuments(c); },
+    'management': function(c){ if(typeof renderManagement==='function') renderManagement(c); },
+    'ia': function(c){ if(typeof renderIA==='function') renderIA(c); },
+    'logistique': function(c){ if(typeof renderLogistique==='function') renderLogistique(c); },
+    'psychologie': function(c){ if(typeof renderPsychologie==='function') renderPsychologie(c); },
+    'recrutement': function(c){ if(typeof renderRecrutement==='function') renderRecrutement(c); },
+    /* Avancé */
+    'commandement': function(c){ if(typeof renderCommandement==='function') renderCommandement(c); },
+    'parcours_chrono': function(c){ if(typeof renderParcours==='function') renderParcours(c); },
+    'social': function(c){ if(typeof renderSocial==='function') renderSocial(c); },
+    'entreprises': function(c){ if(typeof renderEntreprises==='function') renderEntreprises(c); },
+    'passeport': function(c){ if(typeof renderPasseport==='function') renderPasseport(c); },
+    'copilot': function(c){ if(typeof renderCopilot==='function') renderCopilot(c); },
+    'matching': function(c){ if(typeof renderMatching==='function') renderMatching(c); },
+    'mur_reussites': function(c){ if(typeof renderMurReussites==='function') renderMurReussites(c); },
+    'defi': function(c){ if(typeof renderDefi==='function') renderDefi(c); },
+    /* Formation */
+    'academie': function(c){ if(typeof renderAcademie==='function') renderAcademie(c); },
+    'programme': function(c){ if(typeof renderProgramme==='function') renderProgramme(c); },
+    'tutorat': function(c){ if(typeof renderTutorat==='function') renderTutorat(c); },
+    'slides': function(c){ if(typeof renderSlides==='function') renderSlides(c); },
+    'fiche_progression': function(c){ if(typeof renderFicheProgression==='function') renderFicheProgression(c); },
+    'cours_formateur': function(c){ if(typeof renderCoursFormateur==='function') renderCoursFormateur(c); },
+    /* Formateur */
+    'bilan_hebdo': function(c){ if(typeof renderBilanHebdo==='function') renderBilanHebdo(c); },
+    'journal': function(c){ if(typeof renderJournal==='function') renderJournal(c); },
+    'timeline': function(c){ if(typeof renderTimeline==='function') renderTimeline(c); },
+    'dashboard_formateur': function(c){ if(typeof renderDashFormateur==='function') renderDashFormateur(c); },
+    /* Suivi */
+    'smart': function(c){ if(typeof renderSMART==='function') renderSMART(c); },
+    'courbe_progression': function(c){ if(typeof renderCourbeProgression==='function') renderCourbeProgression(c); },
+    'agenda': function(c){ if(typeof renderAgenda==='function') renderAgenda(c); },
+    'bienetre': function(c){ if(typeof renderBienEtre==='function') renderBienEtre(c); },
+    'coffre': function(c){ if(typeof renderCoffre==='function') renderCoffre(c); },
+    'visites_medicales': function(c){ if(typeof renderVisitesMedicales==='function') renderVisitesMedicales(c); },
+    /* Direction */
+    'tableau_direction': function(c){ if(typeof renderTableauDirection==='function') renderTableauDirection(c); },
+    'messagerie': function(c){ if(typeof renderMessagerie==='function') renderMessagerie(c); },
+    'journal_actions': function(c){ if(typeof renderJournalActions==='function') renderJournalActions(c); },
+    /* Outils */
+    'simulateur': function(c){ if(typeof renderSimulateurEntretien==='function') renderSimulateurEntretien(c); },
+    'projet_pro': function(c){ if(typeof renderProjetPro==='function') renderProjetPro(c); },
+    /* Centre de formation */
+    'parcours': function(c){ if(typeof renderParcoursChauffeur==='function') renderParcoursChauffeur(c); },
+    'tableau_formateur': function(c){ if(typeof renderTableauFormateur==='function') renderTableauFormateur(c); },
+    'pedagogique': function(c){ if(typeof renderPedagogique==='function') renderPedagogique(c); },
+    /* OPCO */
+    'opco': function(c){ if(typeof renderOPCO==='function') renderOPCO(c); },
+    /* Post-insertion */
+    'post_sortie': function(c){ if(typeof renderPostSortie==='function') renderPostSortie(c); },
+    'incidents': function(c){ if(typeof renderIncidents==='function') renderIncidents(c); },
+  };
+
+  /* Router principal — écrase TOUT */
+  window.render = function(page){
+    var c = document.getElementById('content');
+    if(!c) return;
+    var fn = PAGES_MAP[page];
+    if(fn){
+      try { fn(c); } catch(e){ c.innerHTML='<div style="padding:20px;color:var(--red)">Erreur: '+e.message+'</div>'; console.error('Render error page='+page, e); }
+    } else {
+      c.innerHTML='<div style="padding:20px;color:var(--sub)">Page "'+page+'" non trouvée</div>';
+    }
+  };
+
+  /* nav() unifié */
+  window.nav = function(page){
+    window.PAGE = page;
+    document.querySelectorAll('.sb-item').forEach(function(el){
+      el.classList.remove('active');
+      if(el.getAttribute('data-p')===page) el.classList.add('active');
+    });
+    window.render(page);
+  };
+
+  console.log('Router central final chargé — '+Object.keys(PAGES_MAP).length+' pages disponibles');
+})();
+
+</script>
