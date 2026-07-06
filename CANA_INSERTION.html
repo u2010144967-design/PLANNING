@@ -22902,3 +22902,839 @@ window.genCertifChauffeur=function(salId){
 console.log("Module Suivi Chauffeur chargé — Tournées, Score, Certification");
 
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DOSSIER CHAUFFEUR COMPLET
+   11 onglets · Alertes · Score employabilité · IA · Timeline
+═══════════════════════════════════════════════════════════════ */
+var DB=window.DB||{};
+var ACADEMIE=window.ACADEMIE||{blocs:[]};
+
+function getDB3(){return window.DB||{};}
+
+/* ── OVERRIDE ouvrirDossier ── */
+window.ouvrirDossier=function(id){
+  var DB=getDB3();
+  window.SAL_ACTIF=id; window.dossierSalActif=id;
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;});
+  if(!s)return;
+  var c2=document.getElementById("content");
+  if(!c2)return;
+  _renderDossierComplet(s,c2);
+};
+
+function _renderDossierComplet(s,c2){
+  var DB=getDB3();
+  var id=s.id;
+
+  /* Score employabilité */
+  var score=_calcScoreEmp(id);
+  var scoreCol=score>=75?"var(--green)":score>=50?"var(--orange)":"var(--red)";
+  var scoreLabel=score>=90?"Prêt pour CDI":score>=75?"Prêt à postuler":score>=50?"En progression":"Début de parcours";
+
+  /* Alertes intelligentes */
+  var alertes=_genAlertes(s);
+
+  var h="<div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap'>";
+  h+="<button class='btn btn-secondary' onclick='nav(\"salaries\")'>← Retour</button>";
+  h+="<div style='font-size:28px'>"+s.avatar+"</div>";
+  h+="<div style='flex:1'><div class='page-title' style='margin:0'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+  h+="<div class='page-sub'>"+s.poste+" · "+s.typeContrat+"</div></div>";
+  /* Score employabilité visible en permanence */
+  h+="<div style='text-align:center;background:"+scoreCol+"11;border:2px solid "+scoreCol+"33;border-radius:12px;padding:10px 18px'>";
+  h+="<div style='font-size:22px;font-weight:900;color:"+scoreCol+"'>"+score+"/100</div>";
+  h+="<div style='font-size:10px;color:"+scoreCol+";font-weight:700'>"+scoreLabel+"</div></div>";
+  h+="<button class='btn btn-primary btn-sm' onclick='window.lancerIADossier("+id+")'>🤖 Analyser IA</button>";
+  h+="</div>";
+
+  /* Alertes */
+  if(alertes.length){
+    h+="<div style='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px'>";
+    alertes.forEach(function(a){
+      h+="<div style='font-size:11px;font-weight:700;color:"+a.col+";background:"+a.col+"15;border:1px solid "+a.col+"33;border-radius:8px;padding:4px 10px'>"+a.ico+" "+a.msg+"</div>";
+    });
+    h+="</div>";
+  }
+
+  /* Mot du formateur */
+  var DB2=getDB3();
+  if(!DB2.mot_formateur) DB2.mot_formateur={};
+  var mot=DB2.mot_formateur[id]||"";
+  h+="<div style='background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:center'>";
+  h+="<span style='font-size:18px'>✍️</span>";
+  h+="<div style='flex:1'><div style='font-size:10px;font-weight:800;color:#818cf8'>MOT DU FORMATEUR</div>";
+  h+="<div style='font-size:12px;color:var(--text);font-style:italic'>"+(mot||"Aucune note. Cliquer pour ajouter.")+"</div></div>";
+  h+="<button class='btn btn-sm btn-secondary' data-sid='"+id+"' onclick='window.editerMotFormateur(this.dataset.sid)'>✏️</button></div>";
+
+  /* Onglets */
+  var tabs=[
+    ["d-profil","📋 Profil"],["d-formation","🎓 Formation"],["d-eval","📊 Évaluations"],
+    ["d-tournees","🚐 Tournées"],["d-certif","🏅 Certifs"],["d-smart","🎯 Objectifs"],
+    ["d-timeline","📅 Timeline"],["d-entretiens","💬 Entretiens"],["d-journal","📓 Journal"],
+    ["d-docs","📁 Documents"],["d-sortie","🚀 Préparer sortie"]
+  ];
+  h+="<div style='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px'>";
+  tabs.forEach(function(t,i){
+    h+="<button id='"+t[0]+"' class='btn btn-sm "+(i===0?"btn-primary":"btn-secondary")+"' data-sid='"+id+"' onclick='window.showDossierTab(\""+t[0]+"\",this.dataset.sid)'>"+t[1]+"</button>";
+  });
+  h+="</div>";
+  h+="<div id='dossier-tab-content'></div>";
+  c2.innerHTML=h;
+  window.showDossierTab("d-profil",id);
+}
+
+/* ── ROUTER ONGLETS ── */
+window.showDossierTab=function(tab,id){
+  document.querySelectorAll("[id^='d-']").forEach(function(b){
+    if(b.tagName==="BUTTON") b.className="btn btn-sm btn-secondary";
+  });
+  var btn=document.getElementById(tab);
+  if(btn) btn.className="btn btn-sm btn-primary";
+  var zone=document.getElementById("dossier-tab-content");
+  if(!zone) return;
+  var fns={
+    "d-profil":_tabProfil,"d-formation":_tabFormation,"d-eval":_tabEvaluations,
+    "d-tournees":_tabTournees,"d-certif":_tabCertifs,"d-smart":_tabSMART,
+    "d-timeline":_tabTimeline,"d-entretiens":_tabEntretiens,"d-journal":_tabJournal,
+    "d-docs":_tabDocuments,"d-sortie":_tabSortie
+  };
+  zone.innerHTML=fns[tab]?fns[tab](parseInt(id)||id):"";
+};
+
+/* ── SCORE EMPLOYABILITÉ ── */
+function _calcScoreEmp(id){
+  var DB=getDB3();
+  var score=0;
+  /* QCM academie 20pts */
+  var prog=(DB.academie&&DB.academie[id])||{};
+  var nbQCM=Object.keys(prog).length;
+  score+=Math.min(20,nbQCM*2);
+  /* Tournées 20pts */
+  var sc=((DB.suivi_chauffeur||{})[id])||{};
+  var tourns=(sc.tournees||[]);
+  var tauxOK=tourns.length?tourns.filter(function(t){return !t.incident;}).length/tourns.length:0;
+  score+=Math.round(tauxOK*20);
+  /* Certifications 20pts */
+  var coffre=((DB.coffre||{})[id])||{};
+  var nbCerts=["caces","haccp","sst","fimo","diplome"].filter(function(k){return coffre[k]&&coffre[k].date;}).length;
+  score+=Math.min(20,nbCerts*4);
+  /* Niveau certification interne 20pts */
+  var niv=(sc.niveau_actuel||1);
+  score+=Math.min(20,(niv-1)*7);
+  /* Entretiens et evaluations 20pts */
+  var ents=((DB.entretiens||[]).filter(function(e){return e.salId==id;})).length;
+  var evals=((DB.evaluations||[]).filter(function(e){return e.salId==id;})).length;
+  score+=Math.min(20,(ents+evals)*2);
+  return Math.min(100,score);
+}
+
+/* ── ALERTES INTELLIGENTES ── */
+function _genAlertes(s){
+  var DB=getDB3(); var id=s.id; var alertes=[];
+  var now=new Date();
+  /* Visite médicale */
+  var vm=((DB.visites_medicales||{})[id])||{};
+  if(!vm.date_prochaine) alertes.push({ico:"🏥",msg:"Visite médicale non planifiée",col:"var(--red)"});
+  else{
+    try{var j=Math.floor((new Date(vm.date_prochaine.split("/").reverse().join("-"))-now)/86400000);
+    if(j<0) alertes.push({ico:"🏥",msg:"Visite médicale expirée",col:"var(--red)"});
+    else if(j<=30) alertes.push({ico:"🏥",msg:"Visite médicale dans "+j+"j",col:"var(--orange)"});}catch(e){}
+  }
+  /* Entretien */
+  var ents=(DB.entretiens||[]).filter(function(e){return e.salId==id;});
+  if(ents.length){
+    var last=ents.sort(function(a,b){return b.date.localeCompare(a.date);})[0];
+    try{var jEnt=Math.floor((now-new Date(last.date))/86400000);
+    if(jEnt>42) alertes.push({ico:"💬",msg:"Entretien dû ("+jEnt+"j sans entretien)",col:"var(--orange)"});}catch(e){}
+  } else alertes.push({ico:"💬",msg:"Aucun entretien",col:"var(--red)"});
+  /* QCM pas commencés */
+  var prog=(DB.academie&&DB.academie[id])||{};
+  var totalBlocs=(ACADEMIE.blocs||[]).length;
+  if(totalBlocs>0&&Object.keys(prog).length===0) alertes.push({ico:"🎓",msg:"Formation non commencée",col:"var(--orange)"});
+  /* Fin de contrat */
+  if(s.dateFin){
+    try{var jFin=Math.floor((new Date(s.dateFin.split("/").reverse().join("-"))-now)/86400000);
+    if(jFin<=60&&jFin>0) alertes.push({ico:"⏰",msg:"Fin de contrat dans "+jFin+"j",col:"var(--red)"});
+    if(jFin<=180&&jFin>60) alertes.push({ico:"📅",msg:"Fin de contrat dans "+jFin+"j — préparer sortie",col:"var(--orange)"});}catch(e){}
+  }
+  /* Incidents récents */
+  var incs=((DB.incidents||{})[id])||[];
+  var recents=incs.filter(function(inc){try{return Math.floor((now-new Date(inc.date.split("/").reverse().join("-")))/86400000)<30;}catch(e){return false;}});
+  if(recents.length) alertes.push({ico:"⚠️",msg:recents.length+" incident(s) ce mois",col:"var(--red)"});
+  /* Permis */
+  var coffre=((DB.coffre||{})[id])||{};
+  if(coffre.permis&&coffre.permis.expiry){
+    try{var jP=Math.floor((new Date(coffre.permis.expiry.split("/").reverse().join("-"))-now)/86400000);
+    if(jP<60) alertes.push({ico:"🪪",msg:"Permis expire dans "+jP+"j",col:jP<30?"var(--red)":"var(--orange)"});}catch(e){}
+  }
+  return alertes;
+}
+
+/* ── ONGLET PROFIL ── */
+function _tabProfil(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return "";
+  if(!DB.projet_vie) DB.projet_vie={};
+  if(!DB.contacts_ext) DB.contacts_ext={};
+  if(!DB.situation) DB.situation={};
+  var pv=DB.projet_vie[id]||{};
+  var ce=DB.contacts_ext[id]||{};
+  var sit=DB.situation[id]||{};
+
+  var h="<div class='grid-2' style='gap:12px'>";
+
+  /* Infos identité */
+  h+="<div class='card'><div class='card-title'>👤 Identité</div>";
+  var infoFields=[["prenom","Prénom"],["nom","Nom"],["dob","Date naissance"],["tel","Téléphone"],["email","Email"],["adresse","Adresse"],["sitfam","Situation familiale"],["nationnalite","Nationalité"]];
+  infoFields.forEach(function(f){
+    if(s[f[0]]) h+="<div style='display:flex;margin-bottom:5px'><span style='font-size:11px;color:var(--sub);width:120px'>"+f[1]+"</span><span style='font-size:11px;color:var(--text);font-weight:700'>"+s[f[0]]+"</span></div>";
+  });
+  h+="</div>";
+
+  /* Contrat */
+  h+="<div class='card'><div class='card-title'>📄 Contrat</div>";
+  [["typeContrat","Type"],["dateEntree","Entrée"],["dateFin","Fin prévue"],["poste","Poste"],["vehicule","Véhicule"],["prescripteur","Prescripteur"]].forEach(function(f){
+    if(s[f[0]]) h+="<div style='display:flex;margin-bottom:5px'><span style='font-size:11px;color:var(--sub);width:120px'>"+f[1]+"</span><span style='font-size:11px;color:var(--text);font-weight:700'>"+s[f[0]]+"</span></div>";
+  });
+  h+="</div>";
+
+  /* Situation pratique */
+  h+="<div class='card'><div class='card-title'>🏠 Situation pratique</div>";
+  var sitFields=[["logement","Logement"],["transport","Transport domicile-travail"],["vehicule_perso","Véhicule personnel"],["zone_habitation","Quartier/Zone"]];
+  sitFields.forEach(function(f){
+    h+="<div style='display:flex;margin-bottom:6px'>";
+    h+="<span style='font-size:11px;color:var(--sub);width:130px;flex-shrink:0'>"+f[1]+"</span>";
+    h+="<input id='sit-"+f[0]+"-"+id+"' value='"+(sit[f[0]]||"")+"' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:11px'></div>";
+  });
+  h+="<button class='btn btn-sm btn-primary' data-sid='"+id+"' onclick='window.sauverSituation(this.dataset.sid)' style='margin-top:6px'>💾 Sauver</button></div>";
+
+  /* Projet de vie */
+  h+="<div class='card'><div class='card-title'>🌟 Projet de vie</div>";
+  h+="<div style='font-size:10px;color:var(--sub);margin-bottom:10px'>Questions posées au début du parcours — remplir ensemble avec le salarié</div>";
+  var pvFields=[["ou_dans_2ans","Où te vois-tu dans 2 ans ?"],["ce_qui_motive","Ce qui te ferait lever le matin avec envie"],["blocage_avant","Ce qui t'a bloqué avant d'arriver ici"]];
+  pvFields.forEach(function(f){
+    h+="<div style='margin-bottom:10px'><div style='font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px'>"+f[1]+"</div>";
+    h+="<textarea id='pv-"+f[0]+"-"+id+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:45px;box-sizing:border-box'>"+(pv[f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-sm btn-primary' data-sid='"+id+"' onclick='window.sauverProjetVie(this.dataset.sid)'>💾 Sauver</button></div>";
+
+  /* Contacts extérieurs */
+  h+="<div class='card'><div class='card-title'>📞 Contacts extérieurs</div>";
+  var ceFields=[["conseiller_ft","Conseiller France Travail"],["assistante_sociale","Assistante sociale"],["mission_locale","Mission Locale (si -26 ans)"],["famille_ref","Famille référente"],["contact_urgence","Contact urgence hors travail"]];
+  ceFields.forEach(function(f){
+    h+="<div style='display:flex;margin-bottom:6px'>";
+    h+="<span style='font-size:10px;color:var(--sub);width:140px;flex-shrink:0'>"+f[1]+"</span>";
+    h+="<input id='ce-"+f[0]+"-"+id+"' value='"+(ce[f[0]]||"")+"' placeholder='Nom + tél' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:11px'></div>";
+  });
+  h+="<button class='btn btn-sm btn-primary' data-sid='"+id+"' onclick='window.sauverContactsExt(this.dataset.sid)' style='margin-top:6px'>💾 Sauver</button></div>";
+
+  /* Carnet de parole */
+  h+="<div class='card'><div class='card-title'>🗣️ Carnet de parole</div>";
+  h+="<div style='font-size:10px;color:var(--sub);margin-bottom:8px'>Notes rapides après discussions informelles</div>";
+  if(!DB.carnet_parole) DB.carnet_parole={};
+  var paroles=(DB.carnet_parole[id]||[]).slice().reverse().slice(0,5);
+  paroles.forEach(function(p){
+    h+="<div style='padding:7px;background:var(--panel2);border-radius:7px;margin-bottom:5px'>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+p.date+"</div>";
+    h+="<div style='font-size:11px;color:var(--text)'>"+p.note+"</div></div>";
+  });
+  h+="<div style='display:flex;gap:6px;margin-top:8px'>";
+  h+="<input id='parole-input-"+id+"' placeholder='Note rapide...' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:12px'>";
+  h+="<button class='btn btn-sm btn-primary' data-sid='"+id+"' onclick='window.ajouterParole(this.dataset.sid)'>+</button></div></div>";
+
+  /* Moments clés */
+  h+="<div class='card'><div class='card-title'>⭐ Moments clés</div>";
+  if(!DB.moments_cles) DB.moments_cles={};
+  var moments=(DB.moments_cles[id]||[]);
+  if(!moments.length) h+="<div style='color:var(--sub);font-size:11px;margin-bottom:8px'>Aucun moment clé. Marquer les réussites importantes.</div>";
+  moments.slice(-5).forEach(function(m){
+    h+="<div style='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)'>";
+    h+="<span style='font-size:16px'>⭐</span><div style='flex:1'><div style='font-size:11px;font-weight:700;color:var(--text)'>"+m.titre+"</div><div style='font-size:10px;color:var(--sub)'>"+m.date+"</div></div></div>";
+  });
+  h+="<div style='display:flex;gap:6px;margin-top:8px'>";
+  h+="<input id='moment-input-"+id+"' placeholder='Ex: Première tournée seul...' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:12px'>";
+  h+="<button class='btn btn-sm btn-primary' data-sid='"+id+"' onclick='window.ajouterMoment(this.dataset.sid)'>+</button></div></div>";
+
+  h+="</div>"; /* fin grid */
+  return h;
+}
+
+/* ── ONGLET FORMATION ── */
+function _tabFormation(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return "";
+  if(!DB.academie) DB.academie={};
+  if(!DB.academie[id]) DB.academie[id]={};
+  var prog=DB.academie[id];
+  if(!DB.plan_formation_perso) DB.plan_formation_perso={};
+  var planPerso=DB.plan_formation_perso[id]||{};
+  var blocs=ACADEMIE.blocs||[];
+
+  /* Comparaison équipe */
+  var salActifs=(DB.salaries||[]).filter(function(s2){return s2.statut==="actif";});
+  var rangs=salActifs.map(function(s2){
+    return {id:s2.id,nb:Object.keys((DB.academie&&DB.academie[s2.id])||{}).length};
+  }).sort(function(a,b){return b.nb-a.nb;});
+  var myRang=rangs.findIndex(function(r){return r.id==id;})+1;
+  var myNb=Object.keys(prog).length;
+
+  var h="<div class='card' style='margin-bottom:12px'>";
+  h+="<div style='display:flex;align-items:center;gap:16px;flex-wrap:wrap'>";
+  h+="<div style='text-align:center'><div style='font-size:24px;font-weight:900;color:var(--blue)'>"+myNb+"/"+blocs.length+"</div><div style='font-size:10px;color:var(--sub)'>Modules complétés</div></div>";
+  h+="<div style='text-align:center'><div style='font-size:24px;font-weight:900;color:var(--orange)'>"+myRang+"e</div><div style='font-size:10px;color:var(--sub)'>Rang équipe</div></div>";
+  var moy=blocs.reduce(function(a,b2){return a+((prog[b2.id]&&prog[b2.id].score)||0);},0)/(blocs.length||1);
+  h+="<div style='text-align:center'><div style='font-size:24px;font-weight:900;color:var(--green)'>"+Math.round(moy)+"%</div><div style='font-size:10px;color:var(--sub)'>Score moyen QCM</div></div>";
+  h+="<div style='flex:1'>";
+  h+="<div style='background:var(--border);border-radius:4px;height:8px'><div style='width:"+Math.round(myNb/blocs.length*100)+"%;height:8px;border-radius:4px;background:var(--blue)'></div></div>";
+  h+="<div style='font-size:10px;color:var(--sub);margin-top:4px'>"+Math.round(myNb/blocs.length*100)+"% de la formation complétée</div></div></div></div>";
+
+  /* Modules */
+  h+="<div class='grid-2' style='gap:10px'>";
+  blocs.forEach(function(bloc){
+    var p=prog[bloc.id]||{};
+    var fait=!!(p.lu||p.score);
+    var prioritaire=!!planPerso[bloc.id];
+    h+="<div style='background:var(--panel2);border:2px solid "+(fait?"rgba(34,197,94,.3)":prioritaire?"rgba(249,115,22,.3)":"var(--border)")+";border-radius:10px;padding:12px'>";
+    h+="<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'>";
+    h+="<span style='font-size:20px'>"+bloc.icon+"</span>";
+    h+="<div style='flex:1'><div style='font-size:11px;font-weight:800;color:var(--text)'>"+bloc.titre+"</div>";
+    if(prioritaire) h+="<div style='font-size:9px;color:var(--orange);font-weight:700'>⭐ PRIORITAIRE</div>";
+    h+="</div>";
+    if(fait) h+="<span style='font-size:14px'>✅</span>";
+    h+="</div>";
+    if(p.score) h+="<div style='font-size:12px;font-weight:800;color:var(--green)'>QCM : "+p.score+"%</div>";
+    if(p.date) h+="<div style='font-size:10px;color:var(--sub)'>Complété le "+p.date+"</div>";
+    h+="<div style='display:flex;gap:5px;margin-top:8px'>";
+    h+="<button class='btn btn-sm btn-secondary' data-sid='"+id+"' data-bid='"+bloc.id+"' onclick='window.noterFormation(this.dataset.sid,this.dataset.bid)'>✍️ Noter</button>";
+    h+="<button class='btn btn-sm btn-secondary' data-sid='"+id+"' data-bid='"+bloc.id+"' onclick='window.togglePrioritaire(this.dataset.sid,this.dataset.bid)' style='font-size:10px'>"+(prioritaire?"★ Retiré":"☆ Priorité")+"</button>";
+    h+="</div></div>";
+  });
+  h+="</div>";
+
+  /* Attestation */
+  h+="<div style='margin-top:12px'><button class='btn btn-primary' data-sid='"+id+"' onclick='window.genAttestationFormation(this.dataset.sid)'>🖨️ Attestation de formation interne</button></div>";
+  return h;
+}
+
+/* ── ONGLET EVALUATIONS ── */
+function _tabEvaluations(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return "";
+  if(!DB.eval_perso) DB.eval_perso={};
+  if(!DB.eval_perso[id]) DB.eval_perso[id]={};
+  var ep=DB.eval_perso[id];
+
+  var AXES_EVAL=[
+    "Ponctualité","Régularité présence","Prise d initiative","Autonomie",
+    "Relation client","Communication équipe","Respect des consignes","Sécurité",
+    "Chaîne du froid","Rigueur BL","Gestion du stress","Adaptation",
+    "Qualité du travail","Rapidité execution","Esprit equipe","Hygiène tenue",
+    "Gestion matériel","Ecoute et progression","Motivation","Projet professionnel"
+  ];
+
+  var phases=["depart","3mois","final"];
+  var phaseLabels={depart:"🟡 Diagnostic départ",mois3:"🔵 Bilan 3 mois",final:"🟢 Évaluation finale"};
+  // compatibility
+  phaseLabels["3mois"]="🔵 Bilan 3 mois";
+
+  var h="<div style='display:flex;gap:8px;margin-bottom:14px'>";
+  phases.forEach(function(ph){
+    var lbl=phaseLabels[ph]||ph;
+    var fait=!!(ep[ph]&&Object.keys(ep[ph]).length>2);
+    h+="<button class='btn btn-sm "+(fait?"btn-green":"btn-secondary")+"' data-sid='"+id+"' data-ph='"+ph+"' onclick='window.ouvrirEvalPhase(this.dataset.sid,this.dataset.ph)'>"+lbl+(fait?" ✅":"")+"</button>";
+  });
+  h+="</div>";
+
+  /* Tableau comparatif */
+  var depart=ep.depart||{}; var mois3=ep["3mois"]||{}; var final=ep.final||{};
+  var hasAny=Object.keys(depart).length||Object.keys(mois3).length||Object.keys(final).length;
+
+  if(!hasAny){
+    h+="<div style='color:var(--sub);font-size:12px;padding:20px;text-align:center'>Aucune évaluation. Cliquer sur une phase pour commencer.</div>";
+    return h;
+  }
+
+  h+="<div class='card'><div class='card-title'>📊 Comparaison des 3 évaluations</div>";
+  h+="<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse;font-size:11px'>";
+  h+="<tr style='background:var(--panel2)'><th style='padding:7px;text-align:left'>Axe</th><th style='text-align:center;padding:7px'>Départ</th><th style='text-align:center;padding:7px'>3 mois</th><th style='text-align:center;padding:7px'>Final</th><th style='text-align:center;padding:7px'>Évolution</th></tr>";
+  AXES_EVAL.forEach(function(ax){
+    var v1=depart[ax]||0; var v2=mois3[ax]||0; var v3=final[ax]||0;
+    var vMax=v3||v2||v1;
+    var evo=vMax-(v1||0);
+    var cols=["var(--border)","var(--red)","var(--yellow)","var(--green)","var(--blue)"];
+    var evoCol=evo>0?"var(--green)":evo<0?"var(--red)":"var(--sub)";
+    h+="<tr style='border-bottom:1px solid var(--border)'>";
+    h+="<td style='padding:6px;font-weight:700;color:var(--text)'>"+ax+"</td>";
+    [v1,v2,v3].forEach(function(v){h+="<td style='text-align:center;font-weight:800;color:"+(cols[v]||"var(--sub)")+";padding:6px'>"+(v||"—")+"</td>";});
+    h+="<td style='text-align:center;font-size:12px;font-weight:900;color:"+evoCol+"'>"+(evo>0?"+":"")+( evo||"—")+"</td></tr>";
+  });
+  h+="</table></div></div>";
+  return h;
+}
+
+/* ── ONGLET TOURNEES (wrapper) ── */
+function _tabTournees(id){
+  var h="<div class='card' style='margin-bottom:12px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px'>";
+  h+="<div class='card-title'>🚐 Carnet de tournées</div>";
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+id+"' onclick='window.ajouterTournee(this.dataset.sid)'>+ Tournée</button></div>";
+  var DB=getDB3();
+  if(!DB.suivi_chauffeur) DB.suivi_chauffeur={};
+  if(!DB.suivi_chauffeur[id]) DB.suivi_chauffeur[id]={tournees:[],score_mensuel:[],niveau_actuel:1};
+  var sc=DB.suivi_chauffeur[id];
+  var tourns=sc.tournees||[];
+  if(!tourns.length){h+="<div style='color:var(--sub);font-size:12px'>Aucune tournée enregistrée.</div>";}
+  else{
+    var totalKm=tourns.reduce(function(a,t){return a+(t.km||0);},0);
+    var totalL=tourns.reduce(function(a,t){return a+(t.livraisons||0);},0);
+    var nbInc=tourns.filter(function(t){return t.incident;}).length;
+    h+="<div style='display:flex;gap:10px;margin-bottom:12px'>";
+    [{v:tourns.length,l:"Tournées",c:"var(--blue)"},{v:totalKm+" km",l:"Km total",c:"var(--orange)"},{v:totalL,l:"Livraisons",c:"var(--green)"},{v:nbInc,l:"Incidents",c:nbInc?"var(--red)":"var(--green)"}].forEach(function(k){
+      h+="<div style='text-align:center;background:var(--panel2);border-radius:8px;padding:8px 12px'>";
+      h+="<div style='font-size:16px;font-weight:900;color:"+k.c+"'>"+k.v+"</div>";
+      h+="<div style='font-size:10px;color:var(--sub)'>"+k.l+"</div></div>";
+    });
+    h+="</div>";
+    tourns.slice().reverse().slice(0,10).forEach(function(t){
+      var col=t.incident?"var(--red)":t.note>=4?"var(--green)":"var(--blue)";
+      h+="<div style='display:flex;align-items:center;gap:10px;padding:8px;background:var(--panel2);border-radius:8px;border-left:3px solid "+col+";margin-bottom:5px'>";
+      h+="<div style='flex:1'><div style='font-size:11px;font-weight:700;color:var(--text)'>"+t.date+" · "+(t.km||0)+"km · "+(t.livraisons||0)+" livraisons</div>";
+      if(t.notes) h+="<div style='font-size:10px;color:var(--sub)'>"+t.notes+"</div>";
+      h+="</div>";
+      if(t.incident) h+="<span style='font-size:10px;color:var(--red);font-weight:700'>⚠️</span>";
+      h+="<div style='font-size:14px;font-weight:900;color:"+col+";width:25px;text-align:right'>"+(t.note||"—")+"</div></div>";
+    });
+  }
+  h+="</div>";
+  /* Score mensuel rapide */
+  h+="<div class='card'><div class='card-title'>📊 Score conduite</div>";
+  var scores=sc.score_mensuel||[];
+  if(!scores.length) h+="<div style='color:var(--sub);font-size:11px'>Aucun score. Évaluer chaque mois.</div>";
+  else{
+    var last=scores[scores.length-1];
+    var col2=last.total>=16?"var(--green)":last.total>=12?"var(--yellow)":"var(--red)";
+    h+="<div style='font-size:20px;font-weight:900;color:"+col2+"'>"+last.total+"/20</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+last.mois+"</div>";
+  }
+  h+="<button class='btn btn-sm btn-primary' style='margin-top:8px' data-sid='"+id+"' onclick='window.noterScore(this.dataset.sid)'>+ Score mensuel</button></div>";
+  return h;
+}
+
+/* ── ONGLET CERTIFICATIONS ── */
+function _tabCertifs(id){
+  var DB=getDB3();
+  var sc=((DB.suivi_chauffeur||{})[id])||{niveau_actuel:1};
+  var niv=(window.NIVEAUX_CHAUFFEUR||[])[sc.niveau_actuel-1]||{icon:"🌱",label:"Apprenti",col:"#94a3b8"};
+  var h="<div class='card' style='margin-bottom:12px'>";
+  h+="<div class='card-title'>🏆 Certification interne</div>";
+  h+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:14px'>";
+  h+="<span style='font-size:36px'>"+niv.icon+"</span>";
+  h+="<div><div style='font-size:16px;font-weight:900;color:var(--text)'>Niveau "+sc.niveau_actuel+"/4</div>";
+  h+="<div style='font-size:13px;color:"+niv.col+";font-weight:700'>"+niv.label+"</div></div>";
+  h+="<div style='margin-left:auto;display:flex;gap:6px'>";
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+id+"' onclick='window.monterNiveau(this.dataset.sid)'>⬆️ Valider niveau</button>";
+  h+="<button class='btn btn-secondary btn-sm' data-sid='"+id+"' onclick='window.genCertifChauffeur(this.dataset.sid)'>🖨️ Certif</button></div></div>";
+  (window.NIVEAUX_CHAUFFEUR||[]).forEach(function(n){
+    var ok=sc.niveau_actuel>n.id; var cur=sc.niveau_actuel===n.id;
+    h+="<div style='padding:8px;border:1px solid "+(ok?"rgba(34,197,94,.3)":cur?n.col+"44":"var(--border)")+";border-radius:8px;margin-bottom:6px;background:"+(ok?"rgba(34,197,94,.05)":cur?n.col+"08":"transparent")+"'>";
+    h+="<div style='font-size:11px;font-weight:800;color:"+(ok?"var(--green)":cur?n.col:"var(--sub)")+"'>"+n.icon+" Niveau "+n.id+" — "+n.label+(ok?" ✅":cur?" ← actuel":"")+"</div></div>";
+  });
+  h+="</div>";
+  /* Coffre-fort certifs */
+  h+="<div class='card'><div class='card-title'>📜 Certifications officielles</div>";
+  var coffre=((DB.coffre||{})[id])||{};
+  var certTypes=[["caces","CACES 489","🏗️"],["haccp","HACCP","🌡️"],["sst","SST","🏥"],["fimo","FIMO","🎓"],["permis","Permis B","🪪"],["permis_c","Permis C","🚛"]];
+  certTypes.forEach(function(ct){
+    var doc=coffre[ct[0]]||{};
+    var ok=!!doc.date;
+    h+="<div style='display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)'>";
+    h+="<span style='font-size:18px'>"+ct[2]+"</span>";
+    h+="<span style='font-size:12px;font-weight:700;flex:1;color:var(--text)'>"+ct[1]+"</span>";
+    if(ok) h+="<span style='font-size:11px;color:var(--green)'>✅ "+doc.date+"</span>";
+    else h+="<span style='font-size:11px;color:var(--sub)'>Non obtenu</span>";
+    h+="<button class='btn btn-sm btn-secondary' data-sid='"+id+"' data-cid='"+ct[0]+"' onclick='window.ajouterDocCoffre2(this.dataset.sid,this.dataset.cid,true)' style='font-size:10px'>"+(ok?"✏️":"+ Ajouter")+"</button></div>";
+  });
+  h+="</div>";
+  return h;
+}
+
+/* ── ONGLET SMART ── */
+function _tabSMART(id){
+  var DB=getDB3();
+  if(!DB.smart) DB.smart={};
+  if(!DB.smart[id]) DB.smart[id]=[];
+  var objs=DB.smart[id];
+  var h="<div class='card'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px'>";
+  h+="<div class='card-title'>🎯 Objectifs SMART</div>";
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+id+"' onclick='window.ajouterSMART(this.dataset.sid)'>+ Objectif</button></div>";
+  if(!objs.length) h+="<div style='color:var(--sub);font-size:12px'>Aucun objectif défini.</div>";
+  objs.forEach(function(obj,i){
+    var col=obj.pct>=100?"var(--green)":obj.pct>=60?"var(--yellow)":"var(--orange)";
+    h+="<div style='background:var(--panel2);border-radius:10px;padding:12px;margin-bottom:8px'>";
+    h+="<div style='display:flex;align-items:start;justify-content:space-between;margin-bottom:6px'>";
+    h+="<div><div style='font-size:12px;font-weight:800;color:var(--text)'>"+obj.objectif+"</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+obj.categorie+" · "+obj.date+"</div></div>";
+    h+="<div style='font-size:18px;font-weight:900;color:"+col+"'>"+obj.pct+"%</div></div>";
+    h+="<div style='background:var(--border);border-radius:4px;height:6px'><div style='width:"+Math.min(obj.pct,100)+"%;height:6px;border-radius:4px;background:"+col+"'></div></div>";
+    if(obj.resultat) h+="<div style='font-size:11px;color:var(--green);margin-top:5px'>"+obj.resultat+"</div>";
+    h+="<div style='display:flex;gap:5px;margin-top:7px'>";
+    h+="<button class='btn btn-sm btn-secondary' data-sid='"+id+"' data-idx='"+i+"' onclick='window.majSMART(this.dataset.sid,this.dataset.idx)'>Mettre à jour</button></div></div>";
+  });
+  h+="</div>";
+  return h;
+}
+
+/* ── ONGLET TIMELINE ── */
+function _tabTimeline(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return "";
+  var events=[];
+  if(s.dateEntree) events.push({date:s.dateEntree,type:"Entrée parcours",icon:"🚪",col:"var(--green)"});
+  (DB.entretiens||[]).filter(function(e){return e.salId==id;}).forEach(function(e){events.push({date:e.date,type:"Entretien : "+(e.type||""),icon:"💬",col:"var(--blue)"}); });
+  (DB.evaluations||[]).filter(function(e){return e.salId==id;}).forEach(function(e){events.push({date:e.date,type:"Évaluation",icon:"⭐",col:"var(--orange)"}); });
+  ((DB.incidents||{})[id]||[]).forEach(function(inc){events.push({date:inc.date,type:"Incident : "+inc.titre,icon:"⚠️",col:"var(--red)"}); });
+  ((DB.moments_cles||{})[id]||[]).forEach(function(m){events.push({date:m.date,type:"⭐ "+m.titre,icon:"🌟",col:"var(--yellow)"}); });
+  if(s.dateFin) events.push({date:s.dateFin,type:"Fin de parcours prévue",icon:"🎓",col:"var(--purple)"});
+  events.sort(function(a,b){try{return a.date.localeCompare(b.date);}catch(e){return 0;}});
+  var h="<div class='card'><div class='card-title'>📅 Timeline du parcours</div>";
+  if(!events.length) h+="<div style='color:var(--sub);font-size:12px'>Aucun événement enregistré.</div>";
+  events.forEach(function(ev){
+    var now=new Date(); var isPass=true;
+    try{isPass=new Date(ev.date.split("/").reverse().join("-"))<=now;}catch(e){}
+    h+="<div style='display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);opacity:"+(isPass?1:0.5)+"'>";
+    h+="<div style='width:3px;border-radius:2px;background:"+ev.col+";flex-shrink:0'></div>";
+    h+="<div style='flex:1'><div style='font-size:11px;font-weight:700;color:var(--text)'>"+ev.icon+" "+ev.type+"</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+ev.date+"</div></div></div>";
+  });
+  h+="</div>";
+  return h;
+}
+
+/* ── ONGLET ENTRETIENS ── */
+function _tabEntretiens(id){
+  var DB=getDB3();
+  var ents=(DB.entretiens||[]).filter(function(e){return e.salId==id;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var h="<div class='card'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px'>";
+  h+="<div class='card-title'>💬 Entretiens ("+ents.length+")</div>";
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+id+"' onclick='window.modalEntretien&&window.modalEntretien(this.dataset.sid,0)'>+ Entretien</button></div>";
+  if(!ents.length) h+="<div style='color:var(--sub);font-size:12px'>Aucun entretien.</div>";
+  ents.slice(0,10).forEach(function(e){
+    h+="<div style='padding:10px;background:var(--panel2);border-radius:8px;margin-bottom:6px'>";
+    h+="<div style='font-size:12px;font-weight:800;color:var(--text)'>"+e.type+" — "+e.date+"</div>";
+    if(e.contenu) h+="<div style='font-size:11px;color:var(--sub);margin-top:4px'>"+e.contenu.slice(0,150)+(e.contenu.length>150?"...":"")+"</div>";
+    h+="</div>";
+  });
+  h+="</div>";
+  return h;
+}
+
+/* ── ONGLET JOURNAL ── */
+function _tabJournal(id){
+  var today=new Date().toISOString().slice(0,10);
+  // Réutiliser renderJournal
+  var DB=getDB3();
+  if(!DB.journal) DB.journal={};
+  if(!DB.journal[id]) DB.journal[id]={};
+  var entree=DB.journal[id][today]||{};
+  var h="<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+  h+="<div class='card'><div class='card-title'>📓 Formateur — "+new Date().toLocaleDateString("fr-FR")+"</div>";
+  [["appris","Ce qu il a appris"],["reussi","Ce qu il a réussi"],["aide","Besoin aide"],["erreur","Erreur à corriger"],["progres","Progression"],["pret","Prêt pour la suite ?"]].forEach(function(f){
+    h+="<div style='margin-bottom:8px'><div style='font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px'>"+f[1]+"</div><textarea id='jf-"+f[0]+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:40px;box-sizing:border-box'>"+(entree["f_"+f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+id+"' data-date='"+today+"' onclick='window.sauverJF&&window.sauverJF(this.dataset.sid,this.dataset.date)'>💾 Sauver</button></div>";
+  h+="<div class='card'><div class='card-title'>✏️ Salarié</div>";
+  [["appris","J ai appris"],["difficile","C était difficile"],["fier","Je suis fier de"],["besoin","J ai besoin de"],["compris","J ai compris"],["ressenti","Je me sens"]].forEach(function(f){
+    h+="<div style='margin-bottom:8px'><div style='font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px'>"+f[1]+"</div><textarea id='js-"+f[0]+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:40px;box-sizing:border-box'>"+(entree["s_"+f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-green btn-sm' data-sid='"+id+"' data-date='"+today+"' onclick='window.sauverJS&&window.sauverJS(this.dataset.sid,this.dataset.date)'>💾 Sauver</button></div></div>";
+  return h;
+}
+
+/* ── ONGLET DOCUMENTS ── */
+function _tabDocuments(id){
+  if(typeof _afficherCoffre2==="function"){
+    var zone=document.getElementById("dossier-tab-content");
+    if(zone){ var d=document.createElement("div"); d.id="coffre-zone"; zone.appendChild(d); _afficherCoffre2(id); return ""; }
+  }
+  return "<div class='card'><button class='btn btn-primary' onclick='nav(\"coffre\")'>🔒 Ouvrir le coffre-fort</button></div>";
+}
+
+/* ── ONGLET PRÉPARER SORTIE ── */
+function _tabSortie(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return "";
+  if(!DB.checklist_sortie) DB.checklist_sortie={};
+  if(!DB.checklist_sortie[id]) DB.checklist_sortie[id]={};
+  var cl=DB.checklist_sortie[id];
+
+  var items=[
+    {id:"modules_termines",l:"Tous les modules formation terminés"},
+    {id:"qcm_valides",l:"QCM principaux validés (>70%)"},
+    {id:"certif_haccp",l:"HACCP obtenu"},
+    {id:"certif_sst",l:"SST obtenu"},
+    {id:"cv_miseajour",l:"CV mis à jour avec compétences CANA"},
+    {id:"passeport_gen",l:"Passeport de compétences généré"},
+    {id:"ft_inscription",l:"Inscription France Travail préparée"},
+    {id:"entretiens_simules",l:"Minimum 2 simulations entretien faites"},
+    {id:"candidatures_envoyees",l:"Au moins 5 candidatures envoyées"},
+    {id:"cpf_verifie",l:"CPF vérifié et solde connu"},
+    {id:"droits_connus",l:"Droits chômage expliqués"},
+    {id:"contacts_reseau",l:"Contacts du réseau notés"},
+    {id:"bilan_2ans",l:"Bilan de parcours 2 ans rédigé"},
+    {id:"attestation_travail",l:"Attestation employeur préparée"},
+  ];
+
+  var done=items.filter(function(it){return cl[it.id];}).length;
+  var pct=Math.round(done/items.length*100);
+  var col=pct>=80?"var(--green)":pct>=50?"var(--orange)":"var(--red)";
+
+  var h="<div class='card' style='margin-bottom:12px'>";
+  h+="<div class='card-title'>🚀 Préparer la sortie</div>";
+  h+="<div style='display:flex;align-items:center;gap:14px;margin-bottom:14px'>";
+  h+="<div style='font-size:28px;font-weight:900;color:"+col+"'>"+pct+"%</div>";
+  h+="<div style='flex:1'><div style='background:var(--border);border-radius:4px;height:8px'><div style='width:"+pct+"%;height:8px;border-radius:4px;background:"+col+"'></div></div>";
+  h+="<div style='font-size:10px;color:var(--sub);margin-top:4px'>"+done+" / "+items.length+" tâches complétées</div></div></div>";
+
+  items.forEach(function(it){
+    var checked=!!cl[it.id];
+    h+="<div style='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)'>";
+    h+="<input type='checkbox' id='cl-"+it.id+"-"+id+"' "+(checked?"checked":"")+" style='width:16px;height:16px;accent-color:var(--green);cursor:pointer' data-sid='"+id+"' data-iid='"+it.id+"' onchange='window.cocherSortie(this)'>";
+    h+="<label for='cl-"+it.id+"-"+id+"' style='font-size:12px;color:"+(checked?"var(--green)":"var(--text)")+";cursor:pointer;text-decoration:"+(checked?"line-through":"none")+"'>"+it.l+"</label></div>";
+  });
+  h+="</div>";
+
+  /* Boutons documents */
+  h+="<div class='card'><div class='card-title'>📄 Documents de sortie</div>";
+  h+="<div style='display:flex;flex-wrap:wrap;gap:8px'>";
+  h+="<button class='btn btn-primary' data-sid='"+id+"' onclick='window.genPasseportProfessionnel&&window.genPasseportProfessionnel(this.dataset.sid)'>📜 Passeport compétences</button>";
+  h+="<button class='btn btn-primary' data-sid='"+id+"' onclick='window.genAttestationFormation(this.dataset.sid)'>🎓 Attestation formation</button>";
+  h+="<button class='btn btn-primary' data-sid='"+id+"' onclick='window.genRapportAnnuelSIAE&&window.genRapportAnnuelSIAE(this.dataset.sid)'>📊 Bilan parcours</button>";
+  h+="<button class='btn btn-secondary' data-sid='"+id+"' onclick='window.imprimerDossier&&window.imprimerDossier(this.dataset.sid)'>🖨️ Dossier complet</button>";
+  h+="</div></div>";
+  return h;
+}
+
+/* ── FONCTIONS UTILITAIRES ── */
+window.editerMotFormateur=function(id){
+  var DB=getDB3();
+  if(!DB.mot_formateur) DB.mot_formateur={};
+  var mot=prompt("Mot du formateur sur ce salarié :",DB.mot_formateur[id]||"");
+  if(mot===null) return;
+  DB.mot_formateur[id]=mot;
+  if(typeof sauver==="function") sauver();
+  ouvrirDossier(id);
+};
+
+window.ajouterParole=function(id){
+  var DB=getDB3();
+  var el=document.getElementById("parole-input-"+id);
+  if(!el||!el.value.trim()) return;
+  if(!DB.carnet_parole) DB.carnet_parole={};
+  if(!DB.carnet_parole[id]) DB.carnet_parole[id]=[];
+  DB.carnet_parole[id].push({date:new Date().toLocaleDateString("fr-FR"),note:el.value.trim()});
+  if(typeof sauver==="function") sauver();
+  el.value="";
+  window.showDossierTab("d-profil",id);
+};
+
+window.ajouterMoment=function(id){
+  var DB=getDB3();
+  var el=document.getElementById("moment-input-"+id);
+  if(!el||!el.value.trim()) return;
+  if(!DB.moments_cles) DB.moments_cles={};
+  if(!DB.moments_cles[id]) DB.moments_cles[id]=[];
+  DB.moments_cles[id].push({date:new Date().toLocaleDateString("fr-FR"),titre:el.value.trim()});
+  if(typeof sauver==="function") sauver();
+  el.value="";
+  window.showDossierTab("d-profil",id);
+};
+
+window.sauverSituation=function(id){
+  var DB=getDB3();
+  if(!DB.situation) DB.situation={};
+  if(!DB.situation[id]) DB.situation[id]={};
+  ["logement","transport","vehicule_perso","zone_habitation"].forEach(function(f){
+    var el=document.getElementById("sit-"+f+"-"+id);
+    if(el) DB.situation[id][f]=el.value;
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Situation sauvegardée","ok");
+};
+
+window.sauverProjetVie=function(id){
+  var DB=getDB3();
+  if(!DB.projet_vie) DB.projet_vie={};
+  if(!DB.projet_vie[id]) DB.projet_vie[id]={};
+  ["ou_dans_2ans","ce_qui_motive","blocage_avant"].forEach(function(f){
+    var el=document.getElementById("pv-"+f+"-"+id);
+    if(el) DB.projet_vie[id][f]=el.value;
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Projet de vie sauvegardé","ok");
+};
+
+window.sauverContactsExt=function(id){
+  var DB=getDB3();
+  if(!DB.contacts_ext) DB.contacts_ext={};
+  if(!DB.contacts_ext[id]) DB.contacts_ext[id]={};
+  ["conseiller_ft","assistante_sociale","mission_locale","famille_ref","contact_urgence"].forEach(function(f){
+    var el=document.getElementById("ce-"+f+"-"+id);
+    if(el) DB.contacts_ext[id][f]=el.value;
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Contacts sauvegardés","ok");
+};
+
+window.noterFormation=function(id,blocId){
+  var DB=getDB3();
+  if(!DB.academie) DB.academie={};
+  if(!DB.academie[id]) DB.academie[id]={};
+  var score=prompt("Score QCM (0-100) :","75");
+  if(score===null) return;
+  DB.academie[id][blocId]={score:parseInt(score)||0,lu:true,date:new Date().toLocaleDateString("fr-FR")};
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Formation notée","ok");
+  window.showDossierTab("d-formation",id);
+};
+
+window.togglePrioritaire=function(id,blocId){
+  var DB=getDB3();
+  if(!DB.plan_formation_perso) DB.plan_formation_perso={};
+  if(!DB.plan_formation_perso[id]) DB.plan_formation_perso[id]={};
+  var pp=DB.plan_formation_perso[id];
+  if(pp[blocId]) delete pp[blocId]; else pp[blocId]=true;
+  if(typeof sauver==="function") sauver();
+  window.showDossierTab("d-formation",id);
+};
+
+window.ouvrirEvalPhase=function(id,phase){
+  var DB=getDB3();
+  if(!DB.eval_perso) DB.eval_perso={};
+  if(!DB.eval_perso[id]) DB.eval_perso[id]={};
+  var AXES=["Ponctualité","Régularité présence","Prise d initiative","Autonomie","Relation client","Communication équipe","Respect des consignes","Sécurité","Chaîne du froid","Rigueur BL","Gestion du stress","Adaptation","Qualité du travail","Rapidité execution","Esprit equipe","Hygiène tenue","Gestion matériel","Ecoute et progression","Motivation","Projet professionnel"];
+  if(!DB.eval_perso[id][phase]) DB.eval_perso[id][phase]={};
+  var ep=DB.eval_perso[id][phase];
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;overflow-y:auto;padding:20px";
+  var phaseLabels={depart:"Diagnostic départ","3mois":"Bilan 3 mois",final:"Évaluation finale"};
+  var h="<div style='max-width:600px;margin:0 auto;background:var(--panel);border-radius:14px;padding:24px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px'>";
+  h+="<div style='font-size:16px;font-weight:900;color:var(--orange)'>"+( phaseLabels[phase]||phase)+"</div>";
+  h+="<button onclick='this.closest(\"div[style]\").remove()' style='background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:6px 12px;cursor:pointer'>✕</button></div>";
+  AXES.forEach(function(ax){
+    var val=ep[ax]||0;
+    h+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'>";
+    h+="<div style='font-size:11px;font-weight:700;color:var(--text);flex:1'>"+ax+"</div>";
+    h+="<div style='display:flex;gap:3px'>";
+    for(var v=1;v<=4;v++){
+      var cols=["","var(--red)","var(--yellow)","var(--green)","var(--blue)"];
+      h+="<button data-ax='"+ax.replace(/'/g,"")+"' data-v='"+v+"' onclick='window._setEvalVal(\""+id+"\",\""+phase+"\",this.dataset.ax,this.dataset.v)' style='width:26px;height:26px;border-radius:4px;border:2px solid "+(val===v?cols[v]:"var(--border)")+";background:"+(val===v?cols[v]+"22":"transparent")+";cursor:pointer;font-size:11px;font-weight:800;color:"+(val===v?cols[v]:"var(--sub)")+"'>"+v+"</button>";
+    }
+    h+="</div></div>";
+  });
+  h+="<button class='btn btn-primary' style='margin-top:14px;width:100%' onclick='if(typeof sauver===\"function\")sauver();if(typeof toast===\"function\")toast(\"Évaluation sauvegardée\",\"ok\");this.closest(\"div[style]\").remove();window.showDossierTab(\"d-eval\","+id+")'>💾 Sauvegarder</button>";
+  h+="</div>";
+  ov.innerHTML=h; document.body.appendChild(ov);
+};
+
+window._setEvalVal=function(id,phase,ax,v){
+  var DB=getDB3();
+  if(!DB.eval_perso) DB.eval_perso={};
+  if(!DB.eval_perso[id]) DB.eval_perso[id]={};
+  if(!DB.eval_perso[id][phase]) DB.eval_perso[id][phase]={};
+  DB.eval_perso[id][phase][ax]=parseInt(v)||0;
+};
+
+window.cocherSortie=function(cb){
+  var id=cb.dataset.sid; var iid=cb.dataset.iid;
+  var DB=getDB3();
+  if(!DB.checklist_sortie) DB.checklist_sortie={};
+  if(!DB.checklist_sortie[id]) DB.checklist_sortie[id]={};
+  DB.checklist_sortie[id][iid]=cb.checked;
+  if(typeof sauver==="function") sauver();
+};
+
+window.lancerIADossier=function(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return;
+  var score=_calcScoreEmp(id);
+  var ents=(DB.entretiens||[]).filter(function(e){return e.salId==id;}).length;
+  var evals=(DB.evaluations||[]).filter(function(e){return e.salId==id;}).length;
+  var sc=((DB.suivi_chauffeur||{})[id])||{};
+  var incs=((DB.incidents||{})[id]||[]).length;
+  var prog=Object.keys((DB.academie&&DB.academie[id])||{}).length;
+  var prompt_text="Tu es un conseiller expert en insertion professionnelle. Voici le dossier de "+s.prenom+(s.nom?" "+s.nom:"")+" :\n"
+    +"- Score employabilité : "+score+"/100\n"
+    +"- Niveau certification interne : "+(sc.niveau_actuel||1)+"/4\n"
+    +"- Modules formation complétés : "+prog+"\n"
+    +"- Entretiens réalisés : "+ents+"\n"
+    +"- Évaluations : "+evals+"\n"
+    +"- Incidents enregistrés : "+incs+"\n"
+    +"- Tournées : "+((sc.tournees||[]).length)+"\n"
+    +"Rédige en 3 courts paragraphes : 1) Points forts observés 2) Axes de progression prioritaires 3) Recommandation concrète pour la suite (emploi, formation, prolongation). Sois direct et bienveillant. Moins de 200 mots.";
+
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px";
+  ov.innerHTML="<div style='max-width:560px;width:100%;background:var(--panel);border-radius:14px;padding:24px'><div style='font-size:15px;font-weight:800;color:var(--orange);margin-bottom:12px'>🤖 Analyse IA — "+s.prenom+"</div><div id='ia-result' style='font-size:12px;color:var(--text);line-height:1.7;min-height:100px'>Analyse en cours...</div><button onclick='this.closest(\"div[style]\").remove()' class='btn btn-secondary' style='margin-top:14px;width:100%'>Fermer</button></div>";
+  document.body.appendChild(ov);
+
+  fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:prompt_text}]})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||"Erreur IA";
+    var el=document.getElementById("ia-result");
+    if(el) el.innerHTML=txt.replace(/\n/g,"<br>");
+  }).catch(function(){
+    var el=document.getElementById("ia-result");
+    if(el) el.innerHTML="Erreur de connexion à l IA.";
+  });
+};
+
+window.genAttestationFormation=function(id){
+  var DB=getDB3();
+  var s=(DB.salaries||[]).find(function(x){return x.id==id;}); if(!s) return;
+  var prog=DB.academie&&DB.academie[id]||{};
+  var blocs=ACADEMIE.blocs||[];
+  var faits=blocs.filter(function(b){return prog[b.id]&&prog[b.id].lu;});
+  var today=new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  var win=window.open("","_blank"); if(!win) return;
+  var html="<!DOCTYPE html><html><head><meta charset='UTF-8'><style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto}h1{font-size:20px;color:#f97316;border-bottom:3px solid #f97316;padding-bottom:8px}table{width:100%;border-collapse:collapse;margin:14px 0}th{background:#0f1923;color:#fff;padding:7px;font-size:11px}td{border:1px solid #e2e8f0;padding:7px;font-size:11px}.sig{display:flex;justify-content:space-between;margin-top:30px}.sig-line{width:180px;border-bottom:1px solid #1a2435;margin:20px auto 4px;text-align:center}@media print{button{display:none}}</style></head><body>";
+  html+="<button onclick='window.print()' style='float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer'>Imprimer</button>";
+  html+="<div style='font-size:10px;color:#64748b;font-weight:700'>ATTESTATION DE FORMATION INTERNE — LA TABLE DE CANA — MARSEILLE</div>";
+  html+="<h1>Attestation de formation logistique</h1>";
+  html+="<p><b>La Table de Cana</b>, Structure d Insertion par l Activite Economique, atteste que :</p>";
+  html+="<p style='font-size:16px;font-weight:900;color:#1a2435;text-align:center;padding:10px'>"+s.prenom+(s.nom?" "+s.nom:"")+"</p>";
+  html+="<p>a suivi et validé les modules de formation professionnelle suivants dans le cadre de son parcours d insertion :</p>";
+  html+="<table><tr><th>Module</th><th>Score QCM</th><th>Date</th></tr>";
+  faits.forEach(function(b){var p=prog[b.id]||{};html+="<tr><td>"+b.icon+" "+b.titre+"</td><td style='text-align:center'>"+(p.score||"—")+"%</td><td>"+(p.date||"—")+"</td></tr>";});
+  html+="</table>";
+  html+="<p>Cette formation a été dispensée dans le cadre d une Action de Formation En Situation de Travail (AFEST), conforme au référentiel logistique de l OPCO Cohésion sociale.</p>";
+  html+="<div class='sig'><div style='text-align:center'><b>Le salarié</b><div class='sig-line'></div><div>"+s.prenom+(s.nom?" "+s.nom:"")+"</div></div>";
+  html+="<div style='text-align:center;color:#64748b;padding-top:20px'>La Table de Cana<br>Marseille<br>"+today+"</div>";
+  html+="<div style='text-align:center'><b>Le responsable</b><div class='sig-line'></div><div>La Table de Cana</div></div></div>";
+  html+="</body></html>";
+  win.document.write(html); win.document.close();
+};
+
+/* Corriger l'erreur Academie logistique */
+(function(){
+  var oldRenderAcademie=window.renderAcademie;
+  window.renderAcademie=function(c2){
+    if(!c2) return;
+    var DB=getDB3();
+    if(!DB.academie) DB.academie={};
+    var ACADEMIE2=window.ACADEMIE||{blocs:[]};
+    if(!ACADEMIE2.blocs||!ACADEMIE2.blocs.length){
+      c2.innerHTML="<div class='page-title'>🎓 Academie logistique</div><div style='color:var(--sub);padding:20px'>Chargement des modules...</div>";
+      return;
+    }
+    if(oldRenderAcademie){ try{oldRenderAcademie(c2);}catch(e){c2.innerHTML="<div class='page-title'>🎓 Academie logistique</div><div style='color:var(--red);padding:20px'>Erreur: "+e.message+"</div>";} }
+  };
+})();
+
+console.log("Dossier Chauffeur Complet charge — 11 onglets + score + alertes + IA");
+
+</script>
