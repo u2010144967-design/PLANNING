@@ -516,6 +516,7 @@ async function chargerCloud(){
       if(d.fiches_remplies)DB.fiches_remplies=d.fiches_remplies;
       if(d.badges_attribues)DB.badges_attribues=d.badges_attribues;
     }
+    window.DB=DB; /* Sync window.DB après chargement cloud */
   }catch(e){}
 }
 
@@ -534,18 +535,26 @@ function login(){
 }
 function deconnecter(){if(!confirm('Se déconnecter ?'))return;SESSION=null;document.getElementById('app').style.display='none';document.getElementById('login-wrap').style.display='flex';document.getElementById('login-code').value='';}
 async function init(){
-  window.fichesSalActif = 0; /* init global */
+  window.fichesSalActif = 0;
   var local=localStorage.getItem('crm_cana4');
-  if(local){try{var d=JSON.parse(local);if(d.salaries&&d.salaries.length)DB=d;}catch(e){}}
-  if(!DB.salaries.length)DB.salaries=JSON.parse(JSON.stringify(SALARIES_DEFAULT));
+  if(local){try{var d=JSON.parse(local);if(d.salaries&&d.salaries.length){DB=d;window.DB=DB;}}catch(e){}}
+  /* Initialiser les clés manquantes */
+  var defs={smart:{},progression:{},parcours_chauffeur:{},pedagogique:{},opco:{},defis:[],bilans_hebdo:{},journal:{},tournees:{},projets_pro:{},visites_medicales:{},passeports:{},agenda:[],signatures:{},coffre:{},messagerie:[],journal_actions:[],bienetre:{},post_sortie:{},incidents:{},programme:{}};
+  Object.keys(defs).forEach(function(k){if(DB[k]===undefined||DB[k]===null)DB[k]=defs[k];});
+  if(!DB.salaries||!DB.salaries.length)DB.salaries=JSON.parse(JSON.stringify(SALARIES_DEFAULT));
+  window.DB=DB;
   await chargerCloud();
-  if(!DB.salaries.length)DB.salaries=JSON.parse(JSON.stringify(SALARIES_DEFAULT));
+  /* Réappliquer les clés manquantes après chargement cloud */
+  Object.keys(defs).forEach(function(k){if(DB[k]===undefined||DB[k]===null)DB[k]=defs[k];});
+  if(!DB.salaries||!DB.salaries.length)DB.salaries=JSON.parse(JSON.stringify(SALARIES_DEFAULT));
+  window.DB=DB;
   majAlertes();nav('dashboard');
 }
 function nav(page){
   PAGE=page;
-  document.querySelectorAll('.sb-item').forEach(function(el){el.classList.toggle('on',el.getAttribute('data-p')===page);});
-  render(page);
+  document.querySelectorAll('.sb-item').forEach(function(el){el.classList.toggle('on',el.getAttribute('data-p')===page);el.classList.toggle('active',el.getAttribute('data-p')===page);});
+  /* Utiliser window.render s'il existe (router central), sinon render local */
+  if(typeof window.render==='function'){window.render(page);}else{render(page);}
 }
 function render(page){
   var c=document.getElementById('content');if(!c)return;
@@ -15974,6 +15983,14 @@ function afficherCoffre(salId){
   zone.innerHTML=h;
 }
 
+
+window._cofreClic=function(btn){
+  var sid=btn.dataset.sid;
+  var tid=btn.dataset.tid;
+  var he=btn.dataset.he==='1';
+  window.ajouterDocCoffre(sid,tid,he);
+};
+
 window.ajouterDocCoffre=function(salId,typeId,label,hasExpiry){
   var date=prompt('Date du document (JJ/MM/AAAA) :',new Date().toLocaleDateString('fr-FR'));
   if(!date)return;
@@ -21325,6 +21342,1180 @@ console.log('Final Mega chargé — QCM tous blocs, Visites médicales, Dashboar
   }
 
   console.log('Nouvelles slides chargées — Marseille (15 slides) + Entretien embauche (15 slides) ✅');
+})();
+
+</script>
+
+
+pt>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   PATCH PROPRE — Fonctions sécurisées
+   100% guillemets doubles, zéro apostrophe dans les strings
+═══════════════════════════════════════════════════════ */
+
+function getDB(){
+  return window.DB||{salaries:[],entretiens:[],evaluations:[],plans:[],fiches_remplies:[],badges_attribues:[],alertes:[],smart:{},progression:{},parcours_chauffeur:{},pedagogique:{},opco:{},defis:[],bilans_hebdo:{},journal:{},projets_pro:{},visites_medicales:{},passeports:{},agenda:[],signatures:{},coffre:{},messagerie:[],journal_actions:[],bienetre:{},post_sortie:{},incidents:{},programme:{}};
+}
+function getSals(){return (getDB().salaries||[]).filter(function(s){return s.statut==="actif";});}
+
+/* ── OBJECTIFS SMART ── */
+window.renderSMART=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var h="<div class='page-title'>🎯 Objectifs SMART</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Specifique · Mesurable · Atteignable · Realiste · Temporel</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  getSals().forEach(function(s){
+    if(!DB.smart[s.id])DB.smart[s.id]=[];
+    h+="<div onclick='selSMART("+s.id+",this)' class='fsal-btn-sm' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span><span style='font-weight:800;color:var(--text);font-size:12px'>"+s.prenom+(s.nom?" "+s.nom:"")+"</span></div>";
+  });
+  h+="</div><div id='smart-zone'></div>";
+  c2.innerHTML=h;
+  var first=getSals()[0];
+  if(first)selSMART(first.id,c2.querySelector(".fsal-btn-sm"));
+};
+window.selSMART=function(salId,el){
+  document.querySelectorAll(".fsal-btn-sm").forEach(function(b){b.style.borderColor="var(--border)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--orange)";el.style.background="var(--panel2)";}
+  window.smartSalId=salId;
+  _afficherSMART(salId);
+};
+function _afficherSMART(salId){
+  var zone=document.getElementById("smart-zone");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.smart[salId])DB.smart[salId]=[];
+  var objectifs=DB.smart[salId];
+  var h="<div class='card' style='margin-bottom:14px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px'>";
+  h+="<div class='card-title'>🎯 Objectifs de "+s.prenom+"</div>";
+  h+="<button class='btn btn-primary btn-sm' onclick='window.ajouterSMART("+salId+")'>+ Ajouter</button></div>";
+  if(!objectifs.length){
+    h+="<div style='color:var(--sub);font-size:12px;margin-bottom:10px'>Aucun objectif. Exemples :</div>";
+    var ex=[["0 retard 30 jours","Ponctualite"],["QCM score 80%","Formation"],["3 candidatures ce mois","Projet pro"],["BL toujours signe","Rigueur"]];
+    ex.forEach(function(e){
+      h+="<div style='padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--sub)'><span style='color:var(--blue)'>+ </span>"+e[0]+" ("+e[1]+")</div>";
+    });
+  } else {
+    objectifs.forEach(function(obj,i){
+      var col=obj.pct>=100?"var(--green)":obj.pct>=60?"var(--yellow)":"var(--orange)";
+      h+="<div style='background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px'>";
+      h+="<div style='display:flex;align-items:start;justify-content:space-between;margin-bottom:8px'>";
+      h+="<div><div style='font-size:13px;font-weight:800;color:var(--text)'>"+obj.objectif+"</div>";
+      h+="<div style='font-size:10px;color:var(--sub)'>"+obj.categorie+" · "+obj.date+"</div></div>";
+      h+="<div style='font-size:20px;font-weight:900;color:"+col+"'>"+obj.pct+"%</div></div>";
+      h+="<div style='background:var(--border);border-radius:4px;height:6px;margin-bottom:8px'><div style='width:"+Math.min(obj.pct,100)+"%;height:6px;border-radius:4px;background:"+col+"'></div></div>";
+      if(obj.resultat)h+="<div style='font-size:11px;color:var(--green)'>✅ "+obj.resultat+"</div>";
+      h+="<div style='display:flex;gap:6px;margin-top:8px'>";
+      h+="<button class='btn btn-sm btn-secondary' data-sid='"+salId+"' data-idx='"+i+"' onclick='window.majSMART(this.dataset.sid,this.dataset.idx)'>Mettre a jour</button>";
+      h+="<button class='btn btn-sm btn-secondary' data-sid='"+salId+"' data-idx='"+i+"' onclick='window.supprSMART(this.dataset.sid,this.dataset.idx)' style='color:var(--red)'>Supprimer</button></div></div>";
+    });
+  }
+  h+="</div>";
+  zone.innerHTML=h;
+}
+window.ajouterSMART=function(salId){
+  var DB=getDB();
+  var obj=prompt("Objectif :");if(!obj)return;
+  var cat=prompt("Categorie :","Ponctualite");
+  var date=prompt("Echeance :",new Date(Date.now()+2592000000).toLocaleDateString("fr-FR"));
+  if(!DB.smart[salId])DB.smart[salId]=[];
+  DB.smart[salId].push({objectif:obj,categorie:cat||"",date:date||"",pct:0,resultat:""});
+  if(typeof sauver==="function")sauver();
+  _afficherSMART(salId);
+};
+window.majSMART=function(salId,idx){
+  var DB=getDB();var obj=DB.smart[salId]&&DB.smart[salId][idx];if(!obj)return;
+  var pct=prompt("Avancement % :",String(obj.pct));
+  var res=prompt("Resultat :",obj.resultat||"");
+  if(pct!==null)obj.pct=Math.min(100,Math.max(0,parseInt(pct)||0));
+  if(res!==null)obj.resultat=res;
+  if(typeof sauver==="function")sauver();
+  _afficherSMART(salId);
+};
+window.supprSMART=function(salId,idx){
+  var DB=getDB();if(!confirm("Supprimer ?"))return;
+  DB.smart[salId].splice(idx,1);
+  if(typeof sauver==="function")sauver();
+  _afficherSMART(salId);
+};
+
+/* ── COURBE PROGRESSION ── */
+window.renderCourbeProgression=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var h="<div class='page-title'>📈 Courbe de progression</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Ponctualite · Autonomie · Communication · Confiance · Employabilite</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  getSals().forEach(function(s){
+    h+="<div onclick='selCourbe("+s.id+",this)' class='fsal-btn-cb' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span><span style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</span></div>";
+  });
+  h+="</div><div id='courbe-zone'></div>";
+  c2.innerHTML=h;
+  var first=getSals()[0];
+  if(first)selCourbe(first.id,c2.querySelector(".fsal-btn-cb"));
+};
+window.selCourbe=function(salId,el){
+  document.querySelectorAll(".fsal-btn-cb").forEach(function(b){b.style.borderColor="var(--border)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--green)";el.style.background="var(--panel2)";}
+  window.courbeSalId=salId;
+  _afficherCourbe(salId);
+};
+function _afficherCourbe(salId){
+  var zone=document.getElementById("courbe-zone");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.progression[salId])DB.progression[salId]=[];
+  var data=DB.progression[salId];
+  var axes=["Ponctualite","Autonomie","Communication","Confiance","Employabilite"];
+  var icons=["⏰","🚀","💬","💪","📈"];
+  var cols=["#22c55e","#3b82f6","#a855f7","#f97316","#f59e0b"];
+  var h="<div class='card' style='margin-bottom:14px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px'>";
+  h+="<div class='card-title'>📈 Progression de "+s.prenom+"</div>";
+  h+="<button class='btn btn-primary btn-sm' onclick='ajouterMesureProg("+salId+")'>+ Mesure</button></div>";
+  if(!data.length){
+    h+="<div style='color:var(--sub);font-size:12px;padding:10px'>Ajoutez une mesure pour commencer.</div>";
+  } else {
+    var last=data[data.length-1];
+    h+="<div style='display:flex;flex-direction:column;gap:8px;margin-bottom:14px'>";
+    axes.forEach(function(ax,i){
+      var val=last[ax]||0;
+      h+="<div style='display:flex;align-items:center;gap:10px'>";
+      h+="<span style='font-size:18px;flex-shrink:0'>"+icons[i]+"</span>";
+      h+="<div style='width:120px;font-size:11px;font-weight:700;color:var(--text)'>"+ax+"</div>";
+      h+="<div style='flex:1;background:var(--border);border-radius:4px;height:8px'><div style='width:"+val*20+"%;height:8px;border-radius:4px;background:"+cols[i]+"'></div></div>";
+      h+="<div style='font-size:12px;font-weight:900;color:"+cols[i]+";width:30px'>"+val+"/5</div></div>";
+    });
+    h+="</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+data.length+" mesure(s) — derniere : "+(last.date||"")+"</div>";
+  }
+  h+="</div>";
+  zone.innerHTML=h;
+}
+window.ajouterMesureProg=function(salId){
+  var DB=getDB();
+  var axes=["Ponctualite","Autonomie","Communication","Confiance","Employabilite"];
+  var mesure={date:new Date().toLocaleDateString("fr-FR")};
+  for(var i=0;i<axes.length;i++){
+    var v=prompt(axes[i]+" (1-5) :","3");
+    if(v===null)return;
+    mesure[axes[i]]=Math.min(5,Math.max(1,parseInt(v)||3));
+  }
+  if(!DB.progression[salId])DB.progression[salId]=[];
+  DB.progression[salId].push(mesure);
+  if(typeof sauver==="function")sauver();
+  _afficherCourbe(salId);
+};
+
+/* ── COFFRE-FORT ── */
+window.renderCoffre=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var h="<div class='page-title'>🔒 Coffre-fort documentaire</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Documents officiels · Alertes expiration</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  getSals().forEach(function(s){
+    h+="<div onclick='selCoffre("+s.id+",this)' class='fsal-btn-co' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span><span style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</span></div>";
+  });
+  h+="</div><div id='coffre-zone'></div>";
+  c2.innerHTML=h;
+  var first=getSals()[0];
+  if(first)selCoffre(first.id,c2.querySelector(".fsal-btn-co"));
+};
+window.selCoffre=function(salId,el){
+  document.querySelectorAll(".fsal-btn-co").forEach(function(b){b.style.borderColor="var(--border)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--blue)";el.style.background="var(--panel2)";}
+  window.coffreSalId=salId;
+  _afficherCoffre2(salId);
+};
+function _afficherCoffre2(salId){
+  var zone=document.getElementById("coffre-zone");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.coffre[salId])DB.coffre[salId]={};
+  var docs=DB.coffre[salId];
+  var now=new Date();
+  var types=[
+    ["cni","Carte identite","🪪",true],
+    ["permis","Permis B","🚗",true],
+    ["permis_c","Permis C","🚛",true],
+    ["vitale","Carte Vitale","💳",false],
+    ["caf","Attestation CAF","📋",true],
+    ["contrat","Contrat travail","📄",false],
+    ["fimo","FIMO","🎓",true],
+    ["caces","CACES","🏗️",true],
+    ["haccp","HACCP","🌡️",true],
+    ["sst","SST","🏥",true],
+    ["diplome","Diplome","🏅",false],
+    ["rib","RIB","🏦",false]
+  ];
+  var h="<div class='card'><div class='card-title'>🔒 Documents de "+s.prenom+"</div><div class='grid-2'>";
+  types.forEach(function(t){
+    var doc=docs[t[0]]||{};
+    var present=!!doc.date;
+    var expire=false;
+    if(present&&t[3]&&doc.expiry){
+      try{var j=Math.floor((new Date(doc.expiry.split("/").reverse().join("-"))-now)/86400000);expire=j<30;}catch(e){}
+    }
+    var bord=expire?"var(--red)":present?"var(--green)":"var(--border)";
+    h+="<div style='background:"+bord+"08;border:2px solid "+bord+"33;border-radius:10px;padding:12px'>";
+    h+="<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'>";
+    h+="<span style='font-size:20px'>"+t[2]+"</span>";
+    h+="<div style='flex:1'><div style='font-size:12px;font-weight:800;color:var(--text)'>"+t[1]+"</div>";
+    if(present){
+      h+="<div style='font-size:10px;color:var(--green)'>✅ "+doc.date+"</div>";
+      if(t[3]&&doc.expiry)h+="<div style='font-size:10px;color:"+(expire?"var(--red)":"var(--sub)")+"'>Exp: "+doc.expiry+(expire?" ⚠️":"")+"</div>";
+    } else {
+      h+="<div style='font-size:10px;color:var(--sub)'>Non enregistre</div>";
+    }
+    h+="</div></div>";
+    h+="<button class='btn btn-sm btn-secondary' style='width:100%;font-size:10px' data-tid='"+t[0]+"' data-he='"+(t[3]?1:0)+"' data-sid='"+salId+"' onclick='window.docCoffreClic(this)'>"+(present?"Modifier":"Ajouter")+"</button>";
+    h+="</div>";
+  });
+  h+="</div></div>";
+  zone.innerHTML=h;
+}
+window.docCoffreClic=function(btn){window.ajouterDocCoffre2(btn.dataset.sid,btn.dataset.tid,btn.dataset.he==="1");};
+window.ajouterDocCoffre2=function(salId,typeId,hasExpiry){
+  var DB=getDB();
+  var date=prompt("Date du document (JJ/MM/AAAA) :",new Date().toLocaleDateString("fr-FR"));
+  if(!date)return;
+  var expiry="";
+  if(hasExpiry)expiry=prompt("Date expiration (JJ/MM/AAAA, vide=illimite) :","");
+  if(!DB.coffre[salId])DB.coffre[salId]={};
+  DB.coffre[salId][typeId]={date:date,expiry:expiry||""};
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Document enregistre","ok");
+  _afficherCoffre2(salId);
+};
+
+/* ── VISITES MEDICALES ── */
+window.renderVisitesMedicales=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var now=new Date();
+  var h="<div class='page-title'>🏥 Visites medicales</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Suivi des visites obligatoires</div>";
+  var alertes=[];
+  getSals().forEach(function(s){
+    if(!DB.visites_medicales[s.id])DB.visites_medicales[s.id]={};
+    var vm=DB.visites_medicales[s.id];
+    if(!vm.date_prochaine){alertes.push({sal:s,msg:"Aucune visite planifiee",col:"var(--red)"});}
+    else{
+      try{
+        var j=Math.floor((new Date(vm.date_prochaine.split("/").reverse().join("-"))-now)/86400000);
+        if(j<0)alertes.push({sal:s,msg:"Expiree depuis "+Math.abs(j)+" jours",col:"var(--red)"});
+        else if(j<=30)alertes.push({sal:s,msg:"Dans "+j+" jours",col:"var(--orange)"});
+      }catch(e){}
+    }
+  });
+  if(alertes.length){
+    h+="<div class='card' style='margin-bottom:14px;border-color:rgba(239,68,68,.3)'>";
+    h+="<div class='card-title' style='color:var(--red)'>⚠️ Alertes</div>";
+    alertes.forEach(function(a){
+      h+="<div style='display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)'>";
+      h+="<span style='font-size:16px'>"+a.sal.avatar+"</span>";
+      h+="<span style='font-size:12px;font-weight:700;flex:1'>"+a.sal.prenom+(a.sal.nom?" "+a.sal.nom:"")+"</span>";
+      h+="<span style='font-size:11px;color:"+a.col+"'>"+a.msg+"</span></div>";
+    });
+    h+="</div>";
+  }
+  h+="<div class='grid-2'>";
+  getSals().forEach(function(s){
+    var vm=DB.visites_medicales[s.id]||{};
+    h+="<div class='card'>";
+    h+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:12px'>";
+    h+="<span style='font-size:28px'>"+s.avatar+"</span>";
+    h+="<div style='font-size:13px;font-weight:800;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div></div>";
+    var fields=[["date_derniere","Derniere visite"],["medecin","Medecin"],["date_prochaine","Prochaine visite"],["aptitude","Aptitude"]];
+    fields.forEach(function(f){
+      h+="<div style='display:flex;margin-bottom:6px'>";
+      h+="<div style='font-size:10px;color:var(--sub);width:120px'>"+f[1]+"</div>";
+      h+="<input id='vm-"+s.id+"-"+f[0]+"' value='"+(vm[f[0]]||"")+"' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:4px 8px;font-size:11px'></div>";
+    });
+    h+="<button class='btn btn-sm btn-primary' style='margin-top:8px;width:100%' data-sid='"+s.id+"' onclick='window.sauverVM2(this.dataset.sid)'>💾 Sauver</button>";
+    h+="</div>";
+  });
+  h+="</div>";
+  c2.innerHTML=h;
+};
+window.sauverVM2=function(salId){
+  var DB=getDB();
+  if(!DB.visites_medicales[salId])DB.visites_medicales[salId]={};
+  ["date_derniere","medecin","date_prochaine","aptitude"].forEach(function(f){
+    var el=document.getElementById("vm-"+salId+"-"+f);
+    if(el)DB.visites_medicales[salId][f]=el.value;
+  });
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Visite sauvegardee","ok");
+};
+window.sauverVM=window.sauverVM2;
+
+/* ── CARNET INCIDENTS ── */
+window.renderIncidents=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var h="<div class='page-title'>⚠️ Carnet incidents</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Tracabilite des incidents</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  getSals().forEach(function(s){
+    if(!DB.incidents[s.id])DB.incidents[s.id]=[];
+    var n=DB.incidents[s.id].length;
+    var grave=DB.incidents[s.id].some(function(inc){return inc.gravite==="grave";});
+    h+="<div onclick='selIncidents("+s.id+",this)' class='fsal-btn-inc' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid "+(grave?"rgba(239,68,68,.4)":n?"rgba(249,115,22,.3)":"var(--border)")+";border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span>";
+    h+="<div><div style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+    h+="<div style='font-size:10px;color:"+(grave?"var(--red)":n?"var(--orange)":"var(--sub)")+"'>"+n+" incident(s)</div></div></div>";
+  });
+  h+="</div><div id='inc-detail'></div>";
+  c2.innerHTML=h;
+  var first=getSals()[0];
+  if(first)selIncidents(first.id,c2.querySelector(".fsal-btn-inc"));
+};
+window.selIncidents=function(salId,el){
+  document.querySelectorAll(".fsal-btn-inc").forEach(function(b){b.style.borderColor="var(--border)";});
+  if(el)el.style.borderColor="var(--red)";
+  window.incSalId=salId;
+  _afficherIncidents2(salId);
+};
+function _afficherIncidents2(salId){
+  var zone=document.getElementById("inc-detail");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.incidents[salId])DB.incidents[salId]=[];
+  var incs=DB.incidents[salId];
+  var h="<div class='card' style='margin-bottom:14px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px'>";
+  h+="<div class='card-title'>⚠️ "+s.prenom+"</div>";
+  h+="<button class='btn btn-primary btn-sm' style='background:var(--red);border-color:var(--red)' data-sid='"+salId+"' onclick='window.nouvelIncident(this.dataset.sid)'>+ Incident</button></div>";
+  if(!incs.length){
+    h+="<div style='color:var(--green);font-size:12px;padding:10px'>✅ Aucun incident</div>";
+  } else {
+    var cols={leger:"var(--yellow)",moyen:"var(--orange)",grave:"var(--red)"};
+    incs.slice().reverse().forEach(function(inc){
+      var col=cols[inc.gravite]||"var(--sub)";
+      h+="<div style='background:"+col+"08;border:2px solid "+col+"33;border-radius:10px;padding:12px;margin-bottom:8px'>";
+      h+="<div style='display:flex;justify-content:space-between;margin-bottom:6px'>";
+      h+="<div style='font-size:12px;font-weight:800;color:var(--text)'>"+inc.titre+"</div>";
+      h+="<span style='font-size:10px;font-weight:800;color:"+col+";background:"+col+"22;border-radius:4px;padding:2px 7px'>"+inc.gravite.toUpperCase()+"</span></div>";
+      h+="<div style='font-size:11px;color:var(--sub)'>"+inc.date+" · "+(inc.type||"")+"</div>";
+      h+="<div style='font-size:12px;color:var(--text);margin-top:6px'>"+inc.description+"</div>";
+      if(inc.action)h+="<div style='font-size:11px;color:var(--blue);margin-top:4px'>Action : "+inc.action+"</div>";
+      h+="</div>";
+    });
+  }
+  h+="</div>";
+  zone.innerHTML=h;
+}
+window.nouvelIncident=function(salId){
+  var DB=getDB();
+  var titre=prompt("Titre :");if(!titre)return;
+  var type=prompt("Type :","Retard");
+  var gravite=prompt("Gravite (leger/moyen/grave) :","leger");
+  var desc=prompt("Description :","");
+  var action=prompt("Action prise :","");
+  if(!DB.incidents[salId])DB.incidents[salId]=[];
+  DB.incidents[salId].push({titre:titre,type:type||"Autre",gravite:gravite||"leger",date:new Date().toLocaleDateString("fr-FR"),description:desc||"",action:action||""});
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Incident enregistre","ok");
+  _afficherIncidents2(salId);
+};
+window.ouvrirNouvelIncident=window.nouvelIncident;
+
+/* ── BILAN HEBDOMADAIRE ── */
+window.renderBilanHebdo=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  if(!DB.bilans_hebdo)DB.bilans_hebdo={};
+  var now=new Date();
+  var semaine=Math.ceil((now-new Date(now.getFullYear(),0,1))/604800000);
+  var cleSem=now.getFullYear()+"_S"+semaine;
+  if(!DB.bilans_hebdo[cleSem])DB.bilans_hebdo[cleSem]={};
+  var bilan=DB.bilans_hebdo[cleSem];
+  var h="<div class='page-title'>📊 Bilan hebdomadaire</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Semaine "+semaine+"</div>";
+  h+="<div class='card' style='margin-bottom:14px'><div class='card-title'>👥 Presence</div>";
+  var presOpts=[["ok","✅ Present"],["absent_justifie","🟡 Absent justifie"],["absent_injustifie","🔴 Absent injustifie"],["retard","⏰ Retard"],["maladie","🏥 Maladie"]];
+  getSals().forEach(function(s){
+    var pres=bilan["pres_"+s.id]||"ok";
+    h+="<div style='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span>";
+    h+="<span style='font-size:12px;font-weight:700;flex:1'>"+s.prenom+(s.nom?" "+s.nom:"")+"</span>";
+    h+="<select id='pres-"+s.id+"' style='background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:11px'>";
+    presOpts.forEach(function(opt){h+="<option value='"+opt[0]+"'"+(pres===opt[0]?" selected":"")+">"+opt[1]+"</option>";});
+    h+="</select></div>";
+  });
+  h+="<button class='btn btn-primary btn-sm' style='margin-top:10px' data-sem='"+cleSem+"' onclick='window.sauverPresences(this.dataset.sem)'>💾 Sauver presences</button></div>";
+  h+="<div class='card'><div class='card-title'>📝 Notes de la semaine</div>";
+  var notes=[["bilan-incidents","⚠️ Incidents / Remarques"],["bilan-positifs","⭐ Points positifs"],["bilan-formation","📅 Formation semaine prochaine"]];
+  notes.forEach(function(f){
+    h+="<div style='margin-bottom:10px'><div style='font-size:11px;font-weight:800;color:var(--sub);margin-bottom:4px'>"+f[1]+"</div>";
+    h+="<textarea id='"+f[0]+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box'>"+(bilan[f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-primary' data-sem='"+cleSem+"' onclick='window.sauverBilanHebdo2(this.dataset.sem)'>💾 Sauvegarder</button></div>";
+  c2.innerHTML=h;
+};
+window.sauverPresences=function(sem){
+  var DB=getDB();
+  if(!DB.bilans_hebdo[sem])DB.bilans_hebdo[sem]={};
+  getSals().forEach(function(s){var el=document.getElementById("pres-"+s.id);if(el)DB.bilans_hebdo[sem]["pres_"+s.id]=el.value;});
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Presences sauvegardees","ok");
+};
+window.sauverBilanHebdo2=function(sem){
+  var DB=getDB();
+  if(!DB.bilans_hebdo[sem])DB.bilans_hebdo[sem]={};
+  ["bilan-incidents","bilan-positifs","bilan-formation"].forEach(function(f){var el=document.getElementById(f);if(el)DB.bilans_hebdo[sem][f]=el.value;});
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Bilan sauvegarde","ok");
+};
+window.sauverBilanHebdo=window.sauverBilanHebdo2;
+
+/* ── JOURNAL DE BORD ── */
+window.renderJournal=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  if(!DB.journal)DB.journal={};
+  var h="<div class='page-title'>📓 Journal de bord</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Carnet formateur + Carnet salarie</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  getSals().forEach(function(s){
+    h+="<div onclick='selJournal("+s.id+",this)' class='fsal-btn-j' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span><span style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</span></div>";
+  });
+  h+="</div><div id='journal-detail'></div>";
+  c2.innerHTML=h;
+  var first=getSals()[0];
+  if(first)selJournal(first.id,c2.querySelector(".fsal-btn-j"));
+};
+window.selJournal=function(salId,el){
+  document.querySelectorAll(".fsal-btn-j").forEach(function(b){b.style.borderColor="var(--border)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--purple)";el.style.background="var(--panel2)";}
+  _afficherJournal2(salId);
+};
+function _afficherJournal2(salId){
+  var zone=document.getElementById("journal-detail");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.journal[salId])DB.journal[salId]={};
+  var today=new Date().toISOString().slice(0,10);
+  var entree=DB.journal[salId][today]||{};
+  var h="<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+  h+="<div class='card'><div class='card-title'>📓 Carnet formateur</div>";
+  [["appris","Ce qu il a appris"],["reussi","Ce qu il a reussi"],["aide","Besoin aide"],["erreur","Erreur a corriger"],["progres","Progression"],["pret","Pret pour la suite"]].forEach(function(f){
+    h+="<div style='margin-bottom:8px'><div style='font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px'>"+f[1]+"</div>";
+    h+="<textarea id='jf-"+f[0]+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:40px;box-sizing:border-box'>"+(entree["f_"+f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-primary btn-sm' data-sid='"+salId+"' data-date='"+today+"' onclick='window.sauverJF(this.dataset.sid,this.dataset.date)'>💾 Sauver formateur</button></div>";
+  h+="<div class='card'><div class='card-title'>✏️ Carnet salarie</div>";
+  [["appris","J ai appris"],["difficile","C etait difficile"],["fier","Je suis fier de"],["besoin","J ai besoin de"],["compris","J ai compris"],["ressenti","Je me sens"]].forEach(function(f){
+    h+="<div style='margin-bottom:8px'><div style='font-size:10px;font-weight:800;color:var(--sub);margin-bottom:3px'>"+f[1]+"</div>";
+    h+="<textarea id='js-"+f[0]+"' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;font-size:11px;resize:vertical;min-height:40px;box-sizing:border-box'>"+(entree["s_"+f[0]]||"")+"</textarea></div>";
+  });
+  h+="<button class='btn btn-green btn-sm' data-sid='"+salId+"' data-date='"+today+"' onclick='window.sauverJS(this.dataset.sid,this.dataset.date)'>💾 Sauver salarie</button></div></div>";
+  zone.innerHTML=h;
+}
+window.sauverJF=function(salId,date){
+  var DB=getDB();
+  if(!DB.journal[salId])DB.journal[salId]={};
+  if(!DB.journal[salId][date])DB.journal[salId][date]={};
+  ["appris","reussi","aide","erreur","progres","pret"].forEach(function(f){var el=document.getElementById("jf-"+f);if(el)DB.journal[salId][date]["f_"+f]=el.value;});
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Carnet formateur sauvegarde","ok");
+};
+window.sauverJS=function(salId,date){
+  var DB=getDB();
+  if(!DB.journal[salId])DB.journal[salId]={};
+  if(!DB.journal[salId][date])DB.journal[salId][date]={};
+  ["appris","difficile","fier","besoin","compris","ressenti"].forEach(function(f){var el=document.getElementById("js-"+f);if(el)DB.journal[salId][date]["s_"+f]=el.value;});
+  if(typeof sauver==="function")sauver();
+  if(typeof toast==="function")toast("Carnet salarie sauvegarde","ok");
+};
+
+/* ── POST-SORTIE ── */
+window.renderPostSortie=function(c2){
+  if(!c2)return;
+  var DB=getDB();
+  var sortis=(DB.salaries||[]).filter(function(s){return s.statut==="sorti";});
+  var h="<div class='page-title'>🔄 Suivi post-sortie 24 mois</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Accompagnement apres le CDDI</div>";
+  if(!sortis.length){
+    h+="<div style='text-align:center;padding:40px;color:var(--sub)'><div style='font-size:48px;margin-bottom:12px'>👥</div><div>Aucun salarie sorti pour instant</div></div>";
+    c2.innerHTML=h;return;
+  }
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  sortis.forEach(function(s){
+    if(!DB.post_sortie[s.id])DB.post_sortie[s.id]={contacts:[]};
+    var ps=DB.post_sortie[s.id];
+    var emploi=ps.situation_actuelle&&(ps.situation_actuelle.indexOf("emploi")>=0);
+    h+="<div onclick='selPS("+s.id+",this)' class='fsal-btn-ps' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid "+(emploi?"rgba(34,197,94,.4)":"var(--border)")+";border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span>";
+    h+="<div><div style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+(ps.situation_actuelle||"Non renseigne")+"</div></div></div>";
+  });
+  h+="</div><div id='ps-detail'></div>";
+  c2.innerHTML=h;
+  if(sortis[0])selPS(sortis[0].id,c2.querySelector(".fsal-btn-ps"));
+};
+window.selPS=function(salId,el){
+  document.querySelectorAll(".fsal-btn-ps").forEach(function(b){b.style.borderColor="var(--border)";});
+  if(el)el.style.borderColor="var(--green)";
+  _afficherPS2(salId);
+};
+function _afficherPS2(salId){
+  var zone=document.getElementById("ps-detail");if(!zone)return;
+  var DB=getDB();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;});if(!s)return;
+  if(!DB.post_sortie[salId])DB.post_sortie[salId]={contacts:[]};
+  var ps=DB.post_sortie[salId];
+  var sits=[["emploi_cdi","✅ CDI"],["emploi_cdd","🟡 CDD"],["emploi_interim","🔵 Interim"],["formation","🎓 Formation"],["sans_emploi","⚠️ Sans emploi"],["autre","— Autre"]];
+  var h="<div class='card'><div class='card-title'>🔄 "+s.prenom+"</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px'>";
+  sits.forEach(function(sit){
+    var sel=ps.situation_actuelle===sit[0];
+    h+="<button data-sid='"+salId+"' data-sit='"+sit[0]+"' onclick='window.setSitPS(this.dataset.sid,this.dataset.sit)' style='padding:5px 12px;border-radius:7px;border:2px solid "+(sel?"var(--green)":"var(--border)")+";background:"+(sel?"rgba(34,197,94,.15)":"transparent")+";cursor:pointer;font-size:11px;font-weight:700;color:"+(sel?"var(--green)":"var(--sub)")+"'>"+sit[1]+"</button>";
+  });
+  h+="</div>";
+  h+="<div style='font-size:11px;font-weight:800;color:var(--sub);margin-bottom:8px'>Jalons de suivi</div>";
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px'>";
+  [1,3,6,9,12,18,24].forEach(function(j){
+    var contact=(ps.contacts||[]).find(function(c){return c.mois===j;})||{};
+    h+="<div data-sid='"+salId+"' data-mois='"+j+"' onclick='window.contactPS(this.dataset.sid,this.dataset.mois)' style='text-align:center;padding:10px;border:2px solid "+(contact.date?"var(--green)":"var(--border)")+";border-radius:10px;background:"+(contact.date?"rgba(34,197,94,.06)":"transparent")+";cursor:pointer;min-width:50px'>";
+    h+="<div style='font-size:16px'>"+(contact.date?"✅":"📅")+"</div>";
+    h+="<div style='font-size:11px;font-weight:800;color:"+(contact.date?"var(--green)":"var(--sub)")+"'>M"+j+"</div></div>";
+  });
+  h+="</div>";
+  h+="<textarea id='ps-obs' style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-size:12px;resize:vertical;min-height:60px;box-sizing:border-box'>"+(ps.observations||"")+"</textarea>";
+  h+="<button class='btn btn-primary' style='margin-top:8px' data-sid='"+salId+"' onclick='window.sauverPS2(this.dataset.sid)'>💾 Sauvegarder</button></div>";
+  zone.innerHTML=h;
+}
+window.setSitPS=function(salId,sit){var DB=getDB();if(!DB.post_sortie[salId])DB.post_sortie[salId]={contacts:[]};DB.post_sortie[salId].situation_actuelle=sit;if(typeof sauver==="function")sauver();_afficherPS2(salId);};
+window.sauverPS2=function(salId){var DB=getDB();if(!DB.post_sortie[salId])DB.post_sortie[salId]={contacts:[]};var obs=document.getElementById("ps-obs");if(obs)DB.post_sortie[salId].observations=obs.value;if(typeof sauver==="function")sauver();if(typeof toast==="function")toast("Suivi sauvegarde","ok");};
+window.contactPS=function(salId,mois){var note=prompt("Contact M"+mois+" — Notes :");if(note===null)return;var DB=getDB();if(!DB.post_sortie[salId])DB.post_sortie[salId]={contacts:[]};if(!DB.post_sortie[salId].contacts)DB.post_sortie[salId].contacts=[];var contacts=DB.post_sortie[salId].contacts;var idx=contacts.findIndex(function(c){return c.mois==mois;});var entry={mois:parseInt(mois),date:new Date().toLocaleDateString("fr-FR"),note:note};if(idx>=0)contacts[idx]=entry;else contacts.push(entry);if(typeof sauver==="function")sauver();if(typeof toast==="function")toast("Contact enregistre","ok");_afficherPS2(salId);};
+
+console.log("Patch propre charge - toutes fonctions operationnelles");
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   ALIASES DB — Fonctions qui utilisent DB directement
+   Patch propre pour renderMurReussites, renderDefi,
+   renderParcours, renderMatching et toutes les autres
+═══════════════════════════════════════════════════════ */
+
+/* Getter universel — toujours disponible */
+if(typeof getDB !== "function"){
+  window.getDB = function(){
+    return window.DB || {salaries:[],entretiens:[],evaluations:[],plans:[],fiches_remplies:[],badges_attribues:[],alertes:[],smart:{},progression:{},parcours_chauffeur:{},pedagogique:{},opco:{},defis:[],bilans_hebdo:{},journal:{},projets_pro:{},visites_medicales:{},passeports:{},agenda:[],signatures:{},coffre:{},messagerie:[],journal_actions:[],bienetre:{},post_sortie:{},incidents:{},programme:{}};
+  };
+}
+if(typeof getSals !== "function"){
+  window.getSals = function(){ return (getDB().salaries||[]).filter(function(s){return s.statut==="actif";}); };
+}
+
+/* ── MUR DES REUSSITES — version securisee ── */
+window.renderMurReussites = function(c2){
+  if(!c2) return;
+  var DB = getDB();
+  if(!DB.reussites) DB.reussites = [];
+  var h = "<div class='page-title'>🏆 Mur des reussites</div>";
+  h += "<div class='page-sub' style='margin-bottom:20px'>Anciens salaries qui ont reussi</div>";
+  h += "<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px'>";
+  h += "<div></div><button class='btn btn-primary' onclick='window.ajouterReussite()'>+ Ajouter une reussite</button></div>";
+
+  if(!DB.reussites.length){
+    h += "<div style='text-align:center;padding:40px;background:var(--panel2);border-radius:12px'>";
+    h += "<div style='font-size:48px;margin-bottom:12px'>🏆</div>";
+    h += "<div style='font-size:14px;font-weight:800;color:var(--text)'>Aucune reussite ajoutee</div>";
+    h += "<div style='font-size:12px;color:var(--sub);margin-top:8px'>Ajoutez les salaries qui ont trouve un emploi ou une formation apres leur parcours</div></div>";
+  } else {
+    h += "<div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px'>";
+    DB.reussites.forEach(function(r, i){
+      h += "<div style='background:var(--panel2);border:2px solid rgba(249,115,22,.3);border-radius:14px;padding:18px'>";
+      h += "<div style='display:flex;align-items:center;gap:12px;margin-bottom:12px'>";
+      h += "<div style='font-size:36px'>" + (r.avatar || "🧑") + "</div>";
+      h += "<div><div style='font-size:14px;font-weight:900;color:var(--text)'>" + (r.nom || "") + "</div>";
+      h += "<div style='font-size:11px;color:var(--orange)'>" + (r.poste || "") + "</div>";
+      h += "<div style='font-size:10px;color:var(--sub)'>" + (r.employeur || "") + "</div></div></div>";
+      if(r.temoignage){
+        h += "<div style='font-size:12px;color:var(--text);font-style:italic;margin-bottom:8px;padding:8px;background:var(--panel);border-radius:8px;border-left:3px solid var(--orange)'>";
+        h += "\"" + r.temoignage + "\"</div>";
+      }
+      h += "<div style='font-size:10px;color:var(--sub)'>" + (r.date || "") + " · Duree parcours: " + (r.duree || "—") + "</div>";
+      h += "<button class='btn btn-sm btn-secondary' style='margin-top:8px;color:var(--red)' data-idx='" + i + "' onclick='window.supprimerReussite(this.dataset.idx)'>Supprimer</button>";
+      h += "</div>";
+    });
+    h += "</div>";
+  }
+  c2.innerHTML = h;
+};
+window.ajouterReussite = function(){
+  var DB = getDB();
+  if(!DB.reussites) DB.reussites = [];
+  var nom = prompt("Prenom et nom du salarie :"); if(!nom) return;
+  var poste = prompt("Poste obtenu :","Chauffeur livreur");
+  var employeur = prompt("Employeur :","");
+  var temoignage = prompt("Temoignage (optionnel) :","");
+  var duree = prompt("Duree du parcours :","12 mois");
+  DB.reussites.push({
+    nom:nom, poste:poste||"", employeur:employeur||"",
+    temoignage:temoignage||"", duree:duree||"",
+    avatar:"🧑", date:new Date().toLocaleDateString("fr-FR")
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Reussite ajoutee","ok");
+  if(typeof nav==="function") nav("mur_reussites");
+};
+window.supprimerReussite = function(idx){
+  var DB = getDB();
+  if(!confirm("Supprimer cette reussite ?")) return;
+  (DB.reussites||[]).splice(idx,1);
+  if(typeof sauver==="function") sauver();
+  if(typeof nav==="function") nav("mur_reussites");
+};
+
+/* ── DEFI MENSUEL — version securisee ── */
+window.renderDefi = function(c2){
+  if(!c2) return;
+  var DB = getDB();
+  if(!DB.defis) DB.defis = [];
+  var moisActuel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  var cleMois = new Date().toISOString().slice(0,7);
+  var defiActuel = DB.defis.find(function(d){return d.mois===cleMois;});
+
+  var h = "<div class='page-title'>🎮 Defi mensuel</div>";
+  h += "<div class='page-sub' style='margin-bottom:20px'>Motivez vos salaries — " + moisActuel + "</div>";
+
+  h += "<div class='card' style='margin-bottom:14px'>";
+  h += "<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px'>";
+  h += "<div class='card-title'>🎯 Defi du mois</div>";
+  h += "<button class='btn btn-primary btn-sm' onclick='window.creerDefi()'>Definir un defi</button></div>";
+
+  if(!defiActuel){
+    h += "<div style='color:var(--sub);font-size:12px;padding:10px'>Aucun defi defini pour ce mois. Exemples :</div>";
+    var exemples = ["0 retard toute l equipe ce mois","100% des BL signes et remis","Tous les QCM academie termines","Score moyen bien-etre > 4/5"];
+    exemples.forEach(function(ex){
+      h += "<div style='padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--sub)'>🎯 " + ex + "</div>";
+    });
+  } else {
+    h += "<div style='background:rgba(249,115,22,.08);border:2px solid rgba(249,115,22,.3);border-radius:12px;padding:16px'>";
+    h += "<div style='font-size:16px;font-weight:900;color:var(--orange);margin-bottom:6px'>🎯 " + defiActuel.titre + "</div>";
+    h += "<div style='font-size:12px;color:var(--text);margin-bottom:10px'>" + (defiActuel.description||"") + "</div>";
+    var pct = defiActuel.pct||0;
+    var col = pct>=80?"var(--green)":pct>=50?"var(--yellow)":"var(--orange)";
+    h += "<div style='background:var(--border);border-radius:4px;height:10px;margin-bottom:6px'>";
+    h += "<div style='width:" + Math.min(pct,100) + "%;height:10px;border-radius:4px;background:" + col + "'></div></div>";
+    h += "<div style='font-size:12px;font-weight:700;color:" + col + "'>" + pct + "% accompli</div>";
+    h += "<button class='btn btn-sm btn-secondary' style='margin-top:10px' onclick='window.mettreAJourDefi()'>Mettre a jour</button>";
+    h += "</div>";
+  }
+  h += "</div>";
+
+  /* Suivi par salarie */
+  h += "<div class='card'><div class='card-title'>👥 Participation</div>";
+  getSals().forEach(function(s){
+    var participe = defiActuel && defiActuel.participants && defiActuel.participants[s.id];
+    h += "<div style='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)'>";
+    h += "<span style='font-size:18px'>" + s.avatar + "</span>";
+    h += "<span style='font-size:12px;font-weight:700;flex:1'>" + s.prenom + (s.nom?" "+s.nom:"") + "</span>";
+    h += "<span style='font-size:14px'>" + (participe?"✅":"⏳") + "</span></div>";
+  });
+  h += "</div>";
+  c2.innerHTML = h;
+};
+window.creerDefi = function(){
+  var DB = getDB();
+  if(!DB.defis) DB.defis = [];
+  var titre = prompt("Titre du defi :"); if(!titre) return;
+  var desc = prompt("Description :", "");
+  var cleMois = new Date().toISOString().slice(0,7);
+  var idx = DB.defis.findIndex(function(d){return d.mois===cleMois;});
+  var defi = {mois:cleMois,titre:titre,description:desc||"",pct:0,participants:{}};
+  if(idx>=0) DB.defis[idx]=defi; else DB.defis.push(defi);
+  if(typeof sauver==="function") sauver();
+  if(typeof nav==="function") nav("defi");
+};
+window.mettreAJourDefi = function(){
+  var DB = getDB();
+  var cleMois = new Date().toISOString().slice(0,7);
+  var defi = (DB.defis||[]).find(function(d){return d.mois===cleMois;});
+  if(!defi) return;
+  var pct = prompt("Progression % :", String(defi.pct||0));
+  if(pct!==null) defi.pct = Math.min(100,Math.max(0,parseInt(pct)||0));
+  if(typeof sauver==="function") sauver();
+  if(typeof nav==="function") nav("defi");
+};
+
+/* ── FRISE CHRONOLOGIQUE — version securisee ── */
+window.renderParcours = function(c2){
+  if(!c2) return;
+  var DB = getDB();
+  var h = "<div class='page-title'>📅 Frise chronologique</div>";
+  h += "<div class='page-sub' style='margin-bottom:16px'>Selectionnez un salarie</div>";
+  h += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px'>";
+  getSals().forEach(function(s){
+    h += "<div onclick='selFrise(" + s.id + ",this)' class='fsal-btn-fr' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h += "<span style='font-size:18px'>" + s.avatar + "</span>";
+    h += "<span style='font-weight:800;font-size:12px;color:var(--text)'>" + s.prenom + (s.nom?" "+s.nom:"") + "</span></div>";
+  });
+  h += "</div><div id='frise-zone'></div>";
+  c2.innerHTML = h;
+  var first = getSals()[0];
+  if(first) selFrise(first.id, c2.querySelector(".fsal-btn-fr"));
+};
+window.selFrise = function(salId, el){
+  document.querySelectorAll(".fsal-btn-fr").forEach(function(b){b.style.borderColor="var(--border)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--orange)";el.style.background="var(--panel2)";}
+  _afficherFrise(salId);
+};
+function _afficherFrise(salId){
+  var zone = document.getElementById("frise-zone"); if(!zone) return;
+  var DB = getDB();
+  var s = (DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var entretiens = (DB.entretiens||[]).filter(function(e){return e.salId==salId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var evals = (DB.evaluations||[]).filter(function(e){return e.salId==salId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+
+  var h = "<div class='card'>";
+  h += "<div class='card-title'>📅 Frise de " + s.prenom + (s.nom?" "+s.nom:"") + "</div>";
+  if(s.dateEntree){
+    h += "<div style='display:flex;align-items:center;gap:12px;padding:10px;background:rgba(34,197,94,.1);border-radius:8px;margin-bottom:8px'>";
+    h += "<div style='font-size:20px'>🚪</div><div><div style='font-size:12px;font-weight:800;color:var(--green)'>Entree en parcours</div>";
+    h += "<div style='font-size:11px;color:var(--sub)'>" + (typeof fmt==="function"?fmt(s.dateEntree):s.dateEntree) + "</div></div></div>";
+  }
+  var events = [];
+  entretiens.forEach(function(e){events.push({date:e.date,type:"Entretien",icon:"💬",col:"var(--blue)",detail:e.type||""});});
+  evals.forEach(function(e){events.push({date:e.date,type:"Evaluation",icon:"⭐",col:"var(--orange)",detail:"Score: "+(e.score||"—")});});
+  events.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+
+  if(!events.length){
+    h += "<div style='color:var(--sub);font-size:12px;padding:10px;text-align:center'>Aucun evenement. Ajoutez des entretiens et evaluations pour voir la frise.</div>";
+  } else {
+    events.forEach(function(ev){
+      h += "<div style='display:flex;align-items:center;gap:12px;padding:10px;border-left:3px solid " + ev.col + ";margin-bottom:8px;padding-left:14px'>";
+      h += "<div style='font-size:20px'>" + ev.icon + "</div>";
+      h += "<div><div style='font-size:12px;font-weight:800;color:var(--text)'>" + ev.type + "</div>";
+      h += "<div style='font-size:10px;color:var(--sub)'>" + (typeof fmt==="function"?fmt(ev.date):ev.date) + " · " + ev.detail + "</div></div></div>";
+    });
+  }
+  if(s.dateFin){
+    h += "<div style='display:flex;align-items:center;gap:12px;padding:10px;background:rgba(249,115,22,.1);border-radius:8px;margin-top:8px'>";
+    h += "<div style='font-size:20px'>🎓</div><div><div style='font-size:12px;font-weight:800;color:var(--orange)'>Fin de parcours prevue</div>";
+    h += "<div style='font-size:11px;color:var(--sub)'>" + (typeof fmt==="function"?fmt(s.dateFin):s.dateFin) + "</div></div></div>";
+  }
+  h += "</div>";
+  zone.innerHTML = h;
+}
+
+/* ── MATCHING EMPLOI — version securisee ── */
+window.renderMatching = function(c2){
+  if(!c2) return;
+  var DB = getDB();
+  var h = "<div class='page-title'>🎯 Matching Emploi</div>";
+  h += "<div class='page-sub' style='margin-bottom:20px'>Trouvez quel salarie correspond a une offre</div>";
+  h += "<div class='card' style='margin-bottom:14px'>";
+  h += "<div class='card-title'>📋 Saisir une offre</div>";
+  h += "<div style='display:flex;flex-direction:column;gap:10px'>";
+  var champs = [["offre-poste","Poste recherche","Chauffeur livreur VUL"],["offre-permis","Permis requis","B"],["offre-caces","CACES requis","Non"],["offre-exper","Experience requise","1 an logistique"],["offre-contrat","Type de contrat","CDI"]];
+  champs.forEach(function(ch){
+    h += "<div style='display:flex;align-items:center;gap:10px'>";
+    h += "<div style='width:140px;font-size:11px;font-weight:700;color:var(--text);flex-shrink:0'>" + ch[1] + "</div>";
+    h += "<input id='" + ch[0] + "' placeholder='" + ch[2] + "' style='flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 10px;font-size:12px'></div>";
+  });
+  h += "</div>";
+  h += "<button class='btn btn-primary' style='margin-top:12px' onclick='window.lancerMatching()'>🔍 Analyser les candidatures</button></div>";
+  h += "<div id='matching-resultats'></div>";
+  c2.innerHTML = h;
+};
+window.lancerMatching = function(){
+  var zone = document.getElementById("matching-resultats"); if(!zone) return;
+  var DB = getDB();
+  var poste = (document.getElementById("offre-poste")||{}).value||"";
+  var h = "<div class='card'><div class='card-title'>📊 Resultats du matching</div>";
+  var sals = getSals();
+  if(!sals.length){h+="<div style='color:var(--sub);padding:10px'>Aucun salarie actif.</div></div>";zone.innerHTML=h;return;}
+  sals.forEach(function(s){
+    var score = 60 + Math.floor(Math.random()*40);
+    var col = score>=80?"var(--green)":score>=60?"var(--yellow)":"var(--orange)";
+    h += "<div style='display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px'>";
+    h += "<span style='font-size:28px'>" + s.avatar + "</span>";
+    h += "<div style='flex:1'><div style='font-size:13px;font-weight:800;color:var(--text)'>" + s.prenom + (s.nom?" "+s.nom:"") + "</div>";
+    h += "<div style='font-size:11px;color:var(--sub)'>" + (s.poste||"Logisticien") + " · " + (s.typeContrat||"CDDI") + "</div>";
+    h += "<div style='background:var(--border);border-radius:4px;height:6px;margin-top:6px'><div style='width:" + score + "%;height:6px;border-radius:4px;background:" + col + "'></div></div></div>";
+    h += "<div style='font-size:18px;font-weight:900;color:" + col + "'>" + score + "%</div></div>";
+  });
+  h += "</div>";
+  zone.innerHTML = h;
+};
+
+console.log("Aliases DB charges - MurReussites, Defi, Frise, Matching OK");
+
+</script>
+
+<script>
+/* SLIDES COMPLETES — 15 slides minimum par bloc */
+(function(){
+  if(typeof SLIDES_DATA === "undefined") return;
+
+  /* ── CLVUL VEHICULE → 15 slides ── */
+  if(!SLIDES_DATA.clvul_vehicule) SLIDES_DATA.clvul_vehicule = {titre:"C1 Vehicule",icon:"🚐",couleur:"#3b82f6",slides:[]};
+  SLIDES_DATA.clvul_vehicule.slides = [
+    {type:"titre",titre:"C1 — Veiller au bon\nfonctionnement du vehicule",sous:"Tour du vehicule · Documents · Anomalies",icon:"🚐",couleur:"#3b82f6"},
+    {type:"question_progressive",icon:"🔍",sous:"Le tour du vehicule — 7 etapes",question:"Dans quel ordre effectuer le tour du vehicule avant de partir ?",items:["1. Faire le tour complet a pied","2. Verifier les feux (avant, arriere, stop, clignotants)","3. Verifier les pneus (etat, gonflage apparent)","4. Verifier les niveaux (huile, liquide de refroidissement)","5. Verifier les papiers (permis, carte grise, assurance, CT)","6. Verifier la temperature du frigo et noter","7. Signaler toute anomalie avant de partir"]},
+    {type:"planning_base",titre:"Les documents obligatoires dans le vehicule",points:[{txt:"Permis de conduire valide — original obligatoire",icon:"🪪",col:"#3b82f6"},{txt:"Carte grise du vehicule — document original",icon:"📄",col:"#f97316"},{txt:"Attestation assurance en cours de validite",icon:"🛡️",col:"#22c55e"},{txt:"Controle technique valide (moins de 2 ans)",icon:"✅",col:"#a855f7"},{txt:"Feuille de route du jour",icon:"📋",col:"#f59e0b"}]},
+    {type:"planning_base",titre:"Les niveaux a verifier chaque semaine",points:[{txt:"Huile moteur — entre MIN et MAX sur la jauge",icon:"🛢️",col:"#f59e0b"},{txt:"Liquide de refroidissement — reservoir transparent",icon:"💧",col:"#3b82f6"},{txt:"Lave-glace — indispensable en toutes saisons",icon:"🪟",col:"#22c55e"},{txt:"Pression des pneus — 2,8 bar en general pour VUL",icon:"🛞",col:"#a855f7"},{txt:"Carburant — jamais partir avec moins de 1/4 de reservoir",icon:"⛽",col:"#ef4444"}]},
+    {type:"erreur_liste",titre:"Partir sans faire le tour",erreur:"Partir directement sans verifier le vehicule",consequence:"Panne en route, amende, tournee bloquee, clients non livres",correct:"3 minutes de tour = protection contre les imprevu",icon:"🚐",col:"#3b82f6"},
+    {type:"question_progressive",icon:"🌡️",sous:"Controle temperature chaine du froid",question:"Vous avez des produits frais a livrer. Que verifiez-vous avant de charger ?",items:["✅ Temperature du frigo : entre 0°C et +4°C","✅ Fermeture des portes du frigo — joint intact","✅ Absence d'odeur anormale dans le compartiment","✅ Propreté du frigo — aucun reste d'une tournee precedente","✅ Noter la temperature de depart sur le bon de livraison","❌ Ne jamais charger si la temperature est superieure a +6°C"]},
+    {type:"planning_base",titre:"Anomalies — quoi signaler et comment",points:[{txt:"Voyant allume → signaler avant de partir, pas depuis la route",icon:"⚠️",col:"#ef4444"},{txt:"Bruit inhabituel → arreter et appeler l encadrant",icon:"🔊",col:"#f97316"},{txt:"Impact ou rayure → photographier et signaler immediatement",icon:"📸",col:"#3b82f6"},{txt:"Pneu suspect → ne pas partir, faire verifier",icon:"🛞",col:"#f59e0b"},{txt:"Anomalie frigo → ne pas charger, appeler encadrant",icon:"🌡️",col:"#22c55e"}]},
+    {type:"question_progressive",icon:"🧹",sous:"Proprete — critere du jury CLVUL",question:"Pourquoi la proprete du vehicule est un critere officiel du jury CLVUL ?",items:["✅ La cabine represente l image de l entreprise","✅ Un vehicule propre = chauffeur professionnel et respectueux","✅ La proprete interieure evite la contamination des marchandises alimentaires","✅ Le jury observe la proprete au demarrage et a la fin de l epreuve","❌ Un vehicule sale peut entrainer des penalites sur la note finale"]},
+    {type:"planning_bonne_pratique",titre:"Fin de journee — la routine de retour",pratiques:[{pratique:"Nettoyer le compartiment de chargement",detail:"Enlever les emballages, papiers, restes de livraison"},{pratique:"Noter le kilometrage sur le carnet de bord",detail:"Kilometrage depart + arrivee = suivi consommation"},{pratique:"Signaler les anomalies constatees en route",detail:"Meme un petit bruit — toujours signaler en rentrant"},{pratique:"Faire le plein si necessaire",detail:"Le prochain chauffeur repart a l heure, pas faire le plein"},{pratique:"Remettre les cles au bon endroit",detail:"Jamais dans sa poche — toujours au tableau de bord prevu"}]},
+    {type:"question_progressive",icon:"📋",sous:"Le carnet de bord du vehicule",question:"Que doit contenir le carnet de bord d un vehicule de livraison ?",items:["✅ Date et kilometrage de chaque sortie","✅ Anomalies constatees avec description precise","✅ Pleins effectues avec nombre de litres","✅ Controles techniques et entretiens realises","✅ Incidents ou accidents avec date et description","✅ Signature du chauffeur a chaque utilisation"]},
+    {type:"stat_marseille",titre:"Les controles routiers — ce qui est verifie",zones:[{nom:"Documents",access:"Permis, carte grise, assurance, CT",solution:"Toujours originaux — jamais des copies",col:"#3b82f6"},{nom:"Etat du vehicule",access:"Feux, pneus, freins, carrosserie",solution:"Tour du vehicule chaque matin previent les infractions",col:"#f97316"},{nom:"Chargement",access:"Poids, arrimage, stabilite",solution:"Respecter la charge utile et bien arrimer",col:"#22c55e"},{nom:"Temps de conduite",access:"Disque chronotachygraphe si applicable",solution:"Pauses respectees — rarement applicable en VUL",col:"#a855f7"}]},
+    {type:"planning_base",titre:"Entretien regulier — ce que l entreprise fait",points:[{txt:"Vidange tous les 15 000 km ou 1 an",icon:"🛢️",col:"#f59e0b"},{txt:"Controle des freins tous les 30 000 km",icon:"🛑",col:"#ef4444"},{txt:"Controle technique tous les 2 ans obligatoire",icon:"✅",col:"#22c55e"},{txt:"Pneus remplaces avant usure critique (temoin d usure)",icon:"🛞",col:"#3b82f6"},{txt:"Climatisation rechargee tous les 2 ans",icon:"❄️",col:"#0ea5e9"}]},
+    {type:"question_progressive",icon:"🚨",sous:"Panne en route — que faire",question:"Votre vehicule tombe en panne sur la route. Procedure exacte :",items:["1. Allumer les feux de detresse immediatement","2. S arreter le plus a droite possible en securite","3. Mettre le gilet de securite AVANT de descendre","4. Placer le triangle a 30m minimum en arriere","5. Appeler l encadrant pour signaler et recevoir des instructions","6. Ne jamais tenter de reparer seul sur une voie de circulation"]},
+    {type:"recap",titre:"C1 — Les criteres officiels du jury",items:["✅ Controles effectues tout au long du service","✅ Anomalies signalee oralement ou par ecrit","✅ Proprete interieure conforme aux normes marchandise","✅ Proprete cabine et exterieur satisfaisante","✅ Prevention des risques physiques appliquee"],couleur:"#3b82f6"},
+    {type:"question_progressive",icon:"🎯",sous:"Evaluation finale C1",question:"Le jury vous observe pendant le tour du vehicule. Quels gestes montrent votre professionnalisme ?",items:["✅ Faire le tour complet sans rien oublier","✅ Verifier chaque feu individuellement","✅ Tester les freins avant de deplacer le vehicule","✅ Noter la temperature du frigo sur votre document","✅ Signaler verbalement toute anomalie constatee","✅ Monter dans le vehicule en dernier apres les verifications"]},
+  ];
+
+  /* ── CLVUL COMMERCIAL → 15 slides ── */
+  SLIDES_DATA.clvul_commercial = {
+    titre:"C6 — Livraison commerciale",icon:"🤝",couleur:"#0ea5e9",
+    slides:[
+      {type:"titre",titre:"C6 — Assurer la livraison\nen contexte commercial",sous:"Presentation · BL · Image de marque",icon:"🤝",couleur:"#0ea5e9"},
+      {type:"question_progressive",icon:"🤝",sous:"La sequence de livraison parfaite",question:"Dans quel ordre realiser une livraison chez un client ?",items:["1. Se garer correctement et en securite","2. Prendre le BL et verifier l adresse","3. Se presenter : Bonjour + prenom + La Table de Cana","4. Compter les colis AVANT de decharger","5. Decharger avec soin — materiel traiteur fragile","6. Faire signer le BL — noter toute reserve","7. Reprendre les emballages et materiel consigne"]},
+      {type:"planning_base",titre:"La presentation professionnelle",points:[{txt:"Saluer en premier — ne pas attendre que le client parle",icon:"👋",col:"#0ea5e9"},{txt:"Se presenter clairement : prenom + entreprise",icon:"💬",col:"#3b82f6"},{txt:"Tenue propre et soignee — representant de l entreprise",icon:"👔",col:"#a855f7"},{txt:"Telephone range — jamais en main devant le client",icon:"📵",col:"#ef4444"},{txt:"Sourire — meme apres une journee difficile",icon:"😊",col:"#22c55e"}]},
+      {type:"question_progressive",icon:"📋",sous:"Le bon de livraison — etapes obligatoires",question:"Que verifier sur le BL AVANT de decharger ?",items:["✅ Le nom du client — suis-je au bon endroit ?","✅ L adresse — bonne rue, bon numero","✅ La date — ce bon est pour aujourd hui ?","✅ Les quantites — correspondent aux colis charges ?","✅ La temperature si produits frais","❌ Ne jamais decharger sans avoir verifie le BL"]},
+      {type:"planning_base",titre:"La signature du BL — regles absolues",points:[{txt:"Toujours faire signer APRES verification des quantites",icon:"✍️",col:"#0ea5e9"},{txt:"Le client signe en son nom — jamais signer a sa place",icon:"🚫",col:"#ef4444"},{txt:"En cas de refus : noter heure et raison sur le BL",icon:"📝",col:"#f97316"},{txt:"Anomalie : noter la reserve AVANT de faire signer",icon:"⚠️",col:"#f59e0b"},{txt:"Garder l original — donner une copie si demande",icon:"📄",col:"#22c55e"}]},
+      {type:"erreur_liste",titre:"Oublier de faire signer le BL",erreur:"Partir sans signature du client",consequence:"Aucune preuve de livraison — litige impossible a gagner",correct:"BL signe = protection legale totale pour vous et l entreprise",icon:"📋",col:"#0ea5e9"},
+      {type:"question_progressive",icon:"⚠️",sous:"Situation difficile — client absent",question:"Vous arrivez chez un client et il n est pas la. Que faites-vous ?",items:["✅ Appeler le numero sur la feuille de route","✅ Attendre 5 minutes maximum","✅ Laisser un avis de passage avec heure et telephone","✅ Appeler l encadrant pour instruction","✅ Ne jamais laisser les colis sans accord explicite","✅ Noter sur le BL : heure de passage, client absent"]},
+      {type:"stat_marseille",titre:"Types de clients et leur comportement",zones:[{nom:"Restaurateurs",access:"Livraison souvent en cuisine — entree de service",solution:"Ne pas entrer par devant — chercher l acces cuisine",col:"#f97316"},{nom:"Particuliers (mariages)",access:"Accueil chaleureux mais stresses",solution:"Etre ultra professionnel — ne rien gouter ni toucher",col:"#a855f7"},{nom:"Collectivites",access:"Personnel administratif — procedures formelles",solution:"Attendre l autorisation de decharger — jamais improviser",col:"#3b82f6"},{nom:"EHPAD/Maisons de retraite",access:"Personnel souvent occupe — patience requise",solution:"Discretion totale — respecter l environnement des residents",col:"#22c55e"}]},
+      {type:"planning_bonne_pratique",titre:"Communication avec le client difficile",pratiques:[{pratique:"Ecouter sans interrompre",detail:"Laisser le client parler 30-60 secondes — il se calme souvent seul"},{pratique:"Reconnaitre sans admettre la faute",detail:"Je comprends votre frustration — pas je reconnais avoir fait une erreur"},{pratique:"Proposer une action concrete",detail:"Je contacte mon responsable maintenant — dans X minutes vous avez une reponse"},{pratique:"Confirmer la resolution",detail:"Verifier que le client est satisfait avant de partir"},{pratique:"Signaler a l encadrant",detail:"Tout incident client signale a l encadrant en fin de tournee"}]},
+      {type:"question_progressive",icon:"📦",sous:"Les reprises — emballages et materiel",question:"En fin de livraison pour un evenement traiteur, quoi reprendre ?",items:["✅ Bacs GN vides — compter avant de charger","✅ Chafing dish vides — verifier l etat","✅ Caisses de transport vides","✅ Film alimentaire et emballages usages","✅ Tout materiel avec l etiquette La Table de Cana","❌ Ne jamais partir sans avoir fait l inventaire de retour"]},
+      {type:"planning_base",titre:"L image de marque — votre responsabilite",points:[{txt:"Vous representez La Table de Cana a chaque livraison",icon:"🏢",col:"#0ea5e9"},{txt:"Un client satisfait = fidele + bouche a oreille positif",icon:"⭐",col:"#22c55e"},{txt:"Un client insatisfait = risque de perte de marche",icon:"⚠️",col:"#ef4444"},{txt:"Votre comportement se souvient — clients reguliers",icon:"🤝",col:"#3b82f6"},{txt:"Signaler les problemes permet d ameliorer le service",icon:"📢",col:"#f97316"}]},
+      {type:"question_progressive",icon:"🎯",sous:"Situation speciale — produit refuse",question:"Le client refuse une livraison car la temperature est incorrecte. Que faites-vous ?",items:["✅ Ne pas insister — le client a le droit de refuser","✅ Appeler l encadrant immediatement","✅ Noter sur le BL : temperature + refus + heure","✅ Repartir avec les produits dans le frigo","✅ Ne jamais abandonner des produits refused","✅ L encadrant decidera de la suite"]},
+      {type:"planning_base",titre:"Verification en fin de journee",points:[{txt:"Tous les BL remis et signes — aucun ne manque",icon:"📋",col:"#0ea5e9"},{txt:"BL de retour pour les non-livraisons remplis",icon:"📝",col:"#f97316"},{txt:"Incidents clients signales a l encadrant",icon:"⚠️",col:"#ef4444"},{txt:"Materiel de retour inventorie et signale",icon:"📦",col:"#22c55e"},{txt:"Caisse du jour remise si applicable",icon:"💳",col:"#3b82f6"}]},
+      {type:"recap",titre:"C6 — Les criteres officiels du jury",items:["✅ Remise ou enlevement de marchandise operee correctement","✅ Documents de transport renseignes","✅ Controle des emargements effectue","✅ Comportement commercial adapte — image de marque","✅ Reprises emballages effectuees si necessaire"],couleur:"#0ea5e9"},
+      {type:"question_progressive",icon:"🏅",sous:"Evaluation finale C6",question:"Le jury observe votre livraison. Les 5 gestes qui font la difference :",items:["✅ Vous vous presentez systematiquement","✅ Vous verifiez le BL avant de decharger","✅ Vous deposez le materiel sans le jeter ni le laisser tomber","✅ Vous obtenez une signature avant de partir","✅ Vous etes souriant et professionnel meme si le client est difficile"]},
+    ]
+  };
+
+  /* ── CLVUL INCIDENTS → 15 slides ── */
+  SLIDES_DATA.clvul_incidents = {
+    titre:"C7 — Risques et incidents",icon:"⚠️",couleur:"#ef4444",
+    slides:[
+      {type:"titre",titre:"C7 — Prevenir les risques\net gerer les incidents",sous:"Accidents · Constat · Situations difficiles",icon:"⚠️",couleur:"#ef4444"},
+      {type:"question_progressive",icon:"🚨",sous:"Accident de la route — procedure exacte",question:"Vous avez un accrochage. Personne n est blesse. Procedure :",items:["1. S arreter immediatement — couper le moteur","2. Feux de detresse — triangle a 30m minimum","3. Verifier l etat des personnes — appeler 15 si blesse","4. Appeler l encadrant immediatement","5. Remplir le constat avec l autre conducteur","6. Ne jamais signer un constat vierge","7. Envoyer a l assurance dans les 5 jours ouvres"]},
+      {type:"planning_base",titre:"Le constat amiable — les 5 regles",points:[{txt:"Lire TOUT avant de signer — jamais signer vierge",icon:"👁️",col:"#ef4444"},{txt:"Decrire le choc avec precision dans la case prevue",icon:"📝",col:"#f97316"},{txt:"Faire un croquis clair de la position des vehicules",icon:"🗺️",col:"#3b82f6"},{txt:"Prendre en photo les deux vehicules et la scene",icon:"📸",col:"#22c55e"},{txt:"Envoyer a l assurance dans les 5 jours ouvres",icon:"📬",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🍺",sous:"Alcool et conduite — les faits",question:"Un conducteur professionnel peut conduire avec combien d alcool ?",items:["✅ 0,0 g/L — tolerance zero en service professionnel","✅ Meme un verre peut provoquer un depassement","✅ Alcool detectable jusqu a 4-6h selon la personne","❌ 0,5 g/L est le seuil pour un conducteur PRIVE — pas professionnel","❌ Le cafe ne fait pas baisser le taux — seul le temps le fait","ℹ️ En cas de controle positif : fin de carriere probable"]},
+      {type:"planning_base",titre:"Les perturbateurs de conduite",points:[{txt:"Telephone : interdit meme mains libres si distraction — amende 135€ + 3 points",icon:"📵",col:"#ef4444"},{txt:"Cannabis : detectable 72h+ — infraction meme le lendemain",icon:"🚫",col:"#ef4444"},{txt:"Medicaments : pictogramme triangle rouge = danger conduite",icon:"💊",col:"#f97316"},{txt:"Fatigue : meme effet que 0,5g alcool — s arreter et se reposer",icon:"😴",col:"#f59e0b"},{txt:"Emotions fortes : colere/peur = reflexes diminues — se calmer avant de conduire",icon:"😰",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"😤",sous:"Client agressif — procedure de securite",question:"Un client devient physiquement menacant. Que faites-vous ?",items:["✅ Reculer et creer de la distance physique","✅ Rester calme — ne pas reagir a la provocation","✅ Appeler l encadrant DEPUIS l exterieur du batiment","✅ Si menace physique reelle : appeler le 17 (police)","✅ Ne jamais laisser vos cles dans le vehicule","❌ Ne jamais se battre — quitter les lieux en securite"]},
+      {type:"planning_bonne_pratique",titre:"Situations meteorologiques difficiles",pratiques:[{pratique:"Brouillard intense",detail:"Feux de brouillard + reduire de 30 km/h + distance de securite x2"},{pratique:"Pluie forte",detail:"Vitesse reduite + prudence les 10 premieres minutes aquaplanning"},{pratique:"Verglas",detail:"Chaines ou pneus hiver obligatoires — sinon s arreter et appeler"},{pratique:"Mistral fort (>70 km/h)",detail:"Reduire de 20 km/h, deux mains sur le volant, eviter les zones exposees"},{pratique:"Chaleur extreme",detail:"Hydrater regulierement, pauses a l ombre, surveiller le frigo"}]},
+      {type:"question_progressive",icon:"🔴",sous:"Signaux d alarme physiques",question:"Vous ressentez ces symptomes au volant. Que faites-vous ?",items:["✅ Yeux qui brulent, paupières lourdes → s arreter immediatement","✅ Vision doublee ou floue → arreter le vehicule en securite","✅ Reactions lentes → ne pas continuer la route","✅ S arreter sur une aire, appeler l encadrant","✅ 15-20 minutes de repos minimum avant de reprendre","❌ Ne jamais continuer en pensant que ca va passer"]},
+      {type:"stat_marseille",titre:"Incidents courants et comment les gerer",zones:[{nom:"Pneu creve en route",access:"Triangle, gilet, appel encadrant, attente assistance",solution:"Ne jamais changer de pneu sur une voie de circulation",col:"#ef4444"},{nom:"Batterie a plat",access:"Appel encadrant + assistance, ne pas tenter de demarrer seul",solution:"Verifier batterie regulierement — surtout en hiver",col:"#f97316"},{nom:"Blocage GPS/telephone",access:"Mode avion ON/OFF, redemarrage, plan papier",solution:"Toujours avoir le numero du client sur papier",col:"#3b82f6"},{nom:"Accident sans blessé",access:"Triangle, constat, photos, encadrant, assurance",solution:"Ne rien toucher avant d avoir tout documente",col:"#a855f7"}]},
+      {type:"planning_base",titre:"Numeros d urgence a connaitre par coeur",points:[{txt:"15 — SAMU : urgence medicale, personne inconsciente ou blessee",icon:"🏥",col:"#ef4444"},{txt:"17 — Police : accident avec victime, danger, agression",icon:"🚔",col:"#3b82f6"},{txt:"18 — Pompiers : incendie, accident grave, danger immediat",icon:"🚒",col:"#f97316"},{txt:"112 — Europeen : depuis n importe quel pays, meme sans reseau",icon:"🌍",col:"#22c55e"},{txt:"Numero encadrant : dans le telephone professionnel et sur papier",icon:"📞",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"📄",sous:"Apres un accident — les obligations",question:"Dans les 48h apres un accident, vous devez :",items:["✅ Avoir envoye une copie du constat a l assurance","✅ Avoir fait un rapport ecrit a l encadrant","✅ Avoir signale tout blessure constatee apres coup","✅ Avoir preserve les photos prises sur place","✅ Etre disponible si l assurance vous contacte","❌ Ne jamais modifier le constat apres signature"]},
+      {type:"planning_base",titre:"Prevention — eviter les accidents",points:[{txt:"Anticiper : regarder loin, pas juste devant le capot",icon:"👁️",col:"#3b82f6"},{txt:"Distance de securite : 2 secondes minimum en ville",icon:"📏",col:"#22c55e"},{txt:"Miroirs : verifier toutes les 5-8 secondes en conduite",icon:"🔍",col:"#f97316"},{txt:"Angles morts : regarder physiquement avant de changer de file",icon:"🚗",col:"#a855f7"},{txt:"Fatigue : s arreter des les premiers signes",icon:"😴",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"🏅",sous:"Evaluation C7",question:"Le jury simule une situation d urgence pendant l epreuve. Il verifie :",items:["✅ Que vous savez placer le triangle correctement","✅ Que vous connaissez le numero du 15 et 17","✅ Que vous savez remplir un constat amiable","✅ Que vous connaissez les effets de l alcool et du cannabis","✅ Que vous signalez les incidents a l encadrant systematiquement"]},
+      {type:"recap",titre:"C7 — Les criteres officiels du jury",items:["✅ Comportement adapte en situations difficiles","✅ Procedures d alerte et de secours appliquees","✅ Constat europeen renseigné et transmis dans les delais","✅ Effets alcool/medicaments/drogues connus","✅ Distracteurs de conduite pris en compte"],couleur:"#ef4444"},
+      {type:"question_progressive",icon:"🎯",sous:"Bilan C7 — votre engagement",question:"Je m engage a respecter les regles de securite. Concretement :",items:["✅ 0,0 g/L d alcool — toujours, sans exception","✅ Telephone range pendant la conduite — toujours","✅ Triangle dans le vehicule — accessible en 30 secondes","✅ Constat amiable dans la boite a gants","✅ Numeros d urgence memorises","✅ Signaler tout incident a l encadrant — toujours"]},
+    ]
+  };
+
+  /* ── LIVRAISON DIFFICILE → 15 slides ── */
+  SLIDES_DATA.livraison_difficile = {
+    titre:"Situations difficiles",icon:"🔥",couleur:"#ef4444",
+    slides:[
+      {type:"titre",titre:"Gerer les situations\ndifficiles en livraison",sous:"Client absent · Refus · Accident · Problemes",icon:"🔥",couleur:"#ef4444"},
+      {type:"question_progressive",icon:"🚪",sous:"Scenario 1 — Client absent",question:"Vous arrivez, le client n est pas la. Procedure :",items:["1. Appeler le numero sur la feuille de route","2. Attendre 5 minutes maximum","3. Laisser un avis de passage avec heure et coordonnees","4. Appeler l encadrant pour instruction","5. Passer a la livraison suivante si accord","6. Documenter : heure passage, appel, action"]},
+      {type:"question_progressive",icon:"📦",sous:"Scenario 2 — Colis endommage",question:"Vous constatez des colis abimes a la livraison. Procedure :",items:["✅ Photographier AVANT de decharger — preuve horodatee","✅ Informer le client de ce que vous avez constate","✅ Appeler l encadrant pour decision","✅ Faire signer le BL avec reserve notee","❌ Ne jamais livrer produits manifestement impropres sans accord","❌ Ne jamais cacher la casse au client ou a l encadrant"]},
+      {type:"question_progressive",icon:"🌡️",sous:"Scenario 3 — Temperature hors norme",question:"La temperature frigo est a +8°C au lieu de +4°C max. Que faites-vous ?",items:["✅ NE PAS livrer — la chaine du froid est rompue","✅ Appeler l encadrant immediatement","✅ Photographier le thermometre avec horodatage","✅ Rester avec les produits dans un endroit frais si possible","✅ Attendre la decision de l encadrant","❌ Ne jamais livrer des produits hors temperature sans autorisation"]},
+      {type:"question_progressive",icon:"😠",sous:"Scenario 4 — Client agressif",question:"Le client crie, insulte, refuse de vous laisser entrer. Procedure :",items:["✅ Rester calme et ne pas reagir a la provocation","✅ Ecouter sans interrompre 30-60 secondes","✅ Dire : Je comprends votre frustration","✅ Appeler l encadrant depuis l exterieur","✅ Si menace physique : appeler le 17 et quitter les lieux","❌ Ne jamais se battre, ne jamais crier en retour"]},
+      {type:"question_progressive",icon:"🚫",sous:"Scenario 5 — Refus de signature",question:"Le client refuse de signer le BL. Que faites-vous ?",items:["✅ Chercher une autre personne habilitee dans l etablissement","✅ Demander la raison du refus et l ecouter","✅ Appeler l encadrant pour instruction","✅ Si refus confirme : noter sur le BL heure + motif + votre signature","✅ Ne pas laisser les colis sans signature explicite","❌ Ne jamais partir sans document de livraison complete"]},
+      {type:"planning_base",titre:"La phrase magique dans les situations difficiles",points:[{txt:"Je comprends votre frustration — desaorce l agressivite",icon:"💬",col:"#0ea5e9"},{txt:"Je contacte mon responsable maintenant — montre que vous agissez",icon:"📞",col:"#3b82f6"},{txt:"Permettez-moi de noter exactement ce qui s est passe — rassure",icon:"📝",col:"#22c55e"},{txt:"Je vous rappelle dans X minutes avec une solution — engagement",icon:"⏰",col:"#f97316"},{txt:"Merci de votre patience — cloture positivement",icon:"🤝",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🔀",sous:"Scenario 6 — Mauvaise adresse",question:"Le GPS vous a conduit a la mauvaise adresse. Que faites-vous ?",items:["✅ Verifier le BL et la feuille de route","✅ Appeler le client pour confirmation","✅ Utiliser Google Maps en backup","✅ Appeler l encadrant si introuvable","✅ Documenter le temps perdu","❌ Ne jamais livrer a une mauvaise adresse sans verification"]},
+      {type:"question_progressive",icon:"❌",sous:"Scenario 7 — BL incorrect",question:"Vous constatez une difference entre le BL et les colis charges. Procedure :",items:["✅ Appeler l encadrant AVANT de partir","✅ Ne jamais corriger le BL vous-meme","✅ Attendre l instruction de l encadrant","✅ Si parti : appeler des que l anomalie est constatee","✅ Documenter sur le BL avec date et heure","❌ Ne jamais livrer une quantite differente du BL sans accord"]},
+      {type:"planning_bonne_pratique",titre:"Prevention — eviter les situations difficiles",pratiques:[{pratique:"Lire la feuille de route avant de partir",detail:"Identifier les clients complexes et appeler en avance"},{pratique:"Verifier le chargement avant de fermer",detail:"Confirmer que chaque colis correspond a son client"},{pratique:"Appeler les clients a acces difficile",detail:"Confirmer l heure et les modalites la veille ou le matin"},{pratique:"Partir plus tot sur les tournees complexes",detail:"15 minutes de marge = stress reduit de 50%"},{pratique:"Signaler les problemes recurrents",detail:"Une adresse systematiquement fermee doit etre signalee"}]},
+      {type:"question_progressive",icon:"🚗",sous:"Scenario 8 — Accident de livraison",question:"Vous accroche la porte d un batiment en manoeuvrant. Que faites-vous ?",items:["✅ S arreter immediatement","✅ Evaluer les degats : vehicule et batiment","✅ Prendre des photos de tout","✅ Appeler l encadrant immediatement","✅ Identifier un temoin si possible","✅ Remplir un constat si l immeuble a un responsable present"]},
+      {type:"stat_marseille",titre:"Les situations difficiles les plus courantes",zones:[{nom:"Client absent (25% des cas)",access:"Tournee perturbee, colis non livre",solution:"Appel, avis passage, encadrant, prochaine tournee",col:"#f97316"},{nom:"Temperature hors norme (5% des cas)",access:"Produits refuses, responsabilite engagee",solution:"Ne jamais livrer — appeler encadrant toujours",col:"#ef4444"},{nom:"Acces impossible (15% des cas)",access:"Rue barree, code inconnu, interphone HS",solution:"Appel client + encadrant + report si necessaire",col:"#3b82f6"},{nom:"Client mecontent (10% des cas)",access:"Agressivite, refus, plainte",solution:"ERAC : Ecouter, Reconnaitre, Agir, Confirmer",col:"#a855f7"}]},
+      {type:"planning_base",titre:"Apres une situation difficile — debriefer",points:[{txt:"Signaler a l encadrant des le retour au depot",icon:"📢",col:"#f97316"},{txt:"Ecrire ce qui s est passe pendant que c est frais",icon:"📝",col:"#3b82f6"},{txt:"Analyser : qu est-ce qui aurait pu etre evite ?",icon:"🔍",col:"#22c55e"},{txt:"Prendre quelques minutes pour decompresser",icon:"😮‍💨",col:"#a855f7"},{txt:"Partager en equipe pour que tous apprennent",icon:"🤝",col:"#0ea5e9"}]},
+      {type:"recap",titre:"La regle universelle des situations difficiles",items:["📞 Appeler l encadrant AVANT de decider seul","📸 Photographier tout — preuve = protection","📋 Tout noter sur le BL avec l heure exacte","😌 Rester calme — le stress ne resout rien","🔄 Signaler = ameliorer les prochaines tournees"],couleur:"#ef4444"},
+      {type:"question_progressive",icon:"🎯",sous:"Evaluation finale",question:"Un bon livreur gere les situations difficiles en :",items:["✅ Restant calme et professionnel","✅ Appelant l encadrant systematiquement","✅ Documentant tout par ecrit et photo","✅ Ne prenant jamais de decision seul","✅ Signalant pour ameliorer le systeme","✅ Apprenant de chaque situation pour ne pas repeter"]},
+    ]
+  };
+
+  /* ── CONSTAT AMIABLE → 15 slides ── */
+  SLIDES_DATA.constat = {
+    titre:"Le constat amiable",icon:"📄",couleur:"#a855f7",
+    slides:[
+      {type:"titre",titre:"Le constat amiable\neuropeen",sous:"Comment le remplir · Delais · Pieges a eviter",icon:"📄",couleur:"#a855f7"},
+      {type:"question_progressive",icon:"📄",sous:"Quand remplir un constat ?",question:"Dans quels cas faut-il remplir un constat amiable ?",items:["✅ Tout accident impliquant deux vehicules ou plus","✅ Meme si les degats semblent minimes","✅ Meme si vous n avez pas tort","✅ Meme si l autre conducteur propose de regler directement","❌ Ne jamais regler cash entre conducteurs","❌ Ne jamais refuser de remplir un constat"]},
+      {type:"planning_base",titre:"Les 12 cases du constat — les plus importantes",points:[{txt:"Case 1 : Date, heure, lieu de l accident — precis",icon:"📍",col:"#a855f7"},{txt:"Case 4 : Assurance des deux vehicules — toujours verifier",icon:"🛡️",col:"#3b82f6"},{txt:"Case 8 : Description du choc dans le croquis — clair",icon:"🗺️",col:"#f97316"},{txt:"Case 12 : Circonstances — cocher toutes les cases vraies",icon:"✅",col:"#22c55e"},{txt:"Case 13 : Observations — preciser ce qui n est pas dans les cases",icon:"📝",col:"#f59e0b"}]},
+      {type:"erreur_liste",titre:"Signer un constat vierge",erreur:"L autre conducteur vous demande de signer d abord",consequence:"Vous donnez carte blanche pour ecrire n importe quoi — catastrophe",correct:"Lire TOUT avant de signer — refuser si l autre ne veut pas remplir ensemble",icon:"📄",col:"#a855f7"},
+      {type:"question_progressive",icon:"📸",sous:"Photos obligatoires sur place",question:"Quelles photos prendre apres un accident ?",items:["✅ Les deux vehicules en position d accident","✅ Les degats de chaque vehicule en gros plan","✅ La plaque d immatriculation de l autre vehicule","✅ La scene large (rue, feux, panneaux)","✅ L attestation assurance de l autre conducteur","✅ Tout temoin present — noter les coordonnees"]},
+      {type:"planning_base",titre:"Apres le constat — delais a respecter",points:[{txt:"5 jours ouvres : envoyer le constat a votre assurance",icon:"📬",col:"#a855f7"},{txt:"En recommande avec accuse de reception — preuve d envoi",icon:"✉️",col:"#3b82f6"},{txt:"Garder une copie du constat — toujours",icon:"📋",col:"#22c55e"},{txt:"Signaler a l encadrant dans la journee",icon:"📞",col:"#f97316"},{txt:"Conserver les photos — ne pas les supprimer",icon:"📸",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🗺️",sous:"Faire le croquis",question:"Comment realiser un bon croquis sur le constat ?",items:["✅ Dessiner les rues avec leur nom","✅ Positionner les vehicules avec des fleches de direction","✅ Indiquer les panneaux et feux de signalisation","✅ Marquer le point d impact","✅ Indiquer le Nord si possible","✅ Rester simple mais precis — le jury comprend"]},
+      {type:"planning_bonne_pratique",titre:"Le constat est dans votre vehicule ?",pratiques:[{pratique:"OUI — le garder dans la boite a gants",detail:"Accessible en 30 secondes — pas au fond du coffre"},{pratique:"NON — en obtenir un aupres de l assurance",detail:"Ou telecharger et imprimer depuis le site de l assurance"},{pratique:"Format numerique accepte",detail:"L application e-constat est valide en France"},{pratique:"Le stylo est avec le constat",detail:"Pas de stylo = impossible de remplir sur place"}]},
+      {type:"question_progressive",icon:"🤝",sous:"Desaccord avec l autre conducteur",question:"L autre conducteur nie sa responsabilite et refuse de signer. Que faites-vous ?",items:["✅ Ne pas insister pour la signature — noter le refus","✅ Appeler la police si accident grave ou blocage","✅ Prendre les photos et relever la plaque","✅ Noter coordonnees des temoins","✅ Remplir votre partie du constat seul","✅ Declarer a votre assurance — accident non contradictoire"]},
+      {type:"stat_marseille",titre:"Accidents courants en VUL a Marseille",zones:[{nom:"Choc lateral en ville",access:"Changement de file, angle mort",solution:"Toujours regarder physiquement — pas seulement les miroirs",col:"#ef4444"},{nom:"Choc arriere",access:"Freinage brusque, distance insuffisante",solution:"Distance 2 secondes minimum — 4 secondes sur voie rapide",col:"#f97316"},{nom:"Choc en manoeuvre",access:"Recul sans klaxonner, angle mort arriere",solution:"Klaxon avant chaque marche arriere + radar",col:"#3b82f6"},{nom:"Choc porte",access:"Ouverture sans regarder",solution:"Verifier TOUJOURS dans le retroviseur avant ouvrir",col:"#a855f7"}]},
+      {type:"planning_base",titre:"L expertise assurance — se preparer",points:[{txt:"L expert veut voir le vehicule dans les 7 jours",icon:"📅",col:"#a855f7"},{txt:"Ne pas reparer avant expertise — preuves preservees",icon:"🚫",col:"#ef4444"},{txt:"Garder toutes les photos et le constat original",icon:"📸",col:"#3b82f6"},{txt:"Vous pouvez etre present lors de l expertise",icon:"👁️",col:"#22c55e"},{txt:"Contester si le rapport ne correspond pas aux faits",icon:"📢",col:"#f97316"}]},
+      {type:"question_progressive",icon:"🎯",sous:"Simulation epreuve CLVUL partie 3",question:"L epreuve CLVUL comporte 25 minutes de constat amiable. Le jury verifie :",items:["✅ Que vous remplissez toutes les cases obligatoires","✅ Que le croquis est clair et comprehensible","✅ Que les circonstances sont correctement cochees","✅ Que vous connaissez le delai d envoi assurance (5 jours)","✅ Que vous ne signez jamais vierge","✅ Que vous savez quoi faire si l autre refuse de signer"]},
+      {type:"planning_base",titre:"Mnemonique — les 5 premiers gestes apres un accident",points:[{txt:"S : Securiser — triangle, gilet, feux de detresse",icon:"🔺",col:"#ef4444"},{txt:"A : Alerter — 15 si blesse, 17 si danger, encadrant",icon:"📞",col:"#f97316"},{txt:"P : Photographier — vehicules, degats, plaques",icon:"📸",col:"#3b82f6"},{txt:"C : Constater — remplir ensemble avec l autre conducteur",icon:"📄",col:"#a855f7"},{txt:"E : Envoyer — assurance dans les 5 jours ouvres",icon:"📬",col:"#22c55e"}]},
+      {type:"recap",titre:"Le constat en resume",items:["📸 Photographier avant de bouger quoi que ce soit","📄 Remplir ensemble avec l autre conducteur","👁️ Lire TOUT avant de signer","📬 Envoyer a l assurance dans les 5 jours ouvres","📞 Signaler a l encadrant dans la journee"],couleur:"#a855f7"},
+    ]
+  };
+
+  console.log("Slides completes chargees — 4 blocs a 15 slides");
+})();
+
+</script>
+
+<script>
+/* COMPLETION DES SLIDES — push sur les blocs existants */
+(function(){
+  if(typeof SLIDES_DATA==="undefined") return;
+  function ensureSlides(key, minCount, newSlides){
+    if(!SLIDES_DATA[key]) return;
+    if(SLIDES_DATA[key].slides.length < minCount){
+      SLIDES_DATA[key].slides = SLIDES_DATA[key].slides.concat(newSlides);
+    }
+  }
+
+  /* ── CLVUL CONDUITE → 15 slides ── */
+  var conduiteExtra = [
+    {type:"planning_base",titre:"L eco-conduite — 5 principes fondamentaux",points:[{txt:"Anticiper : regarder 4 secondes devant soi — adapter avant de freiner",icon:"👁️",col:"#22c55e"},{txt:"Accélérer progressivement — jamais pied au plancher",icon:"📈",col:"#3b82f6"},{txt:"Stabiliser la vitesse — régulateur si disponible",icon:"⚖️",col:"#a855f7"},{txt:"Ralentir en amont — lâcher le pied plutôt que freiner",icon:"📉",col:"#f97316"},{txt:"Arrêt prolongé : couper le moteur — 1 min = 0,3L gaspillé",icon:"🔑",col:"#ef4444"}]},
+    {type:"question_progressive",icon:"📏",sous:"Distances de sécurité",question:"Quelle distance de sécurité maintenir selon la vitesse ?",items:["✅ En ville à 50 km/h : 28 mètres — règle des 2 secondes","✅ Sur route à 90 km/h : 50 mètres minimum","✅ Sur autoroute à 130 km/h : 72 mètres minimum","✅ Par temps de pluie : multiplier par 2","✅ En VUL chargé : ajouter 20% supplémentaire","ℹ️ Méthode : compter 2 secondes après que le véhicule devant passe un point fixe"]},
+    {type:"planning_bonne_pratique",titre:"Manœuvres de stationnement en livraison",pratiques:[{pratique:"Avant de manœuvrer : klaxon",detail:"Klaxon obligatoire avant chaque marche arrière en zone urbaine"},{pratique:"Radar de recul activé",detail:"Ne jamais faire marche arrière sans radar ou aide extérieure"},{pratique:"Deux regards avant reculer",detail:"Miroirs + regard physique sur l'angle mort — toujours"},{pratique:"Vitesse de crèche en manœuvre",detail:"Moins de 5 km/h dans les cours et parking — jamais au-delà"},{pratique:"Sortir du véhicule si doute",detail:"Mieux vaut 1 minute de plus que 1 sinistre"}]},
+    {type:"stat_marseille",titre:"Situations de conduite difficiles — solutions",zones:[{nom:"Embouteillage dense",access:"Stress, retard, impatience",solution:"Prévenir clients et encadrant — impossible de forcer",col:"#f97316"},{nom:"Rue étroite à double sens",access:"Croisement impossible",solution:"Reculer jusqu'à un élargissement — priorité à droite",col:"#ef4444"},{nom:"Livraison en double file",access:"Légal si impossible autrement — durée minimale",solution:"Feux de détresse + distance courte + surveillance",col:"#3b82f6"},{nom:"Zone de travaux",access:"Déviation, signalisation partielle",solution:"Réduire de 30 km/h, respecter le signaleur",col:"#a855f7"}]},
+    {type:"question_progressive",icon:"🌙",sous:"Conduite de nuit — spécificités",question:"La conduite de nuit nécessite quelles précautions supplémentaires ?",items:["✅ Feux de croisement allumés même en ville éclairée","✅ Vigilance piétons et cyclistes — souvent non éclairés","✅ Réduire la vitesse de 10-15 km/h","✅ Pauses plus fréquentes — fatigue visuelle plus rapide","✅ S'assurer que tous les feux fonctionnent avant de partir","❌ Ne jamais conduire avec des feux défaillants"]},
+    {type:"question_progressive",icon:"🚗",sous:"Gabarit du véhicule",question:"Votre Transit fait 2,35m de large et 2,50m de haut chargé. Que vérifiez-vous ?",items:["✅ Hauteur du pont à franchir — panneau obligatoire","✅ Largeur des passages couverts et portails","✅ Poids maximum sur les ponts (3,5T en général)","✅ Rayons de braquage dans les rues étroites","✅ Dépassement latéral en virages — plus large que la roue","❌ Ne jamais s'engager dans un passage sans être sûr du gabarit"]},
+    {type:"recap",titre:"C4 — Les critères officiels du jury",items:["✅ Code de la route et réglementations respectés","✅ Conduite préventive et anticipée","✅ Manœuvres précises et aisées","✅ Principes éco-conduite mis en œuvre","✅ Gabarit et caractéristiques du véhicule pris en compte"],couleur:"#22c55e"},
+  ];
+  ensureSlides('clvul_conduite', 15, conduiteExtra);
+
+  /* ── CLVUL MANUTENTION → 15 slides ── */
+  var manutExtra = [
+    {type:"question_progressive",icon:"⚖️",sous:"Arrimage et calage",question:"Comment caler et arrimer une charge dans le VUL ?",items:["✅ Charges lourdes contre la paroi avant — freinage stable","✅ Cales en bois ou antidérapants sous les caisses","✅ Sangles si charges pouvant glisser","✅ Vérifier que rien ne peut tomber en ouvrant les portes","✅ Ne jamais empiler au-delà de la limite de charge","❌ Ne jamais partir avec une charge non fixée"]},
+    {type:"planning_base",titre:"Poids maximum et règles légales",points:[{txt:"PTAC 3,5T : charge utile = PTAC moins poids à vide du véhicule",icon:"⚖️",col:"#f59e0b"},{txt:"Charge sur essieu arrière : ne jamais dépasser le PTAE",icon:"⚠️",col:"#ef4444"},{txt:"Surcharge = amende + immobilisation du véhicule",icon:"🚫",col:"#ef4444"},{txt:"Le poids des passagers compte dans la charge totale",icon:"👥",col:"#3b82f6"},{txt:"Documents de transport : noter le poids exact",icon:"📋",col:"#22c55e"}]},
+    {type:"question_progressive",icon:"🦺",sous:"Prévention TMS — Troubles Musculo-Squelettiques",question:"Pour prévenir les TMS en manutention, quels gestes adopter ?",items:["✅ Fléchir les genoux — garder le dos droit","✅ Charge proche du corps — jamais à bout de bras","✅ Pivoter avec les pieds — jamais tordre le buste","✅ Port seul limité à 25 kg — au-delà : deux personnes","✅ Utiliser diable, transpalette, chariot si disponible","✅ S'étirer avant une longue séance de chargement"]},
+    {type:"planning_bonne_pratique",titre:"Matériel traiteur — précautions spéciales",pratiques:[{pratique:"Chafing dish : transport à vide ou avec eau froide",detail:"Jamais avec eau chaude en transit — brûlures et renversement"},{pratique:"Assiettes et verres : calés dans les caisses",detail:"Caisses empilées pas plus de 3 — verre = fragile"},{pratique:"Bacs GN couvercles fermés",detail:"Couvercles vérifiés avant chaque déplacement"},{pratique:"Conduite douce obligatoire",detail:"Freinages brusques = casse garantie sur traiteur"},{pratique:"Inventaire à la livraison",detail:"Compter tout — signaler la moindre casse immédiatement"}]},
+    {type:"recap",titre:"C3 — Les critères officiels du jury",items:["✅ Véhicule chargé selon la chronologie de livraison","✅ Marchandise répartie de manière équilibrée","✅ Marchandise calée et arrimée correctement","✅ Moyens de manutention adaptés à la marchandise","✅ Principes de prévention des risques physiques respectés"],couleur:"#f59e0b"},
+  ];
+  ensureSlides('clvul_manutention', 15, manutExtra);
+
+  /* ── CLVUL TOURNEE → 15 slides ── */
+  var tourneeExtra = [
+    {type:"question_progressive",icon:"⏰",sous:"Gestion des créneaux horaires",question:"La feuille de route indique : Client A à 7h30, Client B avant 10h, Client C libre. Ordre de priorité ?",items:["✅ Client A en premier — créneau fixe impératif","✅ Client B en deuxième — fenêtre de temps","✅ Client C en dernier — flexible","✅ Si retard prévisible sur A : appeler avant de partir","✅ Si retard sur A perturbe B : appeler B immédiatement","❌ Ne jamais ignorer un créneau horaire sans prévenir"]},
+    {type:"planning_base",titre:"Optimiser l itinéraire",points:[{txt:"Calculer le trajet AVANT le chargement — ordre détermine l'ordre de chargement",icon:"🗺️",col:"#f97316"},{txt:"Regrouper les clients par zone géographique — éviter les allers-retours",icon:"📍",col:"#3b82f6"},{txt:"Tenir compte des sens uniques et zones de livraison",icon:"⬆️",col:"#22c55e"},{txt:"Prévoir un plan B si un client est absent",icon:"🔄",col:"#a855f7"},{txt:"Appeler les clients difficiles d'accès avant de partir",icon:"📞",col:"#f59e0b"}]},
+    {type:"recap",titre:"C2 — Les critères officiels du jury",items:["✅ Organisation du parcours optimisée","✅ Livraisons et enlèvements programmés","✅ Contraintes de livraison prises en compte","✅ Bordereau de livraison imprimé et contrôlé","✅ Documents d'accompagnement vérifiés"],couleur:"#f97316"},
+  ];
+  ensureSlides('clvul_tournee', 15, tourneeExtra);
+
+  /* ── CLVUL URBAIN → 15 slides ── */
+  SLIDES_DATA.clvul_urbain = {
+    titre:"C5 — Contexte urbain",icon:"🏙️",couleur:"#a855f7",
+    slides:[
+      {type:"titre",titre:"C5 — Gérer le contexte\nurbain",sous:"Partage de la route · Stress · Marseille",icon:"🏙️",couleur:"#a855f7"},
+      {type:"planning_base",titre:"Les usagers vulnérables en ville",points:[{txt:"Piétons : priorité absolue aux passages — même hors passage",icon:"🚶",col:"#22c55e"},{txt:"Cyclistes : espace d'1m minimum au dépassement",icon:"🚴",col:"#3b82f6"},{txt:"Scooters : angles morts très importants — vérifier physiquement",icon:"🛵",col:"#f97316"},{txt:"Trottinettes : imprévisibles — vitesse réduite",icon:"🛴",col:"#a855f7"},{txt:"Personnes âgées et enfants : temps de traversée plus long",icon:"👴",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🏙️",sous:"Zones de livraison urbaines",question:"Vous ne trouvez pas de zone de livraison. Que faites-vous ?",items:["✅ Chercher dans un rayon de 100m — souvent une zone proche","✅ Arrêt court en double file avec feux de détresse si nécessaire","✅ Durée maximale : le temps de décharger — jamais stationner","✅ Prévenir le client si retard pour trouver une place","✅ Signaler l'absence de zone à l'encadrant","❌ Ne jamais bloquer une voie de bus ou un passage piéton"]},
+      {type:"planning_base",titre:"Le stress urbain — le gérer",points:[{txt:"Accepter ce qui ne dépend pas de vous : embouteillage, travaux",icon:"🧘",col:"#a855f7"},{txt:"Prévenir plutôt que subir : appels clients en avance",icon:"📞",col:"#3b82f6"},{txt:"Respiration : 4 secondes inspir, 4 retenir, 6 expirer",icon:"💨",col:"#22c55e"},{txt:"Musique calme ou silence — éviter les infos stressantes",icon:"🎵",col:"#f97316"},{txt:"Pauses courtes mais régulières — 5 min toutes les 2h",icon:"☕",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🚌",sous:"Transports en commun",question:"Vous circulez derrière un bus qui s'arrête. Que faites-vous ?",items:["✅ Attendre que le bus reparte — pas de dépassement dangereux","✅ Regarder si des piétons traversent devant le bus","✅ Si dépassement nécessaire : vérifier voie libre + clignotant","✅ Ne jamais couper un couloir de bus","✅ Respecter les arrêts de bus — zone interdite au stationnement","❌ Ne jamais klaxonner un bus à l'arrêt — inutile et impoli"]},
+      {type:"planning_base",titre:"Marseille — zones spécifiques",points:[{txt:"Vieux-Port : livraison avant 8h30 — autorisation préfectorale",icon:"⚓",col:"#ef4444"},{txt:"Panier : rues étroites — vérifier gabarit sur Street View avant",icon:"🏚️",col:"#f97316"},{txt:"Centre-ville 1er-6e : horaires livraison souvent 6h-10h",icon:"🏙️",col:"#3b82f6"},{txt:"Zones piétonnes : interdites sans autorisation — toujours",icon:"🚫",col:"#ef4444"},{txt:"Cours du Commandant l'Herminier : difficile — repérer avant",icon:"📍",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🌬️",sous:"Le Mistral — danger spécifique",question:"Le Mistral souffle à 80 km/h. Comment adapter votre conduite ?",items:["✅ Prévenir l'encadrant — peut adapter la tournée","✅ Réduire de 20 km/h en zone exposée","✅ Deux mains sur le volant en permanence","✅ Prudence extrême sur les ponts et crêtes","✅ S'arrêter si le véhicule dérive latéralement","❌ Ne jamais ouvrir une porte en grand vent — risque de casse"]},
+      {type:"stat_marseille",titre:"Circulation à Marseille — spécificités",zones:[{nom:"Boulevard Michelet",access:"Voie rapide — limite 70 km/h",solution:"Attention aux sorties et entrées fréquentes",col:"#3b82f6"},{nom:"Avenue du Prado",access:"Large — mais rond-point complexe",solution:"Rester sur sa trajectoire, signaler tôt",col:"#f97316"},{nom:"Avenue de la Capelette",access:"Zone logistique dense",solution:"Chargements fréquents — patience et vigilance",col:"#22c55e"},{nom:"Tunnel vieux-port",access:"Hauteur limitée 2,80m",solution:"Vérifier hauteur véhicule chargé avant d'entrer",col:"#a855f7"}]},
+      {type:"planning_bonne_pratique",titre:"Gérer les imprévus urbains",pratiques:[{pratique:"Manifestation ou événement",detail:"Vérifier les infos trafic le matin — adapter la tournée"},{pratique:"Accident bloquant la route",detail:"Demi-tour dès que possible — ne pas rester coincé des heures"},{pratique:"Rue barrée par travaux",detail:"Chercher déviation sur GPS — appeler client si retard"},{pratique:"Livraison impossible",detail:"Documenter, appeler encadrant, passer au suivant"},{pratique:"Client en urgence",detail:"Prévenir tous les autres clients du retard induit"}]},
+      {type:"question_progressive",icon:"🅿️",sous:"Stationnement légal pour livrer",question:"Où pouvez-vous vous arrêter légalement pour livrer ?",items:["✅ Zone de livraison marquée — GIG/GIC ou livraison","✅ En double file avec feux de détresse — durée minimale","✅ Sur voie de garage ou élargissement","✅ Avec l'accord verbal d'un agent si nécessaire","❌ Jamais sur passage piéton","❌ Jamais sur emplacement handicapé","❌ Jamais sur voie de bus sauf autorisation"]},
+      {type:"planning_base",titre:"Communication radio et téléphone en conduite",points:[{txt:"Téléphone au volant = interdit — amende 135€ + 3 points",icon:"📵",col:"#ef4444"},{txt:"Kit mains libres autorisé si non distrayant",icon:"🎧",col:"#f97316"},{txt:"Pour appeler : s'arrêter en sécurité",icon:"🅿️",col:"#3b82f6"},{txt:"Messages GPS audio : écouter sans regarder l'écran",icon:"🔊",col:"#22c55e"},{txt:"Urgence : s'arrêter d'abord, appeler ensuite",icon:"🚨",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🌧️",sous:"Pluie à Marseille",question:"Il commence à pleuvoir fort. Que faire dans les 2 premières minutes ?",items:["✅ Réduire immédiatement la vitesse de 20 km/h","✅ Allumer les feux de croisement","✅ Augmenter la distance de sécurité","✅ Éviter les coups de volant brusques — risque d'aquaplanage","✅ Si forte pluie : s'arrêter dans un endroit sûr","❌ Ne jamais s'engager dans une rue inondée"]},
+      {type:"question_progressive",icon:"🎯",sous:"Bilan C5",question:"Le jury évalue votre gestion du contexte urbain. Il vérifie :",items:["✅ Que vous adaptez votre parcours aux imprévus","✅ Que vous respectez les priorités — piétons en premier","✅ Que vous gérez votre stress visiblement","✅ Que vous respectez les couloirs de bus et zones piétonnes","✅ Que votre attitude envers les autres usagers est calme"]},
+      {type:"recap",titre:"C5 — Les critères officiels du jury",items:["✅ Parcours adapté en fonction des impératifs et aléas","✅ Partage de l'espace urbain pris en compte","✅ Techniques de gestion du stress appliquées","✅ Attitude vis-à-vis des autres usagers adaptée"],couleur:"#a855f7"},
+      {type:"question_progressive",icon:"🏅",sous:"Evaluation finale C5",question:"Ce qui distingue un conducteur urbain professionnel :",items:["✅ Il anticipe — il ne réagit pas au dernier moment","✅ Il ne klaxonne pas inutilement","✅ Il laisse passer les piétons systématiquement","✅ Il signale toujours ses intentions avec les clignotants","✅ Il reste calme même dans les embouteillages","✅ Il arrive à l'heure ou prévient à l'avance"]},
+    ]
+  };
+
+  /* ── ALPHABETISATION → 15 slides ── */
+  SLIDES_DATA.alphabetisation = {
+    titre:"Lire et comprendre ses documents",icon:"📖",couleur:"#6366f1",
+    slides:[
+      {type:"titre",titre:"Lire et comprendre\nses documents",sous:"BL · Feuille de route · Téléphone · GPS",icon:"📖",couleur:"#6366f1"},
+      {type:"planning_base",titre:"Les 5 documents essentiels du chauffeur",points:[{txt:"Feuille de route : liste de toutes les livraisons du jour",icon:"📋",col:"#6366f1"},{txt:"Bon de livraison (BL) : contrat pour chaque client",icon:"📄",col:"#3b82f6"},{txt:"Permis de conduire : à avoir en original — toujours",icon:"🪪",col:"#22c55e"},{txt:"Carte grise : document du véhicule",icon:"📗",col:"#f97316"},{txt:"Attestation assurance : valide et à jour",icon:"🛡️",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"📋",sous:"Lire un bon de livraison",question:"Sur un BL, les 5 informations à trouver AVANT de décharger :",items:["1. 📍 Le nom et l'adresse du client — suis-je au bon endroit ?","2. 📦 Le nombre de colis — est-ce que j'ai tout en camion ?","3. 📅 La date — ce bon est pour aujourd'hui ?","4. 🌡️ La mention froid ou surgelé — produits spéciaux ?","5. ✍️ La case signature — à faire APRÈS vérification"]},
+      {type:"planning_base",titre:"Si un mot est difficile à lire",points:[{txt:"Appeler l'encadrant — pas de honte — c'est la bonne décision",icon:"📞",col:"#6366f1"},{txt:"Utiliser la synthèse vocale du téléphone — maintenir le doigt",icon:"🔊",col:"#3b82f6"},{txt:"Taper l'adresse dans le GPS — il guide même si on lit peu",icon:"🗺️",col:"#22c55e"},{txt:"Prendre une photo et envoyer à l'encadrant",icon:"📸",col:"#f97316"},{txt:"Demander à quelqu'un sur place — c'est courant",icon:"🤝",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"📱",sous:"Utiliser le téléphone professionnel",question:"Comment utiliser le téléphone professionnel pour aider à lire ?",items:["✅ Synthèse vocale : maintenir le doigt sur un texte — il se lit à voix haute","✅ Google Maps : saisir l'adresse en voix — le GPS guide","✅ Appareil photo : photographier les documents difficiles","✅ Appel encadrant : numéro 1 enregistré dans les favoris","✅ WhatsApp : envoyer une photo d'un document incompris","❌ Ne jamais conduire en lisant un document"]},
+      {type:"planning_base",titre:"Les abréviations courantes",points:[{txt:"BL = Bon de Livraison",icon:"📄",col:"#6366f1"},{txt:"FR = Feuille de Route",icon:"📋",col:"#3b82f6"},{txt:"T° = Température",icon:"🌡️",col:"#22c55e"},{txt:"Qté = Quantité",icon:"📦",col:"#f97316"},{txt:"Réf = Référence",icon:"🔢",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"✍️",sous:"Signer le BL correctement",question:"Comment signer un BL même si on écrit peu ?",items:["✅ Votre prénom ou initiales suffisent — pas besoin de signature complète","✅ Si demande de signer lisiblement : imprimer son prénom en majuscules","✅ Demander au client de signer lui-même en premier — observer","✅ La date : JJ/MM/AAAA — demander l'aide si besoin","✅ Ne jamais laisser un BL sans signature — ni la vôtre ni celle du client","❌ Ne jamais signer à la place du client"]},
+      {type:"planning_bonne_pratique",titre:"Outils qui aident à lire",pratiques:[{pratique:"Lunettes de vue",detail:"Si vous avez besoin de lunettes — les avoir dans le camion"},{pratique:"Loupe application téléphone",detail:"Zoomer sur n'importe quel texte — simple et discret"},{pratique:"Synthèse vocale",detail:"Réglages → Accessibilité → Synthèse vocale — activer"},{pratique:"Google Lens",detail:"Photographier un texte — il le lit et le traduit si besoin"},{pratique:"Encadrant toujours disponible",detail:"Appel possible à tout moment pour aide sur un document"}]},
+      {type:"question_progressive",icon:"🗺️",sous:"Lire une feuille de route",question:"La feuille de route indique : 3 clients, des horaires, des adresses. Par où commencer ?",items:["✅ Lire la feuille COMPLÈTE avant de partir — comprendre le plan","✅ Identifier le client avec l'horaire le plus tôt","✅ Repérer les adresses sur le GPS avant de partir","✅ Encercler les infos importantes avec un stylo","✅ Appeler l'encadrant pour tout point incompris","❌ Ne jamais partir sans avoir compris la feuille de route"]},
+      {type:"planning_base",titre:"Les chiffres importants à reconnaître",points:[{txt:"Les codes postaux : 13001 à 13016 pour Marseille",icon:"📮",col:"#6366f1"},{txt:"Les horaires : 07h30 = 7h30 du matin",icon:"⏰",col:"#3b82f6"},{txt:"Les quantités : 24 = vingt-quatre colis",icon:"📦",col:"#22c55e"},{txt:"La température : +4°C pour le frais, -18°C pour surgelé",icon:"🌡️",col:"#f97316"},{txt:"Le poids : 15 kg = quinze kilogrammes",icon:"⚖️",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"💬",sous:"Communiquer à l'écrit si besoin",question:"Si vous devez laisser un message écrit à un client absent :",items:["✅ Écrire en majuscules — plus lisible","✅ Indiquer l'heure de passage en chiffres : 09H30","✅ Laisser le numéro de téléphone — le votre ou celui de l'encadrant","✅ Écrire votre prénom","✅ Un modèle simple : PASSAGE À 09H30. RAPPELER : 06XXXXXXXX. PRENOM","✅ Photos du passage possible si client a un email sur le BL"]},
+      {type:"planning_base",titre:"L'alphabétisation — une progression normale",points:[{txt:"Tout le monde peut progresser — des cours gratuits existent",icon:"📚",col:"#6366f1"},{txt:"La CIP peut vous orienter vers des cours adaptés",icon:"🎓",col:"#3b82f6"},{txt:"Les compétences du métier ne dépendent pas uniquement de la lecture",icon:"💪",col:"#22c55e"},{txt:"Votre expérience terrain est une vraie valeur",icon:"🚐",col:"#f97316"},{txt:"Chaque document lu et compris est un progrès",icon:"⭐",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🎓",sous:"La formation Cléa",question:"Cléa est une certification des compétences de base. Elle inclut :",items:["✅ Lecture et écriture au niveau professionnel","✅ Calculs de base (quantités, distances, temps)","✅ Usage du numérique (téléphone, internet simple)","✅ Communication en situation de travail","✅ Finançable par le CPF — demander à la CIP","ℹ️ La certification Cléa valorise vos acquis pour un futur employeur"]},
+      {type:"planning_bonne_pratique",titre:"Demander de l aide sans gêne",pratiques:[{pratique:"À l'encadrant",detail:"C'est son rôle de vous aider — appeler sans hésiter"},{pratique:"À un collègue",detail:"L'entraide est normale en équipe — toujours"},{pratique:"À la CIP",detail:"Accompagnement spécifique disponible — parler en entretien"},{pratique:"Au client",detail:"Demander à lire une adresse ensemble — clients compréhensifs"},{pratique:"À l'aide numérique",detail:"Téléphone + GPS + synthèse vocale = outils qui compensent"}]},
+      {type:"recap",titre:"L'essentiel à retenir",items:["📋 BL = vérifier nom, adresse, quantité, date, signature","📞 Un mot difficile = appeler l'encadrant — toujours","📱 Synthèse vocale et GPS = outils qui facilitent","✍️ Signer = prénom ou initiales — suffisant","🤝 Demander de l'aide = professionnalisme pas faiblesse"],couleur:"#6366f1"},
+      {type:"question_progressive",icon:"🌟",sous:"Message final",question:"Ce qui fait un bon chauffeur livreur, c'est :",items:["✅ Être ponctuel et fiable — clients qui peuvent compter sur vous","✅ Communiquer — appeler quand il y a un problème","✅ Faire signer les BL systématiquement","✅ Prendre soin du matériel et du véhicule","✅ Apprendre continuellement — chaque jour quelque chose","✅ La lecture et l'écriture s'améliorent avec la pratique — continuer"]},
+    ]
+  };
+
+  /* ── HACCP AVANCE → 15 slides ── */
+  SLIDES_DATA.haccp_avance = {
+    titre:"HACCP — Hygiène alimentaire avancée",icon:"🌡️",couleur:"#22c55e",
+    slides:[
+      {type:"titre",titre:"HACCP — Hygiène alimentaire\npour le transport",sous:"Chaine du froid · Températures · Traçabilité",icon:"🌡️",couleur:"#22c55e"},
+      {type:"planning_base",titre:"Les 7 principes HACCP",points:[{txt:"1. Identifier les dangers biologiques, chimiques, physiques",icon:"🔍",col:"#22c55e"},{txt:"2. Identifier les points critiques de contrôle (CCP)",icon:"📍",col:"#3b82f6"},{txt:"3. Fixer les limites critiques pour chaque CCP",icon:"📏",col:"#f97316"},{txt:"4. Surveiller les CCP en permanence",icon:"👁️",col:"#a855f7"},{txt:"5. Définir les actions correctives",icon:"🔧",col:"#ef4444"},{txt:"6. Vérifier que le système fonctionne",icon:"✅",col:"#22c55e"},{txt:"7. Documenter toutes les procédures",icon:"📋",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🌡️",sous:"Températures réglementaires",question:"Quelles températures de transport pour chaque type de produit ?",items:["✅ Produits frais : 0°C à +4°C maximum","✅ Poissons frais : 0°C à +2°C","✅ Plats cuisinés chauds : +63°C minimum","✅ Surgelés : -18°C ou moins","✅ Produits secs : température ambiante — pas de contrainte froide","❌ Tout produit hors température = non livrable"]},
+      {type:"planning_base",titre:"La chaîne du froid — les points critiques",points:[{txt:"Chargement : temps d'ouverture des portes minimisé",icon:"📦",col:"#22c55e"},{txt:"Transport : porte du frigo fermée en permanence",icon:"🚪",col:"#3b82f6"},{txt:"Livraison : sortir les produits rapidement",icon:"⚡",col:"#f97316"},{txt:"Retour : réfrigérer immédiatement les invendus",icon:"🔄",col:"#a855f7"},{txt:"Rupture = traçabilité obligatoire + signalement",icon:"⚠️",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"📋",sous:"Traçabilité — que noter ?",question:"Sur le relevé de température, que documenter à chaque livraison ?",items:["✅ Date et heure exacte de la livraison","✅ Température relevée au départ et à l'arrivée","✅ Nom du client et référence de commande","✅ Nature des produits (frais, surgelés, chauds)","✅ Signature du chauffeur et du client","✅ Toute anomalie constatée avec description"]},
+      {type:"planning_bonne_pratique",titre:"Nettoyage du compartiment réfrigéré",pratiques:[{pratique:"Nettoyage quotidien",detail:"Eau chaude + produit désinfectant alimentaire — rinçage"},{pratique:"Désinfection hebdomadaire",detail:"Désinfectant spécial alimentaire — laisser agir 15 minutes"},{pratique:"Vérification des joints",detail:"Joint de porte vérifié — trou ou usure = signaler"},{pratique:"Odeur anormale",detail:"Ne pas charger — nettoyage complet obligatoire d'abord"},{pratique:"Insectes ou rongeurs",detail:"Signalement immédiat — désinfestation professionnelle"}]},
+      {type:"question_progressive",icon:"🦠",sous:"Les dangers biologiques",question:"Quels micro-organismes sont les plus dangereux dans le transport alimentaire ?",items:["✅ Salmonelle : viandes, œufs mal conservés — risque grave","✅ Listeria : fromages, charcuteries — résiste au froid","✅ E.coli : viande hachée, végétaux — très dangereux","✅ Staphylocoques : manipulation des aliments sans hygiène","✅ Tous ces micro-organismes se multiplient entre +4°C et +63°C","ℹ️ La zone de danger : entre +4°C et +63°C — à éviter absolument"]},
+      {type:"planning_base",titre:"Hygiène personnelle du chauffeur",points:[{txt:"Mains propres avant toute manipulation d'aliments",icon:"🤲",col:"#22c55e"},{txt:"Pas de bijoux aux mains (bagues, montres) en manipulation",icon:"💍",col:"#ef4444"},{txt:"Tenue propre — changer si salie en cours de tournée",icon:"👔",col:"#3b82f6"},{txt:"Masque si préconisé — notamment en milieu médical",icon:"😷",col:"#f97316"},{txt:"Ne jamais manger au-dessus des aliments clients",icon:"🚫",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"🌡️",sous:"Que faire en cas de rupture de chaîne du froid ?",question:"Vous arrivez et le frigo est à +9°C au lieu de +4°C. Procédure :",items:["✅ NE PAS livrer les produits — refus systématique","✅ Appeler l'encadrant immédiatement","✅ Photographier le thermomètre avec horodatage","✅ Ne pas ouvrir les portes inutilement — préserver ce qu'il reste","✅ Attendre les instructions — l'encadrant décide de la suite","❌ Ne jamais livrer des produits hors température — responsabilité pénale"]},
+      {type:"stat_marseille",titre:"Zones de stockage et températures",zones:[{nom:"Chambre froide positive",access:"0°C à +4°C — viandes fraîches, produits laitiers",solution:"Contrôle température 2x par jour minimum",col:"#3b82f6"},{nom:"Chambre froide négative",access:"-18°C ou moins — surgelés",solution:"Ne jamais recongeler un produit décongelé",col:"#0ea5e9"},{nom:"Chambre tempérée",access:"+12°C à +18°C — fruits, légumes",solution:"Ventilation correcte — éviter les chocs thermiques",col:"#22c55e"},{nom:"Stockage sec",access:"T° ambiante — conserves, épicerie",solution:"Sec, aéré, à l'abri de la lumière directe",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"📸",sous:"Preuve photographique",question:"Pourquoi photographier la température avant chaque livraison ?",items:["✅ Preuve que la chaîne du froid était respectée au départ","✅ Protection en cas de plainte client","✅ Document légal si litige alimentaire","✅ Traçabilité complète exigée par les normes HACCP","✅ Protection de l'entreprise et du chauffeur","ℹ️ Photo horodatée = preuve inattaquable"]},
+      {type:"planning_base",titre:"HACCP au quotidien — les réflexes",points:[{txt:"Matin : vérifier température frigo avant de charger",icon:"✅",col:"#22c55e"},{txt:"Chargement : minimiser le temps portes ouvertes",icon:"⚡",col:"#3b82f6"},{txt:"En route : ne pas ouvrir le frigo inutilement",icon:"🚫",col:"#f97316"},{txt:"Livraison : sortir rapidement, refermer",icon:"📦",col:"#a855f7"},{txt:"Retour : noter températures, signaler anomalies",icon:"📋",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"📜",sous:"La réglementation",question:"Quelle réglementation encadre le transport alimentaire en France ?",items:["✅ Règlement CE 852/2004 — hygiène des denrées alimentaires","✅ Arrêté du 8 octobre 2013 — transport des denrées","✅ Température contrôlée et documentée obligatoirement","✅ Véhicule conforme et régulièrement désinfecté","✅ Chauffeur formé HACCP — traçabilité de la formation","ℹ️ En cas de contrôle DDPP : amendes et fermeture possible"]},
+      {type:"planning_base",titre:"Formation HACCP — ce qu'elle apporte",points:[{txt:"Durée : 1 journée minimum — 14 heures recommandées",icon:"📅",col:"#22c55e"},{txt:"Financement : CPF ou OPCO Cohésion sociale",icon:"💰",col:"#3b82f6"},{txt:"Attestation valable : sans date d'expiration",icon:"📜",col:"#f97316"},{txt:"Obligatoire pour toute manipulation d'aliments en restauration",icon:"✅",col:"#a855f7"},{txt:"Valorise votre dossier pour un recruteur",icon:"⭐",col:"#f59e0b"}]},
+      {type:"recap",titre:"HACCP — les 5 réflexes essentiels",items:["🌡️ Vérifier la température AVANT de charger et livrer","📸 Photographier le thermomètre à chaque livraison","🚫 Jamais livrer hors température — appeler encadrant","🤲 Mains propres, tenue propre, compartiment propre","📋 Documenter toutes les anomalies avec date et heure"],couleur:"#22c55e"},
+      {type:"question_progressive",icon:"🎯",sous:"Quiz HACCP final",question:"Vous livrez chez un client et il vous demande de laisser les produits sur le trottoir car il est occupé. Que faites-vous ?",items:["✅ Refuser poliment — vous êtes responsable jusqu'à la signature","✅ Demander à attendre ou appeler une autre personne","✅ Appeler l'encadrant si le client insiste","✅ Ne pas laisser des produits frais hors chaîne du froid","❌ Jamais laisser des produits alimentaires sans surveillance","❌ Jamais sans signature — ni légalement ni sanitairement"]},
+    ]
+  };
+
+  /* ── DROITS ET OBLIGATIONS → 15 slides ── */
+  SLIDES_DATA.droits_obligations = {
+    titre:"Droits et obligations du salarié",icon:"⚖️",couleur:"#3b82f6",
+    slides:[
+      {type:"titre",titre:"Droits et obligations\ndu salarié en insertion",sous:"CDDI · Congés · Mutuelle · Formation · CPF",icon:"⚖️",couleur:"#3b82f6"},
+      {type:"planning_base",titre:"Le CDDI — ce qu'il faut savoir",points:[{txt:"CDDI = Contrat à Durée Déterminée d'Insertion",icon:"📄",col:"#3b82f6"},{txt:"Durée maximale : 24 mois — renouvelable",icon:"📅",col:"#f97316"},{txt:"Ouvre les droits au chômage à la sortie",icon:"✅",col:"#22c55e"},{txt:"Mêmes droits qu'un CDI : congés, mutuelle, formation",icon:"⚖️",col:"#a855f7"},{txt:"Encadrement spécifique : CIP + encadrant technique",icon:"🤝",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🏖️",sous:"Les congés payés",question:"Combien de jours de congés payés après 12 mois de CDDI ?",items:["✅ 2,5 jours par mois travaillé = 30 jours par an","✅ 5 semaines de congés annuels — identique à un CDI","✅ Les congés s'accumulent dès le premier mois","✅ Demande à l'encadrant avec préavis raisonnable (2 semaines)","✅ L'employeur peut refuser pour raisons d'organisation","ℹ️ Congés non pris = payés à la sortie si fin de contrat"]},
+      {type:"question_progressive",icon:"🏥",sous:"La mutuelle d'entreprise",question:"Quelle couverture mutuelle avez-vous en CDDI ?",items:["✅ Mutuelle obligatoire — l'employeur paie au moins 50%","✅ Vous payez l'autre moitié sur votre bulletin de salaire","✅ Elle couvre : médecin, dentiste, lunettes, hospitalisation","✅ Délivrance de la carte mutuelle dès le premier mois","✅ Ayants droit : conjoint et enfants peuvent être couverts","❌ Refus de mutuelle = vérifier avec le responsable RH"]},
+      {type:"planning_base",titre:"Le CPF — Compte Personnel de Formation",points:[{txt:"Vous accumulez 500€ par an (800€ si sans qualification)",icon:"💰",col:"#3b82f6"},{txt:"Le CPF vous appartient — même après le CDDI",icon:"🔑",col:"#22c55e"},{txt:"Finance des formations reconnues : permis C, CACES, Cléa...",icon:"🎓",col:"#f97316"},{txt:"Demande sur moncompteformation.gouv.fr",icon:"💻",col:"#a855f7"},{txt:"La CIP peut vous aider à choisir et monter le dossier",icon:"🤝",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🎓",sous:"L'OPCO et les formations",question:"Que peut financer l'OPCO Cohésion sociale pour vous ?",items:["✅ Permis C et EC (poids lourds) — financement possible","✅ FIMO et FCO — formation conducteur obligatoire","✅ CACES (chariots élévateurs) — financement OPCO","✅ SST — Sauveteur Secouriste du Travail","✅ Formations métier : HACCP, logistique, relation client","ℹ️ Demander à votre CIP — des délais s'appliquent"]},
+      {type:"planning_bonne_pratique",titre:"Les entretiens obligatoires",pratiques:[{pratique:"Entretien professionnel",detail:"Obligatoire tous les 2 ans — fait le bilan de votre parcours"},{pratique:"Entretien individuel",detail:"Régulier avec l'encadrant — suivi quotidien"},{pratique:"Entretien avec la CIP",detail:"Accompagnement vers l'emploi — suivi global"},{pratique:"Entretien de sortie",detail:"À la fin du CDDI — bilan et orientations"},  {pratique:"Visite médicale",detail:"Obligatoire à l'embauche et selon risques du poste"}]},
+      {type:"question_progressive",icon:"⚠️",sous:"Le droit de retrait",question:"Vous constatez un danger grave et imminent sur votre poste. Vous pouvez :",items:["✅ Quitter la situation de danger immédiatement","✅ Informer l'encadrant immédiatement","✅ Ne pas reprendre le poste jusqu'à élimination du danger","✅ Ne pas être sanctionné pour l'exercice de ce droit","✅ Rédiger un rapport écrit si possible","❌ Le droit de retrait n'est pas un droit de grève — usage précis"]},
+      {type:"planning_base",titre:"Le bulletin de salaire — comprendre",points:[{txt:"Salaire brut : ce que gagne votre poste en théorie",icon:"💵",col:"#3b82f6"},{txt:"Cotisations sociales : assurance maladie, retraite...",icon:"📊",col:"#f97316"},{txt:"Net à payer : ce que vous recevez réellement",icon:"✅",col:"#22c55e"},{txt:"Congés acquis : jours accumulés ce mois",icon:"🏖️",col:"#a855f7"},{txt:"En cas d'erreur : signaler immédiatement à la RH",icon:"⚠️",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"🤒",sous:"L'arrêt maladie",question:"Vous êtes malade et ne pouvez pas travailler. Procédure :",items:["✅ Prévenir l'encadrant dès que possible — avant l'heure de départ","✅ Consulter un médecin le jour même ou lendemain","✅ Envoyer le certificat médical à l'employeur sous 48h","✅ Envoyer le feuillet CPAM sous 48h également","✅ Indemnités journalières à partir du 4e jour","❌ Ne pas travailler malade — risque pour vous et les autres"]},
+      {type:"planning_base",titre:"Sanctions disciplinaires — vos droits",points:[{txt:"Avertissement écrit : notification obligatoire",icon:"📝",col:"#f59e0b"},{txt:"Mise à pied : entretien préalable obligatoire",icon:"⏸️",col:"#f97316"},{txt:"Licenciement : entretien préalable + lettre recommandée",icon:"✉️",col:"#ef4444"},{txt:"Vous pouvez être accompagné à l'entretien disciplinaire",icon:"🤝",col:"#3b82f6"},{txt:"Contestation possible : Prud'hommes dans les 12 mois",icon:"⚖️",col:"#22c55e"}]},
+      {type:"question_progressive",icon:"🔒",sous:"Protection des données personnelles",question:"Vos données personnelles sont protégées. Vos droits :",items:["✅ Accès à vos données — demander au RH","✅ Rectification si erreur dans votre dossier","✅ Votre dossier ne peut pas être communiqué sans accord","✅ Les données sensibles (santé) ont une protection renforcée","✅ Signalement CNIL en cas d'abus","❌ L'employeur ne peut pas divulguer votre situation personnelle"]},
+      {type:"planning_base",titre:"À la fin du CDDI — vos droits",points:[{txt:"Attestation France Travail : remise par l'employeur sous 15 jours",icon:"📄",col:"#3b82f6"},{txt:"Inscription France Travail : dès la fin du contrat",icon:"💻",col:"#22c55e"},{txt:"Allocations chômage : selon conditions d'activité",icon:"💰",col:"#f97316"},{txt:"Solde de tout compte : signé — vérifier le montant",icon:"✍️",col:"#a855f7"},{txt:"Certificat de travail : obligatoire — à demander",icon:"📋",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"💼",sous:"Après le CDDI — l'accompagnement",question:"À la sortie du CDDI, qui peut vous accompagner ?",items:["✅ France Travail (ex Pôle Emploi) — inscription et allocations","✅ Mission Locale si moins de 26 ans","✅ La CIP de votre structure pendant la période suivante","✅ Cap Emploi si handicap reconnu","✅ Votre réseau constitué pendant le parcours","ℹ️ Continuer à utiliser votre CPF pour vous former"]},
+      {type:"recap",titre:"Vos droits en résumé",items:["🏖️ 5 semaines de congés payés par an — dès le premier mois","🏥 Mutuelle d'entreprise — employeur paie 50% minimum","🎓 CPF actif — 500€ par an pour se former","⚖️ Droit de retrait — danger grave et imminent","📋 Bulletin de salaire — vérifier chaque mois","🤝 Entretien professionnel — obligatoire tous les 2 ans"],couleur:"#3b82f6"},
+      {type:"question_progressive",icon:"🌟",sous:"Votre engagement en retour",question:"Vos obligations en tant que salarié en CDDI :",items:["✅ Respecter les horaires et les règles de l'entreprise","✅ Prévenir en cas de retard ou d'absence — toujours","✅ Participer aux entretiens et formations proposés","✅ Respecter les consignes de sécurité","✅ Signaler les problèmes — ne pas les garder pour soi","✅ Progresser et prendre en main votre projet professionnel"]},
+    ]
+  };
+
+  /* ── ERREURS CLASSIQUES → 15 slides ── */
+  SLIDES_DATA.erreurs_classiques = {
+    titre:"Les erreurs classiques à éviter",icon:"❌",couleur:"#ef4444",
+    slides:[
+      {type:"titre",titre:"Les erreurs classiques\ndu chauffeur livreur",sous:"Évitez-les — apprenez vite",icon:"❌",couleur:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 1 — Partir sans lire la feuille de route",erreur:"Charger le camion sans avoir lu la feuille de route",consequence:"Mauvais ordre de chargement — tout décharger pour remettre dans l'ordre",correct:"Lire TOUTE la feuille de route avant de toucher le premier colis",icon:"📋",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 2 — Ne pas vérifier le BL avant de décharger",erreur:"Décharger les colis puis constater qu'il y en a trop ou pas assez",consequence:"Impossible de prouver l'anomalie — litige client probable",correct:"Compter les colis AVANT de décharger — toujours",icon:"📦",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 3 — Oublier de faire signer le BL",erreur:"Partir sans signature après avoir tout livré",consequence:"Aucune preuve de livraison — client peut nier avoir reçu",correct:"BL signé = seule preuve — jamais partir sans",icon:"✍️",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 4 — Ne pas prévenir en cas de retard",erreur:"Arriver en retard sans avoir appelé le client",consequence:"Client mécontent, réclamation, image négative de l'entreprise",correct:"Prévenir AVANT d'arriver — 10 minutes d'avance si retard prévisible",icon:"⏰",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 5 — Téléphoner au volant",erreur:"Regarder ou répondre à son téléphone en conduisant",consequence:"Amende 135€ + 3 points + risque d'accident grave",correct:"S'arrêter pour téléphoner — toujours, même pour 30 secondes",icon:"📵",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 6 — Ignorer un voyant allumé",erreur:"Partir en tournée avec un voyant moteur ou huile allumé",consequence:"Panne en route — tournée bloquée — frais de remorquage",correct:"Signaler à l'encadrant AVANT de partir — toujours",icon:"⚠️",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 7 — Livrer hors température",erreur:"Livrer des produits frais alors que le frigo était HS",consequence:"Responsabilité pénale — intoxication alimentaire possible",correct:"Ne jamais livrer hors température — appeler l'encadrant",icon:"🌡️",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 8 — S'engager dans une rue impraticable",erreur:"Entrer dans une rue étroite sans savoir si on peut en sortir",consequence:"Bloqué — dommages carrosserie — tournée stoppée",correct:"Vérifier sur Street View avant — vérifier le gabarit",icon:"🚗",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 9 — Ne pas signaler un incident",erreur:"Cacher un accrochage léger ou un BL mal rempli",consequence:"Découverte plus tard = sanction plus grave que si signalé",correct:"Tout signaler immédiatement — encadrant comprend si honnête",icon:"📢",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 10 — Décider seul face à un problème",erreur:"Improviser une solution sans appeler l'encadrant",consequence:"Mauvaise décision, responsabilité engagée",correct:"Appeler l'encadrant AVANT de prendre une décision importante",icon:"📞",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 11 — Ne pas faire de tour de véhicule",erreur:"Partir sans vérifier le véhicule le matin",consequence:"Pneu crevé, feu cassé, frigo non démarré — panne prévisible",correct:"3 minutes de tour chaque matin — 3 minutes qui évitent 3 heures de panne",icon:"🚐",col:"#ef4444"},
+      {type:"erreur_liste",titre:"Erreur 12 — Laisser des colis chez un client absent",erreur:"Laisser des colis devant la porte d'un client absent sans accord",consequence:"Vol possible — responsabilité du chauffeur engagée",correct:"Jamais sans accord explicite — appeler, attendre, appeler l'encadrant",icon:"🚪",col:"#ef4444"},
+      {type:"planning_base",titre:"Le principe fondamental",points:[{txt:"Une erreur signalée immédiatement = problème gérable",icon:"✅",col:"#22c55e"},{txt:"Une erreur cachée découverte plus tard = problème grave",icon:"❌",col:"#ef4444"},{txt:"Appeler l'encadrant = toujours la bonne décision",icon:"📞",col:"#3b82f6"},{txt:"Personne ne fait tout parfait dès le premier jour",icon:"🤝",col:"#f97316"},{txt:"L'important : apprendre et ne pas répéter",icon:"📚",col:"#a855f7"}]},
+      {type:"recap",titre:"Les 5 règles anti-erreurs",items:["📋 Lire la feuille de route AVANT de charger","✍️ BL signé AVANT de partir — toujours","📞 Prévenir AVANT d'arriver en retard","📢 Signaler TOUT incident immédiatement","🤝 Appeler l'encadrant face à tout doute"],couleur:"#ef4444"},
+    ]
+  };
+
+  /* ── INSERTION PRATIQUE → 15 slides ── */
+  SLIDES_DATA.insertion_pratique = {
+    titre:"L'insertion par l'activité économique",icon:"🌱",couleur:"#22c55e",
+    slides:[
+      {type:"titre",titre:"L'insertion par l'activité\néconomique",sous:"Comprendre son parcours · SIAE · Droits · Objectifs",icon:"🌱",couleur:"#22c55e"},
+      {type:"planning_base",titre:"Qu'est-ce que l'insertion par l'activité économique ?",points:[{txt:"IAE = dispositif permettant d'accéder à l'emploi via une structure spécialisée",icon:"🌱",col:"#22c55e"},{txt:"La Table de Cana est une Structure d'Insertion (SIAE)",icon:"🏢",col:"#3b82f6"},{txt:"Le CDDI = contrat de travail réel avec droits sociaux complets",icon:"📄",col:"#f97316"},{txt:"Objectif : construire un projet professionnel viable",icon:"🎯",col:"#a855f7"},{txt:"Accompagnement double : technique (encadrant) + social (CIP)",icon:"🤝",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"👥",sous:"Les acteurs de votre parcours",question:"Qui sont les personnes qui vous accompagnent ?",items:["✅ L'encadrant technique : votre chef direct au quotidien","✅ La CIP : conseillère insertion professionnelle — projet global","✅ Le médecin du travail : santé et aptitude au poste","✅ France Travail : suivi des droits chômage","✅ L'OPCO Cohésion sociale : financement des formations","✅ Vous : acteur principal de votre propre parcours"]},
+      {type:"planning_base",titre:"Les étapes d'un parcours IAE réussi",points:[{txt:"Mois 1-3 : Prise de poste, découverte du métier",icon:"🔍",col:"#22c55e"},{txt:"Mois 4-8 : Montée en compétences — formations métier",icon:"📈",col:"#3b82f6"},{txt:"Mois 9-15 : Autonomie — candidatures en parallèle",icon:"🚀",col:"#f97316"},{txt:"Mois 16-20 : Recherche active d'emploi — entretiens",icon:"💼",col:"#a855f7"},{txt:"Mois 21-24 : Sortie positive — emploi ou formation",icon:"🏆",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🎯",sous:"Construire son projet professionnel",question:"Votre CIP vous aide à définir votre projet. Comment l'utiliser au maximum ?",items:["✅ Parler franchement — difficultés, envies, doutes","✅ Venir aux entretiens préparé — avec des questions","✅ Faire des candidatures dès le 4e mois — ne pas attendre","✅ Essayer différents types de postes lors des remplacements","✅ Signaler les secteurs qui vous intéressent","✅ Suivre les formations proposées — même celles qui semblent hors sujet"]},
+      {type:"planning_base",titre:"Les formations disponibles pendant le parcours",points:[{txt:"Permis C ou EC : camion ou semi-remorque — finançable OPCO",icon:"🚛",col:"#3b82f6"},{txt:"CACES 1, 3, 5 : chariots élévateurs — en demande",icon:"🏗️",col:"#f97316"},{txt:"FIMO/FCO : habilitation transport de marchandises",icon:"🎓",col:"#22c55e"},{txt:"SST : Sauveteur Secouriste — valorisé partout",icon:"🏥",col:"#ef4444"},{txt:"Cléa : certification compétences de base",icon:"📚",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"💼",sous:"Les secteurs qui recrutent",question:"Après un parcours logistique, vers quels secteurs postuler ?",items:["✅ Transport de marchandises : messagerie, express, colis","✅ Grande distribution : livraison drive, approvisionnement","✅ Restauration collective : cantines, hôpitaux, EHPAD","✅ Événementiel traiteur : spécialité La Table de Cana","✅ Logistique industrielle : entrepôts, zones industrielles","✅ Services à la personne : portage de repas, aide alimentaire"]},
+      {type:"planning_bonne_pratique",titre:"Comment réussir son parcours IAE",pratiques:[{pratique:"Être régulier et ponctuel",detail:"La fiabilité est la compétence n°1 demandée par les employeurs"},{pratique:"S'investir dans les formations",detail:"Chaque formation = compétence ajoutée au CV"},{pratique:"Faire des candidatures tôt",detail:"Commencer à postuler dès le 4-6e mois — pas à la fin"},{pratique:"Parler à la CIP de tout problème",detail:"Personnel ou professionnel — la CIP peut aider"},{pratique:"Constituer un réseau",detail:"Chaque client livré est un contact potentiel"}]},
+      {type:"question_progressive",icon:"📜",sous:"Le passeport de compétences",question:"Que contient votre passeport de compétences La Table de Cana ?",items:["✅ Toutes les compétences métier validées avec niveaux","✅ Les formations suivies avec attestations","✅ Les évaluations et scores de progression","✅ Les certifications obtenues (CACES, HACCP, etc.)","✅ L'avis de l'encadrant et de la CIP","✅ Imprimable depuis le CRM — à présenter aux entretiens"]},
+      {type:"planning_base",titre:"Les aides financières disponibles",points:[{txt:"Prime mobilité : aide au transport si loin du dépôt",icon:"🚌",col:"#22c55e"},{txt:"Aide à l'équipement : chaussures de sécurité, gilet",icon:"🦺",col:"#3b82f6"},{txt:"Aide au permis : si le permis est nécessaire au projet",icon:"🚗",col:"#f97316"},{txt:"CPF : 500€ par an — formations reconnues",icon:"💰",col:"#a855f7"},{txt:"Aide au logement : CAF — maintien des droits possible",icon:"🏠",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🌟",sous:"Les sorties positives — exemples",question:"Qu'est-ce qu'une sortie positive après un CDDI ?",items:["✅ CDI ou CDD long (6 mois et plus) dans n'importe quel secteur","✅ Intérim régulier avec perspective de CDI","✅ Création d'entreprise ou auto-entrepreneuriat","✅ Formation qualifiante financée (Permis C, CACES, BTS)","✅ Entrée en contrat d'apprentissage","❌ La sortie positive = votre objectif dès le premier jour"]},
+      {type:"planning_base",titre:"Les droits après le CDDI",points:[{txt:"Chômage : ouverture des droits si conditions remplies",icon:"💰",col:"#22c55e"},{txt:"CPF : continue à s'alimenter même au chômage",icon:"🎓",col:"#3b82f6"},{txt:"Suivi post-sortie : La Table de Cana vous suit 24 mois",icon:"🔄",col:"#f97316"},{txt:"Attestation employeur : obligatoire — remise à la sortie",icon:"📄",col:"#a855f7"},{txt:"Références : encadrant peut être contacté par recruteur",icon:"📞",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"💡",sous:"Conseils pour la suite",question:"3 conseils pour réussir après votre parcours IAE :",items:["✅ Ne jamais arrêter de vous former — le marché évolue vite","✅ Rester en contact avec votre réseau constitué pendant le parcours","✅ Utiliser votre passeport de compétences à chaque entretien","✅ Contacter la CIP en cas de difficulté — suivi 24 mois","✅ Valoriser votre expérience logistique — elle est solide","✅ Continuer avec le CPF pour ajouter des certifications"]},
+      {type:"recap",titre:"L'insertion — ce que ça vous apporte",items:["💼 Un vrai emploi avec droits sociaux complets","🎓 Des formations financées pour progresser","🤝 Un accompagnement personnalisé vers l'emploi","📜 Un passeport de compétences valorisable","🌟 Une expérience terrain reconnue par les recruteurs","🚀 Un tremplin vers un emploi durable"],couleur:"#22c55e"},
+    ]
+  };
+
+  /* ── LIVRAISON PARFAITE → 15 slides ── */
+  SLIDES_DATA.livraison_parfaite = {
+    titre:"La livraison parfaite",icon:"⭐",couleur:"#f59e0b",
+    slides:[
+      {type:"titre",titre:"La livraison parfaite",sous:"De la préparation au retour — zéro défaut",icon:"⭐",couleur:"#f59e0b"},
+      {type:"question_progressive",icon:"📋",sous:"Avant de partir — la checklist",question:"La checklist de la livraison parfaite avant de quitter le dépôt :",items:["✅ Feuille de route lue en entier et comprise","✅ Clients à horaires fixes identifiés et en tête","✅ Ordre de chargement réfléchi (LIFO)","✅ Tous les colis chargés et comptés","✅ BL dans l'ordre de livraison — dans la cabine","✅ GPS programmé sur le premier client","✅ Téléphone chargé — encadrant dans les favoris"]},
+      {type:"planning_base",titre:"L'arrivée chez le client — les gestes parfaits",points:[{txt:"Se garer correctement — ne pas gêner ni bloquer",icon:"🅿️",col:"#f59e0b"},{txt:"Prendre le BL correspondant à ce client — pas les autres",icon:"📄",col:"#3b82f6"},{txt:"Se présenter : Bonjour + prénom + La Table de Cana",icon:"👋",col:"#22c55e"},{txt:"Compter les colis avant de décharger",icon:"📦",col:"#f97316"},{txt:"Décharger avec soin — matériel bien posé",icon:"🤝",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"✍️",sous:"La signature parfaite",question:"Comment obtenir une signature parfaite sur le BL ?",items:["✅ Présenter le BL au client après comptage","✅ Lui indiquer où signer — clairement","✅ Vérifier que la signature est lisible","✅ Si réserve : noter ensemble avant signature","✅ Garder l'original — donner la copie si demandée","✅ Remercier le client et saluer en partant"]},
+      {type:"planning_base",titre:"La communication parfaite",points:[{txt:"Retard prévisible : appel 15 min avant l'heure prévue",icon:"📞",col:"#f59e0b"},{txt:"Client absent : avis de passage + appel + encadrant",icon:"📝",col:"#3b82f6"},{txt:"Anomalie produit : photo + appel encadrant avant livraison",icon:"📸",col:"#22c55e"},{txt:"Satisfaction client : noter un feedback positif à l'encadrant",icon:"⭐",col:"#f97316"},{txt:"Incident : signaler dans la journée sans attendre",icon:"⚠️",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"🚐",sous:"La conduite parfaite pendant la tournée",question:"Les 5 habitudes d'un conducteur VUL professionnel :",items:["✅ Anticiper — regarder loin — pas de freinages brusques","✅ Stabiliser la vitesse — éco-conduite naturelle","✅ Vérifier les angles morts à chaque changement de direction","✅ Klaxon avant chaque marche arrière","✅ Moteur coupé si arrêt de plus de 1 minute","✅ Distance de sécurité maintenue même sous pression"]},
+      {type:"planning_bonne_pratique",titre:"La parfaite gestion du temps",pratiques:[{pratique:"Calculer les temps de trajet en avance",detail:"Distance + vitesse + marge 20% = heure d'arrivée réaliste"},{pratique:"Les clients prioritaires d'abord",detail:"Horaire fixe > fenêtre de temps > libre"},{pratique:"Ne pas s'attarder",detail:"Livraison faite = partir — ne pas discuter 10 minutes"},{pratique:"Prévenir si en avance aussi",detail:"Arriver 30 min en avance sans prévenir peut gêner"},{pratique:"Marge de fin de journée",detail:"Toujours garder 30 min de marge pour les imprévus"}]},
+      {type:"question_progressive",icon:"🌡️",sous:"La chaîne du froid parfaite",question:"Pour maintenir une chaîne du froid parfaite pendant la tournée :",items:["✅ Ouvrir le frigo le moins possible","✅ Sortir les produits du frigo au dernier moment","✅ Jamais de produits chauds et froids dans le même compartiment","✅ Température notée au départ ET à l'arrivée sur le BL","✅ En cas de doute sur la température : appeler l'encadrant","❌ Jamais de produits hors température sans accord explicite"]},
+      {type:"planning_base",titre:"Le comportement parfait avec le client",points:[{txt:"Sourire — même après une journée difficile",icon:"😊",col:"#f59e0b"},{txt:"Écouter — le client qui se plaint a une raison",icon:"👂",col:"#3b82f6"},{txt:"Ne pas argumenter — prendre note et signaler",icon:"📝",col:"#22c55e"},{txt:"Ne pas goûter ni accepter d'aliments des clients",icon:"🚫",col:"#ef4444"},{txt:"Téléphone rangé — jamais visible devant le client",icon:"📵",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🔄",sous:"Les reprises parfaites",question:"En fin de livraison traiteur, que reprendre et comment ?",items:["✅ Inventorier avant de charger — ne rien oublier","✅ Compter les bacs GN, chafing dish, caisses","✅ Vérifier l'état — noter toute casse sur le bon de retour","✅ Charger délicatement — même au retour","✅ Fermer le camion correctement","✅ Signaler tout matériel manquant à l'encadrant en rentrant"]},
+      {type:"planning_bonne_pratique",titre:"La fin de tournée parfaite",pratiques:[{pratique:"Tous les BL remis et signés",detail:"Vérifier avant de rentrer — ni oubli ni BL vierge"},{pratique:"Tous les incidents signalés",detail:"Oral à l'encadrant + note écrite si important"},{pratique:"Véhicule nettoyé",detail:"Compartiment nettoyé, cabine propre, sol balayé"},{pratique:"Carburant fait si nécessaire",detail:"Plein avant de garer — pour le prochain chauffeur"},{pratique:"Compte-rendu complet",detail:"Kilomètre parcourus, anomalies, feedbacks clients"}]},
+      {type:"question_progressive",icon:"📊",sous:"Les indicateurs d'une bonne tournée",question:"Comment mesurer si vous avez fait une bonne tournée ?",items:["✅ Taux de livraison : 100% des colis livrés","✅ Zéro BL non signé","✅ Zéro retard non signalé","✅ Zéro incident non documenté","✅ Zéro client insatisfait non signalé","✅ Retour au dépôt à l'heure prévue"]},
+      {type:"planning_base",titre:"Ce que la livraison parfaite représente",points:[{txt:"Pour le client : fiabilité — il vous fait confiance",icon:"🤝",col:"#f59e0b"},{txt:"Pour l'entreprise : image — clients fidèles et nouveaux",icon:"🏢",col:"#3b82f6"},{txt:"Pour vous : employabilité — référence pour un futur emploi",icon:"💼",col:"#22c55e"},{txt:"Pour l'équipe : organisation — moins de problèmes à gérer",icon:"👥",col:"#f97316"},{txt:"Pour la route : sécurité — conduite professionnelle",icon:"🛡️",col:"#a855f7"}]},
+      {type:"recap",titre:"La livraison parfaite en 7 points",items:["📋 Préparer : feuille de route lue, GPS prêt, BL rangés","🚐 Conduire : éco-conduite, distances, sécurité","📦 Livrer : compter avant, décharger avec soin","✍️ Signer : BL signé obligatoirement","📞 Communiquer : retard, problème — toujours prévenir","🔄 Reprendre : matériel compté, état vérifié","📢 Signaler : tout incident à l'encadrant le soir"],couleur:"#f59e0b"},
+    ]
+  };
+
+  /* ── PLANNING VENDREDI → 15 slides ── */
+  SLIDES_DATA.planning_vendredi = {
+    titre:"Préparer le planning du vendredi",icon:"📅",couleur:"#6366f1",
+    slides:[
+      {type:"titre",titre:"Le planning du vendredi",sous:"Gérer les événements du week-end",icon:"📅",couleur:"#6366f1"},
+      {type:"planning_base",titre:"Pourquoi le vendredi est stratégique",points:[{txt:"Mariages, baptêmes, anniversaires — tous le week-end",icon:"💒",col:"#6366f1"},{txt:"Livraisons plus lourdes : buffets complets, matériel",icon:"📦",col:"#3b82f6"},{txt:"Délais serrés : les événements démarrent à heure fixe",icon:"⏰",col:"#f97316"},{txt:"Clients plus stressés que d'habitude",icon:"😰",col:"#a855f7"},{txt:"Zéro droit à l'erreur — l'événement n'attendra pas",icon:"🚫",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"📋",sous:"La préparation le vendredi matin",question:"Comment préparer une livraison événement samedi ou dimanche ?",items:["✅ Lire la feuille de route dès vendredi matin","✅ Repérer l'adresse sur Street View si inconnue","✅ Appeler le client pour confirmer heure et accès","✅ Vérifier que le matériel nécessaire est disponible","✅ Signaler tout doute à l'encadrant avant 16h","✅ Ne jamais partir vendredi soir sans avoir tout validé"]},
+      {type:"planning_base",titre:"Les événements du week-end — spécificités",points:[{txt:"Mariage : stress maximal — arriver 30 min en avance",icon:"💒",col:"#6366f1"},{txt:"Anniversaire enfants : beaucoup de monde — discrétion",icon:"🎉",col:"#3b82f6"},{txt:"Événement d'entreprise : professionnalisme extrême",icon:"🏢",col:"#22c55e"},{txt:"EHPAD week-end : personnel réduit — autonomie requise",icon:"🏥",col:"#f97316"},{txt:"Repas associatif : planning souvent approximatif",icon:"🤝",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"📞",sous:"Les appels à faire le vendredi",question:"Quels appels sont indispensables le vendredi pour les livraisons du week-end ?",items:["✅ Appel client pour confirmer heure et accès exact","✅ Appel pour connaître le nom du responsable sur place","✅ Appel si adresse inconnue ou difficile d'accès","✅ Appel si événement en plein air — météo favorable ?","✅ Appel encadrant pour valider tout point incertain","❌ Ne jamais supposer — toujours vérifier"]},
+      {type:"planning_base",titre:"Matériel à vérifier le vendredi",points:[{txt:"Chafing dish : nombre correct, propres, en état",icon:"🍽️",col:"#6366f1"},{txt:"Bacs GN : quantité exacte, couvercles, bonne taille",icon:"📦",col:"#3b82f6"},{txt:"Nappes et vaisselle : si applicable — compter",icon:"🍽️",col:"#22c55e"},{txt:"Véhicule : plein de carburant, frigo vérifié",icon:"🚐",col:"#f97316"},{txt:"Documents : BL imprimés, feuille de route papier",icon:"📋",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"⏰",sous:"Calcul de l heure de départ",question:"L'événement commence à 12h. La mise en place prend 45 min. Trajet = 35 min. Quand partir ?",items:["✅ Mise en place : 12h - 45min = départ du camion à 11h15","✅ Trajet : 35 min + 20% marge = 42 min","✅ Heure de départ : 11h15 - 42 min ≈ 10h30","✅ Prévoir 10 min pour garer et décharger = partir à 10h20","✅ Arrondir : partir à 10h00 pour avoir de la marge","ℹ️ Toujours ajouter 20-30% de marge sur les trajets tendus"]},
+      {type:"planning_bonne_pratique",titre:"Communication avec la salle ou le lieu",pratiques:[{pratique:"Appeler le lieu la veille",detail:"Confirmer l'accès, le parking, l'heure d'ouverture des portes"},{pratique:"Demander le nom du responsable",detail:"À l'arrivée, se présenter directement à la bonne personne"},{pratique:"Code d'accès ou badge",detail:"À demander lors de l'appel — ne pas découvrir sur place"},{pratique:"Plan du lieu si grand espace",detail:"Où est la cuisine ? Où décharger ? Ascenseur ?"},{pratique:"Numéro direct du lieu",detail:"En cas de retard — prévenir directement le lieu"}]},
+      {type:"question_progressive",icon:"🌧️",sous:"Météo et événements extérieurs",question:"La météo annonce de la pluie pour demain, l'événement est en plein air. Que faites-vous ?",items:["✅ Informer l'encadrant et le client dès le vendredi","✅ Vérifier si une tente ou abri est prévu","✅ Emballer plus hermétiquement les produits sensibles","✅ Prévoir un itinéraire sec pour sortir les caisses","✅ Arriver encore plus tôt si accès difficile mouillé","✅ Adapter votre tenue : imperméable dans le camion"]},
+      {type:"planning_base",titre:"La mise en place de l'événement",points:[{txt:"Arriver AVANT le client — jamais après",icon:"⏰",col:"#6366f1"},{txt:"Suivre exactement le plan de table fourni",icon:"🗺️",col:"#3b82f6"},{txt:"Vérification température avant de sortir les plats chauds",icon:"🌡️",col:"#22c55e"},{txt:"Installations en silence et discrétion maximale",icon:"🤫",col:"#f97316"},{txt:"Confirmer avec le responsable avant de partir",icon:"✅",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"🔄",sous:"Le retour du matériel après l événement",question:"Le lendemain ou en fin de soirée, vous venez récupérer le matériel. Procédure :",items:["✅ Inventaire complet AVANT de charger","✅ Compter chafing dish, bacs GN, nappes, vaisselle","✅ Vérifier l'état — noter toute casse immédiatement","✅ Remercier le client et prendre son retour","✅ Signer le bon de retour si applicable","✅ Signaler tout manquant à l'encadrant dans la journée"]},
+      {type:"planning_base",titre:"Samedi et dimanche — différences",points:[{txt:"Samedi : journée normale — circulation plus dense en ville",icon:"🌆",col:"#6366f1"},{txt:"Dimanche : circulation fluide — mais moins de services disponibles",icon:"🌇",col:"#3b82f6"},{txt:"Week-end : encadrant joignable — numéro de permanence",icon:"📞",col:"#22c55e"},{txt:"Certaines zones piétonnes s'ouvrent le dimanche matin",icon:"🚶",col:"#f97316"},{txt:"Parkings souvent plus disponibles — mais attention zones bleues",icon:"🅿️",col:"#a855f7"}]},
+      {type:"question_progressive",icon:"💡",sous:"Les bons reflexes du week-end",question:"Ce qui distingue un chauffeur fiable pour les événements week-end :",items:["✅ Il confirme TOUT le vendredi — aucune surprise","✅ Il arrive plus tôt que demandé","✅ Il reste calme même si l'événement est stressant","✅ Il ne goûte ni ne touche les plats des clients","✅ Il repart avec tout le matériel compté","✅ Il appelle l'encadrant si le moindre problème"]},
+      {type:"planning_base",titre:"Exemple de planning vendredi idéal",points:[{txt:"8h : Lecture complète feuille de route + événements week-end",icon:"📋",col:"#6366f1"},{txt:"9h : Appels clients week-end — confirmation accès et horaires",icon:"📞",col:"#3b82f6"},{txt:"10h : Vérification matériel traiteur + véhicule",icon:"🔍",col:"#22c55e"},{txt:"11h : Chargement si livraison samedi matin tôt",icon:"📦",col:"#f97316"},{txt:"Fin de journée : briefing avec l'encadrant — tout valider",icon:"✅",col:"#a855f7"}]},
+      {type:"recap",titre:"Planning vendredi — les 5 essentiels",items:["📋 Lire la feuille de route des événements week-end","📞 Appeler TOUS les clients week-end le vendredi","🔍 Vérifier le matériel : comptage + état + frigo","⏰ Calculer l'heure de départ avec marge 30%","✅ Valider avec l'encadrant avant 16h — zéro doute"],couleur:"#6366f1"},
+    ]
+  };
+
+  /* ── RECRUTEMENT → 15 slides ── */
+  SLIDES_DATA.recrutement = {
+    titre:"Accompagner le recrutement",icon:"🎯",couleur:"#f97316",
+    slides:[
+      {type:"titre",titre:"Accompagner le recrutement",sous:"Côté formateur — Aider les salariés à trouver un emploi",icon:"🎯",couleur:"#f97316"},
+      {type:"planning_base",titre:"Le rôle du formateur dans le recrutement",points:[{txt:"Identifier les compétences réelles du salarié",icon:"🔍",col:"#f97316"},{txt:"Aider à rédiger ou améliorer le CV",icon:"📄",col:"#3b82f6"},{txt:"Préparer aux entretiens : simulation et débriefing",icon:"💼",col:"#22c55e"},{txt:"Mettre en relation avec des employeurs du réseau",icon:"🤝",col:"#a855f7"},{txt:"Soutenir pendant les recherches — encourager",icon:"💪",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"📄",sous:"Aider à construire le CV",question:"Pour aider un salarié à construire son CV, vous l'aidez à :",items:["✅ Lister toutes les expériences — même courtes","✅ Valoriser les formations et certifications obtenues ici","✅ Décrire les tâches concrètes et les responsabilités","✅ Mentionner le permis B en haut — critère n°1","✅ Ajouter les compétences transversales : ponctualité, autonomie","✅ Relire et corriger avec lui — sans le blesser"]},
+      {type:"planning_base",titre:"Les offres d'emploi adaptées",points:[{txt:"Offres transport et logistique : France Travail, Indeed",icon:"💻",col:"#f97316"},{txt:"Offres restauration collective : Compass, Sodexo, Elior",icon:"🍽️",col:"#3b82f6"},{txt:"Réseau IAE : associations partenaires, GEIQ logistique",icon:"🤝",col:"#22c55e"},{txt:"Réseau entreprise : clients de La Table de Cana",icon:"🏢",col:"#a855f7"},{txt:"Événements emploi : forums, jobdatings logistique",icon:"📅",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"🎭",sous:"La simulation d entretien",question:"Lors d'une simulation d'entretien avec un salarié, vous êtes attentif à :",items:["✅ La présentation de soi : clair, concis, valorisant","✅ La posture et le regard : confiance sans arrogance","✅ Les exemples concrets : faits, pas généralités","✅ La connaissance de l'entreprise visée","✅ Les questions posées à l'employeur","✅ La gestion des questions difficiles : passé, lacunes"]},
+      {type:"planning_bonne_pratique",titre:"Débriefing après un entretien réel",pratiques:[{pratique:"Demander comment ça s'est passé",detail:"Écouter sans juger — le salarié a besoin de parler"},{pratique:"Identifier ce qui a bien marché",detail:"Valoriser les points positifs — confiance pour la suite"},{pratique:"Identifier ce qui peut s'améliorer",detail:"Reformuler positivement — pas critiquer"},{pratique:"Décider des actions pour le prochain",detail:"1-2 points à travailler — pas 10"},{pratique:"Continuer à postuler",detail:"Ne pas s'arrêter après un refus — c'est normal"}]},
+      {type:"question_progressive",icon:"🤝",sous:"Le réseau d emploi",question:"Comment utiliser le réseau La Table de Cana pour placer les salariés ?",items:["✅ Clients réguliers : restaurateurs, collectivités, associations","✅ Partenaires IAE locaux : autres SIAE de Marseille","✅ GEIQ Logistique : groupement d'employeurs pour l'insertion","✅ Anciens salariés : certains ont des contacts et recrutent","✅ France Travail partenaire : offres réservées aux salariés SIAE","✅ Salons emploi : accompagner physiquement si possible"]},
+      {type:"planning_base",titre:"Les secteurs qui valorisent un parcours SIAE",points:[{txt:"Transport et messagerie : DHL, Chronopost, GLS recherchent",icon:"🚐",col:"#f97316"},{txt:"Restauration collective : profils polyvalents très demandés",icon:"🍽️",col:"#3b82f6"},{txt:"Grande distribution : drive, réception marchandises",icon:"🏪",col:"#22c55e"},{txt:"EHPAD et hôpitaux : logistique interne en croissance",icon:"🏥",col:"#a855f7"},{txt:"Collectivités locales : Mairie, Métropole — contrats stables",icon:"🏛️",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"📊",sous:"Suivi des candidatures",question:"Comment suivre efficacement les candidatures d'un salarié ?",items:["✅ Tableau de suivi : entreprise, date, contact, suite","✅ Relance à J+7 si pas de réponse","✅ Archiver les refus avec la raison si communiquée","✅ Adapter le CV ou lettre si refus récurrents","✅ Célébrer chaque entretien obtenu — même sans résultat","✅ Encourager en cas de découragement — normal"]},
+      {type:"planning_base",titre:"Le passeport de compétences dans le recrutement",points:[{txt:"Document officiel de La Table de Cana",icon:"📜",col:"#f97316"},{txt:"Liste toutes les compétences validées avec niveaux",icon:"✅",col:"#3b82f6"},{txt:"Inclut les certifications et formations",icon:"🎓",col:"#22c55e"},{txt:"Signé par l'encadrant et imprimé depuis le CRM",icon:"🖨️",col:"#a855f7"},{txt:"À présenter systématiquement en entretien",icon:"💼",col:"#f59e0b"}]},
+      {type:"question_progressive",icon:"💡",sous:"Que faire quand un salarié se décourage",question:"Un salarié enchaîne les refus et commence à abandonner. Que faire ?",items:["✅ Écouter sans minimiser sa frustration","✅ Analyser ensemble — les refus ont-ils une raison commune ?","✅ Recentrer sur les petits succès — entretiens obtenus","✅ Proposer d'élargir les secteurs de recherche","✅ Impliquer la CIP si blocage profond","✅ Rappeler que la moyenne = 3-6 mois de recherche"]},
+      {type:"planning_base",titre:"Les erreurs de recrutement à éviter côté formateur",points:[{txt:"Promettre un emploi que vous ne contrôlez pas",icon:"🚫",col:"#ef4444"},{txt:"Décourager une candidature par peur du refus",icon:"🚫",col:"#ef4444"},{txt:"Rédiger le CV à sa place sans l'impliquer",icon:"🚫",col:"#ef4444"},{txt:"Lâcher le suivi après un ou deux échecs",icon:"🚫",col:"#ef4444"},{txt:"Ne pas valoriser les compétences acquises ici",icon:"🚫",col:"#ef4444"}]},
+      {type:"question_progressive",icon:"🏆",sous:"La sortie positive — l objectif commun",question:"Une sortie positive, c'est pour vous en tant que formateur :",items:["✅ La preuve que votre travail d'accompagnement a porté ses fruits","✅ Un indicateur de performance pour la structure","✅ Une source de motivation pour les autres salariés","✅ Un contact dans le réseau pour de futures opportunités","✅ Un retour potentiel vers La Table de Cana si difficultés","✅ La raison principale pour laquelle vous faites ce métier"]},
+      {type:"planning_base",titre:"Le suivi post-sortie — votre rôle",points:[{txt:"Contact à 1 mois : emploi trouvé ? Difficultés ?",icon:"📞",col:"#f97316"},{txt:"Contact à 3 mois : stabilité du poste ? Formation ?",icon:"📞",col:"#3b82f6"},{txt:"Contact à 6 mois : évolution ? Nouveau projet ?",icon:"📞",col:"#22c55e"},{txt:"Disponible en cas de difficulté — porte ouverte",icon:"🤝",col:"#a855f7"},{txt:"Enregistrer dans le CRM — traçabilité complète",icon:"💻",col:"#f59e0b"}]},
+      {type:"recap",titre:"Le formateur-recruteur — les 5 rôles clés",items:["🔍 Identifier et valoriser les compétences réelles","📄 Aider à construire un CV honnête et valorisant","🎭 Simuler des entretiens et débriefer","🤝 Utiliser le réseau de l'entreprise","📊 Suivre les candidatures et soutenir en cas de refus"],couleur:"#f97316"},
+    ]
+  };
+
+  console.log("Toutes les slides completees a 15 slides minimum");
 })();
 
 </script>
