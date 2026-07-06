@@ -6089,7 +6089,144 @@ function imprimerDashAnnuel(){
   win.document.write('<!DOCTYPE html><html><head><title>Bilan '+_dashAnn+'</title><style>body{font-family:Arial;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{padding:7px;border:1px solid #e2e8f0}th{background:#f1f5f9}@media print{button{display:none}}</style></head><body>');
   win.document.write('<h1>Bilan annuel '+_dashAnn+'</h1>');
   win.document.write(el.innerHTML.replace(/style="[^"]*background:[^"]*#0f172a[^"]*"/g,'style="background:#f8fafc"').replace(/style="[^"]*color:#[0-9a-f]{6}[^"]*"/g,'style=""'));
-  win.document.write('<br><button onclick="window.print()">Imprimer</button></body></html>');
+  win.document.write('<br><button onclick="window.print()">Imprimer</button>
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -6257,7 +6394,144 @@ function imprimerChronogramme(){
   win.document.write('<!DOCTYPE html><html><head><title>Chronogramme</title><style>body{font-family:Arial;padding:20px;font-size:11px}@media print{button{display:none}}</style></head><body>');
   win.document.write('<h1>Chronogramme Insertion</h1>');
   win.document.write(el.innerHTML);
-  win.document.write('<br><button onclick="window.print()">Imprimer</button></body></html>');
+  win.document.write('<br><button onclick="window.print()">Imprimer</button>
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -6670,7 +6944,144 @@ function ouvrirAnalyseSociale(){
   });
 
   win.document.write('<br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer">Imprimer</button>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -6705,7 +7116,144 @@ function ouvrirSimulateur(){
   win.document.write('function simRecrutement(n){var r=document.getElementById("s3r");var nvNd=nd+parseInt(n);var parC=Math.round(tot/nvNd);r.innerHTML="Equipe totale : <b style=color:#22c55e>"+nvNd+"</b> chauffeurs<br>Livraisons par chauffeur : <b>"+parC+"</b> (actuellement "+Math.round(tot/nd)+")<br>Gain : <b style=color:#22c55e>-"+Math.round((1-parC/Math.round(tot/nd))*100)+"%</b> de charge par personne.";}');
   win.document.write('<\/script>');
   win.document.write('<br><button onclick="window.print()" style="padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:7px;cursor:pointer">Imprimer le rapport</button>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -6770,7 +7318,144 @@ function ouvrirAudit(){
 
   win.document.write('<div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px"><div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px"><div style="font-size:10px;color:#64748b;margin-bottom:24px">Responsable logistique :</div><div style="border-top:1px solid #94a3b8"></div></div><div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px"><div style="font-size:10px;color:#64748b;margin-bottom:24px">Directeur :</div><div style="border-top:1px solid #94a3b8"></div></div></div>');
   win.document.write('<br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px">Imprimer le dossier</button>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -7222,7 +7907,144 @@ function imprimerDirection(){
   win.document.write('<!DOCTYPE html><html><head><title>Rapport Direction</title><style>body{font-family:Arial;padding:24px;font-size:12px;max-width:700px;margin:0 auto}h1{font-size:18px;border-bottom:2px solid #1d4ed8;padding-bottom:6px;margin-bottom:16px}@media print{button{display:none}}</style></head><body>');
   win.document.write('<h1>Rapport Direction — '+now.getDate()+' '+MOIS2[now.getMonth()]+' '+now.getFullYear()+'</h1>');
   win.document.write(el.innerText.replace(/\n/g,'<br>'));
-  win.document.write('<br><br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer">Imprimer</button></body></html>');
+  win.document.write('<br><br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer">Imprimer</button>
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -7882,7 +8704,144 @@ function imprimerFeuilleRoute(di, date){
 
   win.document.write('</div>');
   win.document.write('<div style="text-align:center;padding:10px;background:#f1f5f9"><button onclick="window.print()" style="padding:12px 28px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">🖨 Imprimer cette feuille</button></div>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -10166,7 +11125,144 @@ function previewFeuilleTel(di, date){
     +'</div>');
 
   win.document.write('<script>function inc(){var tp=["🔧 Panne","⏰ Retard","👤 Client absent","📦 Matériel","🚗 Accident","💬 Autre"];var n=parseInt(prompt("Incident:\\n\\n"+tp.map(function(t,i){return(i+1)+". "+t;}).join("\\n")+"\\nNuméro :"));if(n&&tp[n-1])alert("Signalé : "+tp[n-1]);}<\/script>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
 }
 
@@ -10816,7 +11912,144 @@ function genererRapportMensuel(){
   win.document.write('<p style="font-size:12px;color:#475569;line-height:1.8">Le mois de '+nomMois+' '+annee+' a ete marque par '+stats.total+' missions realisees par une equipe de '+ST.drivers.length+' chauffeurs. Le taux de presence moyen est de '+presenceMoy+'%.</p>');
 
   win.document.write('<br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700">Imprimer / PDF</button>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
   showT('Rapport '+nomMois+' genere','#16a34a');
 }
@@ -11264,7 +12497,144 @@ function genererRapportCIP(di){
 
   win.document.write('<div style="text-align:center;color:#94a3b8;font-size:10px;margin-top:20px">La Table de Cana Marseille &bull; logistique@latabledecana-marseille.com &bull; Document genere le '+dateRapport+'</div>');
   win.document.write('<br><button onclick="window.print()" style="padding:10px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700">Imprimer / PDF</button>');
-  win.document.write('</body></html>');
+  win.document.write('
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
   showT('Rapport CIP genere pour '+dr.name,'#16a34a');
 }
@@ -15532,7 +16902,144 @@ function imprimerEtiquetteMission(di,h){
       +(t.adresse?'<div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+adresseQ+'" alt="QR Maps"><div style="font-size:10px;color:#94a3b8">Scanner pour ouvrir Maps</div></div>':'')
       +'</div>';
   });
-  html+='</body></html>';
+  html+='
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>';
   win.document.write(html);
   win.document.close();
   setTimeout(function(){win.print();},500);
@@ -15855,7 +17362,144 @@ function imprimerBonSigne(idx){
     +(b.signatureImg?'<img src="'+b.signatureImg+'" style="border:1px solid #ccc;border-radius:4px;max-height:100px">':'Non signe')
     +'</div>'
     +'<div class="row"><div class="lbl">Signe le</div>'+b.signeLe+'</div>'
-    +'</body></html>');
+    +'
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},400);
 }
@@ -16995,7 +18639,144 @@ function genererEvaluationComplete(di){
     +'<p>Points a aborder : assiduite ('+tauxPresence+'%), realisation des missions ('+tauxReussite+'%)'
     +(carnets.objectifs?', objectifs en cours : '+carnets.objectifs:'')
     +'. Profiter de l entretien pour faire le point sur le ressenti general et les perspectives.</p>'
-    +'</body></html>';
+    +'
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>';
   win.document.write(html);
   win.document.close();
   setTimeout(function(){win.print();},400);
@@ -19060,7 +20841,144 @@ function imprimerHeuresMensuelles(){
     +stats.map(function(s){return '<tr><td>'+s.name+'</td><td>'+s.jours+'</td><td>'+s.heuresBrutes+'h</td><td>-'+s.pauseTotal+'h</td><td><b>'+s.heures+'h</b></td><td>'+s.missions+'</td><td>'+s.absences+'</td></tr>';}).join('')
     +'</table>'
     +'<div style="font-size:11px;color:#64748b;margin-top:14px">Estimation basee sur 7h/jour travaille, moins 45 minutes de pause dejeuner par jour travaille - a ajuster selon les horaires reels contractuels.</div>'
-    +'</body></html>';
+    +'
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>';
   win.document.write(html);
   win.document.close();
   setTimeout(function(){win.print();},400);
@@ -19759,7 +21677,144 @@ function imprimerFicheRemplacant(){
     });
   }
   html+='<div style="margin-top:20px;font-size:12px;color:#94a3b8">La Table de Cana - Document genere le '+new Date().toLocaleDateString('fr-FR')+'</div>'
-    +'</body></html>';
+    +'
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>';
   win.document.write(html);
   win.document.close();
   setTimeout(function(){win.print();},400);
@@ -23738,7 +25793,144 @@ function ouvrirBonLivraison(date,di,heure,taskIdx){
     printBtn.style.cssText='background:#1d4ed8;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer';
     printBtn.addEventListener('click',function(){
       var w=window.open('','_blank');
-      w.document.write('<html><head><title>'+numeroBL+'</title></head><body>'+box.innerHTML+'</body></html>');
+      w.document.write('<html><head><title>'+numeroBL+'</title></head><body>'+box.innerHTML+'
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>');
       w.document.close();
       setTimeout(function(){w.print();},300);
     });
@@ -26028,7 +28220,144 @@ window.ouvrirFeuillesRoute = function(){
     html+='</div>';
   });
 
-  html+='</body></html>';
+  html+='
+<script>
+/* ══ FIX HORS CARTE ══ */
+
+/* alerteHorsCarteDemarrage — manquait */
+function alerteHorsCarteDemarrage(){
+  if(!ST||!ST.horsCarte) return;
+  var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+  if(!nb) return;
+  var bar = document.getElementById('hc-alerte-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'hc-alerte-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:88888;background:#7c2d00;border-bottom:2px solid #f97316;padding:7px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#fed7aa;cursor:pointer';
+    bar.innerHTML = '<span>🛒 ' + nb + ' article' + (nb>1?'s':'') + ' hors carte à traiter</span><button onclick="ouvrirHorsCarte();document.getElementById('hc-alerte-bar').remove()" style="background:#f97316;border:none;border-radius:6px;color:#fff;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer">Voir</button>';
+    bar.onclick = function(e){ if(e.target===bar){ ouvrirHorsCarte(); bar.remove(); } };
+    document.body.prepend(bar);
+  }
+}
+
+/* hcSetStatut — correction robuste */
+window.hcSetStatut = function(idx, statut){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  ST.horsCarte[idx].statut = statut;
+  if(statut==='traite') ST.horsCarte[idx].traiteLe = new Date().toISOString();
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Statut mis à jour','#22c55e');
+};
+
+/* hcSupprimerArticle */
+window.hcSupprimerArticle = function(idx){
+  if(!ST||!ST.horsCarte) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  ST.horsCarte.splice(idx, 1);
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+};
+
+/* hcAssignerChauffeur */
+window.hcAssignerChauffeur = function(idx){
+  if(!ST||!ST.horsCarte||!ST.horsCarte[idx]) return;
+  var item = ST.horsCarte[idx];
+  var chauffeurs = ['Otmane','Nicolas','Mickael','Karim'];
+  var choix = prompt('Assigner à (prénom) :', item.chauffeur||'');
+  if(choix===null) return;
+  item.chauffeur = choix;
+  item.statut = 'encours';
+  if(typeof save==='function') save();
+  if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase, 500);
+  hcRefreshListe();
+  if(typeof showT==='function') showT('Assigné à ' + choix,'#f59e0b');
+};
+
+/* Remplacer hcRefreshListe par une version complète et robuste */
+window.hcRefreshListe = function(){
+  var el = document.getElementById('hc-liste');
+  if(!el) return;
+  if(!ST||!ST.horsCarte||!ST.horsCarte.length){
+    el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">Aucun article hors carte. Cliquez sur + pour en ajouter.</div>';
+    return;
+  }
+
+  /* Trier: à traiter en premier, puis en cours, puis traités */
+  var ordre = {atraiter:0, encours:1, traite:2};
+  var sorted = ST.horsCarte.map(function(h,i){return {h:h,i:i};}).sort(function(a,b){
+    return (ordre[a.h.statut]||0) - (ordre[b.h.statut]||0);
+  });
+
+  var cols = {atraiter:'#ef4444', encours:'#f59e0b', traite:'#22c55e'};
+  var lbls = {atraiter:'À traiter', encours:'En cours', traite:'Traité'};
+  var icons = {atraiter:'🔴', encours:'🟡', traite:'✅'};
+
+  /* Stats */
+  var nb_a = ST.horsCarte.filter(function(h){return h.statut==='atraiter';}).length;
+  var nb_e = ST.horsCarte.filter(function(h){return h.statut==='encours';}).length;
+  var nb_t = ST.horsCarte.filter(function(h){return h.statut==='traite';}).length;
+
+  var h = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">🔴 À traiter: ' + nb_a + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">🟡 En cours: ' + nb_e + '</span>';
+  h += '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">✅ Traités: ' + nb_t + '</span>';
+  h += '</div>';
+
+  sorted.forEach(function(obj){
+    var item = obj.h;
+    var i = obj.i;
+    var col = cols[item.statut] || '#64748b';
+    var lbl = lbls[item.statut] || item.statut;
+    var ico = icons[item.statut] || '⚪';
+    var d = item.dateEvenement ? new Date(item.dateEvenement).toLocaleDateString('fr-FR') : '';
+
+    h += '<div style="background:#071526;border:1px solid ' + col + '44;border-left:4px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    h += '<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;background:' + col + '22;color:' + col + ';border:1px solid ' + col + '44">' + ico + ' ' + lbl + '</span>';
+    if(item.chauffeur) h += '<span style="font-size:10px;color:#94a3b8">👤 ' + item.chauffeur + '</span>';
+    h += '</div>';
+    h += '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">' + (item.client||'') + '</div>';
+    h += '<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 ' + (item.article||'') + (item.quantite ? ' — ' + item.quantite : '') + '</div>';
+    if(d) h += '<div style="font-size:11px;color:' + col + ';font-weight:700">📅 Événement: ' + d + '</div>';
+    if(item.note) h += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic">💬 ' + item.note + '</div>';
+    h += '<div style="font-size:10px;color:#475569;margin-top:6px">Saisi par: ' + (item.saisiepar||'—') + ' · ' + new Date(item.createdAt).toLocaleDateString('fr-FR') + '</div>';
+    h += '</div>';
+
+    /* Boutons actions */
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(item.statut === 'atraiter'){
+      h += '<button data-i="' + i + '" onclick="hcAssignerChauffeur(this.dataset.i)" style="padding:5px 10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.5);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer">🟡 En cours</button>';
+    }
+    if(item.statut !== 'traite'){
+      h += '<button data-i="' + i + '" onclick="hcSetStatut(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:700;cursor:pointer">✅ Traité</button>';
+    }
+    h += '<button data-i="' + i + '" onclick="hcSupprimerArticle(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    h += '</div></div></div>';
+  });
+
+  el.innerHTML = h;
+};
+
+/* Relancer l'alerte au chargement si besoin */
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(typeof ST !== 'undefined' && ST && ST.horsCarte && ST.horsCarte.length){
+      var nb = ST.horsCarte.filter(function(h){ return h.statut==='atraiter'; }).length;
+      if(nb > 0) alerteHorsCarteDemarrage();
+    }
+  }, 1500);
+});
+
+console.log('✅ Fix Hors Carte chargé');
+</script>
+
+</body></html>';
   win.document.write(html);
   win.document.close();
 };
@@ -26056,7 +28385,6 @@ function hcInit(){
 }
 
 window.ouvrirHorsCarte = function(){
-  alert('ouvrirHorsCarte appelée !');
   if(typeof ST==='undefined') window.ST={};
   if(!ST.horsCarte) ST.horsCarte=[];
 
