@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Répartition — La Table de Cana</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:#0a0f1e;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#111827;border:2px solid #1e3a5f;border-radius:20px;padding:48px 40px;width:360px;text-align:center}
+.login-logo{font-size:48px;margin-bottom:16px}
+.login-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:6px}
+.login-sub{font-size:13px;color:#64748b;margin-bottom:32px}
+.login-btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:12px;transition:.2s}
+.btn-dir{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.btn-dir:hover{opacity:.9}
+.btn-chef{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
+.btn-chef:hover{opacity:.9}
+.pw-field{width:100%;padding:12px 14px;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;font-size:14px;margin-bottom:12px;outline:none}
+.login-err{color:#ef4444;font-size:12px;margin-top:8px;display:none}
+
+/* ── HEADER ── */
+#app{display:none}
+.header{background:#111827;border-bottom:2px solid #1e3a5f;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:16px}
+.logo-text{font-size:18px;font-weight:900;color:#fff}
+.logo-text span{color:#f97316}
+.role-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+.role-dir{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4)}
+.role-chef{background:rgba(14,165,233,.2);color:#0ea5e9;border:1px solid rgba(14,165,233,.4)}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-logout{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-logout:hover{background:#334155}
+
+/* ── NAV SEMAINE ── */
+.week-nav{background:#111827;border-bottom:1px solid #1e3a5f;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.week-nav-left{display:flex;align-items:center;gap:10px}
+.nav-btn{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.nav-btn:hover{background:#334155}
+.week-label{font-size:15px;font-weight:800;color:#fff;min-width:200px;text-align:center}
+.week-nav-right{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:800;cursor:pointer;border:2px solid transparent;transition:.15s}
+.filter-btn.active{border-color:currentColor}
+.f-all{background:rgba(100,116,139,.15);color:#94a3b8}
+.f-all.active{background:rgba(100,116,139,.25)}
+.f-reg{background:rgba(249,115,22,.1);color:#f97316}
+.f-reg.active{background:rgba(249,115,22,.2)}
+.f-cae{background:rgba(168,85,247,.1);color:#a855f7}
+.f-cae.active{background:rgba(168,85,247,.2)}
+
+/* ── TABLEAU ── */
+.table-wrap{overflow-x:auto;padding:16px 20px}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
+thead th{background:#0f172a;padding:10px 8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#64748b;border-bottom:2px solid #1e3a5f;position:sticky;top:60px;z-index:50}
+thead th.day-col{text-align:center;min-width:110px}
+thead th.client-col{text-align:left;min-width:200px;padding-left:14px}
+.cat-header{background:#0a0f1e;padding:8px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:#475569;letter-spacing:.08em}
+.cat-header td{background:#0a0f1e;padding:10px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:#475569;letter-spacing:.1em;border-top:2px solid #1e3a5f}
+
+tbody tr{transition:.1s}
+tbody tr:hover td{background:#0f172a}
+td{padding:6px 4px;border-bottom:1px solid #0f172a}
+.td-client{padding:6px 14px;font-size:12px;font-weight:600;color:#cbd5e1;white-space:nowrap}
+.td-day{text-align:center;vertical-align:middle}
+
+/* ── CELLULE RÉPARTITION ── */
+.cell-btn{display:inline-flex;align-items:center;justify-content:center;width:96px;height:32px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:2px solid transparent;transition:.15s;user-select:none;letter-spacing:.03em}
+.cell-empty{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:#334155}
+.cell-empty:hover{border-color:#1e3a5f;color:#64748b}
+.cell-cana{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:#22c55e}
+.cell-cana:hover{background:rgba(34,197,94,.25)}
+.cell-sadi{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#0ea5e9}
+.cell-sadi:hover{background:rgba(14,165,233,.25)}
+
+/* lecture seule */
+.readonly .cell-btn{cursor:default!important;pointer-events:none}
+
+/* ── STATS BAR ── */
+.stats-bar{background:#111827;border-top:2px solid #1e3a5f;padding:12px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.stat-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.stat-dot{width:10px;height:10px;border-radius:50%}
+.stat-val{font-weight:800;font-size:14px}
+
+/* ── LÉGENDE ── */
+.legende{padding:8px 20px;background:#0a0f1e;display:flex;gap:16px;align-items:center;border-bottom:1px solid #1e3a5f;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
+.leg-dot{width:12px;height:12px;border-radius:3px}
+.leg-cana{background:rgba(34,197,94,.4)}
+.leg-sadi{background:rgba(14,165,233,.4)}
+.leg-empty{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+
+/* ── TOOLTIP ACTIONS (directeur) ── */
+.cell-tip{position:relative}
+.cell-tip .tip-menu{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);z-index:200;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:6px;gap:4px;min-width:110px;flex-direction:column}
+.cell-tip:hover .tip-menu{display:flex}
+.tip-btn{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;text-align:left}
+.tip-cana{background:rgba(34,197,94,.2);color:#22c55e}
+.tip-sadi{background:rgba(14,165,233,.2);color:#0ea5e9}
+.tip-vide{background:rgba(239,68,68,.1);color:#ef4444}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .week-label{font-size:13px;min-width:150px}
+  .cell-btn{width:70px;font-size:9px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🍽️</div>
+    <div class="login-title">La Table de Cana</div>
+    <div class="login-sub">Répartition des livraisons</div>
+    <button class="login-btn btn-dir" onclick="showPw('dir')">👔 Accès Directeur</button>
+    <button class="login-btn btn-chef" onclick="showPw('chef')">👨‍🍳 Accès Chef de cuisine</button>
+    <div id="pw-zone" style="display:none">
+      <input class="pw-field" type="password" id="pw-input" placeholder="Mot de passe..." onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn btn-dir" id="pw-confirm-btn" onclick="doLogin()" style="margin-top:4px">Connexion</button>
+    </div>
+    <div class="login-err" id="login-err">Mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-text">🍽️ <span>La Table de Cana</span> — Répartition</div>
+      <span class="role-badge" id="role-badge"></span>
+    </div>
+    <div class="header-right">
+      <span style="font-size:11px;color:#64748b" id="header-date"></span>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- Légende -->
+  <div class="legende">
+    <div class="leg-item"><div class="leg-dot leg-cana"></div>La Table de Cana</div>
+    <div class="leg-item"><div class="leg-dot leg-sadi"></div>Sadi Carnot</div>
+    <div class="leg-item"><div class="leg-dot leg-empty"></div>Non affecté</div>
+    <div style="margin-left:auto;font-size:11px;color:#475569" id="readonly-notice"></div>
+  </div>
+
+  <!-- Nav semaine -->
+  <div class="week-nav">
+    <div class="week-nav-left">
+      <button class="nav-btn" onclick="navWeek(-1)">← Semaine préc.</button>
+      <div class="week-label" id="week-label"></div>
+      <button class="nav-btn" onclick="navWeek(1)">Semaine suiv. →</button>
+      <button class="nav-btn" onclick="goToday()" style="color:#f97316;border-color:rgba(249,115,22,.3)">Aujourd'hui</button>
+    </div>
+    <div class="week-nav-right">
+      <button class="filter-btn f-all active" id="fb-all" onclick="setFilter('all')">Tous</button>
+      <button class="filter-btn f-reg" id="fb-reg" onclick="setFilter('reg')">Réguliers</button>
+      <button class="filter-btn f-cae" id="fb-cae" onclick="setFilter('cae')">Centres Aérés</button>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="table-wrap">
+    <table id="planning-table">
+      <thead>
+        <tr>
+          <th class="client-col">Client</th>
+          <th class="day-col">Lundi</th>
+          <th class="day-col">Mardi</th>
+          <th class="day-col">Mercredi</th>
+          <th class="day-col">Jeudi</th>
+          <th class="day-col">Vendredi</th>
+          <th class="day-col">Samedi</th>
+          <th class="day-col">Dimanche</th>
+        </tr>
+      </thead>
+      <tbody id="planning-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="stats-bar"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   DONNÉES
+════════════════════════════════════════════════ */
+var JOURS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+var JOURS_SHORT = ['L','Ma','Me','J','V','S','D'];
+
+var CLIENTS = {
+  reg: [
+    'AMPM BARQUETTE','BMPM BARQUETTE','AMPM','BMPM',
+    'ARGONAUTES','ARGONAUTES PLAT TEMOIN',
+    'CAARUD LE SLEEP\'IN',
+    'CHRS CHEZ SIMONE MIDI','CHRS CHEZ SIMONE SOIR',
+    'CHRS LA MINOTERIE MIDI','CHRS LA MINOTERIE SOIR',
+    'CHRS LA SELONNE MIDI','CHRS LA SELONNE SOIR',
+    'COMPAGNONS MIDI','COMPAGNONS SOIR',
+    'ESAT ST JEAN',
+    'LHSS FONTAINIEU MIDI','LHSS FONTAINIEU SOIR',
+    'PHOCEEN SECURITE CIVILE',
+    'UNITÉ A MIDI','UNITÉ A SOIR',
+    'UNITÉ B MIDI','UNITÉ B SOIR',
+    'UNITÉ C MIDI','UNITÉ C SOIR',
+    'UNITÉ D','VILLA NIOZELLES'
+  ],
+  cae: [
+    'AGA FLAMANTS 1','AGA FLAMANTS 2','AGA FLAMANTS ADO',
+    'AGORA','AIR BEL',
+    'BERNARD DUBOIS 1','BERNARD DUBOIS 2',
+    'BONNEVEINE ADO','BONNEVEINE MAT','BONNEVEINE MPT MAT',
+    'BONNEVEINE PRIM 1','BONNEVEINE PRIM 2','BONNEVEINE PRIM 3',
+    'CASTELLANE','CASTELLANE ADO','CCO SIÈGE',
+    'CHÂTEAU GOMBERT 1','CHÂTEAU GOMBERT 2','CHÂTEAU GOMBERT ADO',
+    'CHAVE COPELLO PRIM','COIN JOLI','COURS JULIEN MAT',
+    'FRAIS VALLON',
+    'LA BRICARDE 1','LA BRICARDE 2',
+    'LA LOUBIÈRE MAT','LA LOUBIÈRE PRIM',
+    'LA SAVINE','LE GRAND CANET',
+    'LE ROUET MAT','LE ROUET PRIM',
+    'LES 3 LUCS ADO','LES 3 LUCS',
+    'LES BOURRELY','LES LIERRES 1','LES LIERRES 2',
+    'LES MUSARDISES','MER ET COLLINE',
+    'ROY D\'ESPAGNE MAT','ROY D\'ESPAGNE PRIM',
+    'SAINTE MARTHE PRIM',
+    'ST GINIEZ ADO','ST GINIEZ MAT','ST GINIEZ PRIM',
+    'ST JEROME','ST THYS',
+    'STE ELISABETH MAT','STE ELISABETH PRIM',
+    'TOROS'
+  ]
+};
+
+/* Mots de passe */
+var PW = { dir:'cana2026', chef:'chef2026' };
+
+/* État */
+var STATE = {
+  role: null,        // 'dir' | 'chef'
+  filter: 'all',     // 'all' | 'reg' | 'cae'
+  weekOffset: 0,     // semaines depuis semaine courante
+  data: {}           // clé: "YYYY-Www" → {clientJour: 'cana'|'sadi'|''}
+};
+
+var loginRole = null;
+
+/* ════════════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════════════ */
+function showPw(role){
+  loginRole = role;
+  document.getElementById('pw-zone').style.display = 'block';
+  var btn = document.getElementById('pw-confirm-btn');
+  btn.className = 'login-btn ' + (role==='dir'?'btn-dir':'btn-chef');
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-input').focus();
+  document.getElementById('login-err').style.display = 'none';
+}
+
+function doLogin(){
+  var pw = document.getElementById('pw-input').value;
+  if(pw === PW[loginRole]){
+    STATE.role = loginRole;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+function logout(){
+  STATE.role = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-zone').style.display = 'none';
+}
+
+/* ════════════════════════════════════════════════
+   SEMAINE
+════════════════════════════════════════════════ */
+function getMonday(offset){
+  var now = new Date();
+  var day = now.getDay();
+  var diff = (day===0?-6:1-day);
+  var mon = new Date(now);
+  mon.setDate(now.getDate() + diff + offset*7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+function getWeekKey(mon){
+  var y = mon.getFullYear();
+  var start = new Date(y,0,1);
+  var wk = Math.ceil(((mon-start)/86400000 + start.getDay()+1)/7);
+  return y+'-W'+(wk<10?'0':'')+wk;
+}
+
+function fmtDate(d){
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+}
+
+function getWeekDates(mon){
+  var days = [];
+  for(var i=0;i<7;i++){
+    var d = new Date(mon);
+    d.setDate(mon.getDate()+i);
+    days.push(d);
+  }
+  return days;
+}
+
+function navWeek(delta){
+  STATE.weekOffset += delta;
+  render();
+}
+
+function goToday(){
+  STATE.weekOffset = 0;
+  render();
+}
+
+/* ════════════════════════════════════════════════
+   DONNÉES LOCALES
+════════════════════════════════════════════════ */
+function load(){
+  try{
+    var d = localStorage.getItem('repartition_cana');
+    if(d) STATE.data = JSON.parse(d);
+  }catch(e){}
+}
+
+function save(){
+  try{
+    localStorage.setItem('repartition_cana', JSON.stringify(STATE.data));
+  }catch(e){}
+}
+
+function getVal(weekKey, client, jour){
+  if(!STATE.data[weekKey]) return '';
+  var k = client+'__'+jour;
+  return STATE.data[weekKey][k] || '';
+}
+
+function setVal(weekKey, client, jour, val){
+  if(!STATE.data[weekKey]) STATE.data[weekKey] = {};
+  var k = client+'__'+jour;
+  STATE.data[weekKey][k] = val;
+  save();
+}
+
+/* ════════════════════════════════════════════════
+   CYCLE: vide → CANA → SADI → vide
+════════════════════════════════════════════════ */
+function cycleVal(current){
+  if(current===''||current==null) return 'cana';
+  if(current==='cana') return 'sadi';
+  return '';
+}
+
+function cellClick(weekKey, client, jour){
+  if(STATE.role !== 'dir') return;
+  var cur = getVal(weekKey, client, jour);
+  var next = cycleVal(cur);
+  setVal(weekKey, client, jour, next);
+  renderCell(weekKey, client, jour);
+  renderStats(weekKey);
+}
+
+function setCell(weekKey, client, jour, val){
+  if(STATE.role !== 'dir') return;
+  setVal(weekKey, client, jour, val);
+  renderCell(weekKey, client, jour);
+  renderStats(weekKey);
+}
+
+/* ════════════════════════════════════════════════
+   RENDER CELLULE
+════════════════════════════════════════════════ */
+function cellId(client, jour){
+  return 'cell_' + btoa(encodeURIComponent(client+'|'+jour)).replace(/=/g,'').replace(/\+/g,'x').replace(/\//g,'y').slice(0,20);
+}
+
+function renderCell(weekKey, client, jour){
+  var val = getVal(weekKey, client, jour);
+  var id = cellId(client, jour);
+  var el = document.getElementById(id);
+  if(!el) return;
+
+  var label = val==='cana'?'✅ CANA':val==='sadi'?'🔵 SADI':'—';
+  var cls = val==='cana'?'cell-cana':val==='sadi'?'cell-sadi':'cell-empty';
+
+  if(STATE.role==='dir'){
+    el.innerHTML =
+      '<div class="cell-tip">' +
+        '<div class="cell-btn '+cls+'" onclick="cellClick(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+')">'+label+'</div>' +
+        '<div class="tip-menu">' +
+          '<button class="tip-btn tip-cana" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'cana\')">✅ CANA</button>' +
+          '<button class="tip-btn tip-sadi" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'sadi\')">🔵 SADI</button>' +
+          '<button class="tip-btn tip-vide" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'\')">✕ Vider</button>' +
+        '</div>' +
+      '</div>';
+  } else {
+    el.innerHTML = '<div class="cell-btn '+cls+'" style="pointer-events:none">'+label+'</div>';
+  }
+}
+
+/* ════════════════════════════════════════════════
+   RENDER TABLEAU
+════════════════════════════════════════════════ */
+function getClientList(){
+  if(STATE.filter==='reg') return {reg:CLIENTS.reg, cae:[]};
+  if(STATE.filter==='cae') return {reg:[], cae:CLIENTS.cae};
+  return CLIENTS;
+}
+
+function render(){
+  var mon = getMonday(STATE.weekOffset);
+  var days = getWeekDates(mon);
+  var weekKey = getWeekKey(mon);
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  /* Label semaine */
+  var wk = weekKey.split('-W')[1];
+  var label = 'Semaine '+wk+' · '+fmtDate(days[0])+' → '+fmtDate(days[6])+' '+days[0].getFullYear();
+  document.getElementById('week-label').textContent = label;
+  document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  /* Badge rôle */
+  var badge = document.getElementById('role-badge');
+  var notice = document.getElementById('readonly-notice');
+  if(STATE.role==='dir'){
+    badge.textContent = '👔 Directeur';
+    badge.className = 'role-badge role-dir';
+    notice.textContent = '';
+    document.getElementById('planning-table').classList.remove('readonly');
+  } else {
+    badge.textContent = '👨‍🍳 Chef de cuisine';
+    badge.className = 'role-badge role-chef';
+    notice.textContent = '🔒 Vue lecture seule';
+    document.getElementById('planning-table').classList.add('readonly');
+  }
+
+  /* En-têtes jours avec dates */
+  var ths = document.querySelectorAll('thead th.day-col');
+  ths.forEach(function(th,i){
+    var d = days[i];
+    var isToday = d.getTime()===today.getTime();
+    th.innerHTML = JOURS[i]+'<br><span style="font-size:10px;font-weight:600;color:'+(isToday?'#f97316':'#475569')+'">'+fmtDate(d)+(isToday?' ◆':'')+'</span>';
+    th.style.color = isToday?'#f97316':'';
+  });
+
+  /* Corps */
+  var body = document.getElementById('planning-body');
+  body.innerHTML = '';
+  var cl = getClientList();
+
+  function addCatRow(label, icon, color){
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 8;
+    td.style.cssText = 'background:#0a0f1e;padding:10px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:'+color+';letter-spacing:.1em;border-top:2px solid #1e3a5f';
+    td.textContent = icon+' '+label;
+    tr.appendChild(td);
+    body.appendChild(tr);
+  }
+
+  function addClientRow(client, weekKey){
+    var tr = document.createElement('tr');
+    /* Nom */
+    var tdN = document.createElement('td');
+    tdN.className = 'td-client';
+    tdN.textContent = client;
+    tr.appendChild(tdN);
+    /* Jours */
+    for(var j=0;j<7;j++){
+      var td = document.createElement('td');
+      td.className = 'td-day';
+      var id = cellId(client, j);
+      td.innerHTML = '<span id="'+id+'"></span>';
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+    /* Rendre les cellules */
+    for(var j2=0;j2<7;j2++) renderCell(weekKey, client, j2);
+  }
+
+  if(cl.reg.length){
+    addCatRow('Clients Réguliers','🏢','#f97316');
+    cl.reg.forEach(function(c){ addClientRow(c, weekKey); });
+  }
+  if(cl.cae.length){
+    addCatRow('Centres Aérés','🌳','#a855f7');
+    cl.cae.forEach(function(c){ addClientRow(c, weekKey); });
+  }
+
+  renderStats(weekKey);
+}
+
+/* ════════════════════════════════════════════════
+   STATS
+════════════════════════════════════════════════ */
+function renderStats(weekKey){
+  var allClients = CLIENTS.reg.concat(CLIENTS.cae);
+  var nb_cana=0, nb_sadi=0, nb_vide=0, total=0;
+  allClients.forEach(function(c){
+    for(var j=0;j<7;j++){
+      var v = getVal(weekKey,c,j);
+      total++;
+      if(v==='cana') nb_cana++;
+      else if(v==='sadi') nb_sadi++;
+      else nb_vide++;
+    }
+  });
+  var pct_cana = total?Math.round(nb_cana/total*100):0;
+  var pct_sadi = total?Math.round(nb_sadi/total*100):0;
+
+  var bar = document.getElementById('stats-bar');
+  bar.innerHTML =
+    '<div class="stat-item"><div class="stat-dot" style="background:#22c55e"></div><span>La Table de Cana :</span><span class="stat-val" style="color:#22c55e">'+nb_cana+'</span><span style="font-size:11px;color:#334155">('+pct_cana+'%)</span></div>' +
+    '<div class="stat-item"><div class="stat-dot" style="background:#0ea5e9"></div><span>Sadi Carnot :</span><span class="stat-val" style="color:#0ea5e9">'+nb_sadi+'</span><span style="font-size:11px;color:#334155">('+pct_sadi+'%)</span></div>' +
+    '<div class="stat-item"><div class="stat-dot" style="background:#334155"></div><span>Non affecté :</span><span class="stat-val" style="color:#64748b">'+nb_vide+'</span></div>' +
+    '<div style="margin-left:auto;font-size:11px;color:#334155">'+allClients.length+' clients · 7 jours</div>';
+}
+
+/* ════════════════════════════════════════════════
+   FILTRES
+════════════════════════════════════════════════ */
+function setFilter(f){
+  STATE.filter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('fb-'+f).classList.add('active');
+  render();
+}
+
+/* ════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════ */
+function initApp(){
+  load();
+  render();
+}
+
+/* Raccourci clavier Entrée login */
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter' && document.getElementById('pw-zone').style.display!=='none') doLogin();
+});
+</script>
+</body>
+</html>
