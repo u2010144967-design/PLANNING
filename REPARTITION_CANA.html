@@ -6,551 +6,1207 @@
 <title>Répartition — La Table de Cana</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0f1e;color:#e2e8f0;min-height:100vh}
+:root{
+  --bg:#07101e;--panel:#0d1b2e;--panel2:#112238;--border:#1a3550;
+  --text:#e2e8f0;--sub:#607d9a;--sub2:#253a52;
+  --cana:#22c55e;--sadi:#0ea5e9;--warn:#f97316;--red:#ef4444;--purple:#a855f7;
+  --cana-bg:rgba(34,197,94,.1);--sadi-bg:rgba(14,165,233,.1);
+  --warn-bg:rgba(249,115,22,.1);--red-bg:rgba(239,68,68,.08);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-/* ── LOGIN ── */
-#login-screen{position:fixed;inset:0;background:#0a0f1e;display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#111827;border:2px solid #1e3a5f;border-radius:20px;padding:48px 40px;width:360px;text-align:center}
-.login-logo{font-size:48px;margin-bottom:16px}
-.login-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:6px}
-.login-sub{font-size:13px;color:#64748b;margin-bottom:32px}
-.login-btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:12px;transition:.2s}
-.btn-dir{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
-.btn-dir:hover{opacity:.9}
-.btn-chef{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
-.btn-chef:hover{opacity:.9}
-.pw-field{width:100%;padding:12px 14px;background:#071526;border:1px solid #1e3a5f;border-radius:8px;color:#fff;font-size:14px;margin-bottom:12px;outline:none}
-.login-err{color:#ef4444;font-size:12px;margin-top:8px;display:none}
+/* ══ LOGIN ══ */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-card{background:var(--panel);border:2px solid var(--border);border-radius:24px;padding:52px 44px;width:400px;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.7)}
+.login-icon{font-size:60px;margin-bottom:16px}
+.login-title{font-size:26px;font-weight:900;color:#fff;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--sub);margin-bottom:36px}
+.login-choices{display:flex;gap:14px}
+.lc-btn{flex:1;padding:18px 8px;border-radius:14px;border:2px solid transparent;font-size:13px;font-weight:800;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;gap:8px}
+.lc-icon{font-size:32px}
+.lc-log{background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.25);color:var(--warn)}
+.lc-log:hover{background:rgba(249,115,22,.22);border-color:var(--warn)}
+.lc-cui{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.25);color:var(--sadi)}
+.lc-cui:hover{background:rgba(14,165,233,.22);border-color:var(--sadi)}
+.pw-zone{margin-top:20px;display:none;flex-direction:column;gap:10px}
+.pw-input{width:100%;padding:13px 16px;background:#071526;border:1px solid var(--border);border-radius:10px;color:#fff;font-size:14px;outline:none;transition:.2s}
+.pw-input:focus{border-color:var(--warn)}
+.pw-go{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer}
+.pw-go-log{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.pw-go-cui{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff}
+.pw-err{color:var(--red);font-size:12px;display:none;margin-top:4px}
 
-/* ── HEADER ── */
-#app{display:none}
-.header{background:#111827;border-bottom:2px solid #1e3a5f;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header-left{display:flex;align-items:center;gap:16px}
-.logo-text{font-size:18px;font-weight:900;color:#fff}
-.logo-text span{color:#f97316}
-.role-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;text-transform:uppercase}
-.role-dir{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4)}
-.role-chef{background:rgba(14,165,233,.2);color:#0ea5e9;border:1px solid rgba(14,165,233,.4)}
-.header-right{display:flex;align-items:center;gap:10px}
-.btn-logout{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
-.btn-logout:hover{background:#334155}
+/* ══ LAYOUT ══ */
+#app{display:none;flex-direction:column;height:100vh}
 
-/* ── NAV SEMAINE ── */
-.week-nav{background:#111827;border-bottom:1px solid #1e3a5f;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.week-nav-left{display:flex;align-items:center;gap:10px}
-.nav-btn{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
-.nav-btn:hover{background:#334155}
-.week-label{font-size:15px;font-weight:800;color:#fff;min-width:200px;text-align:center}
-.week-nav-right{display:flex;gap:8px;flex-wrap:wrap}
-.filter-btn{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:800;cursor:pointer;border:2px solid transparent;transition:.15s}
-.filter-btn.active{border-color:currentColor}
-.f-all{background:rgba(100,116,139,.15);color:#94a3b8}
-.f-all.active{background:rgba(100,116,139,.25)}
-.f-reg{background:rgba(249,115,22,.1);color:#f97316}
-.f-reg.active{background:rgba(249,115,22,.2)}
-.f-cae{background:rgba(168,85,247,.1);color:#a855f7}
-.f-cae.active{background:rgba(168,85,247,.2)}
+/* ══ TOPBAR ══ */
+.topbar{background:var(--panel);border-bottom:2px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.tb-logo{font-size:17px;font-weight:900;color:#fff;white-space:nowrap}
+.tb-logo span{color:var(--warn)}
+.role-pill{font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+.rp-log{background:rgba(249,115,22,.18);color:var(--warn);border:1px solid rgba(249,115,22,.3)}
+.rp-cui{background:rgba(14,165,233,.18);color:var(--sadi);border:1px solid rgba(14,165,233,.3)}
 
-/* ── TABLEAU ── */
-.table-wrap{overflow-x:auto;padding:16px 20px}
-table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
-thead th{background:#0f172a;padding:10px 8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#64748b;border-bottom:2px solid #1e3a5f;position:sticky;top:60px;z-index:50}
-thead th.day-col{text-align:center;min-width:110px}
-thead th.client-col{text-align:left;min-width:200px;padding-left:14px}
-.cat-header{background:#0a0f1e;padding:8px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:#475569;letter-spacing:.08em}
-.cat-header td{background:#0a0f1e;padding:10px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:#475569;letter-spacing:.1em;border-top:2px solid #1e3a5f}
+/* ══ SEARCH BAR ══ */
+.search-wrap{flex:1;max-width:360px;position:relative}
+.search-input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 14px 8px 36px;font-size:13px;outline:none;transition:.2s}
+.search-input:focus{border-color:var(--warn);background:#0a1a2e}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
+.search-result{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--panel2);border:1px solid var(--border);border-radius:12px;z-index:500;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.5);display:none}
+.sr-item{padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover{background:var(--panel)}
+.sr-name{font-size:13px;font-weight:700;flex:1}
+.sr-site{font-size:12px;font-weight:800;padding:4px 12px;border-radius:8px}
+.sr-cana{background:var(--cana-bg);color:var(--cana);border:1px solid rgba(34,197,94,.25)}
+.sr-sadi{background:var(--sadi-bg);color:var(--sadi);border:1px solid rgba(14,165,233,.25)}
+.sr-none{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
 
-tbody tr{transition:.1s}
-tbody tr:hover td{background:#0f172a}
-td{padding:6px 4px;border-bottom:1px solid #0f172a}
-.td-client{padding:6px 14px;font-size:12px;font-weight:600;color:#cbd5e1;white-space:nowrap}
-.td-day{text-align:center;vertical-align:middle}
+.tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.icon-btn{background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
+.icon-btn:hover{background:var(--border);color:var(--text)}
 
-/* ── CELLULE RÉPARTITION ── */
-.cell-btn{display:inline-flex;align-items:center;justify-content:center;width:96px;height:32px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:2px solid transparent;transition:.15s;user-select:none;letter-spacing:.03em}
-.cell-empty{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:#334155}
-.cell-empty:hover{border-color:#1e3a5f;color:#64748b}
-.cell-cana{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:#22c55e}
-.cell-cana:hover{background:rgba(34,197,94,.25)}
-.cell-sadi{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#0ea5e9}
-.cell-sadi:hover{background:rgba(14,165,233,.25)}
+/* ══ DASHBOARD ══ */
+#view-dashboard{padding:24px;overflow-y:auto;flex:1}
+.dash-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px}
+.dash-sub{font-size:13px;color:var(--sub);margin-bottom:24px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.dash-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;transition:.2s;cursor:pointer}
+.dash-card:hover{border-color:var(--warn);background:var(--panel2)}
+.dc-icon{font-size:28px;margin-bottom:8px}
+.dc-val{font-size:34px;font-weight:900;margin-bottom:4px}
+.dc-lbl{font-size:11px;color:var(--sub);font-weight:600;text-transform:uppercase}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}
+.wg-cell{background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:.2s}
+.wg-cell:hover{border-color:var(--warn)}
+.wg-day{font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:4px}
+.wg-date{font-size:13px;font-weight:900;margin-bottom:8px}
+.wg-bar{height:4px;border-radius:2px;margin-bottom:6px;transition:.3s}
+.wg-stat{font-size:10px;color:var(--sub)}
+.dash-alerts{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.alert-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;font-weight:600}
+.alert-row:last-child{border-bottom:none}
+/* Message cuisine */
+.msg-box{background:rgba(14,165,233,.08);border:2px solid rgba(14,165,233,.25);border-radius:14px;padding:20px;margin-bottom:20px}
+.msg-title{font-size:12px;font-weight:800;color:var(--sadi);text-transform:uppercase;margin-bottom:10px}
+.msg-text-show{font-size:15px;font-weight:700;color:#fff;line-height:1.5}
+.msg-input{width:100%;background:#071526;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:13px;outline:none;resize:vertical;min-height:60px;font-family:inherit}
 
-/* lecture seule */
-.readonly .cell-btn{cursor:default!important;pointer-events:none}
+/* ══ WEEK BAR ══ */
+.week-bar{background:var(--panel);border-bottom:2px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+.wbn-btn{background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.wbn-btn:hover{background:var(--border)}
+.wbn-lbl{font-size:14px;font-weight:800;color:#fff;min-width:200px;text-align:center}
+.today-btn{background:var(--warn-bg);border:1px solid rgba(249,115,22,.3);border-radius:8px;color:var(--warn);padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer}
+.wb-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mode-vac{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);border-radius:8px;color:var(--purple);padding:6px 14px;font-size:11px;font-weight:800;cursor:pointer;transition:.15s}
+.mode-vac.on{background:rgba(168,85,247,.25);border-color:var(--purple)}
+.dup-btn{background:var(--sadi-bg);border:1px solid rgba(14,165,233,.25);border-radius:8px;color:var(--sadi);padding:6px 14px;font-size:11px;font-weight:800;cursor:pointer}
 
-/* ── STATS BAR ── */
-.stats-bar{background:#111827;border-top:2px solid #1e3a5f;padding:12px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center}
-.stat-item{display:flex;align-items:center;gap:8px;font-size:12px}
-.stat-dot{width:10px;height:10px;border-radius:50%}
-.stat-val{font-weight:800;font-size:14px}
+/* ══ DAY TABS ══ */
+.day-tabs{display:flex;background:var(--panel2);border-bottom:2px solid var(--border);flex-shrink:0;overflow-x:auto}
+.dt{flex:1;padding:10px 6px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:.15s;min-width:80px;position:relative}
+.dt:hover{background:var(--panel)}
+.dt.active{border-bottom-color:var(--warn);background:var(--panel)}
+.dt-day{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--sub);margin-bottom:3px}
+.dt-date{font-size:12px;font-weight:700}
+.dt-dot{width:7px;height:7px;border-radius:50%;margin:4px auto 0}
+.dt.active .dt-day,.dt.active .dt-date{color:var(--warn)}
+.dt.today-tab .dt-date{color:var(--warn)}
+.ferme-badge{position:absolute;top:4px;right:4px;font-size:8px;background:var(--red-bg);color:var(--red);border-radius:4px;padding:1px 4px;font-weight:800}
 
-/* ── LÉGENDE ── */
-.legende{padding:8px 20px;background:#0a0f1e;display:flex;gap:16px;align-items:center;border-bottom:1px solid #1e3a5f;flex-wrap:wrap}
-.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
-.leg-dot{width:12px;height:12px;border-radius:3px}
-.leg-cana{background:rgba(34,197,94,.4)}
-.leg-sadi{background:rgba(14,165,233,.4)}
-.leg-empty{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+/* ══ VUE JOUR ══ */
+#view-planning{display:none;flex-direction:column;flex:1;overflow:hidden}
+.day-top{padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0}
+.day-title{font-size:15px;font-weight:900;color:#fff}
+.note-input{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 12px;font-size:12px;outline:none;transition:.2s}
+.note-input:focus{border-color:var(--sadi)}
+.ferme-toggle{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid rgba(239,68,68,.3);background:var(--red-bg);color:var(--red);transition:.15s}
+.ferme-toggle.on{background:rgba(239,68,68,.2);border-color:var(--red)}
 
-/* ── TOOLTIP ACTIONS (directeur) ── */
-.cell-tip{position:relative}
-.cell-tip .tip-menu{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);z-index:200;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:6px;gap:4px;min-width:110px;flex-direction:column}
-.cell-tip:hover .tip-menu{display:flex}
-.tip-btn{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;text-align:left}
-.tip-cana{background:rgba(34,197,94,.2);color:#22c55e}
-.tip-sadi{background:rgba(14,165,233,.2);color:#0ea5e9}
-.tip-vide{background:rgba(239,68,68,.1);color:#ef4444}
+/* Colonnes */
+.cols-wrap{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden}
+.site-col{display:flex;flex-direction:column;border-right:2px solid var(--border);overflow:hidden}
+.site-col:last-child{border-right:none}
+.site-head{padding:12px 16px;border-bottom:2px solid var(--border);flex-shrink:0}
+.sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sh-name{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900}
+.sh-count{font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px}
+.sh-cana .sh-name{color:var(--cana)}
+.sh-cana .sh-count{background:var(--cana-bg);color:var(--cana);border:1px solid rgba(34,197,94,.2)}
+.sh-cana{background:rgba(34,197,94,.03);border-bottom-color:rgba(34,197,94,.2)}
+.sh-sadi .sh-name{color:var(--sadi)}
+.sh-sadi .sh-count{background:var(--sadi-bg);color:var(--sadi);border:1px solid rgba(14,165,233,.2)}
+.sh-sadi{background:rgba(14,165,233,.03);border-bottom-color:rgba(14,165,233,.2)}
+/* Livreurs */
+.livreurs-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.livreur-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.lv-cana{background:var(--cana-bg);color:var(--cana);border:1px solid rgba(34,197,94,.2)}
+.lv-sadi{background:var(--sadi-bg);color:var(--sadi);border:1px solid rgba(14,165,233,.2)}
+.lv-add{background:var(--panel2);border:1px dashed var(--border);color:var(--sub);font-size:10px;padding:4px 8px}
+.lv-add:hover{border-color:var(--sub);color:var(--text)}
+.charge-bar{height:4px;border-radius:2px;margin:0 0 0;transition:.3s}
+.col-body{overflow-y:auto;flex:1;padding:8px 10px}
+.cat-lbl{font-size:9px;font-weight:900;text-transform:uppercase;color:var(--sub2);letter-spacing:.1em;padding:10px 6px 4px}
+
+/* ══ CLIENT CARD ══ */
+.cli-card{border-radius:10px;margin-bottom:4px;border:1px solid transparent;overflow:hidden}
+.cli-card-inner{display:flex;align-items:center;gap:0;cursor:pointer;transition:.15s}
+.cli-card-inner:hover{opacity:.88}
+.cli-dot{width:6px;align-self:stretch;flex-shrink:0}
+.dot-cana{background:var(--cana)}
+.dot-sadi{background:var(--sadi)}
+.dot-empty{background:var(--sub2)}
+.cli-info{flex:1;padding:8px 10px;min-width:0}
+.cli-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cli-meta{font-size:10px;color:var(--sub);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap}
+.cli-actions{display:flex;gap:3px;padding:4px 6px;flex-shrink:0}
+.act-btn{padding:4px 9px;border-radius:6px;font-size:10px;font-weight:800;cursor:pointer;border:none;transition:.15s;white-space:nowrap}
+.act-cana{background:var(--cana-bg);color:var(--cana)}
+.act-cana:hover{background:rgba(34,197,94,.2)}
+.act-cana.active{background:rgba(34,197,94,.25);box-shadow:0 0 0 1.5px var(--cana)}
+.act-sadi{background:var(--sadi-bg);color:var(--sadi)}
+.act-sadi:hover{background:rgba(14,165,233,.2)}
+.act-sadi.active{background:rgba(14,165,233,.25);box-shadow:0 0 0 1.5px var(--sadi)}
+.act-x{background:var(--red-bg);color:var(--red);font-size:11px;padding:4px 7px}
+.act-x:hover{background:rgba(239,68,68,.15)}
+/* prod status */
+.prod-btn{padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;cursor:pointer;border:none;transition:.15s}
+.prod-0{background:var(--red-bg);color:var(--red)}
+.prod-1{background:var(--warn-bg);color:var(--warn)}
+.prod-2{background:var(--cana-bg);color:var(--cana)}
+.note-dot{font-size:11px;cursor:pointer;opacity:.6}
+.note-dot:hover{opacity:1}
+
+.cc-empty{background:var(--panel);border-color:var(--border)}
+.cc-cana{background:var(--cana-bg);border-color:rgba(34,197,94,.18)}
+.cc-sadi{background:var(--sadi-bg);border-color:rgba(14,165,233,.18)}
+
+.readonly .cli-actions{display:none}
+.readonly .cli-card-inner{cursor:default}
+.readonly .cli-card-inner:hover{opacity:1}
+
+/* ══ NON AFFECTÉS ══ */
+.na-bar{background:rgba(239,68,68,.05);border-top:2px solid rgba(239,68,68,.15);flex-shrink:0}
+.na-head{padding:8px 16px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.na-ttl{font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase}
+.na-cnt{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800}
+.na-body{padding:6px 12px 8px;display:flex;flex-wrap:wrap;gap:5px;max-height:90px;overflow-y:auto}
+.na-chip{display:inline-flex;align-items:center;gap:5px;background:var(--red-bg);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--red);cursor:pointer;transition:.15s}
+.na-chip:hover{background:rgba(239,68,68,.15)}
+.na-chip .chip-arrow{font-size:9px;opacity:.7}
+
+/* ══ FICHE CLIENT MODAL ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--panel);border:2px solid var(--border);border-radius:20px;padding:28px;width:500px;max-width:98vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:900;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--sub);padding:5px 12px;font-size:13px;cursor:pointer}
+.field-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field-lbl{font-size:10px;font-weight:800;color:var(--sub);text-transform:uppercase}
+.field-inp{background:#071526;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;width:100%;transition:.2s}
+.field-inp:focus{border-color:var(--warn)}
+.field-sel{background:#071526;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;width:100%}
+.modal-btns{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+.mbtn{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;border:none}
+.mbtn-ok{background:var(--warn);color:#fff}
+.mbtn-cancel{background:var(--panel2);color:var(--sub);border:1px solid var(--border)}
+
+/* ══ FERMETURE SADI MODAL ══ */
+#modal-ferme .modal-box{width:420px}
+.ferme-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:14px}
+.ferme-day-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel2);border-radius:8px;font-size:13px}
+.ferme-day-item input[type=checkbox]{accent-color:var(--red);width:16px;height:16px}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:#fff;z-index:9999;transform:translateY(80px);opacity:0;transition:.3s;pointer-events:none;max-width:280px}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
 /* RESPONSIVE */
-@media(max-width:700px){
-  .week-label{font-size:13px;min-width:150px}
-  .cell-btn{width:70px;font-size:9px}
+@media(max-width:640px){
+  .cols-wrap{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .site-col{border-right:none;border-bottom:2px solid var(--border)}
+  .week-grid{grid-template-columns:repeat(4,1fr)}
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">🍽️</div>
+<div id="login">
+  <div class="login-card">
+    <div class="login-icon">🍽️</div>
     <div class="login-title">La Table de Cana</div>
     <div class="login-sub">Répartition des livraisons</div>
-    <button class="login-btn btn-dir" onclick="showPw('dir')">👔 Accès Directeur</button>
-    <button class="login-btn btn-chef" onclick="showPw('chef')">👨‍🍳 Accès Chef de cuisine</button>
-    <div id="pw-zone" style="display:none">
-      <input class="pw-field" type="password" id="pw-input" placeholder="Mot de passe..." onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="login-btn btn-dir" id="pw-confirm-btn" onclick="doLogin()" style="margin-top:4px">Connexion</button>
+    <div class="login-choices">
+      <button class="lc-btn lc-log" onclick="showPw('log')">
+        <span class="lc-icon">🚚</span>Logistique
+      </button>
+      <button class="lc-btn lc-cui" onclick="showPw('cui')">
+        <span class="lc-icon">👨‍🍳</span>Cuisine
+      </button>
     </div>
-    <div class="login-err" id="login-err">Mot de passe incorrect</div>
+    <div class="pw-zone" id="pw-zone">
+      <input class="pw-input" type="password" id="pw-input" placeholder="Mot de passe...">
+      <button class="pw-go" id="pw-go" onclick="doLogin()">Connexion</button>
+      <div class="pw-err" id="pw-err">⚠️ Mot de passe incorrect</div>
+    </div>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="logo-text">🍽️ <span>La Table de Cana</span> — Répartition</div>
-      <span class="role-badge" id="role-badge"></span>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div class="tb-logo">🍽️ <span>Cana</span></div>
+      <span class="role-pill" id="role-pill"></span>
     </div>
-    <div class="header-right">
-      <span style="font-size:11px;color:#64748b" id="header-date"></span>
-      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    <!-- Recherche -->
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" placeholder="Rechercher un client..." oninput="doSearch(this.value)" onfocus="showSearchResult()" autocomplete="off">
+      <div class="search-result" id="search-result"></div>
     </div>
-  </div>
-
-  <!-- Légende -->
-  <div class="legende">
-    <div class="leg-item"><div class="leg-dot leg-cana"></div>La Table de Cana</div>
-    <div class="leg-item"><div class="leg-dot leg-sadi"></div>Sadi Carnot</div>
-    <div class="leg-item"><div class="leg-dot leg-empty"></div>Non affecté</div>
-    <div style="margin-left:auto;font-size:11px;color:#475569" id="readonly-notice"></div>
-  </div>
-
-  <!-- Nav semaine -->
-  <div class="week-nav">
-    <div class="week-nav-left">
-      <button class="nav-btn" onclick="navWeek(-1)">← Semaine préc.</button>
-      <div class="week-label" id="week-label"></div>
-      <button class="nav-btn" onclick="navWeek(1)">Semaine suiv. →</button>
-      <button class="nav-btn" onclick="goToday()" style="color:#f97316;border-color:rgba(249,115,22,.3)">Aujourd'hui</button>
-    </div>
-    <div class="week-nav-right">
-      <button class="filter-btn f-all active" id="fb-all" onclick="setFilter('all')">Tous</button>
-      <button class="filter-btn f-reg" id="fb-reg" onclick="setFilter('reg')">Réguliers</button>
-      <button class="filter-btn f-cae" id="fb-cae" onclick="setFilter('cae')">Centres Aérés</button>
+    <div class="tb-right">
+      <button class="icon-btn" onclick="showView('dashboard')">📊</button>
+      <button class="icon-btn" onclick="showView('planning')">📅 Planning</button>
+      <button class="icon-btn" id="btn-ferme" onclick="openFerme()" title="Jours de fermeture Sadi Carnot">🔒 Fermetures</button>
+      <button class="icon-btn" onclick="logout()">Déco.</button>
     </div>
   </div>
 
-  <!-- Tableau -->
-  <div class="table-wrap">
-    <table id="planning-table">
-      <thead>
-        <tr>
-          <th class="client-col">Client</th>
-          <th class="day-col">Lundi</th>
-          <th class="day-col">Mardi</th>
-          <th class="day-col">Mercredi</th>
-          <th class="day-col">Jeudi</th>
-          <th class="day-col">Vendredi</th>
-          <th class="day-col">Samedi</th>
-          <th class="day-col">Dimanche</th>
-        </tr>
-      </thead>
-      <tbody id="planning-body"></tbody>
-    </table>
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" style="overflow-y:auto;flex:1">
+    <div style="padding:24px 24px 0">
+      <div class="dash-title" id="dash-hello"></div>
+      <div class="dash-sub" id="dash-date"></div>
+    </div>
+    <!-- Message Cuisine -->
+    <div style="padding:16px 24px 0" id="msg-section"></div>
+    <!-- KPIs -->
+    <div style="padding:16px 24px 0">
+      <div class="dash-grid" id="dash-kpis"></div>
+    </div>
+    <!-- Mini-semaine -->
+    <div style="padding:0 24px">
+      <div style="font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Cette semaine — cliquer un jour pour l'ouvrir</div>
+      <div class="week-grid" id="dash-week"></div>
+    </div>
+    <!-- Alertes -->
+    <div style="padding:16px 24px 28px">
+      <div class="dash-alerts">
+        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:12px">⚡ Alertes</div>
+        <div id="dash-alerts"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-bar" id="stats-bar"></div>
+  <!-- PLANNING -->
+  <div id="view-planning" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <!-- Week bar -->
+    <div class="week-bar">
+      <button class="wbn-btn" onclick="navWeek(-1)">←</button>
+      <div class="wbn-lbl" id="wbn-lbl"></div>
+      <button class="wbn-btn" onclick="navWeek(1)">→</button>
+      <button class="today-btn" onclick="goToday()">Aujourd'hui</button>
+      <div class="wb-right">
+        <button class="mode-vac" id="vac-btn" onclick="toggleVac()">🌴 Vacances</button>
+        <button class="dup-btn" onclick="dupliquer()">📋 Dupliquer semaine</button>
+      </div>
+    </div>
+    <!-- Day tabs -->
+    <div class="day-tabs" id="day-tabs"></div>
+    <!-- Day view -->
+    <div id="view-day" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <!-- Top -->
+      <div class="day-top">
+        <div class="day-title" id="day-title"></div>
+        <button class="ferme-toggle" id="ferme-today-btn" onclick="toggleFermeToday()">🔒 Sadi fermé ce jour</button>
+        <input class="note-input" id="day-note" placeholder="Note du jour (visible par la Cuisine)..." oninput="saveNote()">
+      </div>
+      <!-- Colonnes -->
+      <div class="cols-wrap" style="flex:1;overflow:hidden">
+        <!-- CANA -->
+        <div class="site-col">
+          <div class="site-head sh-cana">
+            <div class="sh-top">
+              <div class="sh-name"><span>🟢</span>La Table de Cana</div>
+              <span class="sh-count" id="cana-count">0</span>
+            </div>
+            <div class="livreurs-wrap" id="cana-livreurs"></div>
+            <div class="charge-bar" id="cana-bar" style="background:var(--cana);margin-top:8px"></div>
+          </div>
+          <div class="col-body" id="cana-body"></div>
+        </div>
+        <!-- SADI -->
+        <div class="site-col">
+          <div class="site-head sh-sadi">
+            <div class="sh-top">
+              <div class="sh-name"><span>🔵</span>Sadi Carnot</div>
+              <span class="sh-count" id="sadi-count">0</span>
+            </div>
+            <div class="livreurs-wrap" id="sadi-livreurs"></div>
+            <div class="charge-bar" id="sadi-bar" style="background:var(--sadi);margin-top:8px"></div>
+          </div>
+          <div class="col-body" id="sadi-body"></div>
+        </div>
+      </div>
+      <!-- Non affectés -->
+      <div class="na-bar" id="na-bar">
+        <div class="na-head" onclick="toggleNA()">
+          <span class="na-ttl">⚠️ Non affectés</span>
+          <span class="na-cnt" id="na-cnt">0</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--sub)" id="na-toggle">▲</span>
+        </div>
+        <div class="na-body" id="na-body"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- Modal fiche client -->
+<div class="modal-bg" id="modal-client">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="mc-title">Fiche client</span>
+      <button class="modal-close" onclick="closeModal('modal-client')">✕ Fermer</button>
+    </div>
+    <div class="field-row"><div class="field-lbl">Nom</div><input class="field-inp" id="mc-nom" placeholder="Nom du client"></div>
+    <div class="field-row"><div class="field-lbl">Type</div>
+      <select class="field-sel" id="mc-type">
+        <option value="reg">Régulier</option><option value="cae">Centre Aéré</option>
+      </select>
+    </div>
+    <div class="field-row"><div class="field-lbl">Zone géographique</div>
+      <select class="field-sel" id="mc-zone">
+        <option value="">— Non définie</option>
+        <option value="nord">Nord Marseille</option>
+        <option value="sud">Sud Marseille</option>
+        <option value="centre">Centre Marseille</option>
+        <option value="est">Est Marseille</option>
+        <option value="ouest">Ouest Marseille</option>
+      </select>
+    </div>
+    <div class="field-row"><div class="field-lbl">Nombre de repas habituel</div><input class="field-inp" id="mc-repas" type="number" placeholder="Ex: 80"></div>
+    <div class="field-row"><div class="field-lbl">Heure de livraison</div><input class="field-inp" id="mc-heure" type="time" value="11:30"></div>
+    <div class="field-row"><div class="field-lbl">Contact sur place</div><input class="field-inp" id="mc-contact" placeholder="Nom + téléphone"></div>
+    <div class="field-row"><div class="field-lbl">Site par défaut</div>
+      <select class="field-sel" id="mc-default">
+        <option value="">— Pas de défaut</option>
+        <option value="cana">La Table de Cana</option>
+        <option value="sadi">Sadi Carnot</option>
+      </select>
+    </div>
+    <div class="field-row"><div class="field-lbl">Notes internes</div><textarea class="field-inp" id="mc-notes" style="min-height:60px;resize:vertical" placeholder="Allergènes, particularités..."></textarea></div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('modal-client')">Annuler</button>
+      <button class="mbtn mbtn-ok" onclick="saveClient()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal fermetures Sadi -->
+<div class="modal-bg" id="modal-ferme">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>🔒 Fermetures Sadi Carnot</span>
+      <button class="modal-close" onclick="closeModal('modal-ferme')">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Cochez les jours où Sadi Carnot est fermé cette semaine. Les clients seront alertés.</div>
+    <div class="ferme-list" id="ferme-list"></div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-ok" onclick="saveFerme()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-/* ════════════════════════════════════════════════
-   DONNÉES
-════════════════════════════════════════════════ */
-var JOURS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-var JOURS_SHORT = ['L','Ma','Me','J','V','S','D'];
+/* ══════════════════════════════════════════
+   CONFIG & DONNÉES
+══════════════════════════════════════════ */
+var PW={log:'cana2026',cui:'chef2026'};
+var JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+var PROD_LABELS=['🔴 À produire','🟡 En cours','✅ Terminé'];
+var ZONES={nord:'Nord',sud:'Sud',centre:'Centre',est:'Est',ouest:'Ouest'};
+var LIVREURS_POOL=['Otmane','Nicolas','Mickael','Karim'];
 
-var CLIENTS = {
-  reg: [
-    'AMPM BARQUETTE','BMPM BARQUETTE','AMPM','BMPM',
-    'ARGONAUTES','ARGONAUTES PLAT TEMOIN',
-    'CAARUD LE SLEEP\'IN',
-    'CHRS CHEZ SIMONE MIDI','CHRS CHEZ SIMONE SOIR',
-    'CHRS LA MINOTERIE MIDI','CHRS LA MINOTERIE SOIR',
-    'CHRS LA SELONNE MIDI','CHRS LA SELONNE SOIR',
-    'COMPAGNONS MIDI','COMPAGNONS SOIR',
-    'ESAT ST JEAN',
-    'LHSS FONTAINIEU MIDI','LHSS FONTAINIEU SOIR',
-    'PHOCEEN SECURITE CIVILE',
-    'UNITÉ A MIDI','UNITÉ A SOIR',
-    'UNITÉ B MIDI','UNITÉ B SOIR',
-    'UNITÉ C MIDI','UNITÉ C SOIR',
-    'UNITÉ D','VILLA NIOZELLES'
-  ],
-  cae: [
-    'AGA FLAMANTS 1','AGA FLAMANTS 2','AGA FLAMANTS ADO',
-    'AGORA','AIR BEL',
-    'BERNARD DUBOIS 1','BERNARD DUBOIS 2',
-    'BONNEVEINE ADO','BONNEVEINE MAT','BONNEVEINE MPT MAT',
-    'BONNEVEINE PRIM 1','BONNEVEINE PRIM 2','BONNEVEINE PRIM 3',
-    'CASTELLANE','CASTELLANE ADO','CCO SIÈGE',
-    'CHÂTEAU GOMBERT 1','CHÂTEAU GOMBERT 2','CHÂTEAU GOMBERT ADO',
-    'CHAVE COPELLO PRIM','COIN JOLI','COURS JULIEN MAT',
-    'FRAIS VALLON',
-    'LA BRICARDE 1','LA BRICARDE 2',
-    'LA LOUBIÈRE MAT','LA LOUBIÈRE PRIM',
-    'LA SAVINE','LE GRAND CANET',
-    'LE ROUET MAT','LE ROUET PRIM',
-    'LES 3 LUCS ADO','LES 3 LUCS',
-    'LES BOURRELY','LES LIERRES 1','LES LIERRES 2',
-    'LES MUSARDISES','MER ET COLLINE',
-    'ROY D\'ESPAGNE MAT','ROY D\'ESPAGNE PRIM',
-    'SAINTE MARTHE PRIM',
-    'ST GINIEZ ADO','ST GINIEZ MAT','ST GINIEZ PRIM',
-    'ST JEROME','ST THYS',
-    'STE ELISABETH MAT','STE ELISABETH PRIM',
-    'TOROS'
-  ]
+var CLIENTS_INIT={
+  reg:['AMPM BARQUETTE','BMPM BARQUETTE','AMPM','BMPM','ARGONAUTES','ARGONAUTES PLAT TEMOIN',
+    "CAARUD LE SLEEP'IN",'CHRS CHEZ SIMONE MIDI','CHRS CHEZ SIMONE SOIR',
+    'CHRS LA MINOTERIE MIDI','CHRS LA MINOTERIE SOIR','CHRS LA SELONNE MIDI','CHRS LA SELONNE SOIR',
+    'COMPAGNONS MIDI','COMPAGNONS SOIR','ESAT ST JEAN',
+    'LHSS FONTAINIEU MIDI','LHSS FONTAINIEU SOIR','PHOCEEN SECURITE CIVILE',
+    'UNITÉ A MIDI','UNITÉ A SOIR','UNITÉ B MIDI','UNITÉ B SOIR',
+    'UNITÉ C MIDI','UNITÉ C SOIR','UNITÉ D','VILLA NIOZELLES'],
+  cae:['AGA FLAMANTS 1','AGA FLAMANTS 2','AGA FLAMANTS ADO','AGORA','AIR BEL',
+    'BERNARD DUBOIS 1','BERNARD DUBOIS 2','BONNEVEINE ADO','BONNEVEINE MAT','BONNEVEINE MPT MAT',
+    'BONNEVEINE PRIM 1','BONNEVEINE PRIM 2','BONNEVEINE PRIM 3','CASTELLANE','CASTELLANE ADO','CCO SIÈGE',
+    'CHÂTEAU GOMBERT 1','CHÂTEAU GOMBERT 2','CHÂTEAU GOMBERT ADO','CHAVE COPELLO PRIM',
+    'COIN JOLI','COURS JULIEN MAT','FRAIS VALLON','LA BRICARDE 1','LA BRICARDE 2',
+    'LA LOUBIÈRE MAT','LA LOUBIÈRE PRIM','LA SAVINE','LE GRAND CANET','LE ROUET MAT','LE ROUET PRIM',
+    'LES 3 LUCS ADO','LES 3 LUCS','LES BOURRELY','LES LIERRES 1','LES LIERRES 2',
+    'LES MUSARDISES','MER ET COLLINE','ROY D\'ESPAGNE MAT','ROY D\'ESPAGNE PRIM','SAINTE MARTHE PRIM',
+    'ST GINIEZ ADO','ST GINIEZ MAT','ST GINIEZ PRIM','ST JEROME','ST THYS',
+    'STE ELISABETH MAT','STE ELISABETH PRIM','TOROS']
 };
 
-/* Mots de passe */
-var PW = { dir:'cana2026', chef:'chef2026' };
-
-/* État */
-var STATE = {
-  role: null,        // 'dir' | 'chef'
-  filter: 'all',     // 'all' | 'reg' | 'cae'
-  weekOffset: 0,     // semaines depuis semaine courante
-  data: {}           // clé: "YYYY-Www" → {clientJour: 'cana'|'sadi'|''}
+/* ══ ÉTAT ══ */
+var S={
+  role:null,weekOffset:0,dayIdx:0,vacances:false,naOpen:true,
+  data:{},      // wk → {cli__j:'cana'|'sadi'|''}
+  notes:{},     // wk__j → note texte
+  prod:{},      // wk__j__cli → 0|1|2
+  clientNotes:{},// wk__j__cli → note
+  livreurs:{},  // wk__j__site → [noms]
+  ferme:{},     // wk → [0..6] jours fermés sadi
+  clients:{},   // id → {nom,type,zone,repas,heure,contact,default,notes}
+  defaults:{},  // cli → site
+  msgCuisine:'' // message pour la cuisine
 };
+var loginRole=null;
+var modalClientId=null;
+var fermeTemp=[];
 
-var loginRole = null;
-
-/* ════════════════════════════════════════════════
-   LOGIN
-════════════════════════════════════════════════ */
-function showPw(role){
-  loginRole = role;
-  document.getElementById('pw-zone').style.display = 'block';
-  var btn = document.getElementById('pw-confirm-btn');
-  btn.className = 'login-btn ' + (role==='dir'?'btn-dir':'btn-chef');
-  document.getElementById('pw-input').value = '';
-  document.getElementById('pw-input').focus();
-  document.getElementById('login-err').style.display = 'none';
+/* ══ INIT CLIENTS ══ */
+function initClients(){
+  if(Object.keys(S.clients).length>0) return;
+  CLIENTS_INIT.reg.forEach(function(n){var id=slug(n);S.clients[id]={nom:n,type:'reg',zone:'',repas:'',heure:'11:30',contact:'',default:'',notes:''};});
+  CLIENTS_INIT.cae.forEach(function(n){var id=slug(n);S.clients[id]={nom:n,type:'cae',zone:'',repas:'',heure:'12:00',contact:'',default:'',notes:''};});
 }
-
-function doLogin(){
-  var pw = document.getElementById('pw-input').value;
-  if(pw === PW[loginRole]){
-    STATE.role = loginRole;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initApp();
-  } else {
-    document.getElementById('login-err').style.display = 'block';
-    document.getElementById('pw-input').value = '';
-  }
+function slug(n){return n.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40);}
+function getAllClients(vacances){
+  var all=[];
+  Object.values(S.clients).forEach(function(c){
+    if(vacances&&c.type==='cae') return;
+    all.push(c);
+  });
+  return all;
 }
+function getClientById(id){return S.clients[id]||null;}
+function getClientByNom(nom){return Object.entries(S.clients).find(function(e){return e[1].nom===nom;});}
 
-function logout(){
-  STATE.role = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('pw-zone').style.display = 'none';
-}
-
-/* ════════════════════════════════════════════════
-   SEMAINE
-════════════════════════════════════════════════ */
-function getMonday(offset){
-  var now = new Date();
-  var day = now.getDay();
-  var diff = (day===0?-6:1-day);
-  var mon = new Date(now);
-  mon.setDate(now.getDate() + diff + offset*7);
-  mon.setHours(0,0,0,0);
-  return mon;
-}
-
-function getWeekKey(mon){
-  var y = mon.getFullYear();
-  var start = new Date(y,0,1);
-  var wk = Math.ceil(((mon-start)/86400000 + start.getDay()+1)/7);
-  return y+'-W'+(wk<10?'0':'')+wk;
-}
-
-function fmtDate(d){
-  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-}
-
-function getWeekDates(mon){
-  var days = [];
-  for(var i=0;i<7;i++){
-    var d = new Date(mon);
-    d.setDate(mon.getDate()+i);
-    days.push(d);
-  }
-  return days;
-}
-
-function navWeek(delta){
-  STATE.weekOffset += delta;
-  render();
-}
-
-function goToday(){
-  STATE.weekOffset = 0;
-  render();
-}
-
-/* ════════════════════════════════════════════════
-   DONNÉES LOCALES
-════════════════════════════════════════════════ */
+/* ══ PERSISTANCE ══ */
 function load(){
-  try{
-    var d = localStorage.getItem('repartition_cana');
-    if(d) STATE.data = JSON.parse(d);
-  }catch(e){}
+  try{var d=localStorage.getItem('rep_cana_v3');if(d){var p=JSON.parse(d);
+    S.data=p.data||{};S.notes=p.notes||{};S.prod=p.prod||{};
+    S.clientNotes=p.clientNotes||{};S.livreurs=p.livreurs||{};
+    S.ferme=p.ferme||{};S.clients=p.clients||{};S.defaults=p.defaults||{};
+    S.vacances=!!p.vacances;S.msgCuisine=p.msgCuisine||'';
+  }}catch(e){}
+  initClients();
 }
-
 function save(){
-  try{
-    localStorage.setItem('repartition_cana', JSON.stringify(STATE.data));
-  }catch(e){}
+  try{localStorage.setItem('rep_cana_v3',JSON.stringify({
+    data:S.data,notes:S.notes,prod:S.prod,clientNotes:S.clientNotes,
+    livreurs:S.livreurs,ferme:S.ferme,clients:S.clients,defaults:S.defaults,
+    vacances:S.vacances,msgCuisine:S.msgCuisine
+  }));}catch(e){}
 }
 
-function getVal(weekKey, client, jour){
-  if(!STATE.data[weekKey]) return '';
-  var k = client+'__'+jour;
-  return STATE.data[weekKey][k] || '';
+/* ══ UTILITAIRES ══ */
+function getMonday(off){
+  var d=new Date();var day=d.getDay();
+  d.setDate(d.getDate()+(day===0?-6:1-day)+off*7);
+  d.setHours(0,0,0,0);return d;
+}
+function weekKey(mon){
+  var y=mon.getFullYear();var s=new Date(y,0,1);
+  var w=Math.ceil(((mon-s)/864e5+s.getDay()+1)/7);
+  return y+'-W'+(w<10?'0':'')+w;
+}
+function getDays(mon){var a=[];for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);a.push(d);}return a;}
+function fmtD(d){return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});}
+function isLog(){return S.role==='log';}
+function toast(msg,col){
+  var t=document.getElementById('toast');t.textContent=msg;
+  t.style.borderColor=col||'var(--warn)';t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2400);
 }
 
-function setVal(weekKey, client, jour, val){
-  if(!STATE.data[weekKey]) STATE.data[weekKey] = {};
-  var k = client+'__'+jour;
-  STATE.data[weekKey][k] = val;
-  save();
+/* ══ GETTERS / SETTERS ══ */
+function getVal(wk,nom,j){return(S.data[wk]&&S.data[wk][nom+'__'+j])||'';}
+function setVal(wk,nom,j,v){if(!S.data[wk])S.data[wk]={};S.data[wk][nom+'__'+j]=v;save();}
+function getNote(wk,j){return S.notes[wk+'__'+j]||'';}
+function setNote(wk,j,txt){S.notes[wk+'__'+j]=txt;save();}
+function getProd(wk,j,nom){return S.prod[wk+'__'+j+'__'+nom]||0;}
+function setProd(wk,j,nom,v){S.prod[wk+'__'+j+'__'+nom]=v;save();}
+function getLivreurs(wk,j,site){return(S.livreurs[wk+'__'+j+'__'+site])||[];}
+function setLivreurs(wk,j,site,arr){S.livreurs[wk+'__'+j+'__'+site]=arr;save();}
+function isFerme(wk,j){return(S.ferme[wk]||[]).indexOf(j)>=0;}
+function getDefault(nom){var e=getClientByNom(nom);return e?e[1].default||'':'';}
+
+/* ══ LOGIN ══ */
+function showPw(role){
+  loginRole=role;
+  var z=document.getElementById('pw-zone');z.style.display='flex';
+  var b=document.getElementById('pw-go');
+  b.className='pw-go pw-go-'+(role==='log'?'log':'cui');
+  b.textContent=role==='log'?'Connexion Logistique':'Connexion Cuisine';
+  document.getElementById('pw-input').value='';
+  document.getElementById('pw-err').style.display='none';
+  document.getElementById('pw-input').focus();
+}
+function doLogin(){
+  if(document.getElementById('pw-input').value===PW[loginRole]){
+    S.role=loginRole;load();
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('app').style.flexDirection='column';
+    initApp();
+  }else{
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw-input').value='';
+  }
+}
+function logout(){S.role=null;document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none';}
+
+/* ══ VIEWS ══ */
+function showView(v){
+  document.getElementById('view-dashboard').style.display=v==='dashboard'?'block':'none';
+  document.getElementById('view-planning').style.display=v==='planning'?'flex':'none';
+  if(v==='dashboard') renderDashboard();
+  if(v==='planning') renderPlanning();
 }
 
-/* ════════════════════════════════════════════════
-   CYCLE: vide → CANA → SADI → vide
-════════════════════════════════════════════════ */
-function cycleVal(current){
-  if(current===''||current==null) return 'cana';
-  if(current==='cana') return 'sadi';
-  return '';
-}
+/* ══ NAV ══ */
+function navWeek(d){S.weekOffset+=d;renderPlanning();}
+function goToday(){S.weekOffset=0;S.dayIdx=new Date().getDay()===0?6:Math.max(0,new Date().getDay()-1);renderPlanning();}
+function toggleVac(){if(!isLog()){toast('Accès Logistique requis','var(--red)');return;}S.vacances=!S.vacances;save();renderPlanning();toast(S.vacances?'🌴 Mode vacances — Centres Aérés masqués':'Mode normal rétabli');}
 
-function cellClick(weekKey, client, jour){
-  if(STATE.role !== 'dir') return;
-  var cur = getVal(weekKey, client, jour);
-  var next = cycleVal(cur);
-  setVal(weekKey, client, jour, next);
-  renderCell(weekKey, client, jour);
-  renderStats(weekKey);
-}
-
-function setCell(weekKey, client, jour, val){
-  if(STATE.role !== 'dir') return;
-  setVal(weekKey, client, jour, val);
-  renderCell(weekKey, client, jour);
-  renderStats(weekKey);
-}
-
-/* ════════════════════════════════════════════════
-   RENDER CELLULE
-════════════════════════════════════════════════ */
-function cellId(client, jour){
-  return 'cell_' + btoa(encodeURIComponent(client+'|'+jour)).replace(/=/g,'').replace(/\+/g,'x').replace(/\//g,'y').slice(0,20);
-}
-
-function renderCell(weekKey, client, jour){
-  var val = getVal(weekKey, client, jour);
-  var id = cellId(client, jour);
-  var el = document.getElementById(id);
-  if(!el) return;
-
-  var label = val==='cana'?'✅ CANA':val==='sadi'?'🔵 SADI':'—';
-  var cls = val==='cana'?'cell-cana':val==='sadi'?'cell-sadi':'cell-empty';
-
-  if(STATE.role==='dir'){
-    el.innerHTML =
-      '<div class="cell-tip">' +
-        '<div class="cell-btn '+cls+'" onclick="cellClick(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+')">'+label+'</div>' +
-        '<div class="tip-menu">' +
-          '<button class="tip-btn tip-cana" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'cana\')">✅ CANA</button>' +
-          '<button class="tip-btn tip-sadi" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'sadi\')">🔵 SADI</button>' +
-          '<button class="tip-btn tip-vide" onclick="setCell(\''+weekKey+'\',\''+encodeURIComponent(client)+'\','+jour+',\'\')">✕ Vider</button>' +
-        '</div>' +
+/* ══ RECHERCHE ══ */
+function doSearch(q){
+  var res=document.getElementById('search-result');
+  if(!q||q.length<2){res.style.display='none';return;}
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);var j=S.dayIdx;
+  var hits=Object.values(S.clients).filter(function(c){return c.nom.toLowerCase().includes(q.toLowerCase());}).slice(0,8);
+  if(!hits.length){res.style.display='none';return;}
+  res.innerHTML=hits.map(function(c){
+    var v=getVal(wk,c.nom,j);
+    var siteLbl=v==='cana'?'✅ CANA':v==='sadi'?'🔵 SADI':'Non affecté';
+    var siteCls=v==='cana'?'sr-cana':v==='sadi'?'sr-sadi':'sr-none';
+    var prod=getProd(wk,j,c.nom);
+    return '<div class="sr-item" onclick="goToClient(\''+c.nom.replace(/'/g,"\\'")+"'\")+\">"+'<div class="sr-name">'+c.nom+'</div>'+
+      '<span style="font-size:9px;color:var(--sub);margin-right:4px">'+JOURS[j]+'</span>'+
+      '<span class="sr-site '+siteCls+'">'+siteLbl+'</span>'+
+      (v?'<span style="font-size:9px;color:var(--sub);margin-left:6px">'+PROD_LABELS[prod]+'</span>':'')+
       '</div>';
-  } else {
-    el.innerHTML = '<div class="cell-btn '+cls+'" style="pointer-events:none">'+label+'</div>';
-  }
+  }).join('');
+  res.style.display='block';
 }
-
-/* ════════════════════════════════════════════════
-   RENDER TABLEAU
-════════════════════════════════════════════════ */
-function getClientList(){
-  if(STATE.filter==='reg') return {reg:CLIENTS.reg, cae:[]};
-  if(STATE.filter==='cae') return {reg:[], cae:CLIENTS.cae};
-  return CLIENTS;
+function showSearchResult(){if(document.getElementById('search-input').value.length>=2) doSearch(document.getElementById('search-input').value);}
+function goToClient(nom){
+  document.getElementById('search-result').style.display='none';
+  document.getElementById('search-input').value='';
+  showView('planning');
+  setTimeout(function(){
+    var cards=document.querySelectorAll('.cli-card');
+    cards.forEach(function(c){
+      if(c.dataset.nom===nom){c.scrollIntoView({behavior:'smooth',block:'center'});c.style.outline='2px solid var(--warn)';setTimeout(function(){c.style.outline='';},2000);}
+    });
+  },300);
 }
+document.addEventListener('click',function(e){if(!e.target.closest('.search-wrap')) document.getElementById('search-result').style.display='none';});
 
-function render(){
-  var mon = getMonday(STATE.weekOffset);
-  var days = getWeekDates(mon);
-  var weekKey = getWeekKey(mon);
-  var today = new Date(); today.setHours(0,0,0,0);
+/* ══ DASHBOARD ══ */
+function renderDashboard(){
+  var now=new Date();
+  var hour=now.getHours();
+  var greet=hour<12?'Bonjour':'Bonne après-midi';
+  document.getElementById('dash-hello').textContent=greet+' 👋';
+  document.getElementById('dash-date').textContent=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  /* Label semaine */
-  var wk = weekKey.split('-W')[1];
-  var label = 'Semaine '+wk+' · '+fmtDate(days[0])+' → '+fmtDate(days[6])+' '+days[0].getFullYear();
-  document.getElementById('week-label').textContent = label;
-  document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  /* Message cuisine */
+  var ms=document.getElementById('msg-section');
+  if(isLog()){
+    ms.innerHTML='<div class="msg-box"><div class="msg-title">📢 Message pour la Cuisine</div>'+
+      '<textarea class="msg-input" id="msg-inp" placeholder="Écrivez un message visible par la Cuisine dès sa connexion..." oninput="S.msgCuisine=this.value;save()">'+S.msgCuisine+'</textarea></div>';
+  } else if(S.msgCuisine){
+    ms.innerHTML='<div class="msg-box"><div class="msg-title">📢 Message de la Logistique</div><div class="msg-text-show">'+S.msgCuisine+'</div></div>';
+  } else ms.innerHTML='';
 
-  /* Badge rôle */
-  var badge = document.getElementById('role-badge');
-  var notice = document.getElementById('readonly-notice');
-  if(STATE.role==='dir'){
-    badge.textContent = '👔 Directeur';
-    badge.className = 'role-badge role-dir';
-    notice.textContent = '';
-    document.getElementById('planning-table').classList.remove('readonly');
-  } else {
-    badge.textContent = '👨‍🍳 Chef de cuisine';
-    badge.className = 'role-badge role-chef';
-    notice.textContent = '🔒 Vue lecture seule';
-    document.getElementById('planning-table').classList.add('readonly');
-  }
+  /* KPIs */
+  var mon=getMonday(0);var wk=weekKey(mon);
+  var todayIdx=now.getDay()===0?6:Math.max(0,now.getDay()-1);
+  var ac=getAllClients(S.vacances);
+  var nc=0,ns=0,nv=0;
+  ac.forEach(function(c){var v=getVal(wk,c.nom,todayIdx);if(v==='cana')nc++;else if(v==='sadi')ns++;else nv++;});
+  var lc=getLivreurs(wk,todayIdx,'cana').length;
+  var ls=getLivreurs(wk,todayIdx,'sadi').length;
+  document.getElementById('dash-kpis').innerHTML=
+    kpi('🟢','CANA auj.',nc,'var(--cana)')+
+    kpi('🔵','SADI auj.',ns,'var(--sadi)')+
+    kpi('⚠️','Non affectés',nv,'var(--warn)')+
+    kpi('🚚','Livreurs CANA',lc,'var(--cana)')+
+    kpi('🚚','Livreurs SADI',ls,'var(--sadi)')+
+    kpi('👥','Clients actifs',ac.length,'var(--text)');
 
-  /* En-têtes jours avec dates */
-  var ths = document.querySelectorAll('thead th.day-col');
-  ths.forEach(function(th,i){
-    var d = days[i];
-    var isToday = d.getTime()===today.getTime();
-    th.innerHTML = JOURS[i]+'<br><span style="font-size:10px;font-weight:600;color:'+(isToday?'#f97316':'#475569')+'">'+fmtDate(d)+(isToday?' ◆':'')+'</span>';
-    th.style.color = isToday?'#f97316':'';
+  /* Mini semaine */
+  var days=getDays(mon);var wg=document.getElementById('dash-week');wg.innerHTML='';
+  days.forEach(function(d,i){
+    var nc2=0,ns2=0,nv2=0;
+    ac.forEach(function(c){var v=getVal(wk,c.nom,i);if(v==='cana')nc2++;else if(v==='sadi')ns2++;else nv2++;});
+    var ok=nv2===0&&(nc2+ns2)>0;var part=(nc2+ns2)>0&&nv2>0;
+    var isT=i===todayIdx;var ferme=isFerme(wk,i);
+    var div=document.createElement('div');
+    div.className='wg-cell';
+    div.style.borderColor=isT?'var(--warn)':ferme?'var(--red)':'var(--border)';
+    div.innerHTML='<div class="wg-day">'+JOURS[i].slice(0,3)+'</div>'+
+      '<div class="wg-date" style="color:'+(isT?'var(--warn)':'#fff')+'">'+fmtD(d)+'</div>'+
+      (ferme?'<div style="font-size:9px;color:var(--red);font-weight:800;margin-bottom:4px">🔒 SADI FERMÉ</div>':
+       '<div class="wg-bar" style="background:'+(ok?'var(--cana)':part?'var(--warn)':'var(--sub2)')+'"></div>')+
+      '<div class="wg-stat">'+(ferme?'':ok?'✅ Complet':part?(nc2+ns2)+'/'+ac.length:'Vide')+'</div>';
+    div.onclick=function(){S.weekOffset=0;S.dayIdx=i;showView('planning');};
+    wg.appendChild(div);
   });
 
-  /* Corps */
-  var body = document.getElementById('planning-body');
-  body.innerHTML = '';
-  var cl = getClientList();
+  /* Alertes */
+  var alerts=[];
+  if(nv>0) alerts.push({ico:'⚠️',col:'var(--warn)',txt:nv+' client'+(nv>1?'s':'')+' non affecté'+(nv>1?'s':'')+' aujourd\'hui → '+'<button class="icon-btn" onclick="S.dayIdx='+todayIdx+';showView(\'planning\')" style="padding:4px 10px;font-size:11px">Voir</button>'});
+  if(S.vacances) alerts.push({ico:'🌴',col:'var(--purple)',txt:'Mode vacances actif — Centres Aérés masqués'});
+  var note=getNote(wk,todayIdx);
+  if(note) alerts.push({ico:'📝',col:'var(--sadi)',txt:'Note du jour : '+note});
+  if(isFerme(wk,todayIdx)) alerts.push({ico:'🔒',col:'var(--red)',txt:'Sadi Carnot FERMÉ aujourd\'hui — vérifier la répartition'});
+  if(!alerts.length) alerts.push({ico:'✅',col:'var(--cana)',txt:'Tout est en ordre pour aujourd\'hui'});
+  document.getElementById('dash-alerts').innerHTML=alerts.map(function(a){return '<div class="alert-row"><span style="font-size:16px">'+a.ico+'</span><span style="color:'+a.col+'">'+a.txt+'</span></div>';}).join('');
+}
+function kpi(ico,lbl,val,col){return '<div class="dash-card"><div class="dc-icon">'+ico+'</div><div class="dc-val" style="color:'+col+'">'+val+'</div><div class="dc-lbl">'+lbl+'</div></div>';}
 
-  function addCatRow(label, icon, color){
-    var tr = document.createElement('tr');
-    var td = document.createElement('td');
-    td.colSpan = 8;
-    td.style.cssText = 'background:#0a0f1e;padding:10px 14px;font-size:10px;font-weight:900;text-transform:uppercase;color:'+color+';letter-spacing:.1em;border-top:2px solid #1e3a5f';
-    td.textContent = icon+' '+label;
-    tr.appendChild(td);
-    body.appendChild(tr);
-  }
+/* ══ PLANNING ══ */
+function renderPlanning(){
+  var mon=getMonday(S.weekOffset);var days=getDays(mon);var wk=weekKey(mon);
+  var todayReal=new Date();todayReal.setHours(0,0,0,0);
+  var w=wk.split('-W')[1];
+  document.getElementById('wbn-lbl').textContent='Semaine '+w+' · '+fmtD(days[0])+' → '+fmtD(days[6]);
+  document.getElementById('vac-btn').classList.toggle('on',S.vacances);
 
-  function addClientRow(client, weekKey){
-    var tr = document.createElement('tr');
-    /* Nom */
-    var tdN = document.createElement('td');
-    tdN.className = 'td-client';
-    tdN.textContent = client;
-    tr.appendChild(tdN);
-    /* Jours */
-    for(var j=0;j<7;j++){
-      var td = document.createElement('td');
-      td.className = 'td-day';
-      var id = cellId(client, j);
-      td.innerHTML = '<span id="'+id+'"></span>';
-      tr.appendChild(td);
-    }
-    body.appendChild(tr);
-    /* Rendre les cellules */
-    for(var j2=0;j2<7;j2++) renderCell(weekKey, client, j2);
-  }
-
-  if(cl.reg.length){
-    addCatRow('Clients Réguliers','🏢','#f97316');
-    cl.reg.forEach(function(c){ addClientRow(c, weekKey); });
-  }
-  if(cl.cae.length){
-    addCatRow('Centres Aérés','🌳','#a855f7');
-    cl.cae.forEach(function(c){ addClientRow(c, weekKey); });
-  }
-
-  renderStats(weekKey);
+  /* Onglets */
+  var tabs=document.getElementById('day-tabs');tabs.innerHTML='';
+  days.forEach(function(d,i){
+    var isT=d.getTime()===todayReal.getTime();var isA=i===S.dayIdx;
+    var ferme=isFerme(wk,i);
+    var ac=getAllClients(S.vacances);var nc=0,ns=0;
+    ac.forEach(function(c){var v=getVal(wk,c.nom,i);if(v==='cana')nc++;if(v==='sadi')ns++;});
+    var nv=ac.length-nc-ns;
+    var dotCol=nv===0&&(nc+ns)>0?'var(--cana)':nv>0&&(nc+ns)>0?'var(--warn)':'var(--sub2)';
+    var div=document.createElement('div');
+    div.className='dt'+(isA?' active':'')+(isT?' today-tab':'');
+    div.innerHTML=(ferme?'<span class="ferme-badge">FERMÉ</span>':'')+
+      '<div class="dt-day">'+JOURS[i].slice(0,3)+'</div>'+
+      '<div class="dt-date">'+fmtD(d)+'</div>'+
+      '<div class="dt-dot" style="background:'+dotCol+'"></div>';
+    div.onclick=(function(idx){return function(){S.dayIdx=idx;renderPlanning();};})(i);
+    tabs.appendChild(div);
+  });
+  renderDay();
 }
 
-/* ════════════════════════════════════════════════
-   STATS
-════════════════════════════════════════════════ */
-function renderStats(weekKey){
-  var allClients = CLIENTS.reg.concat(CLIENTS.cae);
-  var nb_cana=0, nb_sadi=0, nb_vide=0, total=0;
-  allClients.forEach(function(c){
+/* ══ JOUR ══ */
+function renderDay(){
+  var mon=getMonday(S.weekOffset);var days=getDays(mon);var wk=weekKey(mon);
+  var j=S.dayIdx;var d=days[j];
+  var ac=getAllClients(S.vacances);
+  var ferme=isFerme(wk,j);
+
+  document.getElementById('day-title').textContent=JOURS[j]+' '+fmtD(d)+' '+d.getFullYear()+(ferme?' 🔒 Sadi Carnot FERMÉ':'');
+  document.getElementById('day-note').value=getNote(wk,j);
+  document.getElementById('day-note').disabled=!isLog();
+  var fb=document.getElementById('ferme-today-btn');
+  fb.classList.toggle('on',ferme);
+  fb.textContent=ferme?'✅ Sadi fermé ce jour (cliquer pour ouvrir)':'🔒 Marquer Sadi fermé ce jour';
+  fb.style.display=isLog()?'block':'none';
+
+  /* Trier clients */
+  var canaList=[],sadiList=[],naList=[];
+  ac.forEach(function(c){
+    var v=getVal(wk,c.nom,j);
+    if(v==='cana') canaList.push(c);
+    else if(v==='sadi') sadiList.push(c);
+    else naList.push(c);
+  });
+
+  var total=ac.length;
+  var nc=canaList.length,ns=sadiList.length,nv=naList.length;
+  document.getElementById('cana-count').textContent=nc+' client'+(nc!==1?'s':'');
+  document.getElementById('sadi-count').textContent=ns+' client'+(ns!==1?'s':'')+(ferme?' 🔒':'');
+  var maxL=Math.max(nc,ns,1);
+  document.getElementById('cana-bar').style.width=Math.round(nc/maxL*100)+'%';
+  document.getElementById('sadi-bar').style.width=Math.round(ns/maxL*100)+'%';
+
+  /* Livreurs */
+  renderLivreurs('cana',wk,j);
+  renderLivreurs('sadi',wk,j);
+
+  /* Corps colonnes */
+  renderColBody('cana-body',wk,j,'cana',canaList);
+  renderColBody('sadi-body',wk,j,'sadi',sadiList);
+
+  /* Non affectés */
+  document.getElementById('na-bar').style.display=nv>0?'block':'none';
+  document.getElementById('na-cnt').textContent=nv;
+  var nb=document.getElementById('na-body');nb.innerHTML='';
+  if(S.naOpen){
+    naList.forEach(function(c){
+      var chip=document.createElement('span');
+      chip.className='na-chip';
+      var defSite=getDefault(c.nom);
+      chip.innerHTML=c.nom+(defSite?'<span class="chip-arrow">→ '+(defSite==='cana'?'CANA':'SADI')+'</span>':'<span class="chip-arrow">→ ?</span>');
+      if(isLog()) chip.onclick=function(){
+        var site=defSite||'cana';
+        setVal(wk,c.nom,j,site);
+        renderDay();
+        toast('➡️ '+c.nom+' → '+(site==='cana'?'CANA':'SADI'));
+      };
+      nb.appendChild(chip);
+    });
+  }
+}
+
+function renderLivreurs(site,wk,j){
+  var el=document.getElementById(site+'-livreurs');el.innerHTML='';
+  var list=getLivreurs(wk,j,site);
+  list.forEach(function(lv,i){
+    var chip=document.createElement('span');
+    chip.className='livreur-chip lv-'+site;
+    chip.textContent='🚚 '+lv;
+    if(isLog()) chip.onclick=function(){
+      var arr=getLivreurs(wk,j,site);arr.splice(i,1);setLivreurs(wk,j,site,arr);renderDay();
+    };
+    el.appendChild(chip);
+  });
+  if(isLog()){
+    var add=document.createElement('span');add.className='livreur-chip lv-add';add.textContent='+ Livreur';
+    add.onclick=function(){
+      var choices=LIVREURS_POOL.filter(function(lv){
+        var cL=getLivreurs(wk,j,'cana');var sL=getLivreurs(wk,j,'sadi');
+        return cL.indexOf(lv)<0&&sL.indexOf(lv)<0;
+      });
+      var choix=choices.length?choices:LIVREURS_POOL;
+      var nom=prompt('Nom du livreur :\n'+choix.map(function(c,i){return (i+1)+'. '+c;}).join('\n')+'\n\nOu tapez un prénom :','');
+      if(!nom) return;
+      var idx=parseInt(nom)-1;
+      if(!isNaN(idx)&&choix[idx]) nom=choix[idx];
+      var arr=getLivreurs(wk,j,site);arr.push(nom.trim());setLivreurs(wk,j,site,arr);renderDay();
+      toast('🚚 '+nom+' ajouté à '+(site==='cana'?'CANA':'SADI'));
+    };
+    el.appendChild(add);
+  }
+  var charge=getLivreurs(wk,j,site).length;
+  if(charge>0){
+    var clients=document.querySelectorAll('#'+site+'-body .cli-card').length;
+    if(clients/charge>15 && isLog()){
+      var warn=document.createElement('span');
+      warn.style.cssText='font-size:10px;color:var(--red);font-weight:700;padding:4px 8px;background:var(--red-bg);border-radius:6px';
+      warn.textContent='⚠️ '+Math.round(clients/charge)+' clients/livreur';
+      el.appendChild(warn);
+    }
+  }
+}
+
+function renderColBody(elId,wk,j,site,list){
+  var el=document.getElementById(elId);el.innerHTML='';
+  var ro=!isLog();
+  if(!list.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 12px;color:var(--sub2);font-size:13px">'+(ro?'Aucun client ici':'Cliquez CANA / SADI sur les clients non affectés')+'</div>';
+    return;
+  }
+  /* Grouper par type */
+  var reg=list.filter(function(c){return c.type==='reg';});
+  var cae=list.filter(function(c){return c.type==='cae';});
+  function addGroup(group,label){
+    if(!group.length) return;
+    var lbl=document.createElement('div');lbl.className='cat-lbl';lbl.textContent=label+' ('+group.length+')';
+    el.appendChild(lbl);
+    group.forEach(function(c){
+      var card=document.createElement('div');
+      card.className='cli-card cc-'+site+(ro?' readonly':'');
+      card.dataset.nom=c.nom;
+      var prod=getProd(wk,j,c.nom);
+      var hasNote=!!(S.clientNotes[wk+'__'+j+'__'+c.nom]);
+      var prodCls='prod-'+prod;
+      var zoneLabel=c.zone&&ZONES[c.zone]?'📍'+ZONES[c.zone]:'';
+      var repasLabel=c.repas?c.repas+' repas':'';
+      var heureLabel=c.heure?'⏰'+c.heure:'';
+      card.innerHTML=
+        '<div class="cli-card-inner">'+
+          '<div class="cli-dot dot-'+site+'"></div>'+
+          '<div class="cli-info">'+
+            '<div class="cli-name">'+c.nom+'</div>'+
+            '<div class="cli-meta">'+
+              (zoneLabel?'<span>'+zoneLabel+'</span>':'')+
+              (repasLabel?'<span>'+repasLabel+'</span>':'')+
+              (heureLabel?'<span>'+heureLabel+'</span>':'')+
+            '</div>'+
+          '</div>'+
+          (!ro?
+            '<div class="cli-actions">'+
+              '<button class="act-btn act-cana'+(site==='cana'?' active':'')+'">CANA</button>'+
+              '<button class="act-btn act-sadi'+(site==='sadi'?' active':'')+'">SADI</button>'+
+              '<button class="act-btn act-x">✕</button>'+
+            '</div>':'');
+      card.innerHTML+=
+        '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-top:1px solid var(--border)">'+
+          '<button class="prod-btn '+prodCls+'">'+(isLog()?PROD_LABELS[prod]:PROD_LABELS[prod])+'</button>'+
+          (isLog()||hasNote?'<span class="note-dot" title="'+(hasNote?S.clientNotes[wk+'__'+j+'__'+c.nom]:'Ajouter note')+'">'+(hasNote?'📝':'✏️')+'</span>':'')+
+          '<span style="font-size:10px;color:var(--sub);margin-left:auto;cursor:pointer" title="Fiche client">'+
+            (isLog()?'⚙️':'')+
+          '</span>'+
+        '</div>';
+      card.innerHTML+='</div>';
+
+      /* Events */
+      if(!ro){
+        var btns=card.querySelectorAll('.act-btn');
+        btns[0].onclick=function(e){e.stopPropagation();setVal(wk,c.nom,j,'cana');renderDay();};
+        btns[1].onclick=function(e){e.stopPropagation();setVal(wk,c.nom,j,'sadi');renderDay();};
+        btns[2].onclick=function(e){e.stopPropagation();setVal(wk,c.nom,j,'');renderDay();};
+      }
+      var pb=card.querySelector('.prod-btn');
+      pb.onclick=function(e){
+        e.stopPropagation();
+        var cur=getProd(wk,j,c.nom);
+        var next=(cur+1)%3;
+        setProd(wk,j,c.nom,next);
+        pb.className='prod-btn prod-'+next;
+        pb.textContent=PROD_LABELS[next];
+      };
+      var nd=card.querySelector('.note-dot');
+      if(nd) nd.onclick=function(e){e.stopPropagation();openClientNote(wk,j,c.nom);};
+      var cfg=card.querySelector('[title="Fiche client"]');
+      if(cfg&&isLog()) cfg.onclick=function(e){e.stopPropagation();openClientModal(c.nom);};
+      el.appendChild(card);
+    });
+  }
+  addGroup(reg,'🏢 Réguliers');
+  addGroup(cae,'🌳 Centres Aérés');
+}
+
+/* ══ ACTIONS ══ */
+function saveNote(){
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);
+  setNote(wk,S.dayIdx,document.getElementById('day-note').value);
+}
+
+function toggleNA(){
+  S.naOpen=!S.naOpen;
+  document.getElementById('na-toggle').textContent=S.naOpen?'▲':'▼';
+  renderDay();
+}
+
+function toggleFermeToday(){
+  if(!isLog()) return;
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);
+  if(!S.ferme[wk]) S.ferme[wk]=[];
+  var idx=S.ferme[wk].indexOf(S.dayIdx);
+  if(idx>=0) S.ferme[wk].splice(idx,1);
+  else S.ferme[wk].push(S.dayIdx);
+  save();renderPlanning();
+  toast(isFerme(wk,S.dayIdx)?'🔒 Sadi Carnot marqué fermé ce jour':'🔓 Sadi Carnot ouvert ce jour');
+}
+
+function dupliquer(){
+  if(!isLog()){toast('Accès Logistique requis','var(--red)');return;}
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);
+  var nMon=getMonday(S.weekOffset+1);var nWk=weekKey(nMon);
+  S.data[nWk]=JSON.parse(JSON.stringify(S.data[wk]||{}));
+  save();toast('✅ Répartition dupliquée → semaine suivante');
+}
+
+/* ══ MODAL FERMETURES ══ */
+function openFerme(){
+  if(!isLog()){toast('Accès Logistique requis','var(--red)');return;}
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);var days=getDays(mon);
+  fermeTemp=JSON.parse(JSON.stringify(S.ferme[wk]||[]));
+  var list=document.getElementById('ferme-list');list.innerHTML='';
+  days.forEach(function(d,i){
+    var chk=fermeTemp.indexOf(i)>=0;
+    list.innerHTML+='<div class="ferme-day-item"><input type="checkbox" id="fd-'+i+'" '+(chk?'checked':'')+' onchange="fermeToggle('+i+',this.checked)"><label for="fd-'+i+'">'+JOURS[i]+' '+fmtD(d)+'</label></div>';
+  });
+  document.getElementById('modal-ferme').classList.add('open');
+}
+function fermeToggle(j,chk){
+  var idx=fermeTemp.indexOf(j);
+  if(chk&&idx<0) fermeTemp.push(j);
+  if(!chk&&idx>=0) fermeTemp.splice(idx,1);
+}
+function saveFerme(){
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);
+  S.ferme[wk]=fermeTemp;save();
+  closeModal('modal-ferme');renderPlanning();
+  toast('🔒 Jours de fermeture enregistrés');
+}
+
+/* ══ MODAL CLIENT ══ */
+function openClientModal(nom){
+  var e=getClientByNom(nom);
+  if(!e) return;
+  modalClientId=e[0];var c=e[1];
+  document.getElementById('mc-title').textContent='⚙️ '+nom;
+  document.getElementById('mc-nom').value=c.nom;
+  document.getElementById('mc-type').value=c.type;
+  document.getElementById('mc-zone').value=c.zone||'';
+  document.getElementById('mc-repas').value=c.repas||'';
+  document.getElementById('mc-heure').value=c.heure||'11:30';
+  document.getElementById('mc-contact').value=c.contact||'';
+  document.getElementById('mc-default').value=c.default||'';
+  document.getElementById('mc-notes').value=c.notes||'';
+  document.getElementById('modal-client').classList.add('open');
+}
+function saveClient(){
+  if(!modalClientId) return;
+  var c=S.clients[modalClientId];
+  c.nom=document.getElementById('mc-nom').value;
+  c.type=document.getElementById('mc-type').value;
+  c.zone=document.getElementById('mc-zone').value;
+  c.repas=document.getElementById('mc-repas').value;
+  c.heure=document.getElementById('mc-heure').value;
+  c.contact=document.getElementById('mc-contact').value;
+  c.default=document.getElementById('mc-default').value;
+  c.notes=document.getElementById('mc-notes').value;
+  save();closeModal('modal-client');renderDay();toast('✅ Fiche client enregistrée');
+}
+function openClientNote(wk,j,nom){
+  var key=wk+'__'+j+'__'+nom;
+  var note=S.clientNotes[key]||'';
+  var txt=prompt('Note pour '+nom+' — '+JOURS[j]+' :',note);
+  if(txt===null) return;
+  S.clientNotes[key]=txt;save();renderDay();toast('📝 Note enregistrée');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+/* ══ APPLIQUER DÉFAUTS ══ */
+function applyDefaults(){
+  if(!isLog()) return;
+  var mon=getMonday(S.weekOffset);var wk=weekKey(mon);
+  var ac=getAllClients(S.vacances);var count=0;
+  ac.forEach(function(c){
     for(var j=0;j<7;j++){
-      var v = getVal(weekKey,c,j);
-      total++;
-      if(v==='cana') nb_cana++;
-      else if(v==='sadi') nb_sadi++;
-      else nb_vide++;
+      if(!getVal(wk,c.nom,j)&&c.default){
+        setVal(wk,c.nom,j,c.default);count++;
+      }
     }
   });
-  var pct_cana = total?Math.round(nb_cana/total*100):0;
-  var pct_sadi = total?Math.round(nb_sadi/total*100):0;
-
-  var bar = document.getElementById('stats-bar');
-  bar.innerHTML =
-    '<div class="stat-item"><div class="stat-dot" style="background:#22c55e"></div><span>La Table de Cana :</span><span class="stat-val" style="color:#22c55e">'+nb_cana+'</span><span style="font-size:11px;color:#334155">('+pct_cana+'%)</span></div>' +
-    '<div class="stat-item"><div class="stat-dot" style="background:#0ea5e9"></div><span>Sadi Carnot :</span><span class="stat-val" style="color:#0ea5e9">'+nb_sadi+'</span><span style="font-size:11px;color:#334155">('+pct_sadi+'%)</span></div>' +
-    '<div class="stat-item"><div class="stat-dot" style="background:#334155"></div><span>Non affecté :</span><span class="stat-val" style="color:#64748b">'+nb_vide+'</span></div>' +
-    '<div style="margin-left:auto;font-size:11px;color:#334155">'+allClients.length+' clients · 7 jours</div>';
+  save();renderDay();toast('✅ '+count+' créneaux remplis avec les défauts');
 }
 
-/* ════════════════════════════════════════════════
-   FILTRES
-════════════════════════════════════════════════ */
-function setFilter(f){
-  STATE.filter = f;
-  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('fb-'+f).classList.add('active');
-  render();
-}
-
-/* ════════════════════════════════════════════════
-   INIT
-════════════════════════════════════════════════ */
+/* ══ INIT ══ */
 function initApp(){
-  load();
-  render();
+  S.dayIdx=new Date().getDay()===0?6:Math.max(0,new Date().getDay()-1);
+  var p=document.getElementById('role-pill');
+  if(S.role==='log'){p.textContent='🚚 Logistique';p.className='role-pill rp-log';}
+  else{p.textContent='👨‍🍳 Cuisine';p.className='role-pill rp-cui';}
+  document.getElementById('btn-ferme').style.display=isLog()?'block':'none';
+  showView('dashboard');
 }
 
-/* Raccourci clavier Entrée login */
+/* ══ CLAVIER ══ */
 document.addEventListener('keydown',function(e){
-  if(e.key==='Enter' && document.getElementById('pw-zone').style.display!=='none') doLogin();
+  if(e.key==='Enter'&&document.getElementById('pw-zone').style.display==='flex') doLogin();
+  if(e.key==='Escape'){closeModal('modal-client');closeModal('modal-ferme');}
+  if(e.key==='ArrowLeft'&&document.getElementById('view-planning').style.display!=='none') {S.dayIdx=Math.max(0,S.dayIdx-1);renderPlanning();}
+  if(e.key==='ArrowRight'&&document.getElementById('view-planning').style.display!=='none') {S.dayIdx=Math.min(6,S.dayIdx+1);renderPlanning();}
 });
+
+/* ══════════════════════════════════════════
+   SUPABASE SYNC — Temps réel
+   Même base que le CRM La Table de Cana
+══════════════════════════════════════════ */
+var SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
+var SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var SUPA_TABLE = 'repartition_cana';
+var syncLed = null;
+var syncTimer = null;
+var lastSyncHash = '';
+var pollingInterval = null;
+
+/* ── Indicateur LED dans la topbar ── */
+function initSyncLed(){
+  if(document.getElementById('sync-led')) return;
+  var tb = document.querySelector('.tb-right');
+  if(!tb) return;
+  var led = document.createElement('div');
+  led.id = 'sync-led';
+  led.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub);padding:6px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px';
+  led.innerHTML = '<span id="led-dot" style="width:8px;height:8px;border-radius:50%;background:var(--sub2);transition:.3s"></span><span id="led-txt">Sync...</span>';
+  tb.insertBefore(led, tb.firstChild);
+  syncLed = led;
+}
+
+function setLed(state, msg){
+  var dot = document.getElementById('led-dot');
+  var txt = document.getElementById('led-txt');
+  if(!dot||!txt) return;
+  var cols = {ok:'var(--cana)', err:'var(--red)', sync:'var(--warn)', offline:'var(--sub2)'};
+  dot.style.background = cols[state]||cols.offline;
+  txt.textContent = msg||state;
+}
+
+/* ── Headers Supabase ── */
+function supaHeaders(){
+  return {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'resolution=merge-duplicates,return=minimal'
+  };
+}
+
+/* ── Hash rapide pour détecter les changements ── */
+function hashState(){
+  return JSON.stringify({data:S.data,notes:S.notes,prod:S.prod,livreurs:S.livreurs,ferme:S.ferme,vacances:S.vacances,msgCuisine:S.msgCuisine});
+}
+
+/* ── Sauvegarder dans Supabase ── */
+function saveCloud(){
+  if(!S.role) return;
+  setLed('sync','Sync...');
+  var payload = {
+    id: 'repartition_principale',
+    data: S.data,
+    notes: S.notes,
+    prod: S.prod,
+    livreurs: S.livreurs,
+    ferme: S.ferme,
+    clients: S.clients,
+    defaults: S.defaults,
+    vacances: S.vacances,
+    msgCuisine: S.msgCuisine,
+    updated_at: new Date().toISOString(),
+    updated_by: S.role
+  };
+  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE, {
+    method: 'POST',
+    mode: 'cors',
+    headers: Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'}, supaHeaders()),
+    body: JSON.stringify(payload)
+  }).then(function(r){
+    if(r.ok){
+      setLed('ok','Synchronisé ✓');
+      lastSyncHash = hashState();
+    } else {
+      setLed('err','Erreur sync');
+    }
+  }).catch(function(){
+    setLed('offline','Hors ligne');
+  });
+}
+
+/* ── Charger depuis Supabase ── */
+function loadCloud(callback){
+  setLed('sync','Chargement...');
+  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?id=eq.repartition_principale&limit=1', {
+    method: 'GET',
+    mode: 'cors',
+    headers: supaHeaders()
+  }).then(function(r){ return r.json(); })
+  .then(function(rows){
+    if(rows && rows.length > 0){
+      var d = rows[0];
+      if(d.data) S.data = d.data;
+      if(d.notes) S.notes = d.notes;
+      if(d.prod) S.prod = d.prod;
+      if(d.livreurs) S.livreurs = d.livreurs;
+      if(d.ferme) S.ferme = d.ferme;
+      if(d.clients && Object.keys(d.clients).length > 0) S.clients = d.clients;
+      if(d.defaults) S.defaults = d.defaults;
+      if(typeof d.vacances !== 'undefined') S.vacances = !!d.vacances;
+      if(d.msgCuisine !== undefined) S.msgCuisine = d.msgCuisine;
+      lastSyncHash = hashState();
+      setLed('ok','Synchronisé ✓');
+    } else {
+      setLed('ok','Prêt (nouveau)');
+    }
+    if(callback) callback();
+  }).catch(function(){
+    setLed('offline','Hors ligne — données locales');
+    if(callback) callback();
+  });
+}
+
+/* ── Polling toutes les 3 secondes ── */
+function startPolling(){
+  if(pollingInterval) return;
+  pollingInterval = setInterval(function(){
+    if(!S.role) return;
+    fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?id=eq.repartition_principale&limit=1&select=updated_at,updated_by', {
+      method: 'GET', mode: 'cors', headers: supaHeaders()
+    }).then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(!rows||!rows.length) return;
+      var remoteTime = new Date(rows[0].updated_at).getTime();
+      var remoteBy = rows[0].updated_by;
+      /* Si la mise à jour vient de l'autre utilisateur → recharger */
+      if(remoteBy && remoteBy !== S.role){
+        var key = 'rep_last_sync';
+        var lastKnown = parseInt(localStorage.getItem(key)||'0');
+        if(remoteTime > lastKnown){
+          localStorage.setItem(key, remoteTime);
+          loadCloud(function(){
+            initClients();
+            /* Rafraîchir la vue courante */
+            var vd = document.getElementById('view-dashboard');
+            var vp = document.getElementById('view-planning');
+            if(vd && vd.style.display !== 'none') renderDashboard();
+            if(vp && vp.style.display !== 'none') renderPlanning();
+            showToastSync();
+          });
+        }
+      }
+    }).catch(function(){/* silence */});
+  }, 3000);
+}
+
+function showToastSync(){
+  toast('🔄 Répartition mise à jour par l'autre utilisateur','var(--sadi)');
+}
+
+/* ── Override save() pour inclure cloud ── */
+var _originalSave = save;
+save = function(){
+  _originalSave();
+  /* Debounce 800ms pour éviter flood */
+  if(syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveCloud, 800);
+};
+
+/* ── Créer la table si elle n'existe pas ── */
+function ensureTable(callback){
+  /* Tenter un GET — si 404 la table n'existe pas encore */
+  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?limit=1', {
+    method: 'GET', mode: 'cors', headers: supaHeaders()
+  }).then(function(r){
+    if(r.status === 404 || r.status === 400){
+      /* Table manquante — afficher message */
+      console.warn('Table repartition_cana manquante dans Supabase — créer via SQL Editor');
+      setLed('err','Table manquante');
+      if(callback) callback();
+    } else {
+      if(callback) callback();
+    }
+  }).catch(function(){
+    if(callback) callback();
+  });
+}
+
+/* ── Init cloud au démarrage ── */
+var _originalInitApp = initApp;
+initApp = function(){
+  initSyncLed();
+  loadCloud(function(){
+    initClients();
+    _originalInitApp();
+    startPolling();
+  });
+};
+
 </script>
 </body>
 </html>
