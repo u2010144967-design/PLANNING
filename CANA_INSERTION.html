@@ -276,6 +276,9 @@ select option{background:#0a1628}
 
   <div class="sb-sec">OPCO & Certification</div>
   <div class="sb-item" data-p="opco" onclick="nav('opco')"><span class="sb-ico">🏅</span>Module OPCO — CLVUL</div>
+
+  <div class="sb-sec">Chauffeur</div>
+  <div class="sb-item" data-p="suivi_chauffeur" onclick="nav('suivi_chauffeur')"><span class="sb-ico">🚐</span>Suivi Chauffeur</div>
 </div>
 <!-- CONTENU -->
 <div class="content" id="content"></div>
@@ -19898,7 +19901,8 @@ console.log('Module FEST officiel chargé ✅ — Dossier complet OPCO/DREETS di
 
 </script>
 
-<script>
+<script>var SLIDES_DATA=window.SLIDES_DATA||{};
+
 /* ═══════════════════════════════════════════════════════════════
    SUITE FINALE — PARTIE 1
    QCM CLVUL officiel 20 questions · Slides CLVUL 7 compétences
@@ -20232,7 +20236,8 @@ window.genRapportFESTReflexif = function(salId){
 
 </script>
 
-<script>
+<script>var SLIDES_DATA=window.SLIDES_DATA||{};
+
 /* ═══════════════════════════════════════════════════════════════
    SUITE FINALE — PARTIE 2
    Post-sortie 24 mois · Carnet incidents · Export dossier complet
@@ -21002,6 +21007,7 @@ console.log('Final Mega chargé — QCM tous blocs, Visites médicales, Dashboar
     /* Post-insertion */
     'post_sortie': function(c){ if(typeof renderPostSortie==='function') renderPostSortie(c); },
     'incidents': function(c){ if(typeof renderIncidents==='function') renderIncidents(c); },
+    'suivi_chauffeur': function(c){ if(typeof renderSuiviChauffeur==='function') renderSuiviChauffeur(c); },
     /* Pages manquantes ajoutées */
     'smart': function(c){ if(typeof renderSMART==='function') renderSMART(c); },
     'courbe_progression': function(c){ if(typeof renderCourbeProgression==='function') renderCourbeProgression(c); },
@@ -21073,7 +21079,8 @@ console.log('Final Mega chargé — QCM tous blocs, Visites médicales, Dashboar
 })();
 </script>
 
-<script>
+<script>var SLIDES_DATA=window.SLIDES_DATA||{};
+
 /* ═══════════════════════════════════════════════════════════════
    NOUVELLES SLIDES — 15 slides minimum par bloc
    Marseille spécifique · Livraison difficile · Planning vendredi
@@ -22158,7 +22165,8 @@ console.log("Aliases DB charges - MurReussites, Defi, Frise, Matching OK");
 
 </script>
 
-<script>
+<script>var SLIDES_DATA=window.SLIDES_DATA||{};
+
 /* SLIDES COMPLETES — 15 slides minimum par bloc */
 (function(){
   if(typeof SLIDES_DATA === "undefined") return;
@@ -22278,7 +22286,7 @@ console.log("Aliases DB charges - MurReussites, Defi, Frise, Matching OK");
 <script>
 /* COMPLETION DES SLIDES — push sur les blocs existants */
 (function(){
-  if(typeof SLIDES_DATA==="undefined") return;
+  var SLIDES_DATA=window.SLIDES_DATA;if(!SLIDES_DATA||typeof SLIDES_DATA!=="object") return;
   function ensureSlides(key, minCount, newSlides){
     if(!SLIDES_DATA[key]) return;
     if(SLIDES_DATA[key].slides.length < minCount){
@@ -22517,5 +22525,380 @@ console.log("Aliases DB charges - MurReussites, Defi, Frise, Matching OK");
 
   console.log("Toutes les slides completees a 15 slides minimum");
 })();
+
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SUIVI CHAUFFEUR — Module complet
+   Tournées · Score conduite · Certification interne · Dashboard
+═══════════════════════════════════════════════════════════════ */
+var SLIDES_DATA=window.SLIDES_DATA||{};
+var DB=window.DB||{};
+
+/* ── NIVEAUX CERTIFICATION INTERNE ── */
+var NIVEAUX_CHAUFFEUR = [
+  {
+    id:1, label:"Apprenti Chauffeur", icon:"🌱", col:"#94a3b8",
+    criteres:["Permis B valide","Fait le tour du véhicule chaque matin","Pas de retard non signalé","BL remplis et remis"]
+  },
+  {
+    id:2, label:"Chauffeur", icon:"🚐", col:"#22c55e",
+    criteres:["3 mois sans incident grave","Score QCM > 60%","Autonomie sur la tournée habituelle","Chaîne du froid maîtrisée"]
+  },
+  {
+    id:3, label:"Chauffeur Confirmé", icon:"⭐", col:"#f97316",
+    criteres:["6 mois sans incident grave","Score QCM > 75%","Gère les situations difficiles seul","Retours clients positifs réguliers"]
+  },
+  {
+    id:4, label:"Chauffeur Référent", icon:"🏆", col:"#a855f7",
+    criteres:["12 mois de parcours sans faute majeure","Score QCM > 85%","Peut accompagner un nouveau chauffeur","Recommandé pour un CDI par l'encadrant"]
+  },
+];
+
+/* ── INITIALISATION DB ── */
+function getDB2(){ return window.DB||{}; }
+function initSuiviChauffeur(salId){
+  var DB=getDB2();
+  if(!DB.suivi_chauffeur) DB.suivi_chauffeur={};
+  if(!DB.suivi_chauffeur[salId]) DB.suivi_chauffeur[salId]={
+    tournees:[], score_mensuel:[], niveau_actuel:1, badges_conduite:[]
+  };
+  return DB.suivi_chauffeur[salId];
+}
+
+/* ── PAGE PRINCIPALE SUIVI CHAUFFEUR ── */
+window.renderSuiviChauffeur = function(c2){
+  if(!c2) return;
+  var DB=getDB2();
+  var h="<div class='page-title'>🚐 Suivi Chauffeur</div>";
+  h+="<div class='page-sub' style='margin-bottom:16px'>Tournées · Score conduite · Certification · Dashboard personnel</div>";
+
+  var sals=(DB.salaries||[]).filter(function(s){return s.statut==="actif";});
+  h+="<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px'>";
+  sals.forEach(function(s){
+    var sc=initSuiviChauffeur(s.id);
+    var niv=NIVEAUX_CHAUFFEUR[sc.niveau_actuel-1]||NIVEAUX_CHAUFFEUR[0];
+    h+="<div onclick='selSuiviChauffeur("+s.id+",this)' class='fsal-btn-sc' style='display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid "+niv.col+"44;border-radius:10px;padding:8px 14px;cursor:pointer'>";
+    h+="<span style='font-size:18px'>"+s.avatar+"</span>";
+    h+="<div><div style='font-weight:800;font-size:12px;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+    h+="<div style='font-size:10px;color:"+niv.col+"'>"+niv.icon+" "+niv.label+"</div></div></div>";
+  });
+  h+="</div><div id='sc-detail'></div>";
+  c2.innerHTML=h;
+  if(sals[0]) selSuiviChauffeur(sals[0].id, c2.querySelector(".fsal-btn-sc"));
+};
+
+window.selSuiviChauffeur=function(salId,el){
+  document.querySelectorAll(".fsal-btn-sc").forEach(function(b){b.style.borderColor="rgba(249,115,22,.2)";b.style.background="var(--panel)";});
+  if(el){el.style.borderColor="var(--orange)";el.style.background="var(--panel2)";}
+  window.scSalId=salId;
+  _afficherSuiviChauffeur(salId);
+};
+
+function _afficherSuiviChauffeur(salId){
+  var zone=document.getElementById("sc-detail"); if(!zone) return;
+  var DB=getDB2();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var sc=initSuiviChauffeur(salId);
+  var niv=NIVEAUX_CHAUFFEUR[sc.niveau_actuel-1]||NIVEAUX_CHAUFFEUR[0];
+
+  // Onglets
+  var h="<div style='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px'>";
+  [["sc-dashboard","🎯 Dashboard"],["sc-tournees","🗺️ Tournées"],["sc-score","📊 Score"],["sc-certif","🏆 Certification"]].forEach(function(t){
+    h+="<button id='"+t[0]+"' class='btn btn-sm btn-secondary' onclick='showSCTab(\""+t[0]+"\","+salId+")'>"+t[1]+"</button>";
+  });
+  h+="</div><div id='sc-tab'></div>";
+  zone.innerHTML=h;
+  showSCTab("sc-dashboard", salId);
+}
+
+window.showSCTab=function(tab,salId){
+  document.querySelectorAll("[id^='sc-']").forEach(function(b){
+    if(b.tagName==="BUTTON") b.className="btn btn-sm btn-secondary";
+  });
+  var btn=document.getElementById(tab);
+  if(btn) btn.className="btn btn-sm btn-primary";
+  var c2=document.getElementById("sc-tab"); if(!c2) return;
+  var fns={
+    "sc-dashboard":_renderSCDashboard,
+    "sc-tournees":_renderSCTournees,
+    "sc-score":_renderSCScore,
+    "sc-certif":_renderSCCertif
+  };
+  if(fns[tab]) c2.innerHTML=fns[tab](salId);
+};
+
+/* ── DASHBOARD PERSONNEL ── */
+function _renderSCDashboard(salId){
+  var DB=getDB2();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return "";
+  var sc=initSuiviChauffeur(salId);
+  var niv=NIVEAUX_CHAUFFEUR[sc.niveau_actuel-1]||NIVEAUX_CHAUFFEUR[0];
+  var nextNiv=NIVEAUX_CHAUFFEUR[Math.min(sc.niveau_actuel,3)];
+  var tournees=sc.tournees||[];
+  var nbTournees=tournees.length;
+  var totalKm=tournees.reduce(function(a,t){return a+(t.km||0);},0);
+  var totalLivr=tournees.reduce(function(a,t){return a+(t.livraisons||0);},0);
+  var nbIncidents=tournees.filter(function(t){return t.incident;}).length;
+  var tauxReussite=nbTournees?Math.round((nbTournees-nbIncidents)/nbTournees*100):100;
+
+  var h="<div class='card' style='margin-bottom:14px;border-color:"+niv.col+"44'>";
+  h+="<div style='display:flex;align-items:center;gap:16px;margin-bottom:16px'>";
+  h+="<div style='font-size:48px'>"+s.avatar+"</div>";
+  h+="<div><div style='font-size:16px;font-weight:900;color:var(--text)'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+  h+="<div style='font-size:14px;font-weight:800;color:"+niv.col+"'>"+niv.icon+" "+niv.label+"</div>";
+  h+="<div style='font-size:11px;color:var(--sub)'>Niveau "+sc.niveau_actuel+"/4</div></div></div>";
+
+  // KPIs
+  h+="<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px'>";
+  [{v:nbTournees,l:"Tournées",i:"🗺️",c:"var(--blue)"},{v:totalKm+" km",l:"Total km",i:"📍",c:"var(--orange)"},{v:totalLivr,l:"Livraisons",i:"📦",c:"var(--green)"},{v:tauxReussite+"%",l:"Réussite",i:"⭐",c:tauxReussite>=95?"var(--green)":tauxReussite>=80?"var(--yellow)":"var(--red)"}].forEach(function(k){
+    h+="<div style='text-align:center;background:var(--panel2);border-radius:10px;padding:12px'>";
+    h+="<div style='font-size:20px'>"+k.i+"</div>";
+    h+="<div style='font-size:18px;font-weight:900;color:"+k.c+"'>"+k.v+"</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+k.l+"</div></div>";
+  });
+  h+="</div>";
+
+  // Prochain niveau
+  if(sc.niveau_actuel<4){
+    h+="<div style='background:"+nextNiv.col+"11;border:1px solid "+nextNiv.col+"33;border-radius:10px;padding:14px;margin-bottom:14px'>";
+    h+="<div style='font-size:12px;font-weight:800;color:"+nextNiv.col+";margin-bottom:8px'>"+nextNiv.icon+" Prochain niveau : "+nextNiv.label+"</div>";
+    nextNiv.criteres.forEach(function(c3){
+      h+="<div style='font-size:11px;color:var(--text);padding:2px 0'>→ "+c3+"</div>";
+    });
+    h+="</div>";
+  } else {
+    h+="<div style='background:rgba(168,85,247,.1);border:2px solid rgba(168,85,247,.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px'>";
+    h+="<div style='font-size:24px;margin-bottom:6px'>🏆</div>";
+    h+="<div style='font-size:14px;font-weight:900;color:var(--purple)'>Chauffeur Référent — Niveau maximum atteint</div></div>";
+  }
+
+  h+="<div style='display:flex;gap:8px'>";
+  h+="<button class='btn btn-primary' onclick='window.ajouterTournee("+salId+")'>+ Tournée</button>";
+  h+="<button class='btn btn-secondary' onclick='window.monterNiveau("+salId+")'>⬆️ Valider niveau</button></div></div>";
+  return h;
+}
+
+/* ── TOURNEES ── */
+function _renderSCTournees(salId){
+  var sc=initSuiviChauffeur(salId);
+  var tournees=sc.tournees||[];
+  var h="<div class='card' style='margin-bottom:14px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px'>";
+  h+="<div class='card-title'>🗺️ Carnet de tournées</div>";
+  h+="<button class='btn btn-primary btn-sm' onclick='window.ajouterTournee("+salId+")'>+ Tournée</button></div>";
+  if(!tournees.length){
+    h+="<div style='color:var(--sub);font-size:12px;padding:10px'>Aucune tournée enregistrée.</div>";
+  } else {
+    h+="<div style='display:flex;flex-direction:column;gap:6px'>";
+    tournees.slice().reverse().slice(0,15).forEach(function(t){
+      var col=t.incident?"var(--red)":t.note>=4?"var(--green)":"var(--blue)";
+      h+="<div style='display:flex;align-items:center;gap:10px;padding:10px;background:var(--panel2);border-radius:8px;border-left:3px solid "+col+"'>";
+      h+="<div style='flex:1'>";
+      h+="<div style='font-size:12px;font-weight:700;color:var(--text)'>"+t.date+" · "+(t.km||0)+" km · "+(t.livraisons||0)+" livraisons</div>";
+      h+="<div style='font-size:10px;color:var(--sub)'>"+(t.notes||"Pas de note")+"</div>";
+      h+="</div>";
+      if(t.incident) h+="<span style='font-size:10px;color:var(--red);font-weight:700'>⚠️ Incident</span>";
+      h+="<div style='font-size:14px;font-weight:900;color:"+col+"'>"+( t.note||"—")+"/5</div></div>";
+    });
+    h+="</div>";
+  }
+  h+="</div>";
+  return h;
+}
+
+window.ajouterTournee=function(salId){
+  var date=prompt("Date (JJ/MM/AAAA) :",new Date().toLocaleDateString("fr-FR"));
+  if(!date) return;
+  var km=prompt("Kilomètres parcourus :","150");
+  var livr=prompt("Nombre de livraisons réalisées :","8");
+  var note=prompt("Note de la tournée (1-5) :","4");
+  var incident=confirm("Y a-t-il eu un incident ou problème ?");
+  var notes=prompt("Observations de la tournée (optionnel) :","");
+  var DB=getDB2();
+  var sc=initSuiviChauffeur(salId);
+  sc.tournees.push({
+    date:date,km:parseInt(km)||0,livraisons:parseInt(livr)||0,
+    note:Math.min(5,Math.max(1,parseInt(note)||4)),
+    incident:incident,notes:notes||""
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Tournée enregistrée","ok");
+  window.showSCTab("sc-tournees",salId);
+};
+
+/* ── SCORE CONDUITE ── */
+function _renderSCScore(salId){
+  var DB=getDB2();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return "";
+  var sc=initSuiviChauffeur(salId);
+  var tournees=sc.tournees||[];
+
+  var h="<div class='card' style='margin-bottom:14px'>";
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px'>";
+  h+="<div class='card-title'>📊 Score conduite mensuel</div>";
+  h+="<button class='btn btn-primary btn-sm' onclick='window.noterScore("+salId+")'>+ Évaluation</button></div>";
+
+  var scores=sc.score_mensuel||[];
+  if(!scores.length){
+    h+="<div style='color:var(--sub);font-size:12px;margin-bottom:14px'>Aucune évaluation mensuelle. Évaluer chaque mois.</div>";
+  } else {
+    // Graphique simple
+    h+="<div style='display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:14px'>";
+    scores.slice(-8).forEach(function(sc2){
+      var pct=sc2.total/20*100;
+      var col=sc2.total>=16?"var(--green)":sc2.total>=12?"var(--yellow)":"var(--red)";
+      h+="<div style='flex:1;display:flex;flex-direction:column;align-items:center;gap:2px'>";
+      h+="<div style='font-size:10px;font-weight:700;color:"+col+"'>"+sc2.total+"</div>";
+      h+="<div style='width:100%;border-radius:3px 3px 0 0;background:"+col+";height:"+pct+"%;min-height:4px'></div>";
+      h+="<div style='font-size:8px;color:var(--sub);text-align:center'>"+( sc2.mois||"").slice(0,3)+"</div></div>";
+    });
+    h+="</div>";
+  }
+
+  // Critères
+  h+="<div style='font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;margin-bottom:8px'>Critères d évaluation mensuelle (sur 20)</div>";
+  var criteres=[
+    ["ponctualite","Ponctualité et respect des horaires","/5"],
+    ["securite","Conduite sécurisée et zéro incident","/5"],
+    ["commercial","Retours clients et comportement","/5"],
+    ["rigueur","Rigueur BL, chaîne du froid, matériel","/5"]
+  ];
+  var dernierScore=scores[scores.length-1]||{};
+  criteres.forEach(function(cr){
+    var val=dernierScore[cr[0]]||0;
+    var col=val>=4?"var(--green)":val>=3?"var(--yellow)":"var(--orange)";
+    h+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'>";
+    h+="<div style='font-size:11px;color:var(--text);flex:1'>"+cr[1]+"</div>";
+    h+="<div style='background:var(--border);border-radius:4px;width:80px;height:6px'>";
+    h+="<div style='width:"+val/5*100+"%;height:6px;border-radius:4px;background:"+col+"'></div></div>";
+    h+="<div style='font-size:11px;font-weight:800;color:"+col+";width:20px'>"+val+cr[2]+"</div></div>";
+  });
+  h+="</div>";
+  return h;
+}
+
+window.noterScore=function(salId){
+  var DB=getDB2();
+  var sc=initSuiviChauffeur(salId);
+  if(!sc.score_mensuel) sc.score_mensuel=[];
+  var mois=new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  var p=parseInt(prompt("Ponctualité et respect horaires (0-5) :","4"))||0;
+  var se=parseInt(prompt("Conduite sécurisée, zéro incident (0-5) :","4"))||0;
+  var co=parseInt(prompt("Retours clients, comportement commercial (0-5) :","4"))||0;
+  var ri=parseInt(prompt("Rigueur BL, chaîne du froid, matériel (0-5) :","4"))||0;
+  sc.score_mensuel.push({
+    mois:mois,date:new Date().toLocaleDateString("fr-FR"),
+    ponctualite:Math.min(5,p),securite:Math.min(5,se),
+    commercial:Math.min(5,co),rigueur:Math.min(5,ri),
+    total:Math.min(5,p)+Math.min(5,se)+Math.min(5,co)+Math.min(5,ri)
+  });
+  if(typeof sauver==="function") sauver();
+  if(typeof toast==="function") toast("Score enregistré","ok");
+  window.showSCTab("sc-score",salId);
+};
+
+/* ── CERTIFICATION INTERNE ── */
+function _renderSCCertif(salId){
+  var DB=getDB2();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return "";
+  var sc=initSuiviChauffeur(salId);
+  var h="<div class='card'>";
+  h+="<div class='card-title'>🏆 Certification interne</div>";
+  h+="<div style='font-size:11px;color:var(--sub);margin-bottom:16px'>4 niveaux de certification — validés par l encadrant</div>";
+
+  NIVEAUX_CHAUFFEUR.forEach(function(niv){
+    var actuel=sc.niveau_actuel===niv.id;
+    var depasse=sc.niveau_actuel>niv.id;
+    var bord=actuel?niv.col:depasse?"var(--green)":"var(--border)";
+    h+="<div style='margin-bottom:10px;padding:14px;border:2px solid "+bord+"33;border-radius:12px;background:"+bord+"08'>";
+    h+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:8px'>";
+    h+="<span style='font-size:24px'>"+niv.icon+"</span>";
+    h+="<div style='flex:1'><div style='font-size:13px;font-weight:900;color:"+(actuel?niv.col:"var(--text)")+"'>Niveau "+niv.id+" — "+niv.label+"</div>";
+    h+="<div style='font-size:10px;color:var(--sub)'>"+(actuel?"✦ Niveau actuel":depasse?"✅ Validé":"Pas encore atteint")+"</div></div>";
+    if(actuel){
+      h+="<span style='font-size:11px;font-weight:800;color:"+niv.col+";background:"+niv.col+"22;border-radius:6px;padding:4px 10px'>EN COURS</span>";
+    } else if(depasse){
+      h+="<span style='font-size:11px;font-weight:800;color:var(--green);background:rgba(34,197,94,.15);border-radius:6px;padding:4px 10px'>✅ VALIDÉ</span>";
+    }
+    h+="</div>";
+    h+="<div style='display:flex;flex-direction:column;gap:3px'>";
+    niv.criteres.forEach(function(c3){
+      h+="<div style='font-size:11px;color:"+(depasse?"var(--green)":"var(--text)")+";padding:2px 0'>"+(depasse?"✅ ":"→ ")+c3+"</div>";
+    });
+    h+="</div></div>";
+  });
+
+  h+="<div style='display:flex;gap:8px;margin-top:12px'>";
+  h+="<button class='btn btn-primary' onclick='window.monterNiveau("+salId+")' "+(sc.niveau_actuel>=4?"disabled":"")+">⬆️ Valider passage niveau suivant</button>";
+  h+="<button class='btn btn-secondary' onclick='window.genCertifChauffeur("+salId+")'>🖨️ Imprimer certificat</button></div>";
+  h+="</div>";
+  return h;
+}
+
+window.monterNiveau=function(salId){
+  var DB=getDB2();
+  var sc=initSuiviChauffeur(salId);
+  if(sc.niveau_actuel>=4){
+    if(typeof toast==="function") toast("Niveau maximum atteint","ok"); return;
+  }
+  var nextNiv=NIVEAUX_CHAUFFEUR[sc.niveau_actuel];
+  if(!confirm("Valider le passage au niveau "+sc.niveau_actuel+" → "+nextNiv.id+" ("+nextNiv.label+") ?")) return;
+  sc.niveau_actuel=nextNiv.id;
+  sc.date_niveau=new Date().toLocaleDateString("fr-FR");
+  if(typeof sauver==="function") sauver();
+  if(typeof logAction==="function") logAction("Certification chauffeur niveau "+nextNiv.id,"salId "+salId);
+  if(typeof toast==="function") toast(nextNiv.icon+" "+nextNiv.label+" validé !","ok");
+  _afficherSuiviChauffeur(salId);
+};
+
+window.genCertifChauffeur=function(salId){
+  var DB=getDB2();
+  var s=(DB.salaries||[]).find(function(x){return x.id==salId;}); if(!s) return;
+  var sc=initSuiviChauffeur(salId);
+  var niv=NIVEAUX_CHAUFFEUR[sc.niveau_actuel-1]||NIVEAUX_CHAUFFEUR[0];
+  var win=window.open("","_blank"); if(!win) return;
+  var today=new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  var html="<!DOCTYPE html><html><head><meta charset='UTF-8'><style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto;text-align:center}.medal{font-size:80px;margin:20px 0}.nom{font-size:28px;font-weight:900;color:#1a2435;margin:10px 0}.niveau{font-size:20px;color:"+niv.col.replace("var(--green)","#16a34a").replace("var(--orange)","#ea580c").replace("var(--purple)","#9333ea").replace("var(--sub)","#64748b")+";font-weight:800;margin-bottom:20px}.crit{text-align:left;background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig-line{width:200px;border-bottom:1px solid #1a2435;margin:20px auto 4px}@media print{button{display:none}}</style></head><body>";
+  html+="<button onclick='window.print()' style='float:right;padding:6px 14px;background:#f97316;border:none;border-radius:6px;color:#fff;font-weight:700;cursor:pointer'>Imprimer</button>";
+  html+="<div style='font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700'>La Table de Cana · Marseille · Certification interne chauffeur</div>";
+  html+="<div class='medal'>"+niv.icon+"</div>";
+  html+="<div style='font-size:14px;color:#64748b'>Certifie que</div>";
+  html+="<div class='nom'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div>";
+  html+="<div style='font-size:14px;color:#64748b'>a atteint le</div>";
+  html+="<div class='niveau'>Niveau "+niv.id+" — "+niv.label+"</div>";
+  html+="<div class='crit'><div style='font-weight:800;margin-bottom:8px'>Compétences validées :</div>";
+  niv.criteres.forEach(function(c3){html+="<div style='padding:3px 0'>✅ "+c3+"</div>";});
+  html+="</div>";
+  html+="<div style='font-size:12px;color:#64748b'>"+today+"</div>";
+  html+="<div class='sig'><div style='text-align:center'><div class='sig-line'></div><div style='font-size:11px'>"+s.prenom+(s.nom?" "+s.nom:"")+"</div></div>";
+  html+="<div style='text-align:center'><div class='sig-line'></div><div style='font-size:11px'>L'encadrant — La Table de Cana</div></div></div>";
+  html+="</body></html>";
+  win.document.write(html); win.document.close();
+};
+
+/* ── ROUTER ── */
+(function(){
+  var _old=window.render;
+  window.render=function(page){
+    var c=document.getElementById("content");
+    if(!c) return _old?_old(page):null;
+    if(page==="suivi_chauffeur"){renderSuiviChauffeur(c);return;}
+    if(_old) _old(page);
+  };
+  // Ajouter dans sidebar
+  var sb=document.querySelector(".sb");
+  if(sb && !sb.querySelector('[data-p="suivi_chauffeur"]')){
+    var secEl=document.querySelector('.sb-sec:last-of-type');
+    var d=document.createElement("div");
+    d.className="sb-item"; d.setAttribute("data-p","suivi_chauffeur");
+    d.innerHTML="<span class='sb-ico'>🚐</span>Suivi Chauffeur";
+    d.onclick=function(){window.nav("suivi_chauffeur");};
+    if(secEl) secEl.after(d); else sb.appendChild(d);
+  }
+})();
+
+console.log("Module Suivi Chauffeur chargé — Tournées, Score, Certification");
 
 </script>
