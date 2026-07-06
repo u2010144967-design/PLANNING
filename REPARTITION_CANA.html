@@ -1015,195 +1015,132 @@ document.addEventListener('keydown',function(e){
   if(e.key==='ArrowRight'&&document.getElementById('view-planning').style.display!=='none') {S.dayIdx=Math.min(6,S.dayIdx+1);renderPlanning();}
 });
 
-/* ══════════════════════════════════════════
-   SUPABASE SYNC — Temps réel
-   Même base que le CRM La Table de Cana
-══════════════════════════════════════════ */
-var SUPA_URL = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
-var SUPA_KEY = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-var SUPA_TABLE = 'repartition_cana';
-var syncLed = null;
-var syncTimer = null;
-var lastSyncHash = '';
-var pollingInterval = null;
 
-/* ── Indicateur LED dans la topbar ── */
-function initSyncLed(){
-  if(document.getElementById('sync-led')) return;
-  var tb = document.querySelector('.tb-right');
-  if(!tb) return;
-  var led = document.createElement('div');
-  led.id = 'sync-led';
-  led.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub);padding:6px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px';
-  led.innerHTML = '<span id="led-dot" style="width:8px;height:8px;border-radius:50%;background:var(--sub2);transition:.3s"></span><span id="led-txt">Sync...</span>';
-  tb.insertBefore(led, tb.firstChild);
-  syncLed = led;
+/* ══ SUPABASE SYNC ══ */
+var SUPA_URL='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var SUPA_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var syncTimer=null;
+var pollTimer=null;
+var lastRemoteTime=0;
+
+function supaHdrs(){
+  return{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'};
 }
 
-function setLed(state, msg){
-  var dot = document.getElementById('led-dot');
-  var txt = document.getElementById('led-txt');
+function setLed(state,msg){
+  var dot=document.getElementById('led-dot');
+  var txt=document.getElementById('led-txt');
   if(!dot||!txt) return;
-  var cols = {ok:'var(--cana)', err:'var(--red)', sync:'var(--warn)', offline:'var(--sub2)'};
-  dot.style.background = cols[state]||cols.offline;
-  txt.textContent = msg||state;
+  var cols={ok:'#22c55e',err:'#ef4444',sync:'#f97316',off:'#334155'};
+  dot.style.background=cols[state]||cols.off;
+  txt.textContent=msg||'';
 }
 
-/* ── Headers Supabase ── */
-function supaHeaders(){
-  return {
-    'apikey': SUPA_KEY,
-    'Authorization': 'Bearer ' + SUPA_KEY,
-    'Content-Type': 'application/json',
-    'Prefer': 'resolution=merge-duplicates,return=minimal'
-  };
-}
-
-/* ── Hash rapide pour détecter les changements ── */
-function hashState(){
-  return JSON.stringify({data:S.data,notes:S.notes,prod:S.prod,livreurs:S.livreurs,ferme:S.ferme,vacances:S.vacances,msgCuisine:S.msgCuisine});
-}
-
-/* ── Sauvegarder dans Supabase ── */
 function saveCloud(){
   if(!S.role) return;
   setLed('sync','Sync...');
-  var payload = {
-    id: 'repartition_principale',
-    data: S.data,
-    notes: S.notes,
-    prod: S.prod,
-    livreurs: S.livreurs,
-    ferme: S.ferme,
-    clients: S.clients,
-    defaults: S.defaults,
-    vacances: S.vacances,
-    msgCuisine: S.msgCuisine,
-    updated_at: new Date().toISOString(),
-    updated_by: S.role
+  var payload={
+    id:'rep_principale',
+    data:S.data,notes:S.notes,prod:S.prod,
+    livreurs:S.livreurs,ferme:S.ferme,
+    clients:S.clients,vacances:S.vacances,
+    msgCuisine:S.msgCuisine,
+    updated_at:new Date().toISOString(),
+    updated_by:S.role
   };
-  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE, {
-    method: 'POST',
-    mode: 'cors',
-    headers: Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'}, supaHeaders()),
-    body: JSON.stringify(payload)
+  fetch(SUPA_URL+'/rest/v1/repartition_cana',{
+    method:'POST',mode:'cors',
+    headers:supaHdrs(),
+    body:JSON.stringify(payload)
   }).then(function(r){
-    if(r.ok){
-      setLed('ok','Synchronisé ✓');
-      lastSyncHash = hashState();
-    } else {
-      setLed('err','Erreur sync');
-    }
-  }).catch(function(){
-    setLed('offline','Hors ligne');
-  });
+    setLed(r.ok?'ok':'err',r.ok?'Synchronisé ✓':'Erreur');
+  }).catch(function(){setLed('off','Hors ligne');});
 }
 
-/* ── Charger depuis Supabase ── */
-function loadCloud(callback){
+function loadCloud(cb){
   setLed('sync','Chargement...');
-  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?id=eq.repartition_principale&limit=1', {
-    method: 'GET',
-    mode: 'cors',
-    headers: supaHeaders()
-  }).then(function(r){ return r.json(); })
+  fetch(SUPA_URL+'/rest/v1/repartition_cana?id=eq.rep_principale&limit=1',{
+    method:'GET',mode:'cors',headers:supaHdrs()
+  }).then(function(r){return r.json();})
   .then(function(rows){
-    if(rows && rows.length > 0){
-      var d = rows[0];
-      if(d.data) S.data = d.data;
-      if(d.notes) S.notes = d.notes;
-      if(d.prod) S.prod = d.prod;
-      if(d.livreurs) S.livreurs = d.livreurs;
-      if(d.ferme) S.ferme = d.ferme;
-      if(d.clients && Object.keys(d.clients).length > 0) S.clients = d.clients;
-      if(d.defaults) S.defaults = d.defaults;
-      if(typeof d.vacances !== 'undefined') S.vacances = !!d.vacances;
-      if(d.msgCuisine !== undefined) S.msgCuisine = d.msgCuisine;
-      lastSyncHash = hashState();
+    if(rows&&rows.length){
+      var d=rows[0];
+      if(d.data) S.data=d.data;
+      if(d.notes) S.notes=d.notes;
+      if(d.prod) S.prod=d.prod;
+      if(d.livreurs) S.livreurs=d.livreurs;
+      if(d.ferme) S.ferme=d.ferme;
+      if(d.clients&&Object.keys(d.clients).length) S.clients=d.clients;
+      if(typeof d.vacances!=='undefined') S.vacances=!!d.vacances;
+      if(d.msgCuisine!==undefined) S.msgCuisine=d.msgCuisine;
+      if(d.updated_at) lastRemoteTime=new Date(d.updated_at).getTime();
       setLed('ok','Synchronisé ✓');
-    } else {
-      setLed('ok','Prêt (nouveau)');
-    }
-    if(callback) callback();
-  }).catch(function(){
-    setLed('offline','Hors ligne — données locales');
-    if(callback) callback();
-  });
+    } else {setLed('ok','Prêt');}
+    if(cb) cb();
+  }).catch(function(){setLed('off','Hors ligne');if(cb) cb();});
 }
 
-/* ── Polling toutes les 3 secondes ── */
-function startPolling(){
-  if(pollingInterval) return;
-  pollingInterval = setInterval(function(){
+function startPoll(){
+  if(pollTimer) return;
+  pollTimer=setInterval(function(){
     if(!S.role) return;
-    fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?id=eq.repartition_principale&limit=1&select=updated_at,updated_by', {
-      method: 'GET', mode: 'cors', headers: supaHeaders()
-    }).then(function(r){ return r.json(); })
+    fetch(SUPA_URL+'/rest/v1/repartition_cana?id=eq.rep_principale&select=updated_at,updated_by&limit=1',{
+      method:'GET',mode:'cors',headers:supaHdrs()
+    }).then(function(r){return r.json();})
     .then(function(rows){
       if(!rows||!rows.length) return;
-      var remoteTime = new Date(rows[0].updated_at).getTime();
-      var remoteBy = rows[0].updated_by;
-      /* Si la mise à jour vient de l'autre utilisateur → recharger */
-      if(remoteBy && remoteBy !== S.role){
-        var key = 'rep_last_sync';
-        var lastKnown = parseInt(localStorage.getItem(key)||'0');
-        if(remoteTime > lastKnown){
-          localStorage.setItem(key, remoteTime);
-          loadCloud(function(){
-            initClients();
-            /* Rafraîchir la vue courante */
-            var vd = document.getElementById('view-dashboard');
-            var vp = document.getElementById('view-planning');
-            if(vd && vd.style.display !== 'none') renderDashboard();
-            if(vp && vp.style.display !== 'none') renderPlanning();
-            showToastSync();
-          });
-        }
+      var t=new Date(rows[0].updated_at).getTime();
+      var by=rows[0].updated_by;
+      if(t>lastRemoteTime&&by&&by!==S.role){
+        lastRemoteTime=t;
+        loadCloud(function(){
+          initClients();
+          var vd=document.getElementById('view-dashboard');
+          var vp=document.getElementById('view-planning');
+          if(vd&&vd.style.display!=='none') renderDashboard();
+          if(vp&&vp.style.display!=='none') renderPlanning();
+          toast('🔄 Mis à jour par l\'autre utilisateur','var(--sadi)');
+        });
       }
-    }).catch(function(){/* silence */});
-  }, 3000);
+    }).catch(function(){});
+  },3000);
 }
 
-function showToastSync(){
-  toast('🔄 Répartition mise à jour par l'autre utilisateur','var(--sadi)');
-}
+/* Override save pour inclure cloud */
+var _sv=save;
+save=function(){_sv();if(syncTimer)clearTimeout(syncTimer);syncTimer=setTimeout(saveCloud,700);};
 
-/* ── Override save() pour inclure cloud ── */
-var _originalSave = save;
-save = function(){
-  _originalSave();
-  /* Debounce 800ms pour éviter flood */
-  if(syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(saveCloud, 800);
-};
-
-/* ── Créer la table si elle n'existe pas ── */
-function ensureTable(callback){
-  /* Tenter un GET — si 404 la table n'existe pas encore */
-  fetch(SUPA_URL + '/rest/v1/' + SUPA_TABLE + '?limit=1', {
-    method: 'GET', mode: 'cors', headers: supaHeaders()
-  }).then(function(r){
-    if(r.status === 404 || r.status === 400){
-      /* Table manquante — afficher message */
-      console.warn('Table repartition_cana manquante dans Supabase — créer via SQL Editor');
-      setLed('err','Table manquante');
-      if(callback) callback();
-    } else {
-      if(callback) callback();
-    }
-  }).catch(function(){
-    if(callback) callback();
-  });
-}
-
-/* ── Init cloud au démarrage ── */
-var _originalInitApp = initApp;
-initApp = function(){
-  initSyncLed();
+/* Override doLogin pour charger cloud avant affichage */
+var _dl=doLogin;
+doLogin=function(){
+  var pw=document.getElementById('pw-input').value;
+  if(pw!==PW[loginRole]){
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw-input').value='';
+    return;
+  }
+  S.role=loginRole;
+  /* Charger depuis le cloud PUIS afficher l'app */
+  document.getElementById('pw-go').textContent='Connexion...';
+  document.getElementById('pw-go').disabled=true;
+  load(); /* local d'abord */
   loadCloud(function(){
     initClients();
-    _originalInitApp();
-    startPolling();
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('app').style.flexDirection='column';
+    /* LED */
+    var tb=document.querySelector('.tb-right');
+    if(tb&&!document.getElementById('sync-led')){
+      var led=document.createElement('div');
+      led.id='sync-led';
+      led.style.cssText='display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub);padding:5px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;white-space:nowrap';
+      led.innerHTML='<span id="led-dot" style="width:8px;height:8px;border-radius:50%;background:#334155;transition:.3s;flex-shrink:0"></span><span id="led-txt">...</span>';
+      tb.insertBefore(led,tb.firstChild);
+    }
+    initApp();
+    startPoll();
+    setLed('ok','Synchronisé ✓');
   });
 };
 
