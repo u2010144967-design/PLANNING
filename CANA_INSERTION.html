@@ -2098,106 +2098,266 @@ function calculCompletionDossier(s){
 <script>
 
 function renderRecrutement(c2){
-  var h='<div class="page-title">Entretien de recrutement</div>';
-  h+='<div class="page-sub" style="margin-bottom:16px">Conduisez l\'entretien en cochant les cases — tout est déjà rédigé</div>';
-  h+='<div style="background:var(--panel);border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:20px;margin-bottom:16px">';
-  h+='<div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:14px">Candidat</div>';
-  h+='<div class="fg">';
-  h+=F('Prénom','rec-prenom','')+F('Nom','rec-nom','')+F('Date','rec-date',today(),'date')+F('Prescripteur','rec-presc','');
-  h+='</div></div>';
-  var fiche=FICHES_TYPES.recrutement;
-  fiche.sections.forEach(function(sec,si){
-    h+='<div class="form-section" style="margin-bottom:10px"><div class="fs-title">'+sec.titre+'</div>';
-    sec.items.forEach(function(item,ii){
-      h+='<label class="check-item" id="rci-'+si+'-'+ii+'"><input type="checkbox" id="rcb-'+si+'-'+ii+'" onchange="majCheckItem(this,\'rci-'+si+'-'+ii+'\')" style="accent-color:var(--orange);width:18px;height:18px;cursor:pointer"><span>'+item+'</span></label>';
-    });
-    h+='</div>';
-  });
-  h+='<div class="form-section"><div class="fs-title">Notes libres</div>';
-  h+='<div class="field"><textarea id="rec-notes" style="min-height:90px" placeholder="Impression générale, doutes, points forts surprenants..."></textarea></div></div>';
-  h+='<div class="btn-row"><button class="btn btn-primary" onclick="imprimerRecrutement()">Imprimer</button><button class="btn btn-green" onclick="creerSalarieRecrutement()">Créer le dossier salarié</button></div>';
+  if(!c2) return;
+  var h="<div class='page-title'>🎯 Recrutement Chauffeur</div>";
+  h+="<div class='page-sub' style='margin-bottom:20px'>Entretien structuré 45 minutes · Slides + Grille d évaluation</div>";
+
+  /* === DEUX ONGLETS === */
+  h+="<div style='display:flex;gap:8px;margin-bottom:20px'>";
+  h+="<button id='recru-tab-slides' class='btn btn-primary' onclick='window.showRecruTab(\"slides\")'>📽️ Slides entretien</button>";
+  h+="<button id='recru-tab-grille' class='btn btn-secondary' onclick='window.showRecruTab(\"grille\")'>📋 Grille évaluation</button>";
+  h+="</div>";
+  h+="<div id='recru-content'></div>";
   c2.innerHTML=h;
+  window.showRecruTab("slides");
 }
 
-window.imprimerRecrutement=function(){
-  var win=window.open('','_blank');if(!win)return;
-  var prenom=(document.getElementById('rec-prenom')||{}).value||'Candidat';
-  var nom=(document.getElementById('rec-nom')||{}).value||'';
-  var date=(document.getElementById('rec-date')||{}).value||today();
-  var presc=(document.getElementById('rec-presc')||{}).value||'';
-  var notes=(document.getElementById('rec-notes')||{}).value||'';
-  var fiche=FICHES_TYPES.recrutement;
-  var css='body{font-family:Arial,sans-serif;padding:24px;color:#1a2435;max-width:800px;margin:0 auto;font-size:12px}h1{font-size:18px;border-bottom:3px solid #f97316;padding-bottom:8px;margin-bottom:16px}h2{font-size:12px;color:#f97316;margin:14px 0 8px;text-transform:uppercase}.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:11px}.box{width:16px;height:16px;border:2px solid #94a3b8;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center}.info{display:flex;gap:20px;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:14px;font-size:11px}@media print{button{display:none}}';
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+css+'</style></head><body>';
-  html+='<button onclick="window.print()" style="float:right;padding:7px 14px;background:#f97316;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Imprimer</button>';
-  html+='<div style="font-size:9px;color:var(--sub);text-transform:uppercase;font-weight:700">La Table de Cana - Entretien de recrutement</div>';
-  html+='<h1>Grille entretien - Chauffeur Livreur / Logistique</h1>';
-  html+='<div class="info"><span><b>Candidat :</b> '+prenom+' '+nom+'</span><span><b>Date :</b> '+new Date(date).toLocaleDateString('fr-FR')+'</span><span><b>Prescripteur :</b> '+presc+'</span></div>';
-  fiche.sections.forEach(function(sec,si){
-    html+='<h2>'+sec.titre+'</h2>';
-    sec.items.forEach(function(item,ii){
-      var cb=document.getElementById('rcb-'+si+'-'+ii);
-      var checked=cb&&cb.checked;
-      html+='<div class="chk"><div class="box" style="'+(checked?'background:#22c55e;border-color:#22c55e':'')+'">'+( checked?'<span style="color:#fff;font-size:10px;font-weight:900">v</span>':'')+'</div><span style="'+(checked?'font-weight:700;color:#15803d':'')+'">'+item+'</span></div>';
-    });
+window.showRecruTab=function(tab){
+  var btns=["slides","grille"];
+  btns.forEach(function(b){
+    var el=document.getElementById("recru-tab-"+b);
+    if(el) el.className="btn "+(b===tab?"btn-primary":"btn-secondary");
   });
-  if(notes)html+='<div style="margin-top:14px;padding:12px;border:1px dashed #cbd5e1;border-radius:6px"><b>Notes :</b><br>'+notes+'</div>';
-  html+='</body></html>';
-  win.document.write(html);win.document.close();
+  var zone=document.getElementById("recru-content");
+  if(!zone) return;
+  if(tab==="slides") _renderRecruSlides(zone);
+  else _renderRecruGrille(zone);
 };
 
-window.creerSalarieRecrutement=function(){
-  var prenom=(document.getElementById('rec-prenom')||{}).value||'Nouveau';
-  var nom=(document.getElementById('rec-nom')||{}).value||'';
-  if(!confirm('Créer le dossier pour '+prenom+' '+nom+' ?'))return;
-  var avatars=['🌟','⚡','🎯','🚀','🦁','🔥','💪'];
-  var couleurs=['#3b82f6','#22c55e','#f97316','#a855f7','#0ea5e9'];
-  var ns={id:Date.now(),prenom:prenom,nom:nom,dob:'',pob:'',nat:'',adresse:'',tel:'',email:'',sitfam:'',enfants:0,presc:(document.getElementById('rec-presc')||{}).value||'',structPresc:'',sitAvant:'',dureeChomage:'',formation:'',rsa:false,aah:false,th:false,mobilite:'vehicule',typeContrat:'CDDI',poste:'Chauffeur livreur',vehicule:'',horaires:'06:00-14:00',dateEntree:'',dateFin:'',heures:26,salaire:'',projetPro:'',secteur:'Logistique/Transport',niveauVise:'',objectifs:'',formations:'',contraintes:'',sante:'',notesCIP:(document.getElementById('rec-notes')||{}).value||'',notesRH:'',statut:'actif',typeSortie:'',dateSortie:'',renouvellements:[],avatar:avatars[Math.floor(Math.random()*avatars.length)],couleur:couleurs[Math.floor(Math.random()*couleurs.length)],createdAt:new Date().toISOString()};
-  DB.salaries.push(ns);sauver();toast('Dossier créé pour '+prenom+' '+nom,'ok');ouvrirDossier(ns.id);
-};
-
-</script>
-<script>
-/* ═══════════════════════════════════════════════════
-   DOCUMENTS D'EMBAUCHE — CHARTES ET ENGAGEMENTS
-   ═══════════════════════════════════════════════════ */
-
-var DOCS_EMBAUCHE = [
-  {
-    id: 'charte_complete',
-    icon: '📋',
-    titre: 'Charte complète du chauffeur',
-    sous: 'Document unique — Toutes les règles obligatoires',
-    couleur: '#3daa7a',
-    important: true
-  },
-  {
-    id: 'remise_vehicule',
-    icon: '🚐',
-    titre: 'État des lieux véhicule',
-    sous: 'Remise des clés et état du véhicule',
-    couleur: '#4a9eba',
-    important: false
-  },
-  {
-    id: 'reglement_interieur',
-    icon: '📜',
-    titre: 'Règlement intérieur',
-    sous: 'Règles de vie dans la structure',
-    couleur: '#8a6ab5',
-    important: false
-  },
-  {
-    id: 'confidentialite',
-    icon: '🔒',
-    titre: 'Engagement confidentialité',
-    sous: 'Clients, adresses, données sensibles',
-    couleur: '#e8814a',
-    important: false
+function _renderRecruSlides(zone){
+  var SD=window.SLIDES_DATA||{};
+  var bloc=SD.recrutement;
+  if(!bloc||!bloc.slides||!bloc.slides.length){
+    zone.innerHTML="<div class='card'><div style='color:var(--sub);padding:20px'>Slides non disponibles.</div></div>";
+    return;
   }
-];
+  var slides=bloc.slides;
+  var idx=window._recruSlideIdx||0;
+  if(idx>=slides.length) idx=0;
+  window._recruSlideIdx=idx;
+  var s=slides[idx];
+  var total=slides.length;
 
-/* ── GÉNÉRATEUR CHARTE COMPLÈTE ── */
+  var h="<div class='card' style='max-width:860px;margin:0 auto'>";
+
+  /* Barre progression */
+  h+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:16px'>";
+  h+="<div style='flex:1;background:var(--border);border-radius:4px;height:6px'>";
+  h+="<div style='width:"+Math.round((idx+1)/total*100)+"%;height:6px;border-radius:4px;background:var(--orange)'></div></div>";
+  h+="<div style='font-size:11px;font-weight:800;color:var(--sub)'>"+( idx+1)+"/"+total+"</div></div>";
+
+  /* Contenu slide selon type */
+  h+=_renderRecruSlideContent(s);
+
+  /* Navigation */
+  h+="<div style='display:flex;align-items:center;justify-content:space-between;margin-top:20px'>";
+  h+="<button class='btn btn-secondary' onclick='window._recruGo(-1)' "+(idx===0?"disabled":"")+" style='"+(idx===0?"opacity:.3;cursor:not-allowed":"")+"'>← Précédent</button>";
+  h+="<div style='display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:400px'>";
+  slides.forEach(function(sl,i){
+    var col=i===idx?"var(--orange)":i<idx?"var(--green)":"var(--border)";
+    h+="<div onclick='window._recruGoTo("+i+")' style='width:10px;height:10px;border-radius:50%;background:"+col+";cursor:pointer;transition:.15s'></div>";
+  });
+  h+="</div>";
+  h+="<button class='btn "+(idx===total-1?"btn-green":"btn-primary")+"' onclick='window._recruGo(1)' "+(idx===total-1?"disabled":"")+">"+(idx===total-1?"✅ Fin":"Suivant →")+"</button>";
+  h+="</div></div>";
+
+  zone.innerHTML=h;
+}
+
+function _renderRecruSlideContent(s){
+  var h="";
+  if(s.type==="titre"){
+    h+="<div style='text-align:center;padding:40px 20px'>";
+    h+="<div style='font-size:60px;margin-bottom:20px'>"+s.icon+"</div>";
+    h+="<div style='font-size:26px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.3'>"+s.titre.replace(/\n/g,"<br>")+"</div>";
+    if(s.sous) h+="<div style='font-size:14px;color:var(--sub)'>"+s.sous+"</div>";
+    h+="</div>";
+  } else if(s.type==="recru_section"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:16px'>";
+    h+="<span style='font-size:32px'>"+s.icon+"</span>";
+    h+="<div><div style='font-size:11px;font-weight:800;color:"+s.couleur+";text-transform:uppercase;letter-spacing:.08em'>"+s.badge+"</div>";
+    h+="<div style='font-size:20px;font-weight:900;color:#fff'>"+s.titre+"</div></div></div>";
+    (s.items||[]).forEach(function(it){
+      h+="<div style='display:flex;align-items:start;gap:12px;padding:12px;background:var(--panel2);border-radius:10px;margin-bottom:8px;border:1px solid var(--border)'>";
+      h+="<span style='font-size:22px;flex-shrink:0'>"+it.icon+"</span>";
+      h+="<div style='font-size:13px;color:var(--text);line-height:1.5'>"+it.txt+"</div></div>";
+    });
+    h+="</div>";
+  } else if(s.type==="recru_3activites"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:16px'>"+s.titre+"</div>";
+    h+="<div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px'>";
+    (s.activites||[]).forEach(function(a){
+      h+="<div style='background:"+a.col+"18;border:2px solid "+a.col+"44;border-radius:12px;padding:16px'>";
+      h+="<div style='font-size:28px;margin-bottom:8px'>"+a.icon+"</div>";
+      h+="<div style='font-size:14px;font-weight:900;color:"+a.col+";margin-bottom:6px'>"+a.nom+"</div>";
+      h+="<div style='font-size:12px;color:var(--text);line-height:1.5'>"+a.desc+"</div></div>";
+    });
+    h+="</div></div>";
+  } else if(s.type==="recru_important"){
+    h+="<div style='padding:20px;text-align:center'>";
+    h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:20px'>"+s.titre+"</div>";
+    h+="<div style='background:rgba(239,68,68,.12);border:2px solid rgba(239,68,68,.35);border-radius:14px;padding:24px;margin-bottom:16px'>";
+    h+="<div style='font-size:20px;font-weight:900;color:var(--red)'>"+s.message+"</div></div>";
+    if(s.sous) h+="<div style='font-size:13px;color:var(--sub);line-height:1.6'>"+s.sous+"</div>";
+    h+="</div>";
+  } else if(s.type==="recru_qualites"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:16px'>"+s.titre+"</div>";
+    h+="<div style='display:flex;flex-direction:column;gap:8px'>";
+    (s.qualites||[]).forEach(function(q){
+      h+="<div style='display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;border-left:4px solid "+q.col+"'>";
+      h+="<span style='font-size:24px'>"+q.icon+"</span>";
+      h+="<div style='flex:1'><div style='font-size:13px;font-weight:800;color:var(--text)'>"+q.qualite+"</div>";
+      if(q.exemple) h+="<div style='font-size:11px;color:var(--sub);margin-top:2px'>Ex: "+q.exemple+"</div>";
+      h+="</div><div style='font-size:11px;font-weight:800;color:"+q.col+";background:"+q.col+"18;border-radius:6px;padding:3px 10px'>"+q.poids+"</div></div>";
+    });
+    h+="</div></div>";
+  } else if(s.type==="recru_question"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='display:flex;align-items:center;gap:10px;margin-bottom:14px'>";
+    h+="<span style='font-size:28px'>"+s.icon+"</span>";
+    h+="<div><div style='font-size:11px;color:var(--orange);font-weight:800;text-transform:uppercase'>"+s.sous+"</div>";
+    h+="<div style='font-size:16px;font-weight:900;color:#fff'>"+s.question+"</div></div></div>";
+    h+="<div style='background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:16px;margin-bottom:12px'>";
+    h+="<div style='font-size:10px;font-weight:800;color:var(--orange);text-transform:uppercase;margin-bottom:10px'>Ce que vous cherchez à entendre</div>";
+    (s.reponses_attendues||[]).forEach(function(r){
+      h+="<div style='display:flex;align-items:start;gap:8px;margin-bottom:6px'>";
+      h+="<span style='color:var(--green);font-weight:900;flex-shrink:0'>✓</span>";
+      h+="<span style='font-size:12px;color:var(--text)'>"+r+"</span></div>";
+    });
+    h+="</div>";
+    if(s.signaux_alarme&&s.signaux_alarme.length){
+      h+="<div style='background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px'>";
+      h+="<div style='font-size:10px;font-weight:800;color:var(--red);text-transform:uppercase;margin-bottom:8px'>⚠️ Signaux d alarme</div>";
+      s.signaux_alarme.forEach(function(r){
+        h+="<div style='font-size:11px;color:var(--red);margin-bottom:4px'>✗ "+r+"</div>";
+      });
+      h+="</div>";
+    }
+    h+="</div>";
+  } else if(s.type==="recru_grille"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:14px'>"+s.titre+"</div>";
+    (s.criteres||[]).forEach(function(cr){
+      h+="<div style='display:flex;align-items:center;gap:10px;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px'>";
+      h+="<span style='font-size:18px;flex-shrink:0'>"+cr.icon+"</span>";
+      h+="<div style='flex:1;font-size:12px;font-weight:700;color:var(--text)'>"+cr.critere+"</div>";
+      h+="<div style='display:flex;gap:4px'>";
+      for(var v=1;v<=5;v++){
+        h+="<div style='width:22px;height:22px;border-radius:4px;border:2px solid var(--border);background:var(--panel);cursor:pointer;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;color:var(--sub)'>"+v+"</div>";
+      }
+      h+="</div></div>";
+    });
+    h+="</div>";
+  } else if(s.type==="recru_conditions"){
+    h+="<div style='padding:4px 0'>";
+    h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:16px'>"+s.titre+"</div>";
+    h+="<div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px'>";
+    (s.conditions||[]).forEach(function(co){
+      h+="<div style='background:"+co.col+"14;border:1px solid "+co.col+"33;border-radius:10px;padding:14px'>";
+      h+="<div style='font-size:22px;margin-bottom:6px'>"+co.icon+"</div>";
+      h+="<div style='font-size:12px;font-weight:800;color:"+co.col+";margin-bottom:4px'>"+co.label+"</div>";
+      h+="<div style='font-size:13px;font-weight:900;color:#fff'>"+co.valeur+"</div></div>";
+    });
+    h+="</div></div>";
+  } else if(s.type==="recru_decision"){
+    h+="<div style='padding:20px;text-align:center'>";
+    h+="<div style='font-size:48px;margin-bottom:16px'>"+s.icon+"</div>";
+    h+="<div style='font-size:20px;font-weight:900;color:#fff;margin-bottom:20px'>"+s.titre+"</div>";
+    h+="<div style='display:flex;gap:12px;justify-content:center;flex-wrap:wrap'>";
+    (s.options||[]).forEach(function(o){
+      h+="<div style='background:"+o.col+"14;border:2px solid "+o.col+"44;border-radius:12px;padding:16px 24px;min-width:160px'>";
+      h+="<div style='font-size:24px;margin-bottom:6px'>"+o.icon+"</div>";
+      h+="<div style='font-size:14px;font-weight:900;color:"+o.col+"'>"+o.label+"</div>";
+      if(o.condition) h+="<div style='font-size:11px;color:var(--sub);margin-top:4px'>"+o.condition+"</div>";
+      h+="</div>";
+    });
+    h+="</div></div>";
+  } else {
+    /* Type générique */
+    h+="<div style='padding:20px'>";
+    if(s.titre) h+="<div style='font-size:18px;font-weight:900;color:#fff;margin-bottom:12px'>"+s.titre+"</div>";
+    if(s.sous) h+="<div style='font-size:13px;color:var(--sub);margin-bottom:12px'>"+s.sous+"</div>";
+    h+="</div>";
+  }
+  return h;
+}
+
+window._recruGo=function(delta){
+  var SD=window.SLIDES_DATA||{};
+  var total=(SD.recrutement&&SD.recrutement.slides&&SD.recrutement.slides.length)||0;
+  var idx=(window._recruSlideIdx||0)+delta;
+  if(idx<0||idx>=total) return;
+  window._recruSlideIdx=idx;
+  var zone=document.getElementById("recru-content");
+  if(zone) _renderRecruSlides(zone);
+};
+window._recruGoTo=function(idx){
+  window._recruSlideIdx=idx;
+  var zone=document.getElementById("recru-content");
+  if(zone) _renderRecruSlides(zone);
+};
+
+function _renderRecruGrille(zone){
+  var h="<div class='card' style='max-width:860px;margin:0 auto'>";
+  h+="<div class='card-title'>📋 Grille d évaluation candidat</div>";
+  h+="<div style='font-size:12px;color:var(--sub);margin-bottom:16px'>Notez 1 à 5 chaque critère pendant l entretien. Score minimum recommandé : 30/50</div>";
+
+  var criteres=[
+    {icon:"⏰",label:"Ponctualité — arrivé à l heure à l entretien",cat:"Comportement"},
+    {icon:"👔",label:"Tenue correcte et adaptée",cat:"Comportement"},
+    {icon:"💬",label:"Communication claire et polie",cat:"Comportement"},
+    {icon:"🧠",label:"Compréhension des consignes logistiques",cat:"Compétences"},
+    {icon:"🚐",label:"Permis B valide — expérience conduite VUL",cat:"Compétences"},
+    {icon:"📋",label:"Connaissance des BL et documents livraison",cat:"Compétences"},
+    {icon:"🎯",label:"Motivation pour le poste de chauffeur livreur",cat:"Motivation"},
+    {icon:"🌱",label:"Engagement dans le parcours d insertion",cat:"Motivation"},
+    {icon:"🤝",label:"Esprit d équipe et relationnel client",cat:"Soft skills"},
+    {icon:"💪",label:"Gestion du stress et des imprévus",cat:"Soft skills"},
+  ];
+
+  var cats=["Comportement","Compétences","Motivation","Soft skills"];
+  var catCols={"Comportement":"var(--blue)","Compétences":"var(--orange)","Motivation":"var(--green)","Soft skills":"var(--purple)"};
+
+  cats.forEach(function(cat){
+    var group=criteres.filter(function(c){return c.cat===cat;});
+    h+="<div style='margin-bottom:16px'>";
+    h+="<div style='font-size:10px;font-weight:900;color:"+catCols[cat]+";text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px'>"+cat+"</div>";
+    group.forEach(function(cr,i){
+      var gid="gn-"+cat.replace(/\s/g,"")+i;
+      h+="<div style='display:flex;align-items:center;gap:10px;padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;margin-bottom:5px'>";
+      h+="<span style='font-size:18px;flex-shrink:0'>"+cr.icon+"</span>";
+      h+="<div style='flex:1;font-size:12px;font-weight:700;color:var(--text)'>"+cr.label+"</div>";
+      h+="<div style='display:flex;gap:4px'>";
+      for(var v=1;v<=5;v++){
+        h+="<input type='radio' name='"+gid+"' value='"+v+"' id='"+gid+"-"+v+"' style='accent-color:var(--orange)'>";
+        h+="<label for='"+gid+"-"+v+"' style='font-size:10px;font-weight:800;color:var(--sub);cursor:pointer'>"+v+"</label>";
+      }
+      h+="</div></div>";
+    });
+    h+="</div>";
+  });
+
+  h+="<div style='background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:14px;margin-top:8px'>";
+  h+="<div style='font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px'>Notes libres</div>";
+  h+="<textarea style='width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;font-family:inherit' id='recru-notes' placeholder='Observations, contexte, impressions générales...'></textarea>";
+  h+="<div style='display:flex;gap:10px;margin-top:10px;flex-wrap:wrap'>";
+  h+="<button class='btn btn-green btn-sm' onclick='window.validerCandidatRecru(1)'>✅ Retenu — prévu le...</button>";
+  h+="<button class='btn btn-sm btn-secondary' onclick='window.validerCandidatRecru(2)' style='color:var(--orange)'>🔄 Liste d attente</button>";
+  h+="<button class='btn btn-sm btn-secondary' onclick='window.validerCandidatRecru(3)' style='color:var(--red)'>❌ Non retenu</button>";
+  h+="</div></div>";
+  h+="</div>";
+  zone.innerHTML=h;
+}
+
+window.validerCandidatRecru=function(decision){
+  var decisions=["","✅ Retenu","🔄 Liste d attente","❌ Non retenu"];
+  if(typeof toast==="function") toast(decisions[decision]+" — Décision enregistrée","var(--green)");
+};
+
+
 function genCharteComplete(s) {
   var win = window.open('', '_blank');
   if (!win) return;
