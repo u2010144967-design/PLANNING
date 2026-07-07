@@ -25968,108 +25968,145 @@ function ouvrirGestionAcces(){
    HUB D'ACCUEIL — affichage au demarrage
 ══════════════════════════════════════════════════ */
 function afficherHub(){
-  var existing=document.getElementById('cana-hub');
-  if(existing){existing.remove();return;}
+  /* Supprimer si déjà ouvert */
+  /* Hub déjà ouvert = juste rafraîchir */
+  var ex=document.getElementById('cana-hub');
+  if(ex){ex.remove();}
 
-  var hub=document.createElement('div');
-  hub.id='cana-hub';
-  hub.style.cssText='position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;background:#07101e;z-index:99999;overflow-y:auto;padding:0 0 40px';
+  /* Masquer le planning derrière */
+  var planningEl=document.querySelector('.grid-wrap,.planning-wrap,#grid-container,#planning-grid,.gw');
+  if(planningEl) planningEl.style.visibility='hidden';
 
+  var srv=window._serviceActuel||{nom:'Direction',icone:'🚚',niveau:'admin'};
+  var chauffeurs=window.ST?ST.drivers||[]:[];
+  var hc=window.ST?ST.horsCarte||[]:[];
+  var hcAttente=hc.filter(function(h){return h.statut==='atraiter';}).length;
   var today=new Date();
   var JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   var dateStr=JOURS[today.getDay()]+' '+today.getDate()+' '+MOIS[today.getMonth()]+' '+today.getFullYear();
+  var heure=today.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 
-  /* KPIs rapides */
-  var date=window.ST?ST.cur:today.toISOString().slice(0,10);
-  var totalMissions=0,totalDone=0;
-  var chauffeurs=window.ST?ST.drivers||[]:[];
+  /* Calculer missions du jour */
+  var totalM=0,doneM=0;
   if(window.ST&&ST.tasks&&typeof getMissions==='function'){
-    chauffeurs.forEach(function(_,di){
-      try{var ms=getMissions({tasks:ST.tasks,drivers:ST.drivers},di,date);
-      totalMissions+=ms.length;totalDone+=ms.filter(function(m){return m._statut==='done';}).length;}catch(e){}
+    (ST.drivers||[]).forEach(function(_,di){
+      try{var ms=getMissions({tasks:ST.tasks,drivers:ST.drivers},di,ST.cur);totalM+=ms.length;doneM+=ms.filter(function(m){return m._statut==='done';}).length;}catch(e){}
     });
   }
-  var hc=window.ST?ST.horsCarte||[]:[];
-  var hcAttente=hc.filter(function(h){return h.statut==='atraiter';}).length;
-  var srv=window._serviceActuel||{nom:'Responsable',icone:'🚚'};
 
-  hub.innerHTML=
-    /* HEADER */
-    '<div style="background:linear-gradient(135deg,#0f1928,#071526);border-bottom:2px solid #1a3550;padding:20px 24px 18px">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-    +'<div style="font-size:22px;font-weight:900;color:#fff">🍽️ La Table de Cana</div>'
-    +'<button onclick="fermerHub()" style="background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">✕ Planning</button>'
-    +'</div>'
-    +'<div style="font-size:13px;color:#64748b">'+dateStr+'</div>'
-    +'<div style="font-size:12px;color:#f97316;font-weight:700;margin-top:4px">'+srv.icone+' '+srv.nom+'</div>'
-    +'</div>'
+  var hub=document.createElement('div');
+  hub.id='cana-hub';
+  hub.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#07101e;z-index:99999;overflow-y:auto;font-family:-apple-system,Arial,sans-serif';
 
-    /* KPIs */
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 16px 8px">'
-    +'<div style="background:#0f1928;border:1px solid #22c55e33;border-radius:12px;padding:14px;text-align:center">'
-    +'<div style="font-size:22px;font-weight:900;color:#22c55e">'+totalDone+'/'+totalMissions+'</div>'
-    +'<div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px">Missions</div></div>'
-    +'<div style="background:#0f1928;border:1px solid '+(hcAttente>0?'#ef444433':'#1a3550')+';border-radius:12px;padding:14px;text-align:center">'
-    +'<div style="font-size:22px;font-weight:900;color:'+(hcAttente>0?'#ef4444':'#64748b')+'">'+hcAttente+'</div>'
-    +'<div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px">HC en attente</div></div>'
-    +'<div style="background:#0f1928;border:1px solid #1a3550;border-radius:12px;padding:14px;text-align:center">'
-    +'<div style="font-size:22px;font-weight:900;color:#3b82f6">'+chauffeurs.length+'</div>'
-    +'<div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px">Chauffeurs</div></div>'
-    +'<div style="background:#0f1928;border:1px solid #1a3550;border-radius:12px;padding:14px;text-align:center">'
-    +'<div style="font-size:22px;font-weight:900;color:#f97316" id="hub-heure">'+today.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'</div>'
-    +'<div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:3px">Heure</div></div>'
-    +'</div>'
+  /* ─── CSS des tuiles ─── */
+  if(!document.getElementById('hub-css')){
+    var st=document.createElement('style');
+    st.id='hub-css';
+    st.textContent=
+      '.hub-tile{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:.15s;text-align:center;min-height:90px}'+
+      '.hub-tile:hover{transform:scale(1.04);border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.06)}'+
+      '.hub-tile:active{transform:scale(.97)}'+
+      '.hub-ico{font-size:28px}'+
+      '.hub-lbl{font-size:12px;font-weight:800;line-height:1.3}'+
+      '.hub-sub{font-size:10px;opacity:.65;line-height:1.2}'+
+      '.hub-section{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 10px;opacity:.6}'+
+      '.hub-kpi{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 8px;text-align:center}'+
+      '.hub-kpi-v{font-size:22px;font-weight:900}'+
+      '.hub-kpi-l{font-size:10px;opacity:.6;margin-top:3px}';
+    document.head.appendChild(st);
+  }
 
-    /* TUILES SECTION 1 - PLANNING */
-    +'<div style="padding:8px 16px 4px"><div style="font-size:10px;font-weight:900;color:#f97316;text-transform:uppercase;letter-spacing:.08em">📅 Planning</div></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 16px 16px">'
-    +hubTile('🗓️','Planning complet','Grille horaire','#60a5fa','rgba(59,130,246,.1)','rgba(59,130,246,.3)','fermerHub()')
-    +hubTile('📋','Planning du jour','Livraisons rapides','#2dd4bf','rgba(20,184,166,.1)','rgba(20,184,166,.3)','ouvrirPlanningSimplifie();fermerHub()')
-    +hubTile('🌅','Briefing matin','Synthèse journée','#fbbf24','rgba(245,158,11,.1)','rgba(245,158,11,.3)','ouvrirBriefingMatin&&ouvrirBriefingMatin()')
-    +hubTile('📊','Tableau de bord','Temps réel','#a78bfa','rgba(168,85,247,.1)','rgba(168,85,247,.3)','fermerHub();setTimeout(toggleDashboard,500)')
-    +hubTile('📅','Calendrier','Vue mensuelle','#34d399','rgba(52,211,153,.1)','rgba(52,211,153,.3)','ouvrirCalendrier&&ouvrirCalendrier()')
-    +hubTile('📊','Stats semaine','Bilans chauffeurs','#818cf8','rgba(99,102,241,.1)','rgba(99,102,241,.3)','fermerHub();setTimeout(ouvrirVueSemaineBilans,300)')
-    +'</div>'
+  /* ─── Fonction tuile ─── */
+  function tile(ico,lbl,sub,col,fn){
+    return '<div class="hub-tile" onclick="'+fn+'" style="color:'+col+'">'
+      +'<div class="hub-ico">'+ico+'</div>'
+      +'<div class="hub-lbl">'+lbl+'</div>'
+      +'<div class="hub-sub" style="color:'+col+'">'+sub+'</div>'
+      +'</div>';
+  }
 
-    /* TUILES SECTION 2 - OPÉRATIONS */
-    +'<div style="padding:4px 16px 4px"><div style="font-size:10px;font-weight:900;color:#22c55e;text-transform:uppercase;letter-spacing:.08em">⚡ Opérations</div></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 16px 16px">'
-    +hubTile('🛒','Hors Carte','Commander / suivre','#f97316','rgba(249,115,22,.12)','rgba(249,115,22,.4)','fermerHub();setTimeout(ouvrirHorsCarte,200)')
-    +hubTile('🌍','Envoyer','Aux chauffeurs','#22c55e','rgba(34,197,94,.1)','rgba(34,197,94,.3)','syncVersGoogle&&syncVersGoogle()')
-    +hubTile('🖨️','Imprimer A4','Feuilles de route','#60a5fa','rgba(59,130,246,.1)','rgba(59,130,246,.3)','ouvrirFeuillesRoute&&ouvrirFeuillesRoute()')
-    +hubTile('📢','Message équipe','Broadcast chauffeurs','#f59e0b','rgba(245,158,11,.1)','rgba(245,158,11,.3)','fermerHub();setTimeout(envoyerMessageBroadcast,200)')
-    +hubTile('📄','Rapport','Journalier PDF','#6366f1','rgba(99,102,241,.1)','rgba(99,102,241,.3)','fermerHub();setTimeout(exportRapportJournalier,200)')
-    +hubTile('📥','Export CSV','Toutes données','#0ea5e9','rgba(14,165,233,.1)','rgba(14,165,233,.3)','fermerHub();setTimeout(exporterCSV,200)')
-    +'</div>'
+  /* ─── HTML ─── */
+  var h='';
 
-    /* TUILES SECTION 3 - CHAUFFEURS & RH */
-    +'<div style="padding:4px 16px 4px"><div style="font-size:10px;font-weight:900;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em">👤 Chauffeurs & RH</div></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 16px 16px">'
-    +hubTile('🚦','Statuts','Absences / congés','#f59e0b','rgba(245,158,11,.1)','rgba(245,158,11,.3)','ouvrirStatutRapide&&ouvrirStatutRapide()')
-    +hubTile('📄','Fiches','Dossiers chauffeurs','#a78bfa','rgba(168,85,247,.1)','rgba(168,85,247,.3)','ouvrirFiches&&ouvrirFiches()')
-    +hubTile('⚠️','Incidents','Historique','#ef4444','rgba(239,68,68,.1)','rgba(239,68,68,.3)','fermerHub();setTimeout(ouvrirHistoriqueIncidents,200)')
-    +hubTile('🚗','Véhicules','Flotte & alertes','#64748b','rgba(100,116,139,.1)','rgba(100,116,139,.3)','ouvrirGestionVehicules&&ouvrirGestionVehicules()')
-    +hubTile('🔍','Recherche','Clients & missions','#0ea5e9','rgba(14,165,233,.1)','rgba(14,165,233,.3)','ouvrirRechercheGlobale&&ouvrirRechercheGlobale()')
-    +hubTile('📊','KPIs semaine','Chiffres','#22c55e','rgba(34,197,94,.1)','rgba(34,197,94,.3)','fermerHub();setTimeout(afficherKPIsSemaine,200)')
-    +'</div>'
+  /* Header */
+  h+='<div style="background:linear-gradient(135deg,#0f1928,#071526);border-bottom:2px solid #1a3550;padding:18px 20px 16px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+  h+='<div style="display:flex;align-items:center;gap:12px">';
+  h+='<div style="font-size:30px">🍽️</div>';
+  h+='<div><div style="font-size:18px;font-weight:900;color:#fff">La Table de Cana</div>';
+  h+='<div style="font-size:12px;color:#f97316;font-weight:700;margin-top:1px">'+srv.icone+' '+srv.nom+'</div></div></div>';
+  h+='<button onclick="fermerHub()" style="background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">📅 Planning →</button>';
+  h+='</div>';
+  h+='<div style="font-size:12px;color:#64748b">'+dateStr+'</div>';
+  h+='</div>';
 
-    /* SECTION 4 - OUTILS */
-    +'<div style="padding:4px 16px 4px"><div style="font-size:10px;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em">🔧 Outils</div></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 16px 16px">'
-    +hubTile('📸','Photos','Signatures preuves','#c084fc','rgba(168,85,247,.1)','rgba(168,85,247,.3)','ouvrirPhotosSignatures&&ouvrirPhotosSignatures()')
-    +hubTile('📂','Archives','Historique complet','#475569','rgba(71,85,105,.1)','rgba(71,85,105,.3)','ouvrirCentreArchives&&ouvrirCentreArchives()')
-    +hubTile('📝','Mémo','Notes rapides','#fbbf24','rgba(245,158,11,.1)','rgba(245,158,11,.3)','ouvrirMemo&&ouvrirMemo()')
-    +hubTile('🛍️','Liste de courses','Pour l\'économe','#22c55e','rgba(34,197,94,.12)','rgba(34,197,94,.4)','fermerHub();setTimeout(ouvrirListeCourses,200)')
-    +'</div>';
+  /* KPIs */
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 16px 8px">';
+  h+='<div class="hub-kpi"><div class="hub-kpi-v" style="color:#22c55e">'+doneM+'/'+totalM+'</div><div class="hub-kpi-l">Missions</div></div>';
+  h+='<div class="hub-kpi"><div class="hub-kpi-v" style="color:'+(hcAttente>0?'#ef4444':'#64748b')+'">'+hcAttente+'</div><div class="hub-kpi-l">HC en attente</div></div>';
+  h+='<div class="hub-kpi"><div class="hub-kpi-v" style="color:#3b82f6">'+chauffeurs.length+'</div><div class="hub-kpi-l">Chauffeurs</div></div>';
+  h+='<div class="hub-kpi"><div class="hub-kpi-v" style="color:#f97316" id="hub-heure">'+heure+'</div><div class="hub-kpi-l">Heure</div></div>';
+  h+='</div>';
+
+  /* Grille de tuiles */
+  h+='<div style="padding:0 16px 24px">';
+
+  /* SECTION 1 — PLANNING */
+  h+='<div class="hub-section" style="color:#60a5fa">📅 Planning</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  h+=tile('🗓️','Planning complet','Grille horaire','#60a5fa','fermerHub()');
+  h+=tile('📋','Planning du jour','Livraisons rapides','#2dd4bf','ouvrirPlanningSimplifie&&ouvrirPlanningSimplifie();fermerHub()');
+  h+=tile('🌅','Briefing matin','Synthèse journée','#fbbf24','ouvrirBriefingMatin&&ouvrirBriefingMatin()');
+  h+=tile('📊','Tableau de bord','Temps réel','#a78bfa','fermerHub();setTimeout(toggleDashboard,500)');
+  h+=tile('📅','Calendrier mensuel','Vue mois','#34d399','ouvrirCalendrier&&ouvrirCalendrier()');
+  h+=tile('📊','Bilans semaine','Tous chauffeurs','#818cf8','fermerHub();setTimeout(ouvrirVueSemaineBilans,300)');
+  h+='</div>';
+
+  /* SECTION 2 — OPÉRATIONS */
+  h+='<div class="hub-section" style="color:#22c55e">⚡ Opérations du jour</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  h+=tile('🛒','Hors Carte','Commander / suivre','#f97316','fermerHub();setTimeout(ouvrirHorsCarte,200)');
+  h+=tile('🛍️','Liste de courses','Pour l\'économe','#22c55e','fermerHub();setTimeout(ouvrirListeCourses,200)');
+  h+=tile('📸','Photos & Signatures','Preuves chauffeurs','#c084fc','ouvrirPhotosSignatures&&ouvrirPhotosSignatures()');
+  h+=tile('🌍','Envoyer','Aux chauffeurs','#22c55e','syncVersGoogle&&syncVersGoogle()');
+  h+=tile('🖨️','Imprimer A4','Feuilles de route','#60a5fa','ouvrirFeuillesRoute&&ouvrirFeuillesRoute()');
+  h+=tile('📢','Message équipe','Broadcast','#f59e0b','fermerHub();setTimeout(envoyerMessageBroadcast,200)');
+  h+='</div>';
+
+  /* SECTION 3 — CHAUFFEURS & RH */
+  h+='<div class="hub-section" style="color:#a78bfa">👤 Chauffeurs & RH</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  h+=tile('🚦','Statuts','Absences / congés','#f59e0b','ouvrirStatutRapide&&ouvrirStatutRapide()');
+  h+=tile('📄','Fiches','Dossiers chauffeurs','#a78bfa','ouvrirFiches&&ouvrirFiches()');
+  h+=tile('⚠️','Incidents','Historique','#ef4444','fermerHub();setTimeout(ouvrirHistoriqueIncidents,200)');
+  h+=tile('🚗','Véhicules','Flotte & alertes','#94a3b8','ouvrirGestionVehicules&&ouvrirGestionVehicules()');
+  h+=tile('🔍','Recherche','Clients & missions','#0ea5e9','ouvrirRechercheGlobale&&ouvrirRechercheGlobale()');
+  h+=tile('📊','KPIs semaine','Chiffres clés','#22c55e','fermerHub();setTimeout(afficherKPIsSemaine,200)');
+  h+='</div>';
+
+  /* SECTION 4 — OUTILS */
+  h+='<div class="hub-section" style="color:#f59e0b">🔧 Outils & Rapports</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  h+=tile('📄','Rapport journalier','Export PDF','#6366f1','fermerHub();setTimeout(exportRapportJournalier,200)');
+  h+=tile('📥','Export CSV','Toutes données','#0ea5e9','fermerHub();setTimeout(exporterCSV,200)');
+  h+=tile('📂','Archives','Historique complet','#475569','ouvrirCentreArchives&&ouvrirCentreArchives()');
+  h+=tile('📝','Mémo','Notes rapides','#fbbf24','ouvrirMemo&&ouvrirMemo()');
+  h+=tile('🏛️','Chronogramme','Parcours insertion','#22c55e','ouvrirChronogramme&&ouvrirChronogramme()');
+  h+=tile('🔔','Notifications','Alertes auto','#ef4444','ouvrirNotifications&&ouvrirNotifications()');
+  h+='</div>';
+
+  h+='</div>'; /* fin padding */
+
+  hub.innerHTML=h;
+  document.body.appendChild(hub);
 
   /* MAJ heure en direct */
-  setInterval(function(){
+  var heureTick=setInterval(function(){
     var el=document.getElementById('hub-heure');
-    if(el) el.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    if(!el){clearInterval(heureTick);return;}
+    el.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   },30000);
-
-  document.body.appendChild(hub);
 }
 
 function hubTile(icon,label,sub,col,bg,border,fn){
@@ -26084,6 +26121,9 @@ function hubTile(icon,label,sub,col,bg,border,fn){
 function fermerHub(){
   var hub=document.getElementById('cana-hub');
   if(hub)hub.remove();
+  /* Rétablir la visibilité du planning */
+  var planningEl=document.querySelector('.grid-wrap,.planning-wrap,#grid-container,#planning-grid,.gw');
+  if(planningEl) planningEl.style.visibility='visible';
   if(window._hubGlowHandler){document.removeEventListener('mousemove',window._hubGlowHandler);window._hubGlowHandler=null;}
   if(window._hubKeyHandler){document.removeEventListener('keydown',window._hubKeyHandler);window._hubKeyHandler=null;}
 }
