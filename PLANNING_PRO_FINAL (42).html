@@ -436,7 +436,14 @@ window.ouvrirTourneesRapide=function(){
         /* ── Fin bandeau Bonjour ── */
         if(typeof appliquerRestrictionsService==='function')appliquerRestrictionsService();
         setTimeout(function(){chargerDepuisSupabase(true);},600);
-        if(typeof afficherHub==='function')setTimeout(afficherHub,1000);
+        /* Afficher le hub avec retry */
+        (function tryHub(n){
+          if(typeof afficherHub==='function'){
+            setTimeout(afficherHub, 500);
+          } else if(n>0){
+            setTimeout(function(){tryHub(n-1);}, 300);
+          }
+        })(10);
         if(typeof creerBoutonAccueilFlottant==='function')creerBoutonAccueilFlottant();
         if(window._serviceActuel&&window._serviceActuel.niveau==='admin'&&typeof ouvrirFenetreValidation==='function'){
           setTimeout(function(){ouvrirFenetreValidation(false);},900);
@@ -7254,6 +7261,303 @@ document.addEventListener('keydown',function(e){
 });
 
 console.log('✅ Planning extras: historique incidents · KPIs · CSV · alertes véhicules');
+})();
+
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   LISTE DE COURSES — La Table de Cana
+   Tous les services peuvent ajouter des achats à faire
+   L'économe voit tout centralisé et peut valider
+══════════════════════════════════════════════════════ */
+(function(){
+
+var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var HDRS={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'};
+
+var _courses=[];
+
+/* ── Charger depuis Supabase ── */
+async function lcLoad(){
+  try{
+    var r=await fetch(SUPA+'/rest/v1/planning?date=eq.LISTE_COURSES&select=donnees&limit=1',{
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+    });
+    var rows=await r.json();
+    if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.items){
+      _courses=rows[0].donnees.items;
+    } else {
+      _courses=[];
+    }
+  }catch(e){_courses=[];}
+}
+
+/* ── Sauvegarder ── */
+async function lcSave(){
+  try{
+    await fetch(SUPA+'/rest/v1/planning',{
+      method:'POST',headers:HDRS,
+      body:JSON.stringify({
+        date:'LISTE_COURSES',
+        donnees:{items:_courses,updated_at:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      })
+    });
+  }catch(e){}
+}
+
+/* ── Ouvrir ── */
+window.ouvrirListeCourses=function(){
+  var ex=document.getElementById('lc-win');
+  if(ex){ex.remove();return;}
+
+  var srv=window._serviceActuel||{nom:'Planning',icone:'📋'};
+
+  var win=document.createElement('div');
+  win.id='lc-win';
+  win.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px';
+  win.onclick=function(e){if(e.target===win)win.remove();};
+
+  var box=document.createElement('div');
+  box.style.cssText='background:#0a1628;border:2px solid #22c55e;border-radius:18px;padding:22px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+
+  box.innerHTML=
+    /* Header */
+    '<div style="display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="font-size:20px;font-weight:900;color:#fff">🛍️ Liste de courses</div>'
+    +'<button onclick="document.getElementById(\'lc-win\').remove()" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">✕ Fermer</button>'
+    +'</div>'
+
+    /* Onglets */
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="lctab-liste" onclick="lcShowTab(\'liste\')" style="flex:1;padding:8px;background:rgba(34,197,94,.2);border:2px solid #22c55e;border-radius:8px;color:#22c55e;font-size:12px;font-weight:900;cursor:pointer">📋 Liste (0)</button>'
+    +'<button id="lctab-ajouter" onclick="lcShowTab(\'ajouter\')" style="flex:1;padding:8px;background:#071526;border:2px solid #1a3550;border-radius:8px;color:#64748b;font-size:12px;font-weight:800;cursor:pointer">➕ Ajouter un achat</button>'
+    +'</div>'
+
+    /* Stats */
+    +'<div id="lc-stats" style="display:flex;gap:8px;flex-wrap:wrap"></div>'
+
+    /* Contenu */
+    +'<div id="lc-content" style="overflow-y:auto;flex:1"></div>';
+
+  win.appendChild(box);
+  document.body.appendChild(win);
+
+  lcLoad().then(function(){
+    lcUpdateStats();
+    lcShowTab('liste');
+  });
+};
+
+window.lcShowTab=function(tab){
+  var l=document.getElementById('lctab-liste');
+  var a=document.getElementById('lctab-ajouter');
+  if(l){l.style.background=tab==='liste'?'rgba(34,197,94,.2)':'#071526';l.style.borderColor=tab==='liste'?'#22c55e':'#1a3550';l.style.color=tab==='liste'?'#22c55e':'#64748b';}
+  if(a){a.style.background=tab==='ajouter'?'rgba(34,197,94,.2)':'#071526';a.style.borderColor=tab==='ajouter'?'#22c55e':'#1a3550';a.style.color=tab==='ajouter'?'#22c55e':'#64748b';}
+  var el=document.getElementById('lc-content');if(!el)return;
+  if(tab==='ajouter') lcRenderForm(el);
+  else lcRenderListe(el);
+};
+
+function lcUpdateStats(){
+  var el=document.getElementById('lc-stats');if(!el)return;
+  var nb_a=_courses.filter(function(i){return i.statut==='aacheter';}).length;
+  var nb_c=_courses.filter(function(i){return i.statut==='commande';}).length;
+  var nb_f=_courses.filter(function(i){return i.statut==='achete';}).length;
+  var tab=document.getElementById('lctab-liste');
+  if(tab) tab.textContent='📋 Liste ('+_courses.length+')';
+  el.innerHTML=
+    '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25)">🔴 À acheter : '+nb_a+'</span>'
+    +'<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25)">🟡 Commandé : '+nb_c+'</span>'
+    +'<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.25)">✅ Acheté : '+nb_f+'</span>';
+}
+
+function lcRenderListe(el){
+  if(!_courses.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#475569;font-size:13px">🛍️<br><br>Aucun achat à faire pour le moment.<br><span style="font-size:11px;margin-top:6px;display:block">Cliquez sur "Ajouter" pour créer une demande.</span></div>';
+    return;
+  }
+
+  /* Trier : à acheter en premier */
+  var sorted=_courses.slice().sort(function(a,b){
+    var o={aacheter:0,commande:1,achete:2};
+    return (o[a.statut]||0)-(o[b.statut]||0);
+  });
+
+  var cols={aacheter:'#ef4444',commande:'#f59e0b',achete:'#22c55e'};
+  var lbls={aacheter:'🔴 À acheter',commande:'🟡 Commandé',achete:'✅ Acheté'};
+  var isEco=window._serviceActuel&&(window._serviceActuel.niveau==='admin'||window._serviceActuel.nom==='Compta'||window._codeActuel==='compta2026');
+
+  var h='';
+  sorted.forEach(function(item){
+    var realIdx=_courses.indexOf(item);
+    var col=cols[item.statut]||'#64748b';
+    var lbl=lbls[item.statut]||item.statut;
+    var d=item.dateBesoin?new Date(item.dateBesoin).toLocaleDateString('fr-FR'):'';
+
+    h+='<div style="background:#071526;border:1px solid '+col+'44;border-left:4px solid '+col+';border-radius:12px;padding:14px;margin-bottom:10px">';
+    h+='<div style="display:flex;align-items:start;gap:10px">';
+    h+='<div style="flex:1;min-width:0">';
+
+    /* Badges */
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">';
+    h+='<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:5px;background:'+col+'18;color:'+col+';border:1px solid '+col+'33">'+lbl+'</span>';
+    if(item.service) h+='<span style="font-size:10px;color:#64748b;font-weight:700;background:#0a1628;padding:2px 8px;border-radius:5px;border:1px solid #1a3550">📍 '+item.service+'</span>';
+    if(item.urgence==='urgent') h+='<span style="font-size:10px;font-weight:900;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(239,68,68,.3)">⚡ URGENT</span>';
+    if(item.categorie) h+='<span style="font-size:10px;color:#818cf8;background:rgba(99,102,241,.08);padding:2px 8px;border-radius:5px;border:1px solid rgba(99,102,241,.2)">'+item.categorie+'</span>';
+    h+='</div>';
+
+    /* Contenu */
+    h+='<div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:4px">'+( item.article||'Article')+'</div>';
+    if(item.quantite||item.unite) h+='<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 Qté : '+(item.quantite||'—')+' '+(item.unite||'')+'</div>';
+    if(item.prestation) h+='<div style="font-size:12px;color:#94a3b8;margin-bottom:3px">🍽️ Pour : '+item.prestation+'</div>';
+    if(d) h+='<div style="font-size:11px;color:'+col+';font-weight:700;margin-bottom:3px">📅 Besoin le : '+d+'</div>';
+    if(item.note) h+='<div style="font-size:11px;color:#64748b;font-style:italic;margin-bottom:5px">💬 '+item.note+'</div>';
+    h+='<div style="font-size:10px;color:#334155">Demandé par : '+(item.demandePar||'—')+' · '+new Date(item.createdAt||0).toLocaleDateString('fr-FR')+'</div>';
+    h+='</div>';
+
+    /* Boutons — l'économe (compta/admin) peut tout gérer, les autres voient */
+    h+='<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+    if(isEco){
+      if(item.statut==='aacheter'){
+        h+='<button data-i="'+realIdx+'" onclick="lcSt(this.dataset.i,\'commande\')" style="padding:5px 10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">🟡 Commandé</button>';
+      }
+      if(item.statut!=='achete'){
+        h+='<button data-i="'+realIdx+'" onclick="lcSt(this.dataset.i,\'achete\')" style="padding:5px 10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;font-weight:800;cursor:pointer">✅ Acheté</button>';
+      }
+      if(item.statut==='achete'){
+        h+='<button data-i="'+realIdx+'" onclick="lcSt(this.dataset.i,\'aacheter\')" style="padding:5px 10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">↩ Réouvrir</button>';
+      }
+      h+='<button data-i="'+realIdx+'" onclick="lcDel(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+    }
+    h+='</div></div></div>';
+  });
+
+  el.innerHTML=h;
+}
+
+function lcRenderForm(el){
+  var srv=window._serviceActuel||{nom:'Planning'};
+  el.innerHTML='<div style="background:#071526;border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:18px">'
+    +'<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:16px">📝 Demande d\'achat</div>'
+
+    /* Service + Urgence */
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
+    +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Votre service</div>'
+    +'<select id="lcf-service" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+    +'<option>Direction</option><option>Logistique</option><option>Cuisine</option><option>CRM / Insertion</option><option>Compta / Économe</option><option>RH</option><option>Commercial</option></select></div>'
+    +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Urgence</div>'
+    +'<select id="lcf-urgence" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+    +'<option value="normal">Normal</option><option value="urgent">⚡ Urgent</option></select></div></div>'
+
+    /* Catégorie */
+    +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Catégorie</div>'
+    +'<select id="lcf-categorie" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+    +'<option>🍔 Alimentaire</option><option>🧴 Hygiène / Entretien</option><option>📦 Emballage / Conditionnement</option><option>🍽️ Vaisselle / Matériel</option><option>🖊️ Fournitures de bureau</option><option>⚙️ Matériel technique</option><option>🌿 Décoration / Fleurs</option><option>Autre</option></select></div>'
+
+    /* Article */
+    +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Article à acheter *</div>'
+    +'<input id="lcf-article" placeholder="Ex: Barquettes aluminium 500ml, Fleurs de table, Nappe blanche..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+
+    /* Quantité + Unité */
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
+    +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Quantité</div>'
+    +'<input id="lcf-qte" placeholder="Ex: 200" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Unité</div>'
+    +'<select id="lcf-unite" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+    +'<option>unités</option><option>kg</option><option>litres</option><option>boîtes</option><option>sacs</option><option>cartons</option><option>rouleaux</option><option>barquettes</option></select></div></div>'
+
+    /* Prestation concernée */
+    +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Prestation concernée</div>'
+    +'<input id="lcf-prestation" placeholder="Ex: Mariage Dupont 200 personnes, Séminaire Mairie..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+
+    /* Date besoin */
+    +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Date de besoin</div>'
+    +'<input type="date" id="lcf-date" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+
+    /* Note */
+    +'<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Note pour l\'économe</div>'
+    +'<textarea id="lcf-note" rows="3" placeholder="Précisions, marque souhaitée, fournisseur habituel..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea></div>'
+
+    +'<button onclick="lcEnvoyer()" style="width:100%;padding:14px;background:#22c55e;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit">📤 Envoyer à l\'économe</button>'
+    +'</div>';
+}
+
+window.lcEnvoyer=function(){
+  var article=(document.getElementById('lcf-article')||{}).value||'';
+  if(!article.trim()){
+    if(typeof showT==='function') showT('L\'article est obligatoire','#ef4444');
+    return;
+  }
+  var srv=window._serviceActuel||{nom:'Planning'};
+  var newItem={
+    id:Date.now(),
+    service:(document.getElementById('lcf-service')||{}).value||srv.nom,
+    urgence:(document.getElementById('lcf-urgence')||{}).value||'normal',
+    categorie:(document.getElementById('lcf-categorie')||{}).value||'',
+    article:article.trim(),
+    quantite:(document.getElementById('lcf-qte')||{}).value||'',
+    unite:(document.getElementById('lcf-unite')||{}).value||'unités',
+    prestation:(document.getElementById('lcf-prestation')||{}).value||'',
+    dateBesoin:(document.getElementById('lcf-date')||{}).value||'',
+    note:(document.getElementById('lcf-note')||{}).value||'',
+    demandePar:srv.nom+(srv.prenom?' — '+srv.prenom:''),
+    statut:'aacheter',
+    createdAt:new Date().toISOString()
+  };
+  _courses.push(newItem);
+  lcSave().then(function(){
+    lcUpdateStats();
+    lcShowTab('liste');
+    if(typeof showT==='function') showT('✅ Demande envoyée à l\'économe','#22c55e');
+  });
+};
+
+window.lcSt=function(i,st){
+  i=parseInt(i);
+  if(!_courses[i]) return;
+  _courses[i].statut=st;
+  if(st==='achete') _courses[i].acheteLe=new Date().toISOString();
+  lcSave().then(function(){
+    lcUpdateStats();
+    var el=document.getElementById('lc-content');
+    if(el) lcRenderListe(el);
+    if(typeof showT==='function') showT(st==='achete'?'✅ Marqué acheté':'🔄 Statut mis à jour','#22c55e');
+  });
+};
+
+window.lcDel=function(i){
+  i=parseInt(i);
+  if(!confirm('Supprimer cette demande ?')) return;
+  _courses.splice(i,1);
+  lcSave().then(function(){
+    lcUpdateStats();
+    var el=document.getElementById('lc-content');
+    if(el) lcRenderListe(el);
+  });
+};
+
+/* ── Ajouter dans le hub et le menu ── */
+setTimeout(function(){
+  /* Dans le menu principal */
+  var menu=document.getElementById('menu-principal');
+  if(menu&&!document.getElementById('btn-liste-courses')){
+    var divider=document.createElement('div');
+    divider.style.cssText='border-top:1px solid #1e293b;margin:4px 0';
+    menu.insertBefore(divider, menu.firstChild);
+    var btn=document.createElement('button');
+    btn.id='btn-liste-courses';
+    btn.className='menu-item';
+    btn.style.cssText='font-weight:900;color:#22c55e;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2)!important';
+    btn.textContent='🛍️ Liste de courses — Économe';
+    btn.onclick=function(){ouvrirListeCourses();var m=document.getElementById('menu-principal');if(m)m.style.display='none';};
+    menu.insertBefore(btn, menu.firstChild);
+  }
+},3000);
+
+console.log('✅ Liste de courses chargée');
 })();
 
 </script>
@@ -25756,6 +26060,7 @@ function afficherHub(){
     +hubTile('📸','Photos','Signatures preuves','#c084fc','rgba(168,85,247,.1)','rgba(168,85,247,.3)','ouvrirPhotosSignatures&&ouvrirPhotosSignatures()')
     +hubTile('📂','Archives','Historique complet','#475569','rgba(71,85,105,.1)','rgba(71,85,105,.3)','ouvrirCentreArchives&&ouvrirCentreArchives()')
     +hubTile('📝','Mémo','Notes rapides','#fbbf24','rgba(245,158,11,.1)','rgba(245,158,11,.3)','ouvrirMemo&&ouvrirMemo()')
+    +hubTile('🛍️','Liste de courses','Pour l\'économe','#22c55e','rgba(34,197,94,.12)','rgba(34,197,94,.4)','fermerHub();setTimeout(ouvrirListeCourses,200)')
     +'</div>';
 
   /* MAJ heure en direct */
