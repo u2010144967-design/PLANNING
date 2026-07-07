@@ -27330,52 +27330,214 @@ function hcInit(){
 }
 
 window.ouvrirHorsCarte = function(){
-  if(typeof ST==='undefined') window.ST={};
-  if(!ST.horsCarte) ST.horsCarte=[];
-
-  /* Supprimer si déjà ouvert */
   var ex=document.getElementById('hc-win');
-  if(ex){ ex.remove(); return; }
+  if(ex){ex.remove();return;}
 
-  /* Fenêtre simple - div directe sans mbg */
+  var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  var hdrs={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'};
+  var _items=[];
+  var _tab='liste';
+
+  /* Créer la fenêtre */
   var win=document.createElement('div');
   win.id='hc-win';
-  win.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px';
+  win.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px';
+  win.onclick=function(e){if(e.target===win)win.remove();};
 
   var box=document.createElement('div');
-  box.style.cssText='background:#0a1628;border:2px solid #f97316;border-radius:16px;padding:22px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  box.style.cssText='background:#0a1628;border:2px solid #f97316;border-radius:18px;padding:22px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;gap:12px;overflow:hidden';
 
-  /* Titre */
-  var hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between';
-  var titre=document.createElement('div');
-  titre.style.cssText='font-size:18px;font-weight:900;color:#fff';
-  titre.textContent='Hors Carte';
-  var btnX=document.createElement('button');
-  btnX.style.cssText='background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer';
-  btnX.textContent='X Fermer';
-  btnX.onclick=function(){ win.remove(); };
-  hdr.appendChild(titre);
-  hdr.appendChild(btnX);
+  /* Header */
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="font-size:20px;font-weight:900;color:#fff">🛒 Hors Carte</div>'
+    +'<button onclick="document.getElementById('hc-win').remove()" style="background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">✕ Fermer</button>'
+    +'</div>'
+    /* Onglets */
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="hctab-liste" onclick="hcShowTab('liste')" style="flex:1;padding:8px;background:rgba(249,115,22,.2);border:2px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:900;cursor:pointer">📋 Liste</button>'
+    +'<button id="hctab-ajouter" onclick="hcShowTab('ajouter')" style="flex:1;padding:8px;background:#071526;border:2px solid #1a3550;border-radius:8px;color:#64748b;font-size:12px;font-weight:800;cursor:pointer">➕ Signaler un hors carte</button>'
+    +'</div>'
+    /* Stats */
+    +'<div id="hc-stats" style="display:flex;gap:8px;flex-wrap:wrap"></div>'
+    /* Contenu */
+    +'<div id="hc-content" style="overflow-y:auto;flex:1"></div>';
 
-  /* Bouton ajouter */
-  var btnAdd=document.createElement('button');
-  btnAdd.style.cssText='padding:11px;background:rgba(249,115,22,.15);border:2px dashed rgba(249,115,22,.5);border-radius:8px;color:#f97316;font-size:13px;font-weight:800;cursor:pointer';
-  btnAdd.textContent='+ Ajouter un article hors carte';
-  btnAdd.onclick=function(){ hcOuvrirFormulaire(); };
-
-  /* Liste */
-  var liste=document.createElement('div');
-  liste.id='hc-liste';
-  liste.style.cssText='overflow-y:auto;flex:1';
-
-  box.appendChild(hdr);
-  box.appendChild(btnAdd);
-  box.appendChild(liste);
   win.appendChild(box);
   document.body.appendChild(win);
 
-  hcRefreshListe();
+  /* Charger depuis Supabase */
+  function loadHC(){
+    document.getElementById('hc-content').innerHTML='<div style="text-align:center;padding:24px;color:#64748b">Chargement...</div>';
+    fetch(SUPA+'/rest/v1/planning?date=eq.HORS_CARTE_SYNC&select=donnees&limit=1',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}})
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.horsCarte){
+        _items=rows[0].donnees.horsCarte;
+        /* Aussi synchroniser avec ST local */
+        if(window.ST) ST.horsCarte=_items;
+      } else {
+        _items=(window.ST&&ST.horsCarte)||[];
+      }
+      renderHCStats();
+      hcShowTab(_tab);
+    }).catch(function(){
+      _items=(window.ST&&ST.horsCarte)||[];
+      renderHCStats();
+      hcShowTab(_tab);
+    });
+  }
+
+  function saveHC(){
+    var body={date:'HORS_CARTE_SYNC',donnees:{horsCarte:_items,updated_at:new Date().toISOString()},updated_at:new Date().toISOString()};
+    fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:hdrs,body:JSON.stringify(body)}).catch(function(){});
+    if(window.ST) ST.horsCarte=_items;
+    if(typeof save==='function') save();
+    if(typeof sauverDansSupabase==='function') setTimeout(sauverDansSupabase,500);
+    renderHCStats();
+    hcNotifierAppChauffeur();
+  }
+
+  function renderHCStats(){
+    var el=document.getElementById('hc-stats');if(!el)return;
+    var nb_a=_items.filter(function(h){return h.statut==='atraiter';}).length;
+    var nb_e=_items.filter(function(h){return h.statut==='encours';}).length;
+    var nb_t=_items.filter(function(h){return h.statut==='traite';}).length;
+    el.innerHTML=
+      '<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25)">🔴 À traiter : '+nb_a+'</span>'
+      +'<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25)">🟡 En cours : '+nb_e+'</span>'
+      +'<span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.25)">✅ Traités : '+nb_t+'</span>';
+  }
+
+  window.hcShowTab=function(tab){
+    _tab=tab;
+    var l=document.getElementById('hctab-liste');
+    var a=document.getElementById('hctab-ajouter');
+    if(l){l.style.background=tab==='liste'?'rgba(249,115,22,.2)':'#071526';l.style.borderColor=tab==='liste'?'#f97316':'#1a3550';l.style.color=tab==='liste'?'#f97316':'#64748b';}
+    if(a){a.style.background=tab==='ajouter'?'rgba(249,115,22,.2)':'#071526';a.style.borderColor=tab==='ajouter'?'#f97316':'#1a3550';a.style.color=tab==='ajouter'?'#f97316':'#64748b';}
+    if(tab==='liste') renderHCListe();
+    else renderHCForm();
+  };
+
+  function renderHCListe(){
+    var el=document.getElementById('hc-content');if(!el)return;
+    if(!_items.length){
+      el.innerHTML='<div style="text-align:center;padding:32px;color:#475569;font-size:13px">🛒<br><br>Aucun hors carte pour le moment.<br><span style="font-size:11px;margin-top:6px;display:block">Utilisez l'onglet "Signaler" pour en ajouter un.</span></div>';
+      return;
+    }
+    var sorted=_items.slice().sort(function(a,b){var o={atraiter:0,encours:1,traite:2};return (o[a.statut]||0)-(o[b.statut]||0);});
+    var cols={atraiter:'#ef4444',encours:'#f59e0b',traite:'#22c55e'};
+    var lbls={atraiter:'🔴 À traiter',encours:'🟡 En cours',traite:'✅ Traité'};
+    var h='';
+    sorted.forEach(function(item){
+      var realIdx=_items.indexOf(item);
+      var col=cols[item.statut]||'#64748b';
+      var lbl=lbls[item.statut]||item.statut;
+      var d=item.dateEvenement?new Date(item.dateEvenement).toLocaleDateString('fr-FR'):'';
+      h+='<div style="background:#071526;border:1px solid '+col+'44;border-left:4px solid '+col+';border-radius:12px;padding:14px;margin-bottom:10px">';
+      h+='<div style="display:flex;align-items:start;gap:10px">';
+      h+='<div style="flex:1">';
+      h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">';
+      h+='<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:5px;background:'+col+'18;color:'+col+';border:1px solid '+col+'33">'+lbl+'</span>';
+      if(item.service) h+='<span style="font-size:10px;color:#64748b;font-weight:700">📍 '+item.service+'</span>';
+      if(item.urgence==='urgent') h+='<span style="font-size:10px;font-weight:900;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 7px;border-radius:5px">⚡ URGENT</span>';
+      if(item.chauffeur) h+='<span style="font-size:10px;color:#3b82f6;font-weight:700">👤 '+item.chauffeur+'</span>';
+      h+='</div>';
+      h+='<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:3px">'+(item.client||'Client non précisé')+'</div>';
+      h+='<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📦 '+(item.article||'')+(item.quantite?' — Qté : '+item.quantite:'')+'</div>';
+      if(d) h+='<div style="font-size:11px;color:'+col+';font-weight:700;margin-bottom:3px">📅 Évènement : '+d+'</div>';
+      if(item.note) h+='<div style="font-size:11px;color:#94a3b8;font-style:italic;margin-bottom:5px">💬 '+item.note+'</div>';
+      h+='<div style="font-size:10px;color:#334155">Par : '+(item.saisiepar||'—')+' · '+new Date(item.createdAt||0).toLocaleDateString('fr-FR')+'</div>';
+      h+='</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">';
+      if(item.statut==='atraiter'){
+        h+='<button data-i="'+realIdx+'" onclick="hcSt(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:6px;color:#f59e0b;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">👤 Assigner</button>';
+        h+='<button data-i="'+realIdx+'" onclick="hcSt(this.dataset.i,'encours')" style="padding:5px 10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#f59e0b;font-size:10px;cursor:pointer">🟡 En cours</button>';
+      }
+      if(item.statut!=='traite'){
+        h+='<button data-i="'+realIdx+'" onclick="hcSt(this.dataset.i,'traite')" style="padding:5px 10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;color:#22c55e;font-size:10px;cursor:pointer">✅ Traité</button>';
+      }
+      if(item.statut==='traite'){
+        h+='<button data-i="'+realIdx+'" onclick="hcSt(this.dataset.i,'atraiter')" style="padding:5px 10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">↩ Réouvrir</button>';
+      }
+      h+='<button data-i="'+realIdx+'" onclick="hcDel(this.dataset.i)" style="padding:5px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:6px;color:#ef4444;font-size:10px;cursor:pointer">🗑️</button>';
+      h+='</div></div></div>';
+    });
+    el.innerHTML=h;
+  }
+
+  function renderHCForm(){
+    var el=document.getElementById('hc-content');if(!el)return;
+    el.innerHTML='<div style="background:#071526;border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:18px">'
+      +'<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:16px">📝 Signaler un hors carte</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
+      +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Service / Département</div>'
+      +'<select id="hcf-service" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+      +'<option>Logistique</option><option>Cuisine</option><option>CRM / Insertion</option><option>Direction</option><option>Client externe</option></select></div>'
+      +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Urgence</div>'
+      +'<select id="hcf-urgence" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none">'
+      +'<option value="normal">Normal</option><option value="urgent">⚡ Urgent — traiter maintenant</option></select></div></div>'
+      +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Client / Évènement *</div>'
+      +'<input id="hcf-client" placeholder="Ex : Mariage Dupont, séminaire mairie, buffet association..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 120px;gap:12px;margin-bottom:12px">'
+      +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Article / Commande *</div>'
+      +'<input id="hcf-article" placeholder="Ex : 80 portions dessert, fleurs table, matériel sono..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+      +'<div><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Quantité</div>'
+      +'<input id="hcf-qte" placeholder="Ex : 80" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div></div>'
+      +'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Date de l'évènement</div>'
+      +'<input type="date" id="hcf-date" style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box"></div>'
+      +'<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:5px">Notes / Précisions</div>'
+      +'<textarea id="hcf-note" rows="3" placeholder="Infos supplémentaires pour le responsable logistique..." style="width:100%;background:#0a1628;border:1px solid #1a3550;border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea></div>'
+      +'<button onclick="hcEnvoyer()" style="width:100%;padding:14px;background:#f97316;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:900;cursor:pointer">📤 Envoyer au responsable logistique</button>'
+      +'</div>';
+  }
+
+  window.hcEnvoyer=function(){
+    var client=(document.getElementById('hcf-client')||{}).value||'';
+    var article=(document.getElementById('hcf-article')||{}).value||'';
+    if(!client.trim()||!article.trim()){if(typeof showT==='function')showT('Client et article sont obligatoires','#ef4444');return;}
+    var newItem={
+      id:Date.now(),
+      service:(document.getElementById('hcf-service')||{}).value||'Logistique',
+      client:client.trim(),
+      article:article.trim(),
+      quantite:(document.getElementById('hcf-qte')||{}).value||'',
+      dateEvenement:(document.getElementById('hcf-date')||{}).value||'',
+      urgence:(document.getElementById('hcf-urgence')||{}).value||'normal',
+      note:(document.getElementById('hcf-note')||{}).value||'',
+      saisiepar:'Planning Pro',
+      statut:'atraiter',
+      createdAt:new Date().toISOString()
+    };
+    _items.push(newItem);
+    saveHC();
+    _tab='liste';
+    hcShowTab('liste');
+    if(typeof showT==='function') showT('✅ Hors carte ajouté — visible dans toute l'équipe','#22c55e');
+    /* Alerte dans le planning */
+    if(typeof alerteHorsCarteDemarrage==='function') setTimeout(alerteHorsCarteDemarrage,500);
+  };
+
+  window.hcSt=function(i,st){
+    i=parseInt(i);
+    if(!_items[i]) return;
+    _items[i].statut=st;
+    if(st==='traite') _items[i].traiteLe=new Date().toISOString();
+    saveHC();
+    renderHCListe();
+    if(typeof showT==='function') showT(st==='traite'?'✅ Marqué traité':'🔄 Statut mis à jour','#22c55e');
+  };
+
+  window.hcDel=function(i){
+    i=parseInt(i);
+    if(!confirm('Supprimer ce hors carte ?')) return;
+    _items.splice(i,1);
+    saveHC();
+    renderHCListe();
+  };
+
+  loadHC();
 };
 
 function hcRefreshListe(){
