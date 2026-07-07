@@ -527,13 +527,15 @@ async function analyserPhotoIA(dataUrl,mimeType,retryCount){
 /* ══ CHARGER TOUS LES EVENEMENTS (preuves) DEPUIS SUPABASE — vue responsable ══ */
 async function loadAllEvents(){
   try{
-    /* Charger tous les evenements individuels (cle commençant par EV_) + ancien format EVENTS en fallback */
-    const r=await fetch(SUPA+'/rest/v1/planning?date=like.EV_*&select=donnees,date&order=date.desc&limit=500',{
-      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
-    });
-    if(!r.ok){console.log('Erreur loadAllEvents HTTP:',r.status);return[];}
-    const rows=await r.json();
-    const events=rows.map(row=>row.donnees).filter(d=>d&&d._isEvent);
+    /* Charger TOUS les événements: EV_*, STATUT_*, BILAN_*, INC_*, CHECKLINFIN_* */
+    const [r1,r2,r3]=await Promise.all([
+      fetch(SUPA+'/rest/v1/planning?date=like.EV_*&select=donnees,date,updated_at&order=updated_at.desc&limit=300',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}}),
+      fetch(SUPA+'/rest/v1/planning?date=like.STATUT_*&select=donnees,date,updated_at&order=updated_at.desc&limit=100',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}}),
+      fetch(SUPA+'/rest/v1/planning?date=like.INC_*&select=donnees,date,updated_at&order=updated_at.desc&limit=100',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}})
+    ]);
+    const [rows1,rows2,rows3]=await Promise.all([r1.json(),r2.json(),r3.json()]);
+    const allRows=[...(Array.isArray(rows1)?rows1:[]),...(Array.isArray(rows2)?rows2:[]),...(Array.isArray(rows3)?rows3:[])];
+    const events=allRows.map(row=>({...row.donnees,_row_updated:row.updated_at})).filter(d=>d&&(d._isEvent);
 
     /* Fallback: ancien format groupe (pour compatibilite avec donnees existantes) */
     const oldRows=await db('planning?date=eq.EVENTS&select=donnees&limit=1');
@@ -793,39 +795,132 @@ function ResponsableHome({onLogout,onSelectDriver,onNavigate}){
       <div style={{padding:'0 16px',marginBottom:6}}>
         <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,textTransform:'uppercase',marginBottom:10}}>🛠️ Outils</div>
       </div>
-      <div className="icon-grid">
-        <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('planning')}>
-          <div className="icon-tile-emoji">📅</div>
-          <div className="icon-tile-label" style={{color:'#60a5fa'}}>Planning</div>
-          <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Voir & modifier</div>
-        </button>
-        <button className="icon-tile" style={{background:'rgba(20,184,166,.1)',borderColor:'rgba(20,184,166,.25)'}} onClick={()=>onNavigate('messages')}>
-          <div className="icon-tile-emoji">💬</div>
-          <div className="icon-tile-label" style={{color:'#2dd4bf'}}>Messages</div>
-          <div className="icon-tile-sub" style={{color:'#2dd4bf'}}>Tous chauffeurs</div>
-        </button>
-        <button className="icon-tile" style={{background:'rgba(245,158,11,.1)',borderColor:'rgba(245,158,11,.25)'}} onClick={()=>onNavigate('vehicles')}>
-          <div className="icon-tile-emoji">🚛</div>
-          <div className="icon-tile-label" style={{color:'#fbbf24'}}>Véhicules</div>
-          <div className="icon-tile-sub" style={{color:'#fbbf24'}}>Flotte complète</div>
-        </button>
-        <button className="icon-tile" style={{background:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.25)'}} onClick={()=>onNavigate('stats')}>
-          <div className="icon-tile-emoji">📊</div>
-          <div className="icon-tile-label" style={{color:'#c084fc'}}>Statistiques</div>
-          <div className="icon-tile-sub" style={{color:'#c084fc'}}>Performance</div>
-        </button>
-        <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('archives')}>
-          <div className="icon-tile-emoji">📂</div>
-          <div className="icon-tile-label" style={{color:'#60a5fa'}}>Archives</div>
-          <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Historique complet</div>
-        </button>
-      </div>
+      <div style={{marginBottom:8}}>
+          {/* === MISSIONS & ORGANISATION === */}
+          <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',padding:'0 16px',marginBottom:8}}>📦 Missions</div>
+          <div className="icon-grid" style={{marginBottom:16}}>
+            <button className="icon-tile" style={{background:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.25)'}} onClick={()=>onNavigate('today')}>
+              <div className="icon-tile-emoji">🚚</div>
+              <div className="icon-tile-label" style={{color:'#60a5fa'}}>Mes missions</div>
+              <div className="icon-tile-sub" style={{color:'#60a5fa'}}>Livraisons du jour</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(20,184,166,.1)',borderColor:'rgba(20,184,166,.25)'}} onClick={()=>onNavigate('calendar')}>
+              <div className="icon-tile-emoji">📅</div>
+              <div className="icon-tile-label" style={{color:'#2dd4bf'}}>Calendrier</div>
+              <div className="icon-tile-sub" style={{color:'#2dd4bf'}}>Mon mois</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(14,165,233,.1)',borderColor:'rgba(14,165,233,.25)'}} onClick={()=>onNavigate('historique')}>
+              <div className="icon-tile-emoji">📅</div>
+              <div className="icon-tile-label" style={{color:'#38bdf8'}}>Historique</div>
+              <div className="icon-tile-sub" style={{color:'#38bdf8'}}>Mes semaines</div>
+            </button>
+          </div>
 
-      {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}>
+          {/* === SIGNALEMENTS === */}
+          <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',padding:'0 16px',marginBottom:8}}>🚨 Signalements</div>
+          <div className="icon-grid" style={{marginBottom:16}}>
+            <button className="icon-tile" style={{background:'rgba(249,115,22,.12)',borderColor:'rgba(249,115,22,.35)'}} onClick={()=>onNavigate('horscarte')}>
+              <div className="icon-tile-emoji">🛒</div>
+              <div className="icon-tile-label" style={{color:'#f97316'}}>Hors Carte</div>
+              <div className="icon-tile-sub" style={{color:'#f97316'}}>Commandes spéciales</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(239,68,68,.1)',borderColor:'rgba(239,68,68,.3)'}} onClick={()=>onNavigate('incident')}>
+              <div className="icon-tile-emoji">⚠️</div>
+              <div className="icon-tile-label" style={{color:'#ef4444'}}>Incident</div>
+              <div className="icon-tile-sub" style={{color:'#ef4444'}}>Signaler</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(34,197,94,.1)',borderColor:'rgba(34,197,94,.25)'}} onClick={()=>onNavigate('statut')}>
+              <div className="icon-tile-emoji">📡</div>
+              <div className="icon-tile-label" style={{color:'#4ade80'}}>Mon statut</div>
+              <div className="icon-tile-sub" style={{color:'#4ade80'}}>Visible en direct</div>
+            </button>
+          </div>
+
+          {/* === BILAN & SUIVI === */}
+          <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',padding:'0 16px',marginBottom:8}}>📝 Bilan & suivi</div>
+          <div className="icon-grid" style={{marginBottom:16}}>
+            <button className="icon-tile" style={{background:'rgba(99,102,241,.1)',borderColor:'rgba(99,102,241,.25)'}} onClick={()=>onNavigate('bilan')}>
+              <div className="icon-tile-emoji">📝</div>
+              <div className="icon-tile-label" style={{color:'#818cf8'}}>Bilan journée</div>
+              <div className="icon-tile-sub" style={{color:'#818cf8'}}>Rapport tournée</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(245,158,11,.1)',borderColor:'rgba(245,158,11,.25)'}} onClick={()=>onNavigate('score')}>
+              <div className="icon-tile-emoji">⭐</div>
+              <div className="icon-tile-label" style={{color:'#fbbf24'}}>Mon score</div>
+              <div className="icon-tile-sub" style={{color:'#fbbf24'}}>Performance</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(34,197,94,.1)',borderColor:'rgba(34,197,94,.25)'}} onClick={()=>onNavigate('checklist_fin')}>
+              <div className="icon-tile-emoji">✅</div>
+              <div className="icon-tile-label" style={{color:'#4ade80'}}>Fin journée</div>
+              <div className="icon-tile-sub" style={{color:'#4ade80'}}>Checklist retour</div>
+            </button>
+          </div>
+
+          {/* === OUTILS === */}
+          <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',padding:'0 16px',marginBottom:8}}>🔧 Outils</div>
+          <div className="icon-grid" style={{marginBottom:16}}>
+            <button className="icon-tile" style={{background:'rgba(20,184,166,.1)',borderColor:'rgba(20,184,166,.25)'}} onClick={()=>onNavigate('messages')}>
+              <div className="icon-tile-emoji">💬</div>
+              <div className="icon-tile-label" style={{color:'#2dd4bf'}}>Messages</div>
+              <div className="icon-tile-sub" style={{color:'#2dd4bf'}}>Équipe</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(245,158,11,.1)',borderColor:'rgba(245,158,11,.25)'}} onClick={()=>onNavigate('vehicle')}>
+              <div className="icon-tile-emoji">🚛</div>
+              <div className="icon-tile-label" style={{color:'#fbbf24'}}>Mon véhicule</div>
+              <div className="icon-tile-sub" style={{color:'#fbbf24'}}>Contrôle</div>
+            </button>
+            <button className="icon-tile" style={{background:'rgba(100,116,139,.1)',borderColor:'rgba(100,116,139,.25)'}} onClick={()=>onNavigate('reprises')}>
+              <div className="icon-tile-emoji">↩️</div>
+              <div className="icon-tile-label" style={{color:'#94a3b8'}}>Reprises</div>
+              <div className="icon-tile-sub" style={{color:'#94a3b8'}}>Retours</div>
+            </button>
+          </div>
+        </div>
+
+            {loading&&<div style={{textAlign:'center',padding:20,color:'var(--muted)',fontSize:12}}>
           <div className="spin" style={{width:24,height:24,margin:'0 auto 10px'}}/>
           <div style={{fontWeight:700,fontSize:13}}>Chargement de votre planning...</div>
           <div style={{fontSize:11,marginTop:4}}>Connexion à La Table de Cana</div>
         </div>}
+      
+      {/* Alertes en direct depuis app chauffeur */}
+      {events.filter(e=>e._isEvent||(e.type&&['incident','statut_chauffeur','bilan_journee','hors_carte_signal','checklist_fin'].includes(e.type))).length>0&&(
+        <div style={{margin:'0 16px 16px'}}>
+          <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:10}}>⚡ Activité récente</div>
+          {events
+            .filter(e=>e._isEvent||(e.type&&['incident','statut_chauffeur','bilan_journee','checklist_fin'].includes(e.type)))
+            .sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0))
+            .slice(0,8)
+            .map((ev,i)=>{
+              const typeMap={
+                'incident':{ico:'⚠️',col:'#ef4444',lbl:'Incident'},
+                'statut_chauffeur':{ico:'📡',col:'#3b82f6',lbl:'Statut'},
+                'bilan_journee':{ico:'📝',col:'#6366f1',lbl:'Bilan'},
+                'checklist_fin':{ico:'✅',col:'#22c55e',lbl:'Fin journée'},
+                'statut':{ico:'📡',col:'#3b82f6',lbl:'Statut'},
+              };
+              const tm=typeMap[ev.type]||{ico:'🔔',col:'#94a3b8',lbl:ev.type||'Événement'};
+              const heure=ev.heure||(ev.ts?new Date(ev.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'');
+              const desc=ev.type==='incident'?ev.incidentType||'Incident'
+                :ev.type==='statut_chauffeur'||ev.type==='statut'?({service:'En service',enroute:'En route',pause:'En pause',retour:'Retour',termine:'Terminé',probleme:'🆘 PROBLÈME'}[ev.statut]||ev.statut||'Statut')
+                :ev.type==='bilan_journee'?`${ev.missionsDone||0}/${ev.missionsTotal||0} missions · ${ev.km||0}km`
+                :ev.type==='checklist_fin'?`${ev.score||'?'} points validés`
+                :'';
+              return(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',background:'var(--card)',border:`1px solid ${tm.col}33`,borderLeft:`3px solid ${tm.col}`,borderRadius:10,marginBottom:6}}>
+                  <span style={{fontSize:16,flexShrink:0}}>{tm.ico}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:800,color:'#fff'}}>{ev.chauffeur||''} <span style={{color:tm.col,fontSize:10}}>{tm.lbl}</span></div>
+                    <div style={{fontSize:11,color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{desc}</div>
+                  </div>
+                  <span style={{fontSize:10,color:'var(--muted)',flexShrink:0}}>{heure}</span>
+                </div>
+              );
+            })
+          }
+        </div>
+      )}
+
       {diag&&<div style={{margin:'0 16px 8px',padding:'6px 12px',background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.15)',borderRadius:8,fontSize:10,color:'#475569',textAlign:'center'}}>🔄 {diag}</div>}
     </div>
   );
@@ -1695,6 +1790,11 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
           <a href={maps} target="_blank" style={{textDecoration:'none'}}>
             <button className="ab ab-maps" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Maps</button>
           </a>
+          <a href={`https://waze.com/ul?q=${encodeURIComponent(m.adresse||m.client||'')}&navigate=yes`} target="_blank" style={{textDecoration:'none'}}>
+            <button style={{width:'100%',background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.25)',borderRadius:12,padding:'10px 8px',color:'#4ade80',fontWeight:800,fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              🗺️ Waze
+            </button>
+          </a>
           {m.contact?(
             <a href={`tel:${m.contact}`} style={{textDecoration:'none'}}>
               <button className="ab ab-call" style={{width:'100%'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Appeler</button>
@@ -1713,6 +1813,20 @@ function MissionDetail({m,ch,onBack,onAction,refreshKey}){
           <button className="ab ab-sign" onClick={()=>onAction(m,'sign')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>{hasSig?'Re-signer':'Signature'}</button>
           <button className="ab ab-voice" onClick={()=>onAction(m,'voice')}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Vocal 🎤</button>
         </div>
+
+        {/* SIGNALER RETARD */}
+        <button onClick={()=>{
+          const raison=window.prompt('Raison du retard :','Embouteillage');
+          if(!raison) return;
+          const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+          const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+          fetch(SUPA+'/rest/v1/planning',{method:'POST',
+            headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({date:'INC_RET_'+Date.now(),donnees:{type:'incident',_isEvent:true,incidentType:'retard',chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:m.client||m.task,gravite:'leger',description:'Retard : '+raison,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),ts:new Date().toISOString()},updated_at:new Date().toISOString()})
+          }).catch(()=>{});
+        }} style={{width:'100%',padding:'10px 14px',background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.25)',borderRadius:12,color:'#fbbf24',fontWeight:800,fontSize:12,cursor:'pointer',marginTop:8}}>
+          ⏰ Signaler un retard sur cette mission
+        </button>
       </div>
 
       {zoomPhoto&&(
@@ -2374,6 +2488,901 @@ function LockScreen({ch,onUnlock}){
   );
 }
 
+
+/* ══════════════════════════════════════════════════════
+   HORS CARTE SCREEN — App Chauffeur
+   Voir les hors carte assignés + en ajouter
+══════════════════════════════════════════════════════ */
+function HorsCarteScreen({ch,onBack,onToast}){
+  const [items,setItems]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [showForm,setShowForm]=React.useState(false);
+  const [form,setForm]=React.useState({client:'',article:'',quantite:'',dateEvenement:'',note:''});
+
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const hdrs={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'};
+
+  const load=async()=>{
+    setLoading(true);
+    try{
+      const r=await fetch(SUPA+'/rest/v1/planning?date=eq.HORS_CARTE_SYNC&limit=1',{headers:hdrs});
+      const rows=await r.json();
+      if(rows&&rows.length&&rows[0].donnees&&rows[0].donnees.horsCarte){
+        const all=rows[0].donnees.horsCarte;
+        /* Filtrer ceux assignés à ce chauffeur OU tous si pas encore assigné */
+        const mine=all.filter(h=>!h.chauffeur||h.chauffeur===ch.display||h.chauffeur===ch.name);
+        setItems(all);
+      }
+    }catch(e){}
+    setLoading(false);
+  };
+
+  React.useEffect(()=>{load();const iv=setInterval(load,10000);return()=>clearInterval(iv);},[]);
+
+  const accepter=async(idx)=>{
+    const updated=[...items];
+    updated[idx]={...updated[idx],chauffeur:ch.display,statut:'encours',accepteLe:new Date().toISOString()};
+    await syncHC(updated);
+    setItems(updated);
+    onToast&&onToast('✅ Hors carte accepté','var(--green)');
+  };
+
+  const terminer=async(idx)=>{
+    const updated=[...items];
+    updated[idx]={...updated[idx],statut:'traite',traiteLe:new Date().toISOString()};
+    await syncHC(updated);
+    setItems(updated);
+    onToast&&onToast('✅ Hors carte terminé','var(--green)');
+  };
+
+  const ajouterHC=async()=>{
+    if(!form.client||!form.article){onToast&&onToast('Client et article requis','var(--red)');return;}
+    const newItem={id:Date.now(),client:form.client,article:form.article,quantite:form.quantite,
+      dateEvenement:form.dateEvenement,note:form.note,saisiepar:ch.display,
+      statut:'atraiter',createdAt:new Date().toISOString(),sourceApp:'chauffeur'};
+    const updated=[...items,newItem];
+    await syncHC(updated);
+    setItems(updated);
+    setForm({client:'',article:'',quantite:'',dateEvenement:'',note:''});
+    setShowForm(false);
+    onToast&&onToast('📦 Hors carte envoyé au responsable','var(--green)');
+  };
+
+  const syncHC=async(list)=>{
+    try{
+      await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:hdrs,
+        body:JSON.stringify({date:'HORS_CARTE_SYNC',donnees:{horsCarte:list,updated_at:new Date().toISOString(),updated_by:ch.display},updated_at:new Date().toISOString()})
+      });
+    }catch(e){}
+  };
+
+  const cols={atraiter:'#ef4444',encours:'#f59e0b',traite:'#22c55e'};
+  const lbls={atraiter:'À traiter',encours:'En cours',traite:'Traité'};
+  const myItems=items.filter(h=>h.chauffeur===ch.display||h.chauffeur===ch.name);
+  const otherItems=items.filter(h=>!h.chauffeur&&h.statut==='atraiter');
+
+  return(
+    <>
+      <Header title="🛒 Hors Carte" onBack={onBack}/>
+      <div className="scroll">
+        <button onClick={()=>setShowForm(!showForm)} style={{width:'100%',padding:14,background:'rgba(249,115,22,.12)',border:'2px dashed rgba(249,115,22,.4)',borderRadius:14,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer',marginBottom:16}}>
+          {showForm?'✕ Annuler':'+ Signaler un hors carte au responsable'}
+        </button>
+
+        {showForm&&(
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:16,padding:16,marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:900,color:'#fff',marginBottom:12}}>Nouveau hors carte</div>
+            {[['client','Client / Évènement','Ex: Mariage Dupont'],['article','Article demandé','Ex: 50 verrines supplémentaires'],['quantite','Quantité','Ex: 50'],['note','Note pour le responsable','Précisions...']].map(([k,lbl,ph])=>(
+              <div key={k} style={{marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:4}}>{lbl}</div>
+                <input value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}
+                  placeholder={ph}
+                  style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'10px 12px',fontSize:13,outline:'none',boxSizing:'border-box'}}/>
+              </div>
+            ))}
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:4}}>Date de l événement</div>
+              <input type="date" value={form.dateEvenement} onChange={e=>setForm({...form,dateEvenement:e.target.value})}
+                style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'10px 12px',fontSize:13,outline:'none',boxSizing:'border-box'}}/>
+            </div>
+            <button onClick={ajouterHC} style={{width:'100%',padding:13,background:'#f97316',border:'none',borderRadius:10,color:'#fff',fontSize:14,fontWeight:800,cursor:'pointer'}}>
+              📤 Envoyer au responsable
+            </button>
+          </div>
+        )}
+
+        {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)',fontSize:13}}>Chargement...</div>}
+
+        {myItems.length>0&&(
+          <>
+            <div style={{fontSize:11,fontWeight:900,color:'#f97316',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Mes hors carte assignés ({myItems.length})</div>
+            {myItems.map((h,i)=>{
+              const col=cols[h.statut]||'#64748b';
+              const lbl=lbls[h.statut]||h.statut;
+              const d=h.dateEvenement?new Date(h.dateEvenement).toLocaleDateString('fr-FR'):'';
+              return(
+                <div key={h.id||i} style={{background:'var(--card)',border:`1px solid ${col}44`,borderLeft:`4px solid ${col}`,borderRadius:12,padding:14,marginBottom:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',gap:8,marginBottom:8}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:900,color:'#fff',marginBottom:3}}>{h.client}</div>
+                      <div style={{fontSize:12,color:'#e2e8f0'}}>📦 {h.article}{h.quantite?' — '+h.quantite:''}</div>
+                      {d&&<div style={{fontSize:11,color:col,fontWeight:700,marginTop:3}}>📅 {d}</div>}
+                      {h.note&&<div style={{fontSize:11,color:'#94a3b8',marginTop:3,fontStyle:'italic'}}>{h.note}</div>}
+                    </div>
+                    <span style={{fontSize:10,fontWeight:800,padding:'3px 8px',borderRadius:6,background:col+'22',color:col,border:`1px solid ${col}44`,whiteSpace:'nowrap'}}>{lbl}</span>
+                  </div>
+                  {h.statut!=='traite'&&(
+                    <button onClick={()=>terminer(items.indexOf(h))} style={{width:'100%',padding:10,background:'rgba(34,197,94,.15)',border:'1px solid rgba(34,197,94,.3)',borderRadius:8,color:'#22c55e',fontSize:12,fontWeight:800,cursor:'pointer'}}>
+                      ✅ Marquer terminé
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {otherItems.length>0&&(
+          <>
+            <div style={{fontSize:11,fontWeight:900,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em',margin:'16px 0 8px'}}>Non assignés — disponibles ({otherItems.length})</div>
+            {otherItems.map((h,i)=>(
+              <div key={h.id||i} style={{background:'var(--card)',border:'1px solid rgba(239,68,68,.3)',borderRadius:12,padding:14,marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:900,color:'#fff',marginBottom:3}}>{h.client}</div>
+                <div style={{fontSize:12,color:'#e2e8f0',marginBottom:10}}>📦 {h.article}{h.quantite?' — '+h.quantite:''}</div>
+                <button onClick={()=>accepter(items.indexOf(h))} style={{width:'100%',padding:10,background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.35)',borderRadius:8,color:'#f97316',fontSize:12,fontWeight:800,cursor:'pointer'}}>
+                  👤 Prendre en charge
+                </button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {!loading&&myItems.length===0&&otherItems.length===0&&(
+          <div style={{textAlign:'center',padding:32,color:'var(--muted)'}}>
+            <div style={{fontSize:36,marginBottom:12}}>🛒</div>
+            <div style={{fontSize:13,fontWeight:700}}>Aucun hors carte pour le moment</div>
+            <div style={{fontSize:11,marginTop:6}}>Le responsable vous assignera des commandes spéciales ici</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   INCIDENT SCREEN — App Chauffeur
+   Signaler un problème en route
+══════════════════════════════════════════════════════ */
+function IncidentScreen({ch,onBack,onToast}){
+  const [type,setType]=React.useState('');
+  const [desc,setDesc]=React.useState('');
+  const [client,setClient]=React.useState('');
+  const [gravite,setGravite]=React.useState('moyen');
+  const [sent,setSent]=React.useState(false);
+  const [sending,setSending]=React.useState(false);
+
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const hdrs={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+
+  const types=[
+    {id:'retard',label:'⏰ Retard',desc:'Embouteillage, problème de circulation'},
+    {id:'accident',label:'🚨 Accident / Accrochage',desc:'Incident avec un autre véhicule'},
+    {id:'panne',label:'🔧 Panne véhicule',desc:'Problème mécanique, pneu, batterie'},
+    {id:'temperature',label:'🌡️ Température hors norme',desc:'Chaîne du froid compromise'},
+    {id:'client_absent',label:'🚪 Client absent',desc:'Personne sur place pour réceptionner'},
+    {id:'colis_endommage',label:'📦 Colis endommagé',desc:'Marchandise abîmée'},
+    {id:'autre',label:'⚠️ Autre problème',desc:'Préciser dans la description'},
+  ];
+
+  const envoyer=async()=>{
+    if(!type){onToast&&onToast('Choisissez le type d incident','var(--red)');return;}
+    if(!desc.trim()){onToast&&onToast('Décrivez le problème','var(--red)');return;}
+    setSending(true);
+    try{
+      const incident={
+        type:'incident',
+        incidentType:type,
+        chauffeurId:ch.id,
+        chauffeur:ch.display,
+        vehicule:ch.truck,
+        client:client,
+        gravite:gravite,
+        description:desc,
+        date:new Date().toISOString().slice(0,10),
+        heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+        ts:new Date().toISOString(),
+        _isEvent:true,
+        statut:'ouvert'
+      };
+      const evKey='INC_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+      await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:hdrs,
+        body:JSON.stringify({date:evKey,donnees:incident,updated_at:new Date().toISOString()})
+      });
+      setSent(true);
+      onToast&&onToast('⚠️ Incident signalé au responsable','var(--red)');
+    }catch(e){
+      onToast&&onToast('Erreur envoi — réessayer','var(--red)');
+    }
+    setSending(false);
+  };
+
+  if(sent){
+    return(
+      <>
+        <Header title="⚠️ Incident signalé" onBack={onBack}/>
+        <div className="scroll" style={{textAlign:'center',paddingTop:40}}>
+          <div style={{fontSize:64,marginBottom:20}}>✅</div>
+          <div style={{fontSize:20,fontWeight:900,color:'#fff',marginBottom:8}}>Signalement envoyé</div>
+          <div style={{fontSize:13,color:'var(--muted)',marginBottom:24}}>Le responsable a été notifié immédiatement</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:16,textAlign:'left',marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:8}}>Récapitulatif</div>
+            <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>{types.find(t=>t.id===type)?.label}</div>
+            {client&&<div style={{fontSize:12,color:'#94a3b8',marginBottom:4}}>Client : {client}</div>}
+            <div style={{fontSize:12,color:'#e2e8f0'}}>{desc}</div>
+          </div>
+          <button onClick={()=>{setSent(false);setType('');setDesc('');setClient('');}} style={{padding:'12px 24px',background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.3)',borderRadius:10,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer'}}>
+            + Nouveau signalement
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  return(
+    <>
+      <Header title="⚠️ Signaler un incident" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',borderRadius:12,padding:12,marginBottom:16,fontSize:12,color:'#fca5a5'}}>
+          🚨 Signalez immédiatement tout problème. Le responsable est notifié en temps réel.
+        </div>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:10}}>Type d incident</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+          {types.map(t=>(
+            <button key={t.id} onClick={()=>setType(t.id)} style={{padding:'12px 14px',background:type===t.id?'rgba(239,68,68,.15)':'var(--card)',border:`2px solid ${type===t.id?'rgba(239,68,68,.5)':'var(--border)'}`,borderRadius:12,textAlign:'left',cursor:'pointer',transition:'.15s'}}>
+              <div style={{fontSize:13,fontWeight:800,color:type===t.id?'#ef4444':'#fff'}}>{t.label}</div>
+              <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{t.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Client concerné (optionnel)</div>
+        <input value={client} onChange={e=>setClient(e.target.value)} placeholder="Nom du client..."
+          style={{width:'100%',background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,color:'#fff',padding:'11px 14px',fontSize:13,outline:'none',boxSizing:'border-box',marginBottom:14}}/>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Gravité</div>
+        <div style={{display:'flex',gap:8,marginBottom:14}}>
+          {[['leger','🟡 Léger','#f59e0b'],['moyen','🟠 Moyen','#f97316'],['grave','🔴 Grave','#ef4444']].map(([v,l,col])=>(
+            <button key={v} onClick={()=>setGravite(v)} style={{flex:1,padding:'10px 4px',background:gravite===v?col+'22':'var(--card)',border:`2px solid ${gravite===v?col:'var(--border)'}`,borderRadius:10,color:gravite===v?col:'var(--muted)',fontSize:11,fontWeight:800,cursor:'pointer'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Description</div>
+        <textarea value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Décrivez le problème en quelques mots..."
+          style={{width:'100%',background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,color:'#fff',padding:'11px 14px',fontSize:13,outline:'none',boxSizing:'border-box',minHeight:90,resize:'vertical',fontFamily:'inherit',marginBottom:20}}/>
+
+        <button onClick={envoyer} disabled={sending} style={{width:'100%',padding:15,background:sending?'rgba(239,68,68,.3)':'#ef4444',border:'none',borderRadius:14,color:'#fff',fontSize:15,fontWeight:900,cursor:sending?'not-allowed':'pointer'}}>
+          {sending?'Envoi...':'🚨 Signaler au responsable'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+
+
+/* ══════════════════════════════════════════════════════
+   STATUT SCREEN — Chauffeur signale son statut en direct
+   Visible immédiatement dans le planning responsable
+══════════════════════════════════════════════════════ */
+function StatutScreen({ch,planning,onBack,onToast,onRefresh}){
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const [current,setCurrent]=React.useState('service');
+  const [sending,setSending]=React.useState(false);
+  const [lastSent,setLastSent]=React.useState(null);
+
+  const statuts=[
+    {id:'service',label:'✅ En service',desc:'Prêt à partir ou en tournée',col:'#22c55e',bg:'rgba(34,197,94,.12)',border:'rgba(34,197,94,.3)'},
+    {id:'enroute',label:'🚐 En route',desc:'En cours de livraison',col:'#3b82f6',bg:'rgba(59,130,246,.12)',border:'rgba(59,130,246,.3)'},
+    {id:'pause',label:'☕ En pause',desc:'Pause courte — reprise rapide',col:'#f59e0b',bg:'rgba(245,158,11,.12)',border:'rgba(245,158,11,.3)'},
+    {id:'retour',label:'🔄 Retour dépôt',desc:'Tournée terminée — je rentre',col:'#a855f7',bg:'rgba(168,85,247,.12)',border:'rgba(168,85,247,.3)'},
+    {id:'termine',label:'🏁 Journée terminée',desc:'Toutes les missions faites',col:'#22c55e',bg:'rgba(34,197,94,.12)',border:'rgba(34,197,94,.3)'},
+    {id:'probleme',label:'🆘 Problème',desc:'Besoin d aide du responsable',col:'#ef4444',bg:'rgba(239,68,68,.12)',border:'rgba(239,68,68,.3)'},
+  ];
+
+  const envoyer=async(statutId)=>{
+    setSending(true);
+    const st=statuts.find(s=>s.id===statutId);
+    try{
+      const evKey='STATUT_'+Date.now()+'_'+ch.id;
+      await fetch(SUPA+'/rest/v1/planning',{
+        method:'POST',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({
+          date:evKey,
+          donnees:{
+            type:'statut_chauffeur',
+            _isEvent:true,
+            chauffeurId:ch.id,
+            chauffeur:ch.display,
+            vehicule:ch.truck,
+            statut:statutId,
+            label:st?st.label:'',
+            date:new Date().toISOString().slice(0,10),
+            heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+            ts:new Date().toISOString()
+          },
+          updated_at:new Date().toISOString()
+        })
+      });
+      setCurrent(statutId);
+      setLastSent(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+      onToast&&onToast((st?st.label:'Statut')+' envoyé au responsable','var(--green)');
+      if(onRefresh) setTimeout(onRefresh,1000);
+    }catch(e){
+      onToast&&onToast('Erreur envoi statut','var(--red)');
+    }
+    setSending(false);
+  };
+
+  return(
+    <>
+      <Header title="📡 Mon statut" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.2)',borderRadius:12,padding:12,marginBottom:20,fontSize:12,color:'#86efac',textAlign:'center'}}>
+          📡 Votre statut est visible en temps réel par le responsable
+          {lastSent&&<div style={{fontSize:11,color:'#64748b',marginTop:4}}>Dernier envoi : {lastSent}</div>}
+        </div>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>Choisir mon statut actuel</div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {statuts.map(st=>(
+            <button key={st.id} onClick={()=>envoyer(st.id)} disabled={sending}
+              style={{padding:'16px 18px',background:current===st.id?st.bg:'var(--card)',border:`2px solid ${current===st.id?st.col:'var(--border)'}`,borderRadius:14,textAlign:'left',cursor:sending?'not-allowed':'pointer',transition:'.2s',opacity:sending?0.7:1}}>
+              <div style={{fontSize:16,fontWeight:900,color:current===st.id?st.col:'#fff',marginBottom:4}}>{st.label}</div>
+              <div style={{fontSize:12,color:'var(--muted)'}}>{st.desc}</div>
+              {current===st.id&&lastSent&&<div style={{fontSize:10,color:st.col,marginTop:4}}>✓ Envoyé à {lastSent}</div>}
+            </button>
+          ))}
+        </div>
+
+        <div style={{marginTop:20,padding:'12px 16px',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,fontSize:11,color:'var(--muted)',lineHeight:1.6}}>
+          💡 <strong style={{color:'#fff'}}>Comment ça marche</strong><br/>
+          Appuyez sur votre statut actuel. Le responsable le voit immédiatement dans son planning sans recharger la page. Mettez à jour votre statut à chaque changement important de votre journée.
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   BILAN JOURNÉE SCREEN — Rapport de tournée du chauffeur
+══════════════════════════════════════════════════════ */
+function BilanJourneeScreen({ch,planning,onBack,onToast}){
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const done=ms.filter(m=>m._statut==='done').length;
+  const [km,setKm]=React.useState('');
+  const [carburant,setCarburant]=React.useState('');
+  const [incidents,setIncidents]=React.useState('0');
+  const [observation,setObservation]=React.useState('');
+  const [humeur,setHumeur]=React.useState('');
+  const [sent,setSent]=React.useState(false);
+  const [sending,setSending]=React.useState(false);
+
+  const envoyer=async()=>{
+    setSending(true);
+    try{
+      const evKey='BILAN_'+today+'_'+ch.id;
+      await fetch(SUPA+'/rest/v1/planning',{
+        method:'POST',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({
+          date:evKey,
+          donnees:{
+            type:'bilan_journee',
+            _isEvent:true,
+            chauffeurId:ch.id,
+            chauffeur:ch.display,
+            vehicule:ch.truck,
+            date:today,
+            missionsTotal:ms.length,
+            missionsDone:done,
+            km:parseInt(km)||0,
+            carburant:parseFloat(carburant)||0,
+            incidents:parseInt(incidents)||0,
+            observation:observation,
+            humeur:humeur,
+            ts:new Date().toISOString()
+          },
+          updated_at:new Date().toISOString()
+        })
+      });
+      setSent(true);
+      onToast&&onToast('📝 Bilan envoyé au responsable','var(--green)');
+    }catch(e){
+      onToast&&onToast('Erreur envoi bilan','var(--red)');
+    }
+    setSending(false);
+  };
+
+  if(sent){
+    return(
+      <>
+        <Header title="📝 Bilan envoyé" onBack={onBack}/>
+        <div className="scroll" style={{textAlign:'center',paddingTop:40}}>
+          <div style={{fontSize:64,marginBottom:16}}>✅</div>
+          <div style={{fontSize:20,fontWeight:900,color:'#fff',marginBottom:8}}>Bilan envoyé !</div>
+          <div style={{fontSize:13,color:'var(--muted)',marginBottom:24}}>Le responsable a reçu votre rapport de journée</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:16,textAlign:'left',marginBottom:20}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {[
+                {l:'Missions',v:done+'/'+ms.length,c:'#22c55e'},
+                {l:'Kilomètres',v:(km||'0')+' km',c:'#3b82f6'},
+                {l:'Carburant',v:(carburant||'0')+' L',c:'#f97316'},
+                {l:'Incidents',v:incidents,c:parseInt(incidents)>0?'#ef4444':'#22c55e'},
+              ].map(k=>(
+                <div key={k.l} style={{textAlign:'center',padding:'12px 8px',background:'var(--bg)',borderRadius:10}}>
+                  <div style={{fontSize:20,fontWeight:900,color:k.c}}>{k.v}</div>
+                  <div style={{fontSize:10,color:'var(--muted)',marginTop:3}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+            {observation&&<div style={{marginTop:12,fontSize:12,color:'#e2e8f0',fontStyle:'italic',borderTop:'1px solid var(--border)',paddingTop:10}}>"{observation}"</div>}
+          </div>
+          <button onClick={onBack} style={{padding:'12px 24px',background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.3)',borderRadius:10,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer'}}>
+            Retour à l'accueil
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  return(
+    <>
+      <Header title="📝 Bilan de journée" onBack={onBack}/>
+      <div className="scroll">
+        {/* Résumé missions auto */}
+        <div style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.2)',borderRadius:14,padding:16,marginBottom:20}}>
+          <div style={{fontSize:12,fontWeight:900,color:'#4ade80',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>Résumé automatique du jour</div>
+          <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+            {[
+              {v:ms.length,l:'Total missions',c:'#e2e8f0'},
+              {v:done,l:'Terminées',c:'#22c55e'},
+              {v:ms.length-done,l:'Restantes',c:ms.length-done>0?'#f97316':'#22c55e'},
+            ].map(k=>(
+              <div key={k.l} style={{textAlign:'center',flex:1,background:'var(--card)',borderRadius:10,padding:'10px 8px'}}>
+                <div style={{fontSize:22,fontWeight:900,color:k.c}}>{k.v}</div>
+                <div style={{fontSize:10,color:'var(--muted)'}}>{k.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Champs à remplir */}
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>Compléter le rapport</div>
+
+        {[
+          {label:'Kilomètres parcourus aujourd'hui',key:'km',setter:setKm,val:km,placeholder:'Ex: 145',type:'number'},
+          {label:'Carburant pris (litres)',key:'carb',setter:setCarburant,val:carburant,placeholder:'Ex: 32',type:'number'},
+          {label:'Nombre d'incidents / problèmes',key:'inc',setter:setIncidents,val:incidents,placeholder:'0',type:'number'},
+        ].map(f=>(
+          <div key={f.key} style={{marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:6}}>{f.label}</div>
+            <input type={f.type} value={f.val} onChange={e=>f.setter(e.target.value)} placeholder={f.placeholder}
+              style={{width:'100%',background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,color:'#fff',padding:'12px 14px',fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+          </div>
+        ))}
+
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:6}}>Observations / remarques</div>
+          <textarea value={observation} onChange={e=>setObservation(e.target.value)} placeholder="Tout ce que le responsable doit savoir sur cette journée..."
+            style={{width:'100%',background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,color:'#fff',padding:'12px 14px',fontSize:13,outline:'none',boxSizing:'border-box',minHeight:80,resize:'vertical',fontFamily:'inherit'}}/>
+        </div>
+
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:10}}>Comment s'est passée votre journée ?</div>
+          <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+            {[['😊','Bien'],['😐','Moyen'],['😓','Difficile'],['💪','Top']].map(([e,l])=>(
+              <button key={e} onClick={()=>setHumeur(e)}
+                style={{flex:1,padding:'14px 4px',background:humeur===e?'rgba(249,115,22,.2)':'var(--card)',border:`2px solid ${humeur===e?'#f97316':'var(--border)'}`,borderRadius:12,fontSize:22,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                {e}
+                <span style={{fontSize:10,color:humeur===e?'#f97316':'var(--muted)',fontWeight:700}}>{l}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={envoyer} disabled={sending}
+          style={{width:'100%',padding:16,background:sending?'rgba(99,102,241,.3)':'#6366f1',border:'none',borderRadius:14,color:'#fff',fontSize:15,fontWeight:900,cursor:sending?'not-allowed':'pointer'}}>
+          {sending?'Envoi en cours...':'📤 Envoyer le bilan au responsable'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+
+/* ══ SYNC INDICATOR — Barre de statut en direct ══ */
+function SyncIndicator({ch}){
+  const [lastSync,setLastSync]=React.useState(null);
+  React.useEffect(()=>{
+    const iv=setInterval(()=>setLastSync(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})),30000);
+    setLastSync(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+    return()=>clearInterval(iv);
+  },[]);
+  if(!lastSync) return null;
+  return(
+    <span style={{fontSize:10,color:'#22c55e',fontWeight:700}}>
+      📡 Sync {lastSync}
+    </span>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════
+   SCORE SCREEN — Performance du chauffeur
+══════════════════════════════════════════════════════ */
+function ScoreScreen({ch,planning,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const done=ms.filter(m=>m._statut==='done').length;
+  const total=ms.length;
+  const tauxCompletion=total>0?Math.round(done/total*100):100;
+
+  /* Calculer score */
+  const score=Math.min(100,Math.max(0,
+    tauxCompletion*0.4 +           /* 40pts — missions complétées */
+    60                              /* 60pts — base */
+  ));
+
+  const scoreCol=score>=80?'#22c55e':score>=60?'#f59e0b':'#ef4444';
+  const scoreLbl=score>=90?'Excellent 🏆':score>=80?'Très bien ⭐':score>=70?'Bien 👍':score>=60?'Correct 👌':'À améliorer 💪';
+
+  const criteres=[
+    {label:'Missions complétées',val:done+'/'+total,pts:Math.round(tauxCompletion*0.4),max:40,col:'#22c55e'},
+    {label:'Ponctualité',val:'En cours...',pts:15,max:20,col:'#3b82f6'},
+    {label:'Signalement incidents',val:'Actif',pts:10,max:10,col:'#a855f7'},
+    {label:'Bilan journée envoyé',val:'En attente',pts:0,max:10,col:'#f97316'},
+    {label:'Zéro problème signalé',val:'✅',pts:20,max:20,col:'#22c55e'},
+  ];
+
+  return(
+    <>
+      <Header title="⭐ Mon score" onBack={onBack}/>
+      <div className="scroll">
+        {/* Score principal */}
+        <div style={{textAlign:'center',background:'var(--card)',border:'1px solid var(--border)',borderRadius:20,padding:'28px 20px',marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>Score de performance</div>
+          <div style={{position:'relative',width:120,height:120,margin:'0 auto 16px'}}>
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1a3550" strokeWidth="10"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke={scoreCol} strokeWidth="10"
+                strokeDasharray={`${score*3.14} 314`}
+                strokeLinecap="round"
+                transform="rotate(-90 60 60)"
+                style={{transition:'stroke-dasharray .8s ease'}}/>
+            </svg>
+            <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+              <div style={{fontSize:28,fontWeight:900,color:scoreCol}}>{score}</div>
+              <div style={{fontSize:10,color:'var(--muted)'}}>/ 100</div>
+            </div>
+          </div>
+          <div style={{fontSize:16,fontWeight:800,color:scoreCol}}>{scoreLbl}</div>
+          <div style={{fontSize:12,color:'var(--muted)',marginTop:6}}>{ch.display} — {new Date().toLocaleDateString('fr-FR')}</div>
+        </div>
+
+        {/* Détail par critère */}
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>Détail des points</div>
+        {criteres.map((cr,i)=>(
+          <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'12px 14px',marginBottom:8}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#fff'}}>{cr.label}</div>
+              <div style={{fontSize:12,fontWeight:900,color:cr.col}}>{cr.pts}/{cr.max} pts</div>
+            </div>
+            <div style={{background:'var(--bg)',borderRadius:4,height:6,marginBottom:6}}>
+              <div style={{width:(cr.pts/cr.max*100)+'%',height:6,borderRadius:4,background:cr.col,transition:'.6s ease'}}/>
+            </div>
+            <div style={{fontSize:11,color:'var(--muted)'}}>{cr.val}</div>
+          </div>
+        ))}
+
+        <div style={{background:'rgba(249,115,22,.06)',border:'1px solid rgba(249,115,22,.2)',borderRadius:12,padding:'14px 16px',marginTop:8,fontSize:12,color:'#fed7aa',lineHeight:1.6}}>
+          💡 Le score se met à jour en temps réel. Envoyez votre bilan de journée pour gagner 10 points supplémentaires.
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   CHECKLIST FIN DE JOURNÉE
+══════════════════════════════════════════════════════ */
+function ChecklistFinScreen({ch,onBack,onToast}){
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const items=[
+    {id:'bls_remis',label:'Tous les BL remis et signés',icon:'📋',critical:true},
+    {id:'materiel_retour',label:'Tout le matériel ramené au dépôt',icon:'📦',critical:true},
+    {id:'camion_propre',label:'Camion nettoyé (intérieur + extérieur)',icon:'🧹',critical:false},
+    {id:'frigo_eteint',label:'Frigo éteint et portes ouvertes',icon:'🌡️',critical:false},
+    {id:'plein_carburant',label:'Plein de carburant fait si nécessaire',icon:'⛽',critical:false},
+    {id:'incidents_signales',label:'Tous les incidents signalés au responsable',icon:'⚠️',critical:true},
+    {id:'km_note',label:'Kilométrage noté dans le bilan',icon:'📍',critical:false},
+    {id:'cles_rendues',label:'Clés du véhicule rendues',icon:'🔑',critical:true},
+    {id:'tenue_rangee',label:'Tenue rangée',icon:'👔',critical:false},
+  ];
+
+  const [checked,setChecked]=React.useState({});
+  const [sent,setSent]=React.useState(false);
+  const [sending,setSending]=React.useState(false);
+  const criticals=items.filter(i=>i.critical);
+  const allCriticalsDone=criticals.every(i=>checked[i.id]);
+  const allDone=items.every(i=>checked[i.id]);
+  const countDone=Object.values(checked).filter(Boolean).length;
+
+  const toggle=(id)=>setChecked(c=>({...c,[id]:!c[id]}));
+
+  const valider=async()=>{
+    if(!allCriticalsDone){
+      onToast&&onToast('Complétez d'abord les points obligatoires (🔴)','var(--red)');
+      return;
+    }
+    setSending(true);
+    try{
+      const today=new Date().toISOString().slice(0,10);
+      await fetch(SUPA+'/rest/v1/planning',{
+        method:'POST',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({
+          date:'CHECKLINFIN_'+today+'_'+ch.id,
+          donnees:{
+            type:'checklist_fin',_isEvent:true,
+            chauffeurId:ch.id,chauffeur:ch.display,
+            date:today,
+            heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+            checked:checked,score:countDone+'/'+items.length,
+            ts:new Date().toISOString()
+          },
+          updated_at:new Date().toISOString()
+        })
+      });
+      setSent(true);
+      onToast&&onToast('✅ Journée clôturée — à demain !','var(--green)');
+    }catch(e){
+      onToast&&onToast('Erreur — réessayer','var(--red)');
+    }
+    setSending(false);
+  };
+
+  if(sent){
+    return(
+      <>
+        <Header title="✅ Journée clôturée" onBack={onBack}/>
+        <div className="scroll" style={{textAlign:'center',paddingTop:50}}>
+          <div style={{fontSize:72,marginBottom:20}}>🏁</div>
+          <div style={{fontSize:22,fontWeight:900,color:'#fff',marginBottom:8}}>Bonne fin de journée !</div>
+          <div style={{fontSize:14,color:'var(--muted)',marginBottom:8}}>{ch.display}</div>
+          <div style={{fontSize:13,color:'#22c55e',marginBottom:24}}>{countDone}/{items.length} points validés</div>
+          <button onClick={onBack} style={{padding:'13px 28px',background:'rgba(34,197,94,.15)',border:'1px solid rgba(34,197,94,.3)',borderRadius:12,color:'#22c55e',fontSize:14,fontWeight:800,cursor:'pointer'}}>
+            Retour à l'accueil
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  return(
+    <>
+      <Header title="✅ Fin de journée" onBack={onBack}/>
+      <div className="scroll">
+        {/* Progress */}
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>Progression</div>
+            <div style={{fontSize:14,fontWeight:900,color:allDone?'#22c55e':'#f97316'}}>{countDone}/{items.length}</div>
+          </div>
+          <div style={{background:'var(--bg)',borderRadius:4,height:8}}>
+            <div style={{width:(countDone/items.length*100)+'%',height:8,borderRadius:4,background:allDone?'#22c55e':'#f97316',transition:'.3s'}}/>
+          </div>
+        </div>
+
+        <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>
+          Points obligatoires <span style={{color:'#ef4444'}}>●</span>
+        </div>
+
+        {items.map(item=>(
+          <button key={item.id} onClick={()=>toggle(item.id)}
+            style={{width:'100%',display:'flex',alignItems:'center',gap:12,background:checked[item.id]?'rgba(34,197,94,.1)':'var(--card)',border:`2px solid ${checked[item.id]?'rgba(34,197,94,.4)':'var(--border)'}`,borderRadius:14,padding:'13px 14px',marginBottom:8,cursor:'pointer',textAlign:'left',transition:'.2s'}}>
+            <span style={{fontSize:22,flexShrink:0}}>{item.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:checked[item.id]?'#22c55e':'#fff'}}>{item.label}</div>
+              {item.critical&&!checked[item.id]&&<div style={{fontSize:10,color:'#ef4444',fontWeight:700,marginTop:2}}>● Obligatoire</div>}
+            </div>
+            <div style={{width:26,height:26,borderRadius:8,border:`2px solid ${checked[item.id]?'#22c55e':'var(--border)'}`,background:checked[item.id]?'#22c55e':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              {checked[item.id]&&<span style={{fontSize:14,color:'#fff'}}>✓</span>}
+            </div>
+          </button>
+        ))}
+
+        {!allCriticalsDone&&(
+          <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',borderRadius:10,padding:'10px 14px',marginTop:4,marginBottom:16,fontSize:12,color:'#fca5a5'}}>
+            ⚠️ Complétez les points obligatoires avant de clôturer
+          </div>
+        )}
+
+        <button onClick={valider} disabled={sending||!allCriticalsDone}
+          style={{width:'100%',padding:16,marginTop:8,background:allCriticalsDone?'#22c55e':'rgba(34,197,94,.2)',border:'none',borderRadius:14,color:'#fff',fontSize:15,fontWeight:900,cursor:allCriticalsDone&&!sending?'pointer':'not-allowed',transition:'.2s'}}>
+          {sending?'Envoi...':'🏁 Clôturer la journée'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════
+   MÉTÉO WIDGET — Conditions du jour pour Marseille
+══════════════════════════════════════════════════════ */
+function MeteoWidget(){
+  const [meteo,setMeteo]=React.useState(null);
+  React.useEffect(()=>{
+    /* API Open-Meteo gratuite — Marseille */
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=43.2965&longitude=5.3698&current=temperature_2m,weathercode,windspeed_10m&timezone=Europe/Paris')
+      .then(r=>r.json())
+      .then(d=>{
+        if(d&&d.current){
+          const code=d.current.weathercode;
+          const ico=code===0?'☀️':code<=3?'⛅':code<=67?'🌧️':code<=77?'🌨️':code<=82?'🌦️':'⛈️';
+          const desc=code===0?'Ensoleillé':code<=3?'Nuageux':code<=67?'Pluie':code<=77?'Neige':code<=82?'Averses':'Orage';
+          setMeteo({
+            temp:Math.round(d.current.temperature_2m),
+            wind:Math.round(d.current.windspeed_10m),
+            ico,desc
+          });
+        }
+      }).catch(()=>{});
+  },[]);
+
+  if(!meteo) return null;
+
+  const alertVent=meteo.wind>60;
+  return(
+    <div style={{margin:'8px 16px 0',background:alertVent?'rgba(239,68,68,.08)':'rgba(255,255,255,.04)',border:`1px solid ${alertVent?'rgba(239,68,68,.25)':'rgba(255,255,255,.08)'}`,borderRadius:12,padding:'8px 14px',display:'flex',alignItems:'center',gap:12}}>
+      <span style={{fontSize:22}}>{meteo.ico}</span>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{meteo.desc} · {meteo.temp}°C</div>
+        <div style={{fontSize:11,color:alertVent?'#ef4444':'var(--muted)',fontWeight:alertVent?800:400}}>
+          {alertVent?'⚠️ Mistral fort — ':''}{meteo.wind} km/h · Marseille
+        </div>
+      </div>
+      {alertVent&&<div style={{fontSize:10,fontWeight:900,color:'#ef4444',background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:6,padding:'3px 8px'}}>PRUDENCE</div>}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   HISTORIQUE HEBDOMADAIRE — Vue semaine du chauffeur
+══════════════════════════════════════════════════════ */
+function HistoriqueScreen({ch,onBack}){
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const [data,setData]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [weekOffset,setWeekOffset]=React.useState(0);
+
+  const getWeekDays=(offset)=>{
+    const now=new Date();
+    const day=now.getDay();
+    const monday=new Date(now);
+    monday.setDate(now.getDate()-(day===0?6:day-1)+offset*7);
+    monday.setHours(0,0,0,0);
+    return Array.from({length:7},(_,i)=>{
+      const d=new Date(monday);d.setDate(monday.getDate()+i);
+      return d.toISOString().slice(0,10);
+    });
+  };
+
+  const days=getWeekDays(weekOffset);
+  const weekLabel=`${new Date(days[0]).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → ${new Date(days[6]).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
+
+  React.useEffect(()=>{
+    setLoading(true);
+    Promise.all([
+      fetch(SUPA+'/rest/v1/planning?date=like.STATUT_*&select=donnees,updated_at&order=updated_at.desc&limit=200',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}}),
+      fetch(SUPA+'/rest/v1/planning?date=like.INC_*&select=donnees,updated_at&order=updated_at.desc&limit=200',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}}),
+      fetch(SUPA+'/rest/v1/planning?date=like.BILAN_*&select=donnees,date,updated_at&order=updated_at.desc&limit=200',{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}}),
+    ]).then(async([r1,r2,r3])=>{
+      const [d1,d2,d3]=await Promise.all([r1.json(),r2.json(),r3.json()]);
+      const all=[
+        ...(Array.isArray(d1)?d1:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),
+        ...(Array.isArray(d2)?d2:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),
+        ...(Array.isArray(d3)?d3:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),
+      ];
+      setData(all);
+      setLoading(false);
+    }).catch(()=>setLoading(false));
+  },[weekOffset,ch.id]);
+
+  const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+  return(
+    <>
+      <Header title="📅 Historique semaine" onBack={onBack}/>
+      <div className="scroll">
+        {/* Navigation semaine */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'10px 14px'}}>
+          <button onClick={()=>setWeekOffset(w=>w-1)} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'6px 12px',cursor:'pointer',fontWeight:700}}>←</button>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{weekLabel}</div>
+            {weekOffset===0&&<div style={{fontSize:10,color:'var(--orange)',fontWeight:700}}>Semaine actuelle</div>}
+          </div>
+          <button onClick={()=>setWeekOffset(w=>w+1)} disabled={weekOffset>=0} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:weekOffset>=0?'#334155':'#fff',padding:'6px 12px',cursor:weekOffset>=0?'not-allowed':'pointer',fontWeight:700}}>→</button>
+        </div>
+
+        {loading&&<div style={{textAlign:'center',padding:30,color:'var(--muted)'}}>Chargement...</div>}
+
+        {!loading&&days.map((date,i)=>{
+          const dayData=data.filter(d=>d.date===date||(d.ts&&d.ts.startsWith(date)));
+          const incidents=dayData.filter(d=>d.type==='incident');
+          const statuts=dayData.filter(d=>d.type==='statut_chauffeur');
+          const bilan=dayData.find(d=>d.type==='bilan_journee');
+          const isToday=date===new Date().toISOString().slice(0,10);
+          const isPast=date<new Date().toISOString().slice(0,10);
+
+          return(
+            <div key={date} style={{marginBottom:10,background:'var(--card)',border:`1px solid ${isToday?'var(--orange)':'var(--border)'}`,borderRadius:14,overflow:'hidden'}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:isToday?'rgba(249,115,22,.06)':'transparent'}}>
+                <div style={{fontWeight:900,fontSize:13,color:isToday?'var(--orange)':'#fff',width:40}}>{JOURS[i]}</div>
+                <div style={{fontSize:11,color:'var(--muted)',flex:1}}>{new Date(date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</div>
+                <div style={{display:'flex',gap:6}}>
+                  {incidents.length>0&&<span style={{fontSize:10,fontWeight:800,color:'#ef4444',background:'rgba(239,68,68,.1)',padding:'2px 7px',borderRadius:6}}>⚠️ {incidents.length}</span>}
+                  {bilan&&<span style={{fontSize:10,fontWeight:800,color:'#6366f1',background:'rgba(99,102,241,.1)',padding:'2px 7px',borderRadius:6}}>📝 Bilan</span>}
+                  {!dayData.length&&isPast&&<span style={{fontSize:10,color:'#334155'}}>—</span>}
+                  {!dayData.length&&!isPast&&<span style={{fontSize:10,color:'#334155'}}>À venir</span>}
+                </div>
+              </div>
+              {(bilan||incidents.length>0||statuts.length>0)&&(
+                <div style={{padding:'0 14px 10px',borderTop:'1px solid var(--border)'}}>
+                  {bilan&&(
+                    <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
+                      {[{l:'Missions',v:`${bilan.missionsDone||0}/${bilan.missionsTotal||0}`,c:'#22c55e'},{l:'Km',v:`${bilan.km||0}`,c:'#3b82f6'},{l:'Carb.',v:`${bilan.carburant||0}L`,c:'#f97316'}].map(k=>(
+                        <div key={k.l} style={{background:'var(--bg)',borderRadius:8,padding:'5px 10px',textAlign:'center',flex:1}}>
+                          <div style={{fontSize:14,fontWeight:900,color:k.c}}>{k.v}</div>
+                          <div style={{fontSize:9,color:'var(--muted)'}}>{k.l}</div>
+                        </div>
+                      ))}
+                      {bilan.humeur&&<div style={{fontSize:22,display:'flex',alignItems:'center'}}>{bilan.humeur}</div>}
+                    </div>
+                  )}
+                  {incidents.map((inc,j)=>(
+                    <div key={j} style={{marginTop:6,fontSize:11,color:'#ef4444',background:'rgba(239,68,68,.06)',padding:'5px 10px',borderRadius:7,border:'1px solid rgba(239,68,68,.15)'}}>
+                      ⚠️ {({retard:'Retard',accident:'Accident',panne:'Panne',temperature:'Temp. hors norme',client_absent:'Client absent',colis_endommage:'Colis endommagé',autre:'Autre'})[inc.incidentType]||inc.incidentType} {inc.heure?'· '+inc.heure:''}
+                    </div>
+                  ))}
+                  {statuts.slice(-1).map((st,j)=>(
+                    <div key={j} style={{marginTop:6,fontSize:11,color:'#3b82f6',background:'rgba(59,130,246,.06)',padding:'5px 10px',borderRadius:7,border:'1px solid rgba(59,130,246,.15)'}}>
+                      📡 Dernier statut: {({service:'En service',enroute:'En route',pause:'Pause',retour:'Retour',termine:'Terminé',probleme:'Problème'})[st.statut]||st.statut} {st.heure?'· '+st.heure:''}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function ChaufApp({ch,onLogout}){
   const [screen,setScreen]=useState('home');
   const [locked,setLocked]=useState(false);
@@ -2593,6 +3602,13 @@ function ChaufApp({ch,onLogout}){
   return(
     <div className="screen">
       {screen==='home'&&!selectedMission&&<HomeScreen ch={ch} planning={planning} onNavigate={setScreen} unreadMsg={1}/>}
+      {screen==='horscarte'&&<HorsCarteScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='incident'&&<IncidentScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='bilan'&&<BilanJourneeScreen ch={ch} planning={planning} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='statut'&&<StatutScreen ch={ch} planning={planning} onBack={()=>setScreen('home')} onToast={t3} onRefresh={()=>{loadPlanning().then(p=>{if(p)setPlanning(p);});}}/>}
+      {screen==='score'&&<ScoreScreen ch={ch} planning={planning} onBack={()=>setScreen('home')}/>}
+      {screen==='checklist_fin'&&<ChecklistFinScreen ch={ch} onBack={()=>setScreen('home')} onToast={t3}/>}
+      {screen==='historique'&&<HistoriqueScreen ch={ch} onBack={()=>setScreen('home')}/>}
       {screen==='today'&&!selectedMission&&<TodayList ch={ch} planning={planning} onSelectMission={handleSelectMission} onBack={()=>setScreen('home')}/>}
       {screen==='clients'&&!selectedMission&&<ClientsList ch={ch} planning={planning} onSelectMission={handleSelectMission} onBack={()=>setScreen('home')}/>}
       {screen==='calendar'&&<CalendarScreen ch={ch} planning={planning} onBack={()=>setScreen('home')}/>}
