@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Planning Cana">
+<meta name="theme-color" content="#0ea5e9">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Planning Responsable — La Table de Cana</title>
+<style>
+:root{
+  --bg:#0a1628; --card:#0f1e33; --card2:#12233a; --border:#1a3550;
+  --muted:#64748b; --txt:#e2e8f0; --blue:#0ea5e9; --green:#22c55e;
+  --orange:#f97316; --purple:#a855f7; --red:#ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:16px}
+
+/* LOGIN */
+.login{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(165deg,#0c2540,#071526,#0a1628);position:relative;overflow:hidden}
+.halo{position:absolute;border-radius:50%;pointer-events:none}
+.login-logo{width:96px;height:96px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 34px rgba(14,165,233,.4);margin-bottom:16px}
+.login-title{font-size:26px;font-weight:900;color:#fff;text-align:center;line-height:1.1}
+.login-sub{font-size:13px;color:#64748b;margin-top:8px;margin-bottom:28px;text-align:center}
+.pin-dots{display:flex;gap:14px;margin-bottom:20px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.15);transition:.15s}
+.pin-dot.on{background:var(--blue);box-shadow:0 0 12px var(--blue)}
+.pad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;width:100%;max-width:280px}
+.pad button{padding:18px 0;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:24px;font-weight:800}
+.pad button:active{background:rgba(255,255,255,.15);transform:scale(.95)}
+.login-err{color:var(--red);font-size:13px;font-weight:800;margin-top:14px;height:18px}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0ea5e9,#0369a1);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.3);flex-shrink:0}
+.hdr-back{background:rgba(255,255,255,.2);border:none;border-radius:10px;color:#fff;padding:8px 14px;font-size:15px;font-weight:800}
+.hdr-title{flex:1;font-size:17px;font-weight:900;color:#fff}
+.hdr-sync{width:10px;height:10px;border-radius:50%;background:#22c55e}
+
+/* DATE BAR */
+.datebar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.datebar button{background:var(--card2);border:1px solid var(--border);border-radius:10px;color:#fff;padding:10px 14px;font-size:18px;font-weight:800}
+.date-label{flex:1;text-align:center;font-size:15px;font-weight:900;color:#fff;text-transform:capitalize}
+.date-today{font-size:10px;color:var(--blue);font-weight:700}
+
+/* DRIVER CARD */
+.dcard{background:var(--card);border:1px solid var(--border);border-radius:16px;margin:10px 12px;overflow:hidden}
+.dcard-head{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.dcard-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff}
+.dcard-name{font-size:16px;font-weight:900;color:#fff}
+.dcard-truck{font-size:11px;color:var(--orange);font-weight:700}
+.dcard-count{font-size:12px;font-weight:800;padding:4px 10px;border-radius:8px;background:rgba(14,165,233,.15);color:var(--blue)}
+
+/* MISSION */
+.mission{padding:10px 14px;border-bottom:1px solid var(--card2);display:flex;align-items:center;gap:10px}
+.mission:last-child{border-bottom:none}
+.mission-time{font-size:18px;font-weight:900;min-width:52px;text-align:center}
+.mission-info{flex:1;min-width:0}
+.mission-client{font-size:14px;font-weight:800;color:#fff}
+.mission-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;display:inline-block;margin-top:2px}
+.mission-del{background:rgba(239,68,68,.12);border:none;border-radius:8px;color:var(--red);padding:8px 10px;font-size:14px}
+
+.empty-day{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+
+/* FAB */
+.fab{position:fixed;bottom:20px;right:16px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;font-size:30px;font-weight:300;box-shadow:0 8px 24px rgba(34,197,94,.5);z-index:100;display:flex;align-items:center;justify-content:center}
+.fab:active{transform:scale(.92)}
+
+/* BOTTOM NAV */
+.botnav{background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+.botnav button{flex:1;background:none;border:none;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted)}
+.botnav button.active{color:var(--blue)}
+.botnav-ico{font-size:20px}
+.botnav-lbl{font-size:10px;font-weight:700}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding:20px 18px 28px;animation:up .3s ease}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-title{font-size:19px;font-weight:900;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.sheet-close{background:var(--card2);border:none;border-radius:10px;color:var(--muted);padding:8px 14px;font-size:13px;font-weight:800}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select{width:100%;background:var(--card2);border:2px solid var(--border);border-radius:12px;color:#fff;padding:13px 14px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:10px 14px;border-radius:12px;border:2px solid var(--border);background:var(--card2);color:var(--muted);font-size:13px;font-weight:800}
+.chip.on{color:#fff}
+.btn-big{width:100%;padding:16px;border-radius:14px;border:none;font-size:16px;font-weight:900;color:#fff;margin-top:6px}
+.btn-save{background:linear-gradient(135deg,#22c55e,#16a34a)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:800;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:down .3s ease}
+@keyframes down{from{transform:translate(-50%,-80px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PLANNING RESPONSABLE MOBILE — La Table de Cana
+   Fichier INDÉPENDANT. Même base Supabase que le planning bureau.
+   Ne touche PAS à planning.html.
+═══════════════════════════════════════════════════════════ */
+
+var SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+var KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+var H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
+
+/* Chauffeurs — MÊME ORDRE que le planning bureau (index = chauffeurId) */
+var DRIVERS=[
+  {name:'OTMANE',truck:'VIVARO 1',color:'#3b82f6',start:'06:00',end:'14:00'},
+  {name:'MOMO',truck:'JUMPY',color:'#22c55e',start:'06:00',end:'14:00'},
+  {name:'MOHAMED',truck:'IVECO',color:'#a855f7',start:'06:00',end:'15:00'},
+  {name:'ABDOU',truck:'VIVARO 2',color:'#f59e0b',start:'06:00',end:'14:00'},
+  {name:'CHAUFFEUR 5',truck:'CAMION 5',color:'#ec4899',start:'06:00',end:'14:00'}
+];
+
+var CATS={
+  traiteur:{lbl:'Traiteur',ico:'🎉',col:'#a855f7'},
+  collectivite:{lbl:'Resto co',ico:'🏢',col:'#3b82f6'},
+  centre:{lbl:'Centre',ico:'🌳',col:'#22c55e'},
+  task:{lbl:'Tâche',ico:'📋',col:'#f59e0b'}
+};
+
+var CODES={'1710':'Responsable','cana2026':'Direction','com2026':'Commercial','compta2026':'Compta','restoco2026':'Resto Co','rh2026':'RH','rse2026':'RSE'};
+
+/* État */
+var ST={
+  logged:false,
+  service:'',
+  cur:new Date().toISOString().slice(0,10),
+  tasks:{},        /* clé "date|driverIndex|heure" → [taches] */
+  drivers:JSON.parse(JSON.stringify(DRIVERS)),
+  page:'planning', /* planning | livraisons | statuts */
+  chargementFini:false
+};
+
+var SLOTS=[];
+for(var _h=6;_h<18;_h++){var hh=String(_h).padStart(2,'0');if(_h===6){SLOTS.push('06:30');}else{SLOTS.push(hh+':00');if(_h<17)SLOTS.push(hh+':30');}}
+SLOTS.push('17:30');
+
+function gk(d,i,h){return d+'|'+i+'|'+h;}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function $(id){return document.getElementById(id);}
+
+var JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+function fmtDate(s){var d=new Date(s+'T12:00:00');return JOURS[d.getDay()]+' '+d.getDate()+' '+MOIS[d.getMonth()];}
+
+function toast(msg,col){
+  var t=document.createElement('div');t.className='toast';if(col)t.style.background=col;
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(function(){t.remove();},300);},2200);
+}
+
+/* ═══ SUPABASE ═══ */
+function chargerPlanning(cb){
+  var led=$('sync-led');
+  fetch(SUPA+'/rest/v1/planning?order=updated_at.desc&limit=50&select=date,donnees,updated_at',{headers:H,cache:'no-store'})
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    if(!Array.isArray(rows)){if(cb)cb();return;}
+    /* Filtrer les enregistrements spéciaux */
+    rows=rows.filter(function(r){
+      return r.date && !r.date.startsWith('EV_') && !r.date.startsWith('INC_') && !r.date.startsWith('STATUT_')
+        && !r.date.startsWith('BILAN_') && !r.date.startsWith('HORS_') && !r.date.startsWith('LISTE_')
+        && !r.date.startsWith('MESSAGES') && !r.date.startsWith('CONGES_') && !r.date.startsWith('REP_')
+        && !r.date.startsWith('AUDIT_') && !r.date.startsWith('test');
+    });
+    /* Prendre la ligne avec le plus de drivers, fusionner toutes les tasks */
+    var data=null,maxD=0,tasksAll={};
+    rows.forEach(function(r){
+      var d=r.donnees;
+      if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}
+      if(!d)return;
+      if(d.drivers&&d.drivers.length>=maxD){maxD=d.drivers.length;data=d;}
+      if(d.tasks){Object.keys(d.tasks).forEach(function(k){
+        var arr=d.tasks[k];
+        if(arr&&arr.length&&(!tasksAll[k]||arr.length>tasksAll[k].length))tasksAll[k]=arr;
+      });}
+    });
+    if(data&&data.drivers&&data.drivers.length){
+      /* Fusionner les drivers du planning avec nos couleurs */
+      ST.drivers=data.drivers.map(function(d,i){
+        return {name:d.name,truck:d.truck,start:d.start,end:d.end,color:(DRIVERS[i]?DRIVERS[i].color:'#64748b')};
+      });
+    }
+    ST.tasks=tasksAll;
+    ST.chargementFini=true;
+    if(led)led.style.background='#22c55e';
+    if(cb)cb();
+  })
+  .catch(function(){if(led)led.style.background='#ef4444';if(cb)cb();});
+}
+
+function sauverPlanning(){
+  if(!ST.chargementFini){return;}
+  var led=$('sync-led');if(led)led.style.background='#f59e0b';
+  var dateSave=ST.cur;
+  var d={drivers:ST.drivers,tasks:ST.tasks,cur:ST.cur};
+  fetch(SUPA+'/rest/v1/planning?date=eq.'+dateSave+'&select=date',{headers:H})
+  .then(function(r){return r.ok?r.json():[];})
+  .then(function(rows){
+    var exists=rows&&rows.length>0;
+    var url=exists?SUPA+'/rest/v1/planning?date=eq.'+dateSave:SUPA+'/rest/v1/planning';
+    return fetch(url,{method:exists?'PATCH':'POST',headers:Object.assign({'Prefer':'return=minimal'},H),body:JSON.stringify({date:dateSave,donnees:d,updated_at:new Date().toISOString()})});
+  })
+  .then(function(r){if(led)led.style.background=r&&r.ok?'#22c55e':'#ef4444';})
+  .catch(function(){if(led)led.style.background='#ef4444';});
+}
+
+/* La suite (UI, rendu, modales) dans le prochain bloc */
+</script>
+<script>
+/* ═══════════════════ INTERFACE ═══════════════════ */
+
+function render(){
+  if(!ST.logged){renderLogin();return;}
+  var app=$('app');
+  var h='';
+  /* Header */
+  h+='<div class="hdr">';
+  h+='<div class="hdr-title">📋 Planning — '+ST.service+'</div>';
+  h+='<div id="sync-led" class="hdr-sync"></div>';
+  h+='<button class="hdr-back" onclick="deconnexion()">🚪</button>';
+  h+='</div>';
+
+  /* Contenu selon la page */
+  if(ST.page==='planning')h+=renderPlanning();
+  else if(ST.page==='recherche')h+=renderRecherche();
+  else if(ST.page==='menu')h+=renderMenu();
+  else h+='<div class="scroll" id="page-content"></div>';
+
+  /* Bottom nav */
+  h+='<div class="botnav">';
+  h+='<button class="'+(ST.page==='planning'?'active':'')+'" onclick="allerPage(\'planning\')"><span class="botnav-ico">📅</span><span class="botnav-lbl">Planning</span></button>';
+  h+='<button class="'+(ST.page==='recherche'?'active':'')+'" onclick="allerPage(\'recherche\')"><span class="botnav-ico">🔍</span><span class="botnav-lbl">Recherche</span></button>';
+  h+='<button class="'+(ST.page==='livraisons'?'active':'')+'" onclick="allerPage(\'livraisons\')"><span class="botnav-ico">✅</span><span class="botnav-lbl">Livraisons</span></button>';
+  h+='<button class="'+(ST.page==='statuts'?'active':'')+'" onclick="allerPage(\'statuts\')"><span class="botnav-ico">📍</span><span class="botnav-lbl">Chauffeurs</span></button>';
+  h+='<button class="'+(ST.page==='menu'?'active':'')+'" onclick="allerPage(\'menu\')"><span class="botnav-ico">☰</span><span class="botnav-lbl">Menu</span></button>';
+  h+='</div>';
+
+  app.innerHTML=h;
+
+  if(ST.page==='planning'){
+    var fab=document.createElement('button');
+    fab.className='fab';fab.innerHTML='+';fab.onclick=function(){ouvrirAjout();};
+    app.appendChild(fab);
+  } else if(ST.page==='livraisons'){chargerLivraisons();}
+  else if(ST.page==='statuts'){chargerStatuts();}
+  else if(ST.page==='conges'){chargerConges();}
+  else if(ST.page==='courses'){chargerCourses();}
+  else if(ST.page==='dashboard'){renderDashboard();}
+  else if(ST.page==='recherche'){setTimeout(function(){var el=$('rc-input');if(el)el.focus();},200);}
+}
+
+function renderLogin(){
+  var pin=window._pin||'';
+  var h='<div class="login">';
+  h+='<div class="halo" style="top:-80px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(14,165,233,.18),transparent 70%)"></div>';
+  h+='<div class="login-logo"><svg width="64" height="64" viewBox="0 0 80 80"><circle cx="40" cy="40" r="16" fill="#be185d"/><circle cx="40" cy="12" r="6.5" fill="#be185d"/><circle cx="60" cy="20" r="6.5" fill="#be185d"/><circle cx="68" cy="40" r="6.5" fill="#be185d"/><circle cx="60" cy="60" r="6.5" fill="#be185d"/><circle cx="40" cy="68" r="6.5" fill="#be185d"/><circle cx="20" cy="60" r="6.5" fill="#be185d"/><circle cx="12" cy="40" r="6.5" fill="#be185d"/><circle cx="20" cy="20" r="6.5" fill="#ec4899"/></svg></div>';
+  h+='<div class="login-title">Planning Responsable</div>';
+  h+='<div class="login-sub">La Table de Cana · Entrez votre code</div>';
+  h+='<div class="pin-dots">';
+  for(var i=0;i<4;i++)h+='<div class="pin-dot '+(pin.length>i?'on':'')+'"></div>';
+  h+='</div>';
+  h+='<div class="login-err">'+(window._loginErr||'')+'</div>';
+  h+='<div class="pad">';
+  [1,2,3,4,5,6,7,8,9].forEach(function(n){h+='<button onclick="tapePin(\''+n+'\')">'+n+'</button>';});
+  h+='<div></div>';
+  h+='<button onclick="tapePin(\'0\')">0</button>';
+  h+='<button onclick="effacePin()" style="color:#f87171">⌫</button>';
+  h+='</div>';
+  h+='</div>';
+  $('app').innerHTML=h;
+}
+
+/* Le code fait 7 chiffres/lettres (ex cana2026), pas 4. On utilise un input caché */
+window._pin='';
+window._loginErr='';
+function tapePin(){}
+function effacePin(){}
+
+/* Connexion par saisie du code complet via prompt de champ */
+function renderLoginChamp(){
+  var h='<div class="login">';
+  h+='<div class="halo" style="top:-80px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(14,165,233,.18),transparent 70%)"></div>';
+  h+='<div class="halo" style="bottom:-40px;left:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(34,197,94,.12),transparent 70%)"></div>';
+  h+='<div class="login-logo"><svg width="64" height="64" viewBox="0 0 80 80"><circle cx="40" cy="40" r="16" fill="#be185d"/><circle cx="40" cy="12" r="6.5" fill="#be185d"/><circle cx="60" cy="20" r="6.5" fill="#be185d"/><circle cx="68" cy="40" r="6.5" fill="#be185d"/><circle cx="60" cy="60" r="6.5" fill="#be185d"/><circle cx="40" cy="68" r="6.5" fill="#be185d"/><circle cx="20" cy="60" r="6.5" fill="#be185d"/><circle cx="12" cy="40" r="6.5" fill="#be185d"/><circle cx="20" cy="20" r="6.5" fill="#ec4899"/></svg></div>';
+  h+='<div class="login-title">Planning<br>Responsable</div>';
+  h+='<div class="login-sub">La Table de Cana</div>';
+  h+='<div style="width:100%;max-width:320px">';
+  h+='<div class="field"><label>Votre code d\'accès</label>';
+  h+='<input id="login-code" type="password" placeholder="Ex : cana2026" style="text-align:center;font-size:18px;letter-spacing:2px" onkeydown="if(event.key===\'Enter\')tenterConnexion()"></div>';
+  h+='<div class="login-err" id="login-err">'+(window._loginErr||'')+'</div>';
+  h+='<button class="btn-big btn-save" onclick="tenterConnexion()">🔓 Se connecter</button>';
+  h+='</div>';
+  h+='</div>';
+  $('app').innerHTML=h;
+  setTimeout(function(){var el=$('login-code');if(el)el.focus();},200);
+}
+
+function tenterConnexion(){
+  var code=($('login-code')?$('login-code').value:'').trim().toLowerCase();
+  if(CODES[code]){
+    ST.logged=true;
+    ST.service=CODES[code];
+    try{localStorage.setItem('cana_mob_service',ST.service);localStorage.setItem('cana_mob_code',code);}catch(e){}
+    window._loginErr='';
+    chargerPlanning(function(){render();});
+    render();
+  } else {
+    window._loginErr='Code incorrect';
+    var el=$('login-err');if(el)el.textContent='Code incorrect';
+    var inp=$('login-code');if(inp){inp.value='';inp.style.borderColor='#ef4444';}
+  }
+}
+
+function deconnexion(){
+  if(!confirm('Se déconnecter ?'))return;
+  ST.logged=false;ST.service='';
+  try{localStorage.removeItem('cana_mob_service');localStorage.removeItem('cana_mob_code');}catch(e){}
+  renderLoginChamp();
+}
+
+function allerPage(p){ST.page=p;render();}
+
+function changerJour(delta){
+  var d=new Date(ST.cur+'T12:00:00');
+  d.setDate(d.getDate()+delta);
+  ST.cur=d.toISOString().slice(0,10);
+  render();
+}
+function allerAujourdhui(){ST.cur=todayStr();render();}
+</script>
+<script>
+/* ═══════════════════ RENDU PLANNING ═══════════════════ */
+function renderPlanning(){
+  var h='<div class="datebar">';
+  h+='<button onclick="changerJour(-1)">‹</button>';
+  h+='<div class="date-label" onclick="allerAujourdhui()">'+fmtDate(ST.cur);
+  if(ST.cur===todayStr())h+='<div class="date-today">Aujourd\'hui</div>';
+  h+='</div>';
+  h+='<button onclick="changerJour(1)">›</button>';
+  h+='</div>';
+
+  h+='<div class="scroll" style="padding-bottom:90px">';
+
+  ST.drivers.forEach(function(dr,di){
+    /* Récupérer les missions de ce chauffeur ce jour */
+    var missions=[];
+    SLOTS.forEach(function(slot){
+      var k=gk(ST.cur,di,slot);
+      (ST.tasks[k]||[]).forEach(function(t){missions.push({slot:slot,t:t,key:k});});
+    });
+
+    h+='<div class="dcard">';
+    h+='<div class="dcard-head">';
+    h+='<div class="dcard-avatar" style="background:'+dr.color+'">'+dr.name[0]+'</div>';
+    h+='<div style="flex:1" onclick="changerCamion('+di+')">';
+    h+='<div class="dcard-name">'+dr.name+'</div>';
+    h+='<div class="dcard-truck">🚛 '+dr.truck+' · ✏️ changer</div>';
+    h+='</div>';
+    h+='<div class="dcard-count">'+missions.length+' mission'+(missions.length>1?'s':'')+'</div>';
+    h+='</div>';
+
+    if(missions.length===0){
+      h+='<div class="empty-day">Aucune mission — appuyez sur + pour ajouter</div>';
+    } else {
+      missions.forEach(function(mi){
+        var cat=CATS[mi.t.category]||{ico:'📦',col:'#64748b',lbl:''};
+        h+='<div class="mission">';
+        h+='<div class="mission-time" style="color:'+cat.col+'">'+mi.slot+'</div>';
+        h+='<div class="mission-info" onclick="modifierMission(\''+mi.key+'\','+di+',\''+mi.slot+'\','+missions.indexOf(mi)+')">';
+        h+='<div class="mission-client">'+(mi.t.client||mi.t.task||'—')+'</div>';
+        if(cat.lbl)h+='<span class="mission-badge" style="background:'+cat.col+'22;color:'+cat.col+'">'+cat.ico+' '+cat.lbl+'</span>';
+        h+='</div>';
+        h+='<button class="mission-del" onclick="supprimerMission(\''+mi.key+'\','+JSON.stringify(mi.t.ts||0)+')">🗑️</button>';
+        h+='</div>';
+      });
+    }
+    h+='</div>';
+  });
+
+  h+='</div>';
+  return h;
+}
+
+/* ═══════════════════ AJOUT MISSION ═══════════════════ */
+window._editCat='traiteur';
+window._editDriver=0;
+function ouvrirAjout(){
+  window._editCat='traiteur';window._editDriver=0;
+  var h='<div class="modal" onclick="if(event.target===this)fermerModal()">';
+  h+='<div class="sheet">';
+  h+='<div class="sheet-title">➕ Nouvelle mission<button class="sheet-close" onclick="fermerModal()">Fermer</button></div>';
+  h+='<div class="field"><label>Client / Tâche</label><input id="m-client" placeholder="Ex : Village Club Soleil" autocomplete="off"></div>';
+  h+='<div class="field"><label>Chauffeur</label><select id="m-driver">';
+  ST.drivers.forEach(function(dr,i){h+='<option value="'+i+'">'+dr.name+' · '+dr.truck+'</option>';});
+  h+='</select></div>';
+  h+='<div class="field"><label>Heure</label><select id="m-heure">';
+  SLOTS.forEach(function(s){h+='<option value="'+s+'"'+(s==='08:00'?' selected':'')+'>'+s+'</option>';});
+  h+='</select></div>';
+  h+='<div class="field"><label>Type</label><div class="chips" id="m-cats">';
+  Object.keys(CATS).forEach(function(c){var cat=CATS[c];h+='<button class="chip'+(c==='traiteur'?' on':'')+'" style="'+(c==='traiteur'?'border-color:'+cat.col+';background:'+cat.col+'22;color:'+cat.col:'')+'" onclick="choisirCat(\''+c+'\')" data-cat="'+c+'">'+cat.ico+' '+cat.lbl+'</button>';});
+  h+='</div></div>';
+  h+='<button class="btn-big btn-save" onclick="enregistrerMission()">✅ Ajouter la mission</button>';
+  h+='</div></div>';
+  var d=document.createElement('div');d.id='modal-wrap';d.innerHTML=h;document.body.appendChild(d);
+  setTimeout(function(){var el=$('m-client');if(el)el.focus();},200);
+}
+
+function choisirCat(c){
+  window._editCat=c;
+  document.querySelectorAll('#m-cats .chip').forEach(function(ch){
+    var cat=CATS[ch.getAttribute('data-cat')];
+    if(ch.getAttribute('data-cat')===c){ch.className='chip on';ch.style.cssText='border-color:'+cat.col+';background:'+cat.col+'22;color:'+cat.col;}
+    else{ch.className='chip';ch.style.cssText='';}
+  });
+}
+
+function enregistrerMission(){
+  var client=($('m-client').value||'').trim();
+  if(!client){$('m-client').style.borderColor='#ef4444';return;}
+  var di=parseInt($('m-driver').value);
+  var heure=$('m-heure').value;
+  var cat=window._editCat;
+  var k=gk(ST.cur,di,heure);
+  if(!ST.tasks[k])ST.tasks[k]=[];
+  ST.tasks[k].push({task:cat==='task'?client:'',client:cat==='task'?'':client,category:cat,truck:ST.drivers[di].truck,ts:Date.now()});
+  sauverPlanning();
+  fermerModal();
+  render();
+  toast('✅ Mission ajoutée');
+}
+
+function fermerModal(){var w=$('modal-wrap');if(w)w.remove();}
+
+/* ═══════════════════ MODIFIER / SUPPRIMER ═══════════════════ */
+function modifierMission(key,di,slot,idx){
+  var arr=ST.tasks[key]||[];
+  var t=arr[idx];if(!t)return;
+  window._editCat=t.category||'traiteur';
+  var h='<div class="modal" onclick="if(event.target===this)fermerModal()">';
+  h+='<div class="sheet">';
+  h+='<div class="sheet-title">✏️ Modifier<button class="sheet-close" onclick="fermerModal()">Fermer</button></div>';
+  h+='<div class="field"><label>Client / Tâche</label><input id="e-client" value="'+((t.client||t.task||'').replace(/"/g,"&quot;"))+'"></div>';
+  h+='<div class="field"><label>Chauffeur</label><select id="e-driver">';
+  ST.drivers.forEach(function(dr,i){h+='<option value="'+i+'"'+(i===di?' selected':'')+'>'+dr.name+' · '+dr.truck+'</option>';});
+  h+='</select></div>';
+  h+='<div class="field"><label>Heure</label><select id="e-heure">';
+  SLOTS.forEach(function(s){h+='<option value="'+s+'"'+(s===slot?' selected':'')+'>'+s+'</option>';});
+  h+='</select></div>';
+  h+='<div class="field"><label>Type</label><div class="chips" id="e-cats">';
+  Object.keys(CATS).forEach(function(c){var cat=CATS[c];var on=c===window._editCat;h+='<button class="chip'+(on?' on':'')+'" style="'+(on?'border-color:'+cat.col+';background:'+cat.col+'22;color:'+cat.col:'')+'" onclick="choisirCatE(\''+c+'\')" data-cat="'+c+'">'+cat.ico+' '+cat.lbl+'</button>';});
+  h+='</div></div>';
+  h+='<button class="btn-big btn-save" onclick="sauverModif(\''+key+'\','+idx+')">✅ Enregistrer</button>';
+  h+='<button class="btn-big btn-danger" style="margin-top:8px" onclick="supprimerMission(\''+key+'\','+JSON.stringify(t.ts||0)+');fermerModal()">🗑️ Supprimer</button>';
+  h+='</div></div>';
+  var d=document.createElement('div');d.id='modal-wrap';d.innerHTML=h;document.body.appendChild(d);
+}
+function choisirCatE(c){
+  window._editCat=c;
+  document.querySelectorAll('#e-cats .chip').forEach(function(ch){
+    var cat=CATS[ch.getAttribute('data-cat')];
+    if(ch.getAttribute('data-cat')===c){ch.className='chip on';ch.style.cssText='border-color:'+cat.col+';background:'+cat.col+'22;color:'+cat.col;}
+    else{ch.className='chip';ch.style.cssText='';}
+  });
+}
+function sauverModif(key,idx){
+  var arr=ST.tasks[key]||[];var t=arr[idx];if(!t)return;
+  var client=($('e-client').value||'').trim();
+  var newDi=parseInt($('e-driver').value);
+  var newHeure=$('e-heure').value;
+  var cat=window._editCat;
+  /* Retirer de l'ancienne position */
+  arr.splice(idx,1);
+  if(arr.length===0)delete ST.tasks[key];
+  /* Ajouter à la nouvelle */
+  var nk=gk(ST.cur,newDi,newHeure);
+  if(!ST.tasks[nk])ST.tasks[nk]=[];
+  ST.tasks[nk].push({task:cat==='task'?client:'',client:cat==='task'?'':client,category:cat,truck:ST.drivers[newDi].truck,ts:t.ts||Date.now()});
+  sauverPlanning();fermerModal();render();toast('✅ Modifié');
+}
+function supprimerMission(key,ts){
+  if(!confirm('Supprimer cette mission ?'))return;
+  var arr=ST.tasks[key]||[];
+  ST.tasks[key]=arr.filter(function(t){return (t.ts||0)!==ts;});
+  if(ST.tasks[key].length===0)delete ST.tasks[key];
+  sauverPlanning();render();toast('🗑️ Supprimé','#ef4444');
+}
+
+/* ═══════════════════ CHANGER CAMION ═══════════════════ */
+function changerCamion(di){
+  var dr=ST.drivers[di];
+  var camions=['JUMPY','VIVARO 1','VIVARO 2','IVECO','CAMION 5','VIVARO LOCATION','MASTER','TRAFIC'];
+  var h='<div class="modal" onclick="if(event.target===this)fermerModal()">';
+  h+='<div class="sheet">';
+  h+='<div class="sheet-title">🚛 Camion de '+dr.name+'<button class="sheet-close" onclick="fermerModal()">Fermer</button></div>';
+  h+='<div class="field"><label>Camion actuel : '+dr.truck+'</label>';
+  h+='<div class="chips">';
+  camions.forEach(function(c){var on=c===dr.truck;h+='<button class="chip'+(on?' on':'')+'" style="'+(on?'border-color:#0ea5e9;background:rgba(14,165,233,.2);color:#0ea5e9':'')+'" onclick="appliquerCamion('+di+',\''+c+'\')">🚛 '+c+'</button>';});
+  h+='</div></div>';
+  h+='<div class="field"><label>Ou saisir un autre camion</label><input id="camion-custom" placeholder="Nom du camion"></div>';
+  h+='<button class="btn-big btn-save" onclick="appliquerCamionCustom('+di+')">✅ Valider</button>';
+  h+='</div></div>';
+  var d=document.createElement('div');d.id='modal-wrap';d.innerHTML=h;document.body.appendChild(d);
+}
+function appliquerCamion(di,camion){
+  ST.drivers[di].truck=camion;
+  sauverPlanning();fermerModal();render();toast('🚛 Camion changé : '+camion);
+}
+function appliquerCamionCustom(di){
+  var c=($('camion-custom').value||'').trim();
+  if(!c)return;
+  ST.drivers[di].truck=c.toUpperCase();
+  sauverPlanning();fermerModal();render();toast('🚛 Camion changé');
+}
+</script>
+<script>
+/* ═══════════════════ LIVRAISONS ═══════════════════ */
+function chargerLivraisons(){
+  var el=$('page-content');if(!el)return;
+  el.innerHTML='<div class="empty-day">⏳ Chargement des livraisons...</div>';
+  fetch(SUPA+'/rest/v1/planning?date=like.EV_LIV_*&select=donnees,updated_at&order=updated_at.desc&limit=60',{headers:H,cache:'no-store'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var today=todayStr();var livs=[];
+    (rows||[]).forEach(function(row){
+      var ev=row.donnees;if(typeof ev==='string'){try{ev=JSON.parse(ev);}catch(e){return;}}
+      if(ev&&ev.type==='livraison_confirmee'&&ev.date===today)livs.push(ev);
+    });
+    if(!livs.length){el.innerHTML='<div class="empty-day" style="padding:50px">📦<br><br>Aucune livraison confirmée aujourd\'hui</div>';return;}
+    var h='<div style="padding:12px">';
+    h+='<div style="font-size:13px;color:#64748b;font-weight:800;margin-bottom:10px">'+livs.length+' livraison'+(livs.length>1?'s':'')+' confirmée'+(livs.length>1?'s':'')+' aujourd\'hui</div>';
+    livs.forEach(function(l){
+      h+='<div style="background:var(--card);border:1px solid rgba(34,197,94,.3);border-left:4px solid #22c55e;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      h+='<div style="font-size:24px">✅</div>';
+      h+='<div style="flex:1"><div style="font-size:14px;font-weight:800;color:#fff">'+(l.client||'—')+'</div>';
+      h+='<div style="font-size:11px;color:#64748b">'+(l.chauffeur||'')+(l.vehicule?' · '+l.vehicule:'')+(l.heure?' · '+l.heure:'')+'</div></div>';
+      if(l.photo)h+='<img src="'+l.photo+'" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onclick="zoomPhoto(\''+l.photo+'\')">';
+      h+='</div>';
+    });
+    h+='</div>';
+    el.innerHTML=h;
+  })
+  .catch(function(){el.innerHTML='<div class="empty-day">Erreur de chargement</div>';});
+}
+function zoomPhoto(src){
+  var z=document.createElement('div');z.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px';
+  z.onclick=function(){z.remove();};
+  var im=document.createElement('img');im.src=src;im.style.cssText='max-width:100%;max-height:100%;border-radius:12px';
+  z.appendChild(im);document.body.appendChild(z);
+}
+
+/* ═══════════════════ STATUTS CHAUFFEURS ═══════════════════ */
+function chargerStatuts(){
+  var el=$('page-content');if(!el)return;
+  el.innerHTML='<div class="empty-day">⏳ Chargement...</div>';
+  fetch(SUPA+'/rest/v1/planning?date=like.STATUT_*&select=donnees,updated_at&order=updated_at.desc&limit=60',{headers:H,cache:'no-store'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var statuts={};
+    (rows||[]).forEach(function(row){
+      var ev=row.donnees;if(typeof ev==='string'){try{ev=JSON.parse(ev);}catch(e){return;}}
+      if(ev&&ev.type==='statut_chauffeur'){
+        var di=ev.chauffeurId;
+        if(statuts[di]===undefined||new Date(ev.ts)>new Date(statuts[di].ts))statuts[di]=ev;
+      }
+    });
+    var stLbl={service:'✅ En service',enroute:'🚐 En route',pause:'☕ En pause',retour:'🔄 Retour',termine:'🏁 Terminé',probleme:'🆘 Problème'};
+    var stCol={service:'#22c55e',enroute:'#3b82f6',pause:'#f59e0b',retour:'#a855f7',termine:'#22c55e',probleme:'#ef4444'};
+    var h='<div style="padding:12px">';
+    ST.drivers.forEach(function(dr,di){
+      var s=statuts[di];var key=s?s.statut:null;
+      var lbl=key&&stLbl[key]?stLbl[key]:'⚪ Pas de statut';
+      var col=key&&stCol[key]?stCol[key]:'#64748b';
+      h+='<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid '+col+';border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      h+='<div style="width:40px;height:40px;border-radius:50%;background:'+dr.color+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff">'+dr.name[0]+'</div>';
+      h+='<div style="flex:1"><div style="font-size:15px;font-weight:900;color:#fff">'+dr.name+'</div><div style="font-size:11px;color:#64748b">🚛 '+dr.truck+'</div></div>';
+      h+='<div style="text-align:right"><div style="font-size:13px;font-weight:800;color:'+col+'">'+lbl+'</div>';
+      if(s&&s.heure)h+='<div style="font-size:10px;color:#475569">'+s.heure+'</div>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+    el.innerHTML=h;
+  })
+  .catch(function(){el.innerHTML='<div class="empty-day">Erreur</div>';});
+}
+
+/* ═══════════════════ PWA + DÉMARRAGE ═══════════════════ */
+(function(){
+  var manifest={name:'Planning Responsable Cana',short_name:'Planning Cana',start_url:window.location.pathname,display:'standalone',display_override:['fullscreen','standalone'],orientation:'portrait',background_color:'#0a1628',theme_color:'#0ea5e9',
+    icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230ea5e9'/%3E%3Ctext x='50' y='68' font-size='55' text-anchor='middle'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'}]};
+  var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  var link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(blob);document.head.appendChild(link);
+})();
+
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;
+  setTimeout(function(){
+    if(!ST.logged||document.getElementById('btn-install'))return;
+    var b=document.createElement('button');b.id='btn-install';
+    b.innerHTML='⬇️ Installer';
+    b.style.cssText='position:fixed;top:10px;right:52px;z-index:9999;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800';
+    b.onclick=function(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;b.remove();});}};
+    document.body.appendChild(b);
+  },2000);
+});
+
+/* Auto-update : recharger les données toutes les 15s */
+setInterval(function(){
+  if(ST.logged&&ST.page==='planning'&&!document.getElementById('modal-wrap')){
+    chargerPlanning(function(){if(ST.page==='planning')render();});
+  } else if(ST.logged&&ST.page==='livraisons'){chargerLivraisons();}
+  else if(ST.logged&&ST.page==='statuts'){chargerStatuts();}
+},15000);
+
+/* DÉMARRAGE */
+(function(){
+  var savedService='';try{savedService=localStorage.getItem('cana_mob_service')||'';}catch(e){}
+  if(savedService){
+    ST.logged=true;ST.service=savedService;
+    chargerPlanning(function(){render();});
+    render();
+  } else {
+    renderLoginChamp();
+  }
+})();
+</script>
+<script>
+/* ═══════════════════ RECHERCHE CLIENT ═══════════════════ */
+function renderRecherche(){
+  var h='<div class="scroll" style="padding:14px">';
+  h+='<div style="position:relative;margin-bottom:14px">';
+  h+='<input id="rc-input" placeholder="🔍 Chercher un client..." oninput="rechercheClient(this.value)" autocomplete="off" style="width:100%;background:var(--card);border:2px solid var(--border);border-radius:14px;color:#fff;padding:14px 16px;font-size:15px;outline:none">';
+  h+='</div>';
+  h+='<div id="rc-results"><div class="empty-day" style="padding:40px">Tapez au moins 2 lettres pour chercher un client dans tout le planning</div></div>';
+  h+='</div>';
+  return h;
+}
+function rechercheClient(terme){
+  var el=$('rc-results');if(!el)return;
+  terme=(terme||'').trim().toLowerCase();
+  if(terme.length<2){el.innerHTML='<div class="empty-day" style="padding:40px">Tapez au moins 2 lettres</div>';return;}
+  var today=todayStr();var res=[];
+  Object.keys(ST.tasks).forEach(function(k){
+    var p=k.split('|');var date=p[0],di=parseInt(p[1]),heure=p[2];
+    (ST.tasks[k]||[]).forEach(function(t){
+      var nom=(t.client||t.task||'').toLowerCase();
+      if(nom.indexOf(terme)>=0){
+        res.push({client:t.client||t.task,date:date,heure:heure,di:di,cat:t.category,
+          livre:t._livreParApp||t._statut==='done'||t.confirmed,
+          today:date===today,futur:date>today});
+      }
+    });
+  });
+  res.sort(function(a,b){if(a.today&&!b.today)return -1;if(!a.today&&b.today)return 1;return a.date.localeCompare(b.date);});
+  if(!res.length){el.innerHTML='<div class="empty-day" style="padding:40px">Aucun client "'+terme+'" trouvé</div>';return;}
+  var h='<div style="font-size:12px;color:#64748b;font-weight:800;margin-bottom:10px">'+res.length+' résultat'+(res.length>1?'s':'')+'</div>';
+  res.slice(0,20).forEach(function(r){
+    var cat=CATS[r.cat]||{ico:'📦',col:'#64748b'};
+    var dr=ST.drivers[r.di];
+    var badge=r.livre?'<span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px">✅ Livré</span>':r.today?'<span style="background:rgba(249,115,22,.15);color:#f97316;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px">⏳ À livrer</span>':r.futur?'<span style="background:rgba(59,130,246,.15);color:#3b82f6;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px">📅 Prévu</span>':'<span style="background:rgba(100,116,139,.15);color:#64748b;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px">Passé</span>';
+    h+='<div onclick="allerAuJour(\''+r.date+'\')" style="background:var(--card);border:1px solid var(--border);border-left:3px solid '+cat.col+';border-radius:12px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:14px;font-weight:800;color:#fff">'+cat.ico+' '+r.client+'</span>'+badge+'</div>';
+    h+='<div style="font-size:11px;color:#94a3b8">📅 '+fmtDate(r.date)+' · 🕐 '+r.heure+' · 🚛 '+(dr?dr.name:'?')+'</div>';
+    h+='</div>';
+  });
+  el.innerHTML=h;
+}
+function allerAuJour(date){ST.cur=date;ST.page='planning';render();}
+
+/* ═══════════════════ MENU ═══════════════════ */
+function renderMenu(){
+  var items=[
+    {ico:'📊',lbl:'Tableau de bord',sub:'Vue d\'ensemble du jour',col:'#3b82f6',page:'dashboard'},
+    {ico:'🛍️',lbl:'Liste de courses',sub:'Les achats à faire',col:'#22c55e',page:'courses'},
+    {ico:'🏖️',lbl:'Congés',sub:'Demandes des chauffeurs',col:'#a855f7',page:'conges'},
+    {ico:'✅',lbl:'Livraisons du jour',sub:'Confirmées + photos',col:'#22c55e',page:'livraisons'},
+    {ico:'📍',lbl:'Où sont mes chauffeurs',sub:'Statuts en direct',col:'#f59e0b',page:'statuts'}
+  ];
+  var h='<div class="scroll" style="padding:14px">';
+  h+='<div style="font-size:13px;color:#64748b;font-weight:800;margin-bottom:12px;text-transform:uppercase">Toutes les fonctions</div>';
+  items.forEach(function(it){
+    h+='<div onclick="allerPage(\''+it.page+'\')" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">';
+    h+='<div style="width:46px;height:46px;border-radius:12px;background:'+it.col+'20;display:flex;align-items:center;justify-content:center;font-size:22px">'+it.ico+'</div>';
+    h+='<div style="flex:1"><div style="font-size:16px;font-weight:900;color:#fff">'+it.lbl+'</div><div style="font-size:12px;color:#64748b">'+it.sub+'</div></div>';
+    h+='<div style="font-size:20px;color:#334155">›</div>';
+    h+='</div>';
+  });
+  h+='<button class="btn-big btn-danger" style="margin-top:10px" onclick="deconnexion()">🚪 Se déconnecter</button>';
+  h+='</div>';
+  return h;
+}
+
+/* ═══════════════════ TABLEAU DE BORD ═══════════════════ */
+function renderDashboard(){
+  var el=$('page-content');if(!el)return;
+  var today=ST.cur;var total=0,livrees=0,restantes=0;
+  var parCh={};
+  ST.drivers.forEach(function(dr,di){parCh[di]={nom:dr.name,total:0,livrees:0};});
+  Object.keys(ST.tasks).forEach(function(k){
+    var p=k.split('|');if(p[0]!==today)return;var di=parseInt(p[1]);
+    (ST.tasks[k]||[]).forEach(function(t){
+      if(!t.client&&!t.task)return;total++;if(parCh[di])parCh[di].total++;
+      var l=t._livreParApp||t._statut==='done'||t.confirmed;
+      if(l){livrees++;if(parCh[di])parCh[di].livrees++;}else restantes++;
+    });
+  });
+  var pct=total>0?Math.round(livrees/total*100):0;
+  var h='<div style="padding:14px">';
+  h+='<div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:4px">📊 '+fmtDate(today)+'</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0">';
+  h+='<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center"><div style="font-size:26px;font-weight:900;color:#fff">'+total+'</div><div style="font-size:10px;color:#64748b">Missions</div></div>';
+  h+='<div style="background:var(--card);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:14px;text-align:center"><div style="font-size:26px;font-weight:900;color:#22c55e">'+livrees+'</div><div style="font-size:10px;color:#64748b">Livrées</div></div>';
+  h+='<div style="background:var(--card);border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:14px;text-align:center"><div style="font-size:26px;font-weight:900;color:#f97316">'+restantes+'</div><div style="font-size:10px;color:#64748b">Restantes</div></div>';
+  h+='</div>';
+  h+='<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">';
+  h+='<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:800;color:#fff">Progression</span><span style="font-size:14px;font-weight:900;color:'+(pct>=80?'#22c55e':'#f97316')+'">'+pct+'%</span></div>';
+  h+='<div style="background:var(--card2);border-radius:8px;height:12px;overflow:hidden"><div style="width:'+pct+'%;height:12px;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>';
+  h+='</div>';
+  h+='<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:10px">Par chauffeur</div>';
+  Object.keys(parCh).forEach(function(di){var c=parCh[di];if(c.total===0)return;var cp=c.total>0?Math.round(c.livrees/c.total*100):0;
+    h+='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:14px;font-weight:900;color:#fff">'+c.nom+'</span><span style="font-size:12px;font-weight:800;color:'+(cp>=80?'#22c55e':'#f97316')+'">'+c.livrees+'/'+c.total+'</span></div>';
+    h+='<div style="background:var(--card2);border-radius:6px;height:6px;overflow:hidden"><div style="width:'+cp+'%;height:6px;background:'+(cp>=80?'#22c55e':'#f97316')+'"></div></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+/* ═══════════════════ CONGÉS ═══════════════════ */
+function chargerConges(){
+  var el=$('page-content');if(!el)return;
+  el.innerHTML='<div class="empty-day">⏳ Chargement...</div>';
+  var annee=new Date().getFullYear();
+  fetch(SUPA+'/rest/v1/planning?date=like.CONGES_'+annee+'*&select=donnees,date&limit=100',{headers:H,cache:'no-store'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var demandes=[];
+    (rows||[]).forEach(function(row){
+      var d=row.donnees;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){return;}}
+      if(d&&Array.isArray(d))d.forEach(function(c){demandes.push(c);});
+      else if(d&&d.demandes)d.demandes.forEach(function(c){demandes.push(c);});
+    });
+    if(!demandes.length){el.innerHTML='<div class="empty-day" style="padding:50px">🏖️<br><br>Aucune demande de congé</div>';return;}
+    var h='<div style="padding:14px">';
+    h+='<div style="font-size:13px;color:#64748b;font-weight:800;margin-bottom:12px">'+demandes.length+' demande'+(demandes.length>1?'s':'')+'</div>';
+    demandes.forEach(function(c){
+      h+='<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid #a855f7;border-radius:12px;padding:14px;margin-bottom:8px">';
+      h+='<div style="font-size:14px;font-weight:900;color:#fff">'+(c.chauffeur||c.nom||'Chauffeur')+'</div>';
+      h+='<div style="font-size:12px;color:#94a3b8;margin-top:4px">'+(c.debut||c.dateDebut||'')+(c.fin?' → '+c.fin:c.dateFin?' → '+c.dateFin:'')+'</div>';
+      if(c.motif||c.type)h+='<div style="font-size:11px;color:#64748b;margin-top:2px">'+(c.motif||c.type)+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+    el.innerHTML=h;
+  })
+  .catch(function(){el.innerHTML='<div class="empty-day">Erreur de chargement</div>';});
+}
+
+/* ═══════════════════ LISTE DE COURSES ═══════════════════ */
+function chargerCourses(){
+  var el=$('page-content');if(!el)return;
+  el.innerHTML='<div class="empty-day">⏳ Chargement...</div>';
+  fetch(SUPA+'/rest/v1/planning?date=eq.LISTE_COURSES&select=donnees&limit=1',{headers:H,cache:'no-store'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var items=[];
+    if(rows&&rows.length&&rows[0].donnees){
+      var d=rows[0].donnees;
+      try{items=typeof d==='string'?JSON.parse(d):(d.items||d||[]);}catch(e){items=[];}
+      if(!Array.isArray(items))items=items.items||[];
+    }
+    window._courses=items;
+    afficherCourses();
+  })
+  .catch(function(){el.innerHTML='<div class="empty-day">Erreur</div>';});
+}
+function afficherCourses(){
+  var el=$('page-content');if(!el)return;
+  var items=window._courses||[];
+  var h='<div style="padding:14px">';
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px">';
+  h+='<input id="lc-new" placeholder="Ajouter un article..." style="flex:1;background:var(--card);border:2px solid var(--border);border-radius:12px;color:#fff;padding:12px 14px;outline:none" onkeydown="if(event.key===\'Enter\')ajouterCourse()">';
+  h+='<button onclick="ajouterCourse()" style="background:#22c55e;border:none;border-radius:12px;color:#fff;padding:0 18px;font-size:22px;font-weight:800">+</button>';
+  h+='</div>';
+  if(!items.length){h+='<div class="empty-day" style="padding:40px">🛍️<br><br>Liste vide</div>';}
+  else{
+    h+='<div style="font-size:12px;color:#64748b;font-weight:800;margin-bottom:10px">'+items.length+' article'+(items.length>1?'s':'')+'</div>';
+    items.forEach(function(it,idx){
+      var fait=it.fait;
+      h+='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px'+(fait?';opacity:.5':'')+'">';
+      h+='<button onclick="toggleCourse('+idx+')" style="width:28px;height:28px;border-radius:50%;border:2px solid '+(fait?'#22c55e':'#334155')+';background:'+(fait?'#22c55e':'transparent')+';color:#fff;font-size:14px">'+(fait?'✓':'')+'</button>';
+      h+='<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff;'+(fait?'text-decoration:line-through':'')+'">'+(it.article||it.nom||'')+'</div>';
+      if(it.qty&&it.qty!=='—')h+='<div style="font-size:11px;color:#64748b">'+it.qty+'</div>';
+      h+='</div>';
+      h+='<button onclick="suppCourse('+idx+')" style="background:rgba(239,68,68,.12);border:none;border-radius:8px;color:#ef4444;padding:8px 10px">🗑️</button>';
+      h+='</div>';
+    });
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+function sauverCourses(){
+  fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},H),body:JSON.stringify({date:'LISTE_COURSES',donnees:JSON.stringify(window._courses||[]),updated_at:new Date().toISOString()})}).catch(function(){});
+}
+function ajouterCourse(){
+  var v=($('lc-new').value||'').trim();if(!v)return;
+  if(!window._courses)window._courses=[];
+  window._courses.push({id:Date.now(),article:v,qty:'—',fait:false,ts:new Date().toISOString()});
+  sauverCourses();afficherCourses();toast('✅ Ajouté');
+}
+function toggleCourse(idx){window._courses[idx].fait=!window._courses[idx].fait;sauverCourses();afficherCourses();}
+function suppCourse(idx){window._courses.splice(idx,1);sauverCourses();afficherCourses();toast('🗑️ Retiré','#ef4444');}
+</script>
+<script>
+/* ═══════════════════ ALERTE LIVRAISON EN DIRECT ═══════════════════ */
+window._nbLivraisonsVues=null;
+function bipLivraison(){
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    var ctx=window._audioMob||(window._audioMob=new AC());
+    if(ctx.state==='suspended')ctx.resume();
+    var o=ctx.createOscillator();var g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=880;o.type='sine';
+    g.gain.setValueAtTime(0.001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.35,ctx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
+    o.start();o.stop(ctx.currentTime+0.26);
+  }catch(e){}
+}
+function surveillerLivraisons(){
+  if(!ST.logged)return;
+  fetch(SUPA+'/rest/v1/planning?date=like.EV_LIV_*&select=donnees,updated_at&order=updated_at.desc&limit=40',{headers:H,cache:'no-store'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var today=todayStr();var nb=0;var derniere=null;
+    (rows||[]).forEach(function(row){
+      var ev=row.donnees;if(typeof ev==='string'){try{ev=JSON.parse(ev);}catch(e){return;}}
+      if(ev&&ev.type==='livraison_confirmee'&&ev.date===today){nb++;if(!derniere)derniere=ev;}
+    });
+    if(window._nbLivraisonsVues!==null && nb>window._nbLivraisonsVues && derniere){
+      bipLivraison();
+      if(navigator.vibrate)navigator.vibrate([200,80,200]);
+      try{if('Notification' in window && Notification.permission==='granted'){
+        new Notification('✅ Nouvelle livraison !',{body:(derniere.chauffeur||'')+' → '+(derniere.client||''),tag:'liv'});
+      }}catch(e){}
+      var b=document.createElement('div');b.className='toast';b.style.background='#22c55e';
+      b.textContent='✅ '+(derniere.chauffeur||'')+' a livré '+(derniere.client||'');
+      document.body.appendChild(b);
+      setTimeout(function(){b.style.opacity='0';setTimeout(function(){b.remove();},300);},3500);
+    }
+    window._nbLivraisonsVues=nb;
+  }).catch(function(){});
+}
+setInterval(surveillerLivraisons,8000);
+setTimeout(function(){
+  try{if('Notification' in window && Notification.permission==='default')Notification.requestPermission();}catch(e){}
+  surveillerLivraisons();
+},3000);
+</script>
+</body>
+</html>
