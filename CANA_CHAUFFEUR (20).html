@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- ═══ PWA : Installation + Mise à jour automatique ═══ -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a1628">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>La Table de Cana — App Chauffeur</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#07101e;--card:#0d1b2e;--border:#1a3550;--text:#e2e8f0;--muted:#607d9a;
+  --orange:#f97316;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;
+  --sab:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+#root{height:100%}
+.screen{height:100%;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+/* LOGIN */
+.lw{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:24px;background:linear-gradient(160deg,#071526,#0a1f38)}
+.l-logo{font-size:56px;margin-bottom:12px}
+.l-title{font-size:26px;font-weight:900;color:#fff;margin-bottom:4px}
+.l-sub{font-size:13px;color:var(--muted);margin-bottom:28px;text-align:center}
+.l-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-bottom:20px}
+.drv-btn{padding:16px 8px;border-radius:14px;border:2px solid;background:transparent;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;font-family:inherit}
+.drv-btn:active{transform:scale(.95)}
+.pin-wrap{width:100%;max-width:320px}
+.pin-in{width:100%;background:var(--card);border:2px solid var(--border);border-radius:12px;color:#fff;padding:14px;font-size:20px;text-align:center;outline:none;letter-spacing:8px;margin-bottom:10px;font-family:inherit}
+.pin-in:focus{border-color:var(--orange)}
+.pin-go{width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit}
+.pin-err{color:var(--red);font-size:12px;text-align:center;margin-top:8px;height:16px}
+/* HEADER */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;min-height:52px}
+.hdr-back{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--orange);font-size:16px;font-weight:900;cursor:pointer;padding:9px 16px;border-radius:12px;line-height:1;font-family:inherit;white-space:nowrap}
+.hdr-title{font-size:15px;font-weight:800;color:#fff;flex:1}
+/* ICON GRID */
+.icon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.icon-tile{aspect-ratio:1;border-radius:20px;border:1.5px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;background:none;font-family:inherit;position:relative;transition:.12s;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.icon-tile:active{transform:scale(.91);box-shadow:none}
+.it-ico{font-size:28px}
+.it-lbl{font-size:11px;font-weight:900;text-align:center;padding:0 4px;line-height:1.3}
+.it-sub{font-size:9px;text-align:center;padding:0 4px;line-height:1.2;opacity:.75}
+.tile-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg)}
+/* HOME TOP */
+.home-top{padding:18px 16px 12px;background:linear-gradient(160deg,#0f1928,#071526);border-bottom:1px solid var(--border)}
+.home-greet{font-size:12px;color:var(--muted)}
+.home-name{font-size:24px;font-weight:900;margin-bottom:6px}
+.home-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin:0 16px 12px}
+.card-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:12px}
+/* FORMS */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select,.field textarea{background:#071526;border:1px solid var(--border);border-radius:8px;color:#fff;padding:10px 12px;font-size:13px;outline:none;font-family:inherit;box-sizing:border-box;width:100%}
+.field input:focus,.field select:focus{border-color:var(--orange)}
+.btn-p{width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit}
+.btn-s{width:100%;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+/* MISSION CARD */
+.mission-card{background:var(--card);border-radius:14px;padding:14px;margin:0 16px 10px;border-left:4px solid var(--orange);cursor:pointer;transition:.15s}
+.mission-card:active{transform:scale(.98)}
+.mission-card.done{border-left-color:var(--green);opacity:.8}
+/* MISSION DETAIL */
+.md-section{margin:0 16px 14px}
+.md-section-title{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.action-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:8px;font-family:inherit;text-align:left;transition:.15s}
+.action-btn:active{transform:scale(.98)}
+.action-btn-ico{font-size:22px;flex-shrink:0}
+.action-btn-label{font-size:13px;font-weight:800;color:#fff}
+.action-btn-sub{font-size:11px;color:var(--muted);margin-top:1px}
+/* PHOTO PREVIEW */
+.photo-preview{width:100%;border-radius:12px;max-height:200px;object-fit:cover;margin-bottom:8px;border:1px solid var(--border)}
+/* SIGNATURE PAD */
+#sig-canvas{border:2px solid var(--border);border-radius:12px;background:#071526;touch-action:none;cursor:crosshair}
+/* CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 12px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:11px;cursor:pointer;position:relative}
+.cal-day.today{background:var(--orange);color:#fff;font-weight:900}
+.cal-day.has-missions::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--green)}
+.cal-day.today.has-missions::after{background:#fff}
+.cal-day-off{opacity:.3}
+/* STATUT */
+.st-btn{width:100%;padding:15px 16px;background:var(--card);border:2px solid var(--border);border-radius:14px;text-align:left;cursor:pointer;margin-bottom:10px;transition:.2s;font-family:inherit}
+.st-btn.active{border-color:var(--orange);background:rgba(249,115,22,.08)}
+.st-lbl{font-size:14px;font-weight:900;color:#fff}
+.st-desc{font-size:11px;color:var(--muted);margin-top:2px}
+/* CHECK */
+.chk-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border:2px solid var(--border);border-radius:14px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.chk-item.on{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3)}
+.chk-box{width:26px;height:26px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s}
+.chk-item.on .chk-box{background:var(--green);border-color:var(--green);color:#fff}
+/* METEO */
+.meteo-bar{margin:8px 16px 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
+/* TOAST */
+#toast{position:fixed;bottom:calc(20px + var(--sab));left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:#fff;z-index:9999;pointer-events:none;opacity:0;transition:.3s;white-space:nowrap;max-width:90vw}
+#toast.show{opacity:1}
+@keyframes slideUpPad{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ═══════════════════ CONFIG ═══════════════════ */
+const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+const H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+const HM={...H,'Prefer':'resolution=merge-duplicates,return=minimal'};
+
+const DRIVERS=[
+  {id:0,name:'OTMANE',display:'Otmane',color:'#3b82f6',code:'1111',truck:'JUMPY',start:'06:00',end:'14:00'},
+  {id:1,name:'NICOLAS',display:'Nicolas',color:'#22c55e',code:'2222',truck:'VIVARO LOCATION',start:'06:00',end:'14:00'},
+  {id:2,name:'MICKAEL',display:'Mickael',color:'#f97316',code:'3333',truck:'VIVARO 1',start:'06:00',end:'15:00'},
+  {id:3,name:'KARIM',display:'Karim',color:'#a855f7',code:'4444',truck:'VIVARO 2',start:'06:00',end:'14:00'},
+  {id:4,name:'MAITRE_HOTEL',display:"Maître d'H.",color:'#f59e0b',code:'5555',truck:'CAMION 5',start:'08:00',end:'22:00'},
+];
+
+/* ═══════════════════ UTILS ═══════════════════ */
+function showToast(msg,col='var(--orange)'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.borderColor=col;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+async function sGet(path){
+  try{const r=await fetch(SUPA+'/rest/v1/'+path,{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});return r.json();}
+  catch(e){return[];}
+}
+async function sPostEvent(body){
+  /* POST dédié aux événements (livraisons, statuts) - upsert propre */
+  const headers={...H,'Prefer':'resolution=merge-duplicates,return=minimal'};
+  try{
+    const r=await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:headers,body:JSON.stringify(body)});
+    if(!r.ok){
+      const txt=await r.text().catch(()=>'');
+      console.log('sPostEvent echec:',r.status,txt);
+      await new Promise(res=>setTimeout(res,1000));
+      return await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:headers,body:JSON.stringify(body)});
+    }
+    return r;
+  }catch(e){
+    console.log('sPostEvent erreur:',e);
+    try{await new Promise(res=>setTimeout(res,1000));return await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:headers,body:JSON.stringify(body)});}catch(e2){}
+  }
+}
+async function sPost(table,body){
+  try{
+    const r=await fetch(SUPA+'/rest/v1/'+table,{method:'POST',headers:HM,body:JSON.stringify(body)});
+    if(!r.ok){
+      /* Retry une fois */
+      await new Promise(res=>setTimeout(res,800));
+      return await fetch(SUPA+'/rest/v1/'+table,{method:'POST',headers:HM,body:JSON.stringify(body)});
+    }
+    return r;
+  }catch(e){
+    /* Retry en cas d'erreur réseau */
+    try{await new Promise(res=>setTimeout(res,800));return await fetch(SUPA+'/rest/v1/'+table,{method:'POST',headers:HM,body:JSON.stringify(body)});}catch(e2){}
+  }
+}
+
+function getMissions(planning,driverId,date){
+  if(!planning?.tasks) return[];
+  const res=[];
+  Object.keys(planning.tasks).forEach(k=>{
+    const[d,di,h]=k.split('|');
+    if(d===date&&parseInt(di)===driverId){
+      (planning.tasks[k]||[]).forEach(t=>{
+        if(t&&(t.client||t.task)) res.push({...t,heure:h,_key:k});
+      });
+    }
+  });
+  return res.sort((a,b)=>a.heure.localeCompare(b.heure));
+}
+
+function getAllMissionDates(planning,driverId){
+  if(!planning?.tasks) return{};
+  const dates={};
+  Object.keys(planning.tasks).forEach(k=>{
+    const[d,di]=k.split('|');
+    if(parseInt(di)===driverId&&(planning.tasks[k]||[]).some(t=>t?.client||t?.task)){
+      if(!dates[d]) dates[d]=0;
+      dates[d]+=(planning.tasks[k]||[]).length;
+    }
+  });
+  return dates;
+}
+
+/* ═══════════════════ HEADER ═══════════════════ */
+function Header({title,onBack,right,ch,onLogout}){
+  return(
+    <div className="hdr">
+      {onBack&&<button className="hdr-back" onClick={onBack}>← Retour</button>}
+      <div className="hdr-title">{title}</div>
+      {right&&<div style={{fontSize:12,color:'var(--muted)',flexShrink:0}}>{right}</div>}
+      {onLogout&&(
+        <button onClick={onLogout}
+          style={{background:'rgba(249,115,22,.12)',border:'1px solid rgba(249,115,22,.35)',borderRadius:10,color:'var(--orange)',padding:'9px 16px',fontSize:14,fontWeight:900,cursor:'pointer',flexShrink:0}}>
+          🔄 Changer
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════ MÉTÉO ═══════════════════ */
+function MeteoBar(){
+  const[m,setM]=useState(null);
+  useEffect(()=>{
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=43.2965&longitude=5.3698&current=temperature_2m,weathercode,windspeed_10m&timezone=Europe/Paris')
+      .then(r=>r.json()).then(d=>{
+        if(d?.current){
+          const c=d.current.weathercode;
+          const ico=c===0?'☀️':c<=3?'⛅':c<=67?'🌧️':'⛈️';
+          setM({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.windspeed_10m),ico,desc:c===0?'Ensoleillé':c<=3?'Nuageux':c<=67?'Pluie':'Orage'});
+        }
+      }).catch(()=>{});
+  },[]);
+  if(!m) return null;
+  const alerte=m.wind>60;
+  return(
+    <div className="meteo-bar" style={{borderColor:alerte?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)',background:alerte?'rgba(239,68,68,.06)':'rgba(255,255,255,.04)'}}>
+      <span style={{fontSize:20}}>{m.ico}</span>
+      <div style={{flex:1}}>
+        <div style={{fontWeight:800,color:'#fff',fontSize:12}}>{m.desc} · {m.temp}°C</div>
+        <div style={{fontSize:10,color:alerte?'#ef4444':'var(--muted)',fontWeight:alerte?800:400}}>{alerte?'⚠️ Mistral fort — ':''}{m.wind} km/h</div>
+      </div>
+      {alerte&&<span style={{fontSize:9,fontWeight:900,color:'#ef4444',background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:5,padding:'2px 6px'}}>PRUDENCE</span>}
+    </div>
+  );
+}
+
+/* ═══════════════════ LOGIN ═══════════════════ */
+function Login({onLogin}){
+  const[sel,setSel]=useState(null);
+  const[pin,setPin]=useState('');
+  const[err,setErr]=useState('');
+  const[now,setNow]=useState(new Date());
+  const[listeOuverte,setListeOuverte]=useState(false);
+  const[pavOuvert,setPavOuvert]=useState(false);
+  useEffect(()=>{const iv=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(iv);},[]);
+
+  function tapeChiffre(c){
+    if(pin.length<4){var np=pin+c;setPin(np);setErr('');
+      if(np.length===4){setTimeout(()=>{if(np===sel.code)onLogin(sel);else{setErr('Code incorrect');setPin('');}},150);}
+    }
+  }
+  function effacer(){setPin(pin.slice(0,-1));setErr('');}
+
+  const JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const heureStr=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const dateStr=JOURS[now.getDay()]+' '+now.getDate()+' '+MOIS[now.getMonth()]+' '+now.getFullYear();
+  const h=now.getHours();
+  const salut=h<12?'Bonne matinée':h<18?'Bon après-midi':'Bonne soirée';
+
+  return(
+    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',background:'linear-gradient(165deg,#0c2818 0%,#071526 50%,#0a1628 100%)',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',top:-80,right:-60,width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,197,94,.18),transparent 70%)',pointerEvents:'none'}}/>
+      <div style={{position:'absolute',bottom:-40,left:-50,width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(14,165,233,.1),transparent 70%)',pointerEvents:'none'}}/>
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'0 22px',position:'relative',zIndex:2,overflowY:'auto'}}>
+        {/* Date + heure */}
+        <div style={{textAlign:'center',marginTop:24,marginBottom:12}}>
+          <div style={{fontSize:38,fontWeight:900,color:'#fff',letterSpacing:1,lineHeight:1,fontVariantNumeric:'tabular-nums'}}>{heureStr}</div>
+          <div style={{fontSize:12,fontWeight:700,color:'#4ade80',marginTop:5,textTransform:'capitalize'}}>{dateStr}</div>
+        </div>
+
+        {/* LOGO La Table de Cana */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',marginBottom:6}}>
+          <div style={{width:98,height:98,borderRadius:'50%',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 12px 34px rgba(190,24,93,.4)',marginBottom:12,position:'relative',border:'3px solid rgba(190,24,93,.15)'}}>
+            <svg width="66" height="66" viewBox="0 0 80 80">
+              {/* Table ronde centrale */}
+              <circle cx="40" cy="40" r="16" fill="#be185d"/>
+              {/* Convives autour de la table (points) */}
+              <circle cx="40" cy="12" r="6.5" fill="#be185d"/>
+              <circle cx="60" cy="20" r="6.5" fill="#be185d"/>
+              <circle cx="68" cy="40" r="6.5" fill="#be185d"/>
+              <circle cx="60" cy="60" r="6.5" fill="#be185d"/>
+              <circle cx="40" cy="68" r="6.5" fill="#be185d"/>
+              <circle cx="20" cy="60" r="6.5" fill="#be185d"/>
+              <circle cx="12" cy="40" r="6.5" fill="#be185d"/>
+              {/* Un convive accueilli (couleur plus claire, celui qui rejoint) */}
+              <circle cx="20" cy="20" r="6.5" fill="#ec4899"/>
+            </svg>
+          </div>
+          <div style={{fontSize:13,fontWeight:600,color:'#86efac',letterSpacing:2,textTransform:'uppercase'}}>Bienvenue à</div>
+          <div style={{fontSize:27,fontWeight:900,color:'#fff',textAlign:'center',lineHeight:1.05,marginTop:2}}>La Table<br/>de Cana</div>
+          <div style={{fontSize:11,color:'#64748b',marginTop:8,marginBottom:20}}>{salut} · Bon service 👋</div>
+        </div>
+
+        {/* SÉLECTEUR déroulant "Identifiez-vous" */}
+        <div style={{width:'100%',maxWidth:340,position:'relative',marginBottom:16}}>
+          <button onClick={()=>{setListeOuverte(!listeOuverte);}}
+            style={{width:'100%',padding:'16px 18px',borderRadius:16,border:'2px solid '+(sel?sel.color+'66':'rgba(255,255,255,.15)'),background:sel?'linear-gradient(135deg,'+sel.color+'22,transparent)':'rgba(255,255,255,.05)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+            {sel?(
+              <>
+                <div style={{width:40,height:40,borderRadius:'50%',background:sel.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:900,color:'#fff'}}>{sel.display[0]}</div>
+                <div style={{flex:1,textAlign:'left'}}>
+                  <div style={{fontSize:17,fontWeight:900,color:'#fff'}}>{sel.display}</div>
+                  <div style={{fontSize:11,color:sel.color,fontWeight:700}}>🚛 {sel.truck}</div>
+                </div>
+              </>
+            ):(
+              <>
+                <div style={{width:40,height:40,borderRadius:'50%',background:'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>👤</div>
+                <div style={{flex:1,textAlign:'left',fontSize:16,fontWeight:800,color:'#94a3b8'}}>Identifiez-vous</div>
+              </>
+            )}
+            <div style={{fontSize:18,color:'#64748b',transform:listeOuverte?'rotate(180deg)':'none',transition:'.2s'}}>▼</div>
+          </button>
+
+          {/* Liste déroulante des chauffeurs */}
+          {listeOuverte&&(
+            <div style={{position:'absolute',top:'calc(100% + 8px)',left:0,right:0,background:'#0f1e33',border:'2px solid rgba(255,255,255,.12)',borderRadius:16,overflow:'hidden',zIndex:100,boxShadow:'0 16px 40px rgba(0,0,0,.5)'}}>
+              {DRIVERS.map((dr,i)=>(
+                <button key={dr.id} onClick={()=>{setSel(dr);setPin('');setErr('');setListeOuverte(false);setPavOuvert(true);}}
+                  style={{width:'100%',padding:'13px 16px',border:'none',borderBottom:i<DRIVERS.length-1?'1px solid rgba(255,255,255,.06)':'none',background:sel?.id===dr.id?dr.color+'22':'transparent',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                  <div style={{width:38,height:38,borderRadius:'50%',background:dr.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'#fff'}}>{dr.display[0]}</div>
+                  <div style={{flex:1,textAlign:'left'}}>
+                    <div style={{fontSize:15,fontWeight:800,color:'#fff'}}>{dr.display}</div>
+                    <div style={{fontSize:11,color:dr.color,fontWeight:700}}>🚛 {dr.truck}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Champ code (clic = ouvre le pavé) */}
+        {sel&&(
+          <div style={{width:'100%',maxWidth:340,marginBottom:20}}>
+            <button onClick={()=>setPavOuvert(true)}
+              style={{width:'100%',padding:'16px 18px',borderRadius:16,border:'2px solid '+(err?'#ef4444':'rgba(255,255,255,.15)'),background:'rgba(255,255,255,.05)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:14,fontWeight:700,color:'#94a3b8'}}>Code à 4 chiffres</span>
+              <div style={{display:'flex',gap:10}}>
+                {[0,1,2,3].map(i=>(
+                  <div key={i} style={{width:14,height:14,borderRadius:'50%',background:pin.length>i?sel.color:'rgba(255,255,255,.15)',boxShadow:pin.length>i?'0 0 10px '+sel.color:'none'}}/>
+                ))}
+              </div>
+            </button>
+            {err&&<div style={{textAlign:'center',color:'#ef4444',fontSize:12,fontWeight:800,marginTop:10}}>{err}</div>}
+          </div>
+        )}
+      </div>
+
+      {/* PAVÉ NUMÉRIQUE qui glisse depuis le bas */}
+      {sel&&pavOuvert&&(
+        <div style={{position:'fixed',left:0,right:0,bottom:0,zIndex:200,background:'#0f1e33',borderTop:'2px solid rgba(255,255,255,.1)',borderRadius:'24px 24px 0 0',padding:'16px 20px 24px',boxShadow:'0 -10px 40px rgba(0,0,0,.5)',animation:'slideUpPad .3s ease'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+            <span style={{fontSize:13,fontWeight:800,color:'#94a3b8'}}>Tapez votre code</span>
+            <div style={{display:'flex',gap:8}}>
+              {[0,1,2,3].map(i=>(<div key={i} style={{width:12,height:12,borderRadius:'50%',background:pin.length>i?sel.color:'rgba(255,255,255,.15)'}}/>))}
+            </div>
+            <button onClick={()=>setPavOuvert(false)} style={{background:'rgba(255,255,255,.08)',border:'none',borderRadius:8,color:'#94a3b8',padding:'6px 12px',fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>Fermer</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:9,maxWidth:280,margin:'0 auto'}}>
+            {[1,2,3,4,5,6,7,8,9].map(n=>(
+              <button key={n} onClick={()=>tapeChiffre(''+n)}
+                style={{padding:'15px 0',borderRadius:14,border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.06)',color:'#fff',fontSize:23,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+            ))}
+            <div/>
+            <button onClick={()=>tapeChiffre('0')} style={{padding:'15px 0',borderRadius:14,border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.06)',color:'#fff',fontSize:23,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>0</button>
+            <button onClick={effacer} style={{padding:'15px 0',borderRadius:14,border:'1px solid rgba(255,255,255,.1)',background:'rgba(239,68,68,.12)',color:'#f87171',fontSize:19,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>⌫</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════ PLUS (outils secondaires) ═══════════════════ */
+function PlusScreen({ch,onNavigate,onBack,onLogout}){
+  const outils=[
+    {ico:'📝',lbl:'Mon bilan',sub:'Ma journée',col:'#818cf8',to:'bilan'},
+    {ico:'⭐',lbl:'Mon score',sub:'Ma performance',col:'#fbbf24',to:'score'},
+    {ico:'✅',lbl:'Fin de journée',sub:'Ma checklist',col:'#4ade80',to:'checklist_fin'},
+    {ico:'📅',lbl:'Historique',sub:'Mes semaines',col:'#38bdf8',to:'historique'},
+    {ico:'📸',lbl:'Mes preuves',sub:'Photos & signatures',col:'#c084fc',to:'preuves'},
+    {ico:'📡',lbl:'Mon statut',sub:'Où je suis',col:'#4ade80',to:'statut'},
+    {ico:'🆘',lbl:'Aide / SOS',sub:'Urgences',col:'#f87171',to:'help'},
+  ];
+  return(
+    <div style={{minHeight:'100%',background:'var(--bg)'}}>
+      <Header title="Plus d'outils" onBack={onBack} ch={ch}/>
+      <div style={{padding:'16px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          {outils.map(o=>(
+            <button key={o.to} onClick={()=>onNavigate(o.to)} style={{padding:'20px 12px',borderRadius:18,border:'1px solid '+o.col+'44',background:o.col+'14',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+              <span style={{fontSize:32}}>{o.ico}</span>
+              <span style={{fontSize:14,fontWeight:900,color:o.col}}>{o.lbl}</span>
+              <span style={{fontSize:10,color:o.col,opacity:.7}}>{o.sub}</span>
+            </button>
+          ))}
+        </div>
+        {/* Bouton déconnexion */}
+        <button onClick={()=>{if(confirm('Voulez-vous vous déconnecter ?'))onLogout();}}
+          style={{width:'100%',marginTop:16,padding:'15px',borderRadius:16,border:'1px solid rgba(239,68,68,.3)',background:'rgba(239,68,68,.1)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          <span style={{fontSize:20}}>🚪</span>
+          <span style={{fontSize:15,fontWeight:900,color:'#f87171'}}>Se déconnecter</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ HOME ═══════════════════ */
+function HomeScreen({ch,planning,onNavigate,unreadMsg,onLogout}){
+  const today=new Date().toISOString().slice(0,10);
+  const[confirmed,setConfirmed]=useState({});
+  const[tournee,setTournee]=useState(()=>{try{return localStorage.getItem('cana_tournee_'+ch.id+'_'+today)||'';}catch(e){return '';}});
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const done=ms.filter(m=>m._statut==='done').length;
+  const restant=ms.length-done;
+  const next=ms.find(m=>m._statut!=='done');
+  /* Répartition par type pour l'accueil */
+  const repartitionHome=[
+    {ico:'🎉',col:'#c084fc',n:ms.filter(m=>m.category==='traiteur').length},
+    {ico:'🏢',col:'#60a5fa',n:ms.filter(m=>m.category==='collectivite').length},
+    {ico:'🌳',col:'#4ade80',n:ms.filter(m=>m.category==='centre').length},
+    {ico:'📋',col:'#fbbf24',n:ms.filter(m=>m.category==='task').length}
+  ].filter(t=>t.n>0);
+
+  async function envoyerTournee(id,label){
+    setTournee(id);
+    try{localStorage.setItem('cana_tournee_'+ch.id+'_'+today,id);}catch(e){}
+    if(navigator.vibrate)navigator.vibrate(50);
+    try{envoyerPosition(ch,'tournee_'+id);}catch(e){}
+    try{await sPostEvent({date:'STATUT_'+Date.now()+'_'+ch.id,donnees:{type:'statut_chauffeur',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,statut:id,label:label,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),ts:new Date().toISOString()},updated_at:new Date().toISOString()});}catch(e){}
+  }
+  function appelerResponsable(){window.location.href='tel:0496157438';}
+
+  const tiles=[
+    {ico:'📅',lbl:'Mon planning',sub:'Mes jours',col:'#c084fc',bg:'rgba(168,85,247,.12)',brd:'rgba(168,85,247,.35)',to:'calendar'},
+    {ico:'💬',lbl:'Messages',sub:'Responsable',col:'#2dd4bf',bg:'rgba(20,184,166,.12)',brd:'rgba(20,184,166,.35)',to:'messages',badge:unreadMsg},
+    {ico:'⚠️',lbl:'Incident',sub:'Signaler',col:'#ef4444',bg:'rgba(239,68,68,.12)',brd:'rgba(239,68,68,.35)',to:'incident'},
+    {ico:'🛒',lbl:'Hors Carte',sub:'Commandes',col:'#f97316',bg:'rgba(249,115,22,.12)',brd:'rgba(249,115,22,.4)',to:'horscarte'},
+    {ico:'🏖️',lbl:'Mes congés',sub:'Demandes',col:'#22c55e',bg:'rgba(34,197,94,.12)',brd:'rgba(34,197,94,.35)',to:'conges'},
+    {ico:'⋯',lbl:'Plus',sub:'Bilan, score...',col:'#94a3b8',bg:'rgba(148,163,184,.1)',brd:'rgba(148,163,184,.3)',to:'plus'},
+  ];
+
+  const[now,setNow]=useState(new Date());
+  useEffect(()=>{const iv=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(iv);},[]);
+  const JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const heureStr=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateStr=JOURS[now.getDay()]+' '+now.getDate()+' '+MOIS[now.getMonth()]+' '+now.getFullYear();
+
+  return(
+    <div className="screen">
+      <div className="scroll">
+        <div style={{background:'linear-gradient(160deg,#0f1928,#071526)',padding:'16px 16px 14px',borderBottom:'1px solid var(--border)'}}>
+          {/* Horloge principale */}
+          <div style={{textAlign:'center',marginBottom:10}}>
+            <div style={{fontSize:52,fontWeight:900,color:'#fff',letterSpacing:2,lineHeight:1,fontVariantNumeric:'tabular-nums'}}>
+              {heureStr}
+            </div>
+            <div style={{fontSize:14,fontWeight:800,color:'var(--orange)',marginTop:4,letterSpacing:.5}}>
+              {dateStr}
+            </div>
+          </div>
+          {/* Séparateur */}
+          <div style={{height:1,background:'rgba(255,255,255,.08)',margin:'10px 0'}}/>
+          {/* Infos chauffeur */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:'var(--muted)',fontWeight:600}}>{(now.getHours()<12?'Bonjour':now.getHours()<18?'Bon après-midi':'Bonsoir')} 👋</div>
+              <div style={{fontSize:28,fontWeight:900,color:ch.color,lineHeight:1.1,marginTop:2}}>{ch.display}</div>
+              <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14,marginTop:6,flexWrap:'wrap'}}>
+                <span style={{fontWeight:800,color:'var(--orange)',display:'flex',alignItems:'center',gap:4}}>🚛 {ch.truck}</span>
+                <span style={{fontWeight:800,color:'#fff',background:'rgba(255,255,255,.08)',padding:'3px 10px',borderRadius:8}}>🕐 {ch.start} – {ch.end}</span>
+                {next&&<span style={{color:'#22c55e',fontWeight:700,fontSize:12}}>📍 {next.heure} {(next.client||next.task||'').slice(0,16)}</span>}
+              </div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6}}>
+              {onLogout&&<button onClick={()=>{if(confirm('Se déconnecter ?'))onLogout();}} style={{background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.3)',borderRadius:9,color:'#f87171',padding:'6px 12px',fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>🚪 Quitter</button>}
+              <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <div style={{textAlign:'center',background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:8,padding:'6px 10px'}}>
+                  <div style={{fontSize:18,fontWeight:900,color:'#22c55e'}}>{done}</div>
+                  <div style={{fontSize:8,color:'var(--muted)'}}>Faites</div>
+                </div>
+                <div style={{textAlign:'center',background:'rgba(249,115,22,.1)',border:'1px solid rgba(249,115,22,.25)',borderRadius:8,padding:'6px 10px'}}>
+                  <div style={{fontSize:18,fontWeight:900,color:'var(--orange)'}}>{restant}</div>
+                  <div style={{fontSize:8,color:'var(--muted)'}}>Restantes</div>
+                </div>
+              </div>
+              <button onClick={onLogout} style={{background:'none',border:'1px solid rgba(255,255,255,.12)',borderRadius:7,color:'rgba(255,255,255,.4)',padding:'4px 10px',fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                🔄 Changer
+              </button>
+            </div>
+          </div>
+        </div>
+        <MeteoBar/>
+        <div style={{padding:'12px 16px 4px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em'}}>Aujourd'hui</div>
+          <div style={{fontSize:12,fontWeight:800,color:done===ms.length&&ms.length>0?'#22c55e':'var(--orange)'}}>{done}/{ms.length} missions</div>
+        </div>
+        {/* ═══ GROS BOUTON PRINCIPAL : MES LIVRAISONS DU JOUR ═══ */}
+        <div style={{padding:'0 14px',marginTop:16,marginBottom:8}}>
+          <button onClick={()=>onNavigate('today')}
+            style={{
+              width:'100%',border:'3px solid rgba(255,255,255,.15)',cursor:'pointer',
+              background:'linear-gradient(135deg,#0ea5e9,#0284c7 50%,#0369a1)',
+              borderRadius:'32px 32px 32px 8px',padding:'24px 22px',position:'relative',overflow:'hidden',
+              boxShadow:'0 16px 40px rgba(14,165,233,.5),0 2px 10px rgba(0,0,0,.35)',
+              textAlign:'left'
+            }}>
+            {/* Camion logoté La Table de Cana en filigrane */}
+            <div style={{position:'absolute',right:-14,bottom:-10,opacity:.18,transform:'rotate(-6deg)'}}>
+              <svg width="150" height="100" viewBox="0 0 150 100">
+                <rect x="8" y="30" width="80" height="42" rx="5" fill="#fff"/>
+                <rect x="88" y="44" width="38" height="28" rx="4" fill="#fff"/>
+                <rect x="94" y="49" width="20" height="14" rx="2" fill="#0369a1"/>
+                <circle cx="34" cy="78" r="11" fill="#fff"/><circle cx="34" cy="78" r="5" fill="#0369a1"/>
+                <circle cx="104" cy="78" r="11" fill="#fff"/><circle cx="104" cy="78" r="5" fill="#0369a1"/>
+                <text x="16" y="56" font-family="Arial" font-weight="900" font-size="15" fill="#0369a1">CANA</text>
+              </svg>
+            </div>
+            {/* Contenu */}
+            <div style={{position:'relative',zIndex:2}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                <span style={{fontSize:30}}>🚚</span>
+                <div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#fff',lineHeight:1.1,textShadow:'0 1px 3px rgba(0,0,0,.3)'}}>Mes livraisons</div>
+                  <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)'}}>du jour · appuyez ici</div>
+                </div>
+              </div>
+              {/* Camion logoté La Table de Cana */}
+              <div style={{display:'inline-flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.95)',borderRadius:12,padding:'6px 12px',marginTop:8,marginBottom:12,boxShadow:'0 2px 8px rgba(0,0,0,.15)'}}>
+                <span style={{fontSize:18}}>🚛</span>
+                <div style={{lineHeight:1}}>
+                  <div style={{fontSize:9,fontWeight:800,color:'#0369a1',letterSpacing:.5,textTransform:'uppercase'}}>La Table de Cana</div>
+                  <div style={{fontSize:14,fontWeight:900,color:'#0f1928'}}>{ch.truck}</div>
+                </div>
+              </div>
+              {/* Progression */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+                <span style={{fontSize:13,fontWeight:800,color:'#fff'}}>
+                  {restant>0?(restant+' livraison'+(restant>1?'s':'')+' restante'+(restant>1?'s':'')):'Toutes livrées ✅'}
+                </span>
+                <span style={{fontSize:13,fontWeight:900,color:'#fff'}}>{done}/{ms.length}</span>
+              </div>
+              <div style={{background:'rgba(0,0,0,.25)',borderRadius:10,height:10,overflow:'hidden'}}>
+                <div style={{width:(ms.length>0?Math.round(done/ms.length*100):0)+'%',height:10,background:'linear-gradient(90deg,#4ade80,#22c55e)',borderRadius:10,transition:'width .4s'}}/>
+              </div>
+              {/* Prochaine livraison */}
+              {next&&(
+                <div style={{marginTop:12,display:'flex',alignItems:'center',gap:8,background:'rgba(0,0,0,.2)',borderRadius:12,padding:'9px 12px'}}>
+                  <span style={{fontSize:18}}>📍</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5}}>Prochaine</div>
+                    <div style={{fontSize:14,fontWeight:900,color:'#fff'}}>{next.client||next.task}{next.heure?' · '+next.heure:''}</div>
+                  </div>
+                  <span style={{fontSize:20,color:'#fff'}}>→</span>
+                </div>
+              )}
+            </div>
+          </button>
+        </div>
+
+        {/* ═══ BARRE MA TOURNÉE ═══ */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:12,fontWeight:800,color:'#64748b',marginBottom:8,paddingLeft:4,textTransform:'uppercase',letterSpacing:.5}}>Ma tournée</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+            <button onClick={()=>envoyerTournee('enroute','🚀 Démarré')} style={{padding:'14px 6px',borderRadius:16,border:'2px solid '+(tournee==='enroute'?'#3b82f6':'rgba(59,130,246,.25)'),background:tournee==='enroute'?'rgba(59,130,246,.2)':'rgba(59,130,246,.06)',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:24}}>🚀</span>
+              <span style={{fontSize:12,fontWeight:900,color:tournee==='enroute'?'#60a5fa':'#94a3b8'}}>Je démarre</span>
+            </button>
+            <button onClick={()=>envoyerTournee('pause','☕ En pause')} style={{padding:'14px 6px',borderRadius:16,border:'2px solid '+(tournee==='pause'?'#f59e0b':'rgba(245,158,11,.25)'),background:tournee==='pause'?'rgba(245,158,11,.2)':'rgba(245,158,11,.06)',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:24}}>☕</span>
+              <span style={{fontSize:12,fontWeight:900,color:tournee==='pause'?'#fbbf24':'#94a3b8'}}>Pause</span>
+            </button>
+            <button onClick={()=>envoyerTournee('termine','🏁 Terminé')} style={{padding:'14px 6px',borderRadius:16,border:'2px solid '+(tournee==='termine'?'#22c55e':'rgba(34,197,94,.25)'),background:tournee==='termine'?'rgba(34,197,94,.2)':'rgba(34,197,94,.06)',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:24}}>🏁</span>
+              <span style={{fontSize:12,fontWeight:900,color:tournee==='termine'?'#4ade80':'#94a3b8'}}>Terminé</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="icon-grid">
+          {tiles.map(t=>(
+            <button key={t.to} className="icon-tile" onClick={()=>onNavigate(t.to)}
+              style={{background:t.bg,borderColor:t.brd}}>
+              {(t.badge||0)>0&&<div className="tile-badge">{t.badge}</div>}
+              <div className="it-ico">{t.ico}</div>
+              <div className="it-lbl" style={{color:t.col}}>{t.lbl}</div>
+              <div className="it-sub" style={{color:t.col}}>{t.sub}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* ═══ APPELER LE RESPONSABLE ═══ */}
+        <button onClick={appelerResponsable} style={{width:'100%',marginTop:6,marginBottom:10,padding:'15px',borderRadius:16,border:'1px solid rgba(34,197,94,.3)',background:'linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.08))',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          <span style={{fontSize:22}}>📞</span>
+          <span style={{fontSize:15,fontWeight:900,color:'#22c55e'}}>Appeler le responsable</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ MISSIONS DU JOUR ═══════════════════ */
+function TodayScreen({ch,planning,onNavigate,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=(planning?getMissions(planning,ch.id,today):[]).map(m=>{
+    var mk='LIV_'+ch.id+'_'+today+'_'+(m.client||m.task||'')+'_'+(m.heure||'');
+    try{if(localStorage.getItem(mk)==='done')return{...m,_statut:'done'};}catch(e){}
+    return m;
+  });
+  const done=ms.filter(m=>m._statut==='done').length;
+  const restant=ms.length-done;
+  const pct=ms.length>0?Math.round(done/ms.length*100):0;
+  /* Répartition par type */
+  const repartition={
+    traiteur:ms.filter(m=>m.category==='traiteur').length,
+    collectivite:ms.filter(m=>m.category==='collectivite').length,
+    centre:ms.filter(m=>m.category==='centre').length,
+    task:ms.filter(m=>m.category==='task').length
+  };
+  const typesInfo=[
+    {key:'traiteur',ico:'🎉',lbl:'Traiteur',col:'#a855f7'},
+    {key:'collectivite',ico:'🏢',lbl:'Resto co',col:'#3b82f6'},
+    {key:'centre',ico:'🌳',lbl:'Centre',col:'#22c55e'},
+    {key:'task',ico:'📋',lbl:'Tâche',col:'#f59e0b'}
+  ].filter(t=>repartition[t.key]>0);
+
+  const CATCOL={
+    traiteur:{c:'#a855f7',bg:'rgba(168,85,247,.14)',l:'TRAITEUR',ico:'🎉'},
+    collectivite:{c:'#3b82f6',bg:'rgba(59,130,246,.14)',l:'RESTO CO',ico:'🏢'},
+    centre:{c:'#22c55e',bg:'rgba(34,197,94,.14)',l:'CENTRE',ico:'🌳'},
+    task:{c:'#f59e0b',bg:'rgba(245,158,11,.14)',l:'TÂCHE',ico:'📋'}
+  };
+
+  /* Trier : à faire d'abord (par heure), livrées à la fin */
+  const msTries=[...ms].sort((a,b)=>{
+    const ad=a._statut==='done'?1:0, bd=b._statut==='done'?1:0;
+    if(ad!==bd)return ad-bd;
+    return (a.heure||'').localeCompare(b.heure||'');
+  });
+
+  return(
+    <div className="screen">
+      <Header title="🚚 Mes livraisons" onBack={onBack} ch={ch}/>
+      <div className="scroll">
+        {!planning&&<div style={{textAlign:'center',padding:40,color:'var(--muted)'}}>⏳ Chargement...</div>}
+
+        {planning&&ms.length>0&&(
+          <div style={{padding:'14px 16px 4px'}}>
+            {/* Grande barre de progression */}
+            <div style={{background:'linear-gradient(135deg,#0f1e33,#0a1628)',border:'1px solid var(--border)',borderRadius:18,padding:'16px 18px',marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:13,color:'var(--muted)',fontWeight:600}}>Ma journée</div>
+                  <div style={{fontSize:26,fontWeight:900,color:'#fff',lineHeight:1.1}}>{done} <span style={{fontSize:16,color:'var(--muted)'}}>sur {ms.length} livrées</span></div>
+                </div>
+                <div style={{fontSize:34,fontWeight:900,color:pct>=100?'#22c55e':pct>=50?'#0ea5e9':'#f97316',lineHeight:1}}>{pct}%</div>
+              </div>
+              <div style={{background:'rgba(255,255,255,.08)',borderRadius:10,height:14,overflow:'hidden'}}>
+                <div style={{width:pct+'%',height:14,borderRadius:10,background:pct>=100?'linear-gradient(90deg,#22c55e,#16a34a)':'linear-gradient(90deg,#0ea5e9,#0369a1)',transition:'.5s'}}/>
+              </div>
+              {restant>0&&<div style={{fontSize:13,color:'#f97316',fontWeight:800,marginTop:10,textAlign:'center'}}>🔥 Encore {restant} livraison{restant>1?'s':''} à faire !</div>}
+              {restant===0&&<div style={{fontSize:14,color:'#22c55e',fontWeight:900,marginTop:10,textAlign:'center'}}>🎉 Bravo ! Toutes tes livraisons sont faites !</div>}
+            </div>
+
+            {/* Répartition par type — discret et élégant */}
+            {typesInfo.length>0&&(
+              <div style={{display:'flex',gap:8,marginBottom:6,flexWrap:'wrap'}}>
+                {typesInfo.map(t=>(
+                  <div key={t.key} style={{flex:'1 1 0',minWidth:70,background:t.col+'12',border:'1px solid '+t.col+'30',borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
+                    <div style={{fontSize:18,marginBottom:2}}>{t.ico}</div>
+                    <div style={{fontSize:20,fontWeight:900,color:t.col,lineHeight:1}}>{repartition[t.key]}</div>
+                    <div style={{fontSize:10,color:t.col,fontWeight:700,marginTop:2,opacity:.85}}>{t.lbl}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {planning&&ms.length===0&&(
+          <div style={{textAlign:'center',padding:50,color:'var(--muted)'}}>
+            <div style={{fontSize:48,marginBottom:12}}>😎</div>
+            <div style={{fontWeight:800,fontSize:16,color:'#fff'}}>Aucune livraison aujourd'hui</div>
+            <div style={{fontSize:13,marginTop:6}}>Profite de ta journée !</div>
+          </div>
+        )}
+
+        <div style={{padding:'0 14px 20px'}}>
+          {msTries.map((m,i)=>{
+            const cat=CATCOL[m.category]||{c:'#64748b',bg:'rgba(100,116,139,.14)',l:'',ico:'📦'};
+            const estLivre=m._statut==='done';
+            const numero=msTries.filter((x,j)=>j<=i && x._statut!=='done').length;
+            return(
+              <div key={i}
+                onClick={()=>onNavigate('mission_detail',m)}
+                style={{
+                  background:estLivre?'rgba(34,197,94,.06)':'linear-gradient(135deg,#0f1e33,#0a1628)',
+                  border:`2px solid ${estLivre?'rgba(34,197,94,.25)':cat.c+'55'}`,
+                  borderRadius:20,padding:0,marginBottom:12,overflow:'hidden',cursor:'pointer',
+                  opacity:estLivre?.7:1,position:'relative'
+                }}>
+                {/* Bande couleur en haut */}
+                <div style={{height:5,background:estLivre?'#22c55e':cat.c}}/>
+                <div style={{padding:'14px 16px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:14}}>
+                    {/* Heure ÉNORME à gauche */}
+                    <div style={{textAlign:'center',minWidth:64}}>
+                      <div style={{fontSize:28,fontWeight:900,color:estLivre?'#22c55e':'#fff',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>{m.heure||'—'}</div>
+                      {!estLivre&&<div style={{fontSize:10,fontWeight:800,color:cat.c,marginTop:3}}>N°{numero}</div>}
+                    </div>
+                    {/* Séparateur vertical */}
+                    <div style={{width:2,alignSelf:'stretch',background:estLivre?'rgba(34,197,94,.2)':cat.c+'33',borderRadius:2,minHeight:44}}/>
+                    {/* Client + type */}
+                    <div style={{flex:1,minWidth:0}}>
+                      {cat.l&&<div style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:10,fontWeight:900,padding:'3px 9px',borderRadius:7,background:cat.bg,color:cat.c,marginBottom:5,letterSpacing:.5}}>{cat.ico} {cat.l}</div>}
+                      <div style={{fontSize:18,fontWeight:900,color:estLivre?'#94a3b8':'#fff',lineHeight:1.15,textDecoration:estLivre?'line-through':'none'}}>{m.client||m.task}</div>
+                      {m.task&&m.client&&<div style={{fontSize:12,color:'var(--muted)',marginTop:2}}>{m.task}</div>}
+                    </div>
+                    {/* Statut à droite */}
+                    <div style={{textAlign:'center'}}>
+                      {estLivre?(
+                        <div style={{fontSize:28}}>✅</div>
+                      ):(
+                        <div style={{width:38,height:38,borderRadius:'50%',border:`2px solid ${cat.c}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:cat.c}}>→</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ FICHE CLIENT / MISSION DETAIL ═══════════════════ */
+function MissionDetailScreen({ch,mission,planning,onBack,onNavigate}){
+  const today=new Date().toISOString().slice(0,10);
+  /* Clé unique pour cette mission (persistance état livré) */
+  const missionKey='LIV_'+ch.id+'_'+today+'_'+(mission.client||mission.task||'')+'_'+(mission.heure||'');
+  const dejaLivre=(()=>{try{return localStorage.getItem(missionKey)==='done';}catch(e){return false;}})();
+  const[statut,setStatut]=useState(mission._statut==='done'||dejaLivre?'done':'pending');
+  const[photos,setPhotos]=useState([]);
+  const[sig,setSig]=useState(null);
+  const[reprises,setReprises]=useState([]);
+  const[loading,setLoading]=useState(false);
+  const[activeSection,setActiveSection]=useState(null);
+
+  // Charger les preuves existantes
+  useEffect(()=>{
+    sGet(`planning?date=like.EV_*&select=donnees&order=date.desc&limit=100`).then(rows=>{
+      const evts=(rows||[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&d.chauffeurId===ch.id&&d.date===today&&d.client===(mission.client||mission.task));
+      setPhotos(evts.filter(e=>e.type==='photo'));
+      const s=evts.find(e=>e.type==='signature');
+      if(s) setSig(s);
+      setReprises(evts.filter(e=>e.type==='reprise'));
+      /* Si une livraison confirmée existe déjà pour cette mission, marquer done */
+      if(evts.find(e=>e.type==='livraison_confirmee')){setStatut('done');try{localStorage.setItem(missionKey,'done');}catch(e){}}
+    });
+  },[]);
+
+  const maps=`https://maps.google.com/?q=${encodeURIComponent(mission.adresse||mission.client||'')}`;
+  const waze=`https://waze.com/ul?q=${encodeURIComponent(mission.adresse||mission.client||'')}&navigate=yes`;
+
+  async function marquerLivre(){
+    if(statut==='done'){showToast('Déjà confirmée ✓','var(--green)');return;}
+    setStatut('done');
+    try{localStorage.setItem(missionKey,'done');}catch(e){}
+    showToast('✅ Livraison confirmée — responsable notifié','var(--green)');
+    try{envoyerPosition(ch,'livraison');}catch(e){}
+    /* Récupérer la dernière photo prise pour cette mission si elle existe */
+    var dernierePhoto=null;
+    try{
+      if(photos&&photos.length){var pp=photos[photos.length-1];dernierePhoto=pp.dataUrl||pp.photo||null;}
+    }catch(e){}
+    /* Envoyer confirmation au planning */
+    try{
+      await sPostEvent({
+        date:'EV_LIV_'+Date.now()+'_'+ch.id,
+        donnees:{
+          type:'livraison_confirmee',
+          _isEvent:true,
+          chauffeurId:ch.id,
+          chauffeur:ch.display,
+          vehicule:ch.truck,
+          client:mission.client||mission.task||'',
+          heure:mission.heure||'',
+          taskKey:mission._key||'',
+          photo:dernierePhoto,
+          date:new Date().toISOString().slice(0,10),
+          ts:new Date().toISOString()
+        },
+        updated_at:new Date().toISOString()
+      });
+    }catch(e){}
+    /* Revenir à la liste des missions après 1.2s */
+    setTimeout(function(){if(onBack)onBack();},1200);
+  }
+
+  const sections=[
+    {id:'photo',ico:'📸',lbl:'Prendre une photo',sub:'Photo du dépôt, livraison...',col:'#818cf8',bg:'rgba(99,102,241,.1)',brd:'rgba(99,102,241,.3)'},
+    {id:'ia_bac',ico:'🤖',lbl:'Photo IA — Bacs gastro',sub:'L\'IA compte les bacs automatiquement',col:'#f97316',bg:'rgba(249,115,22,.1)',brd:'rgba(249,115,22,.3)'},
+    {id:'signature',ico:'✍️',lbl:'Signature client',sub:'Preuve de livraison signée',col:'#22c55e',bg:'rgba(34,197,94,.1)',brd:'rgba(34,197,94,.3)'},
+    {id:'reprise',ico:'📦',lbl:'Signaler une reprise',sub:'Bacs, matériel à récupérer',col:'#f59e0b',bg:'rgba(245,158,11,.1)',brd:'rgba(245,158,11,.3)'},
+    {id:'retard',ico:'⏰',lbl:'Signaler un retard',sub:'Notifier le responsable',col:'#ef4444',bg:'rgba(239,68,68,.1)',brd:'rgba(239,68,68,.3)'},
+  ];
+
+  if(activeSection==='photo') return <PhotoScreen ch={ch} mission={mission} onBack={()=>setActiveSection(null)} ia={false}/>;
+  if(activeSection==='ia_bac') return <PhotoIABacsScreen ch={ch} mission={mission} onBack={()=>setActiveSection(null)}/>;
+  if(activeSection==='signature') return <SignatureScreen ch={ch} mission={mission} onBack={()=>setActiveSection(null)}/>;
+  if(activeSection==='reprise') return <RepriseScreen ch={ch} mission={mission} onBack={()=>setActiveSection(null)}/>;
+
+  return(
+    <div className="screen">
+      <Header title={mission.client||mission.task||'Mission'} onBack={onBack} right={mission.heure}/>
+      <div className="scroll">
+        {/* Infos client */}
+        <div className="card">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',marginBottom:10}}>
+            <div>
+              <div style={{fontSize:16,fontWeight:900,color:'#fff',marginBottom:4}}>{mission.client||mission.task}</div>
+              {mission.adresse&&<div style={{fontSize:12,color:'var(--muted)',marginBottom:3}}>📍 {mission.adresse}</div>}
+              {mission.convives&&<div style={{fontSize:12,color:'var(--muted)'}}>👥 {mission.convives} convives</div>}
+            </div>
+            <span style={{fontSize:22,fontWeight:900,color:'var(--orange)',flexShrink:0}}>{mission.heure}</span>
+          </div>
+          {/* Statut livraison */}
+          {statut==='done'?(
+            <div style={{background:'rgba(34,197,94,.1)',border:'2px solid rgba(34,197,94,.4)',borderRadius:14,padding:'16px',marginBottom:4,textAlign:'center'}}>
+              <div style={{fontSize:36,marginBottom:4}}>✅</div>
+              <div style={{fontWeight:900,color:'#22c55e',fontSize:15}}>Livraison confirmée !</div>
+              <div style={{fontSize:11,color:'var(--muted)',marginTop:3}}>Responsable notifié en temps réel</div>
+            </div>
+          ):(
+            <button onClick={marquerLivre} style={{width:'100%',padding:'18px',background:'linear-gradient(135deg,#22c55e,#16a34a)',border:'none',borderRadius:14,color:'#fff',fontSize:17,fontWeight:900,cursor:'pointer',marginBottom:4,display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 4px 20px rgba(34,197,94,.3)',fontFamily:'inherit'}}>
+              <span style={{fontSize:22}}>✅</span> CONFIRMER LA LIVRAISON
+            </button>
+          )}
+        </div>
+
+        {/* Navigation GPS */}
+        <div className="md-section">
+          <div className="md-section-title">🗺️ Navigation</div>
+          <div style={{display:'flex',gap:8}}>
+            <a href={maps} target="_blank" style={{flex:1,textDecoration:'none'}}>
+              <button style={{width:'100%',padding:'12px 8px',background:'rgba(59,130,246,.12)',border:'1px solid rgba(59,130,246,.3)',borderRadius:12,color:'#60a5fa',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>🗺️ Google Maps</button>
+            </a>
+            <a href={waze} target="_blank" style={{flex:1,textDecoration:'none'}}>
+              <button style={{width:'100%',padding:'12px 8px',background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:12,color:'#4ade80',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>🗺️ Waze</button>
+            </a>
+          </div>
+        </div>
+
+        {/* Preuves déjà prises */}
+        {(photos.length>0||sig)&&(
+          <div className="md-section">
+            <div className="md-section-title">✅ Preuves enregistrées</div>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              {photos.map((p,i)=>(
+                <span key={i} style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:8,background:'rgba(99,102,241,.12)',color:'#818cf8',border:'1px solid rgba(99,102,241,.2)'}}>
+                  📸 {p.nb_bacs?`${p.nb_bacs} bacs détectés`:'Photo'}
+                </span>
+              ))}
+              {sig&&<span style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:8,background:'rgba(34,197,94,.12)',color:'#22c55e',border:'1px solid rgba(34,197,94,.2)'}}>✍️ Signature OK</span>}
+              {reprises.map((r,i)=><span key={i} style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:8,background:'rgba(245,158,11,.12)',color:'#f59e0b',border:'1px solid rgba(245,158,11,.2)'}}>📦 {r.article}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="md-section">
+          <div className="md-section-title">📋 Actions sur cette livraison</div>
+          {sections.map(s=>(
+            <div key={s.id} className="action-btn" onClick={()=>setActiveSection(s.id)}
+              style={{background:s.bg,border:`1px solid ${s.brd}`}}>
+              <div className="action-btn-ico">{s.ico}</div>
+              <div style={{flex:1}}>
+                <div className="action-btn-label" style={{color:s.col}}>{s.lbl}</div>
+                <div className="action-btn-sub">{s.sub}</div>
+              </div>
+              <div style={{color:s.col,fontSize:16}}>›</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{height:20}}/>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ PHOTO STANDARD ═══════════════════ */
+function PhotoScreen({ch,mission,onBack,ia}){
+  const[img,setImg]=useState(null);
+  const[sending,setSending]=useState(false);
+  const fileRef=useRef();
+  const today=new Date().toISOString().slice(0,10);
+
+  function handleFile(e){
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      /* Compresser la photo avant envoi */
+      const original=ev.target.result;
+      const imgEl=new Image();
+      imgEl.onload=function(){
+        const MAX=800;
+        let w=imgEl.width,h=imgEl.height;
+        if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+        if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(imgEl,0,0,w,h);
+        setImg(canvas.toDataURL('image/jpeg',0.72));
+      };
+      imgEl.src=original;
+    };
+    reader.readAsDataURL(f);
+  }
+
+  async function envoyer(){
+    if(!img){showToast('Prenez une photo d\'abord','var(--red)');return;}
+    setSending(true);
+    try{
+      await sPost('planning',{
+        date:'EV_'+Date.now()+'_'+ch.id,
+        donnees:{type:'photo',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),photo:img,dataUrl:img,ts:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      });
+      showToast('📸 Photo envoyée au responsable','var(--green)');
+      onBack();
+    }catch(e){showToast('Erreur envoi','var(--red)');}
+    setSending(false);
+  }
+
+  return(
+    <div className="screen">
+      <Header title="📸 Photo de livraison" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{padding:'16px'}}>
+          {img&&<img src={img} className="photo-preview" alt="preview"/>}
+          <div style={{display:'flex',gap:8,marginBottom:16}}>
+            <button onClick={()=>fileRef.current.click()} style={{flex:1,padding:13,background:'rgba(99,102,241,.12)',border:'1px solid rgba(99,102,241,.3)',borderRadius:12,color:'#818cf8',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+              {img?'🔄 Reprendre':'📷 Prendre une photo'}
+            </button>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{display:'none'}}/>
+          {img&&<button className="btn-p" onClick={envoyer} disabled={sending}>{sending?'Envoi...':'📤 Envoyer au responsable'}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ PHOTO IA BACS GASTRO ═══════════════════ */
+function PhotoIABacsScreen({ch,mission,onBack}){
+  const[img,setImg]=useState(null);
+  const[result,setResult]=useState(null);
+  const[analyzing,setAnalyzing]=useState(false);
+  const[sending,setSending]=useState(false);
+  const fileRef=useRef();
+  const today=new Date().toISOString().slice(0,10);
+
+  function handleFile(e){
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{setImg(ev.target.result);setResult(null);};
+    reader.readAsDataURL(f);
+  }
+
+  async function analyserIA(){
+    if(!img){showToast('Prenez une photo d\'abord','var(--red)');return;}
+    setAnalyzing(true);
+    setResult(null);
+    try{
+      const base64=img.split(',')[1];
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6',
+          max_tokens:300,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
+            {type:'text',text:'Tu es un assistant pour une société de traiteur. Compte précisément le nombre de bacs gastronormes (bacs GN) visibles sur cette photo. Réponds UNIQUEMENT avec ce format JSON: {"nb_bacs": <nombre>, "details": "<description courte>"} . Si tu ne vois pas de bacs, mets 0.'}
+          ]}]
+        })
+      });
+      const data=await resp.json();
+      const text=(data.content||[]).map(c=>c.text||'').join('');
+      const clean=text.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(clean);
+      setResult(parsed);
+    }catch(e){
+      setResult({nb_bacs:'?',details:'Analyse impossible — vérifiez la qualité de la photo'});
+    }
+    setAnalyzing(false);
+  }
+
+  async function envoyer(){
+    if(!img||!result){showToast('Analysez d\'abord la photo','var(--red)');return;}
+    setSending(true);
+    try{
+      await sPost('planning',{
+        date:'EV_'+Date.now()+'_'+ch.id,
+        donnees:{type:'photo',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),photo:img,dataUrl:img,nb_bacs:result.nb_bacs,details_bacs:result.details,ia_analyse:true,ts:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      });
+      showToast(`📸 ${result.nb_bacs} bacs envoyés au responsable`,'var(--green)');
+      onBack();
+    }catch(e){showToast('Erreur envoi','var(--red)');}
+    setSending(false);
+  }
+
+  return(
+    <div className="screen">
+      <Header title="🤖 IA — Bacs Gastro" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{padding:'16px'}}>
+          <div style={{background:'rgba(249,115,22,.08)',border:'1px solid rgba(249,115,22,.2)',borderRadius:12,padding:'12px',fontSize:12,color:'#fed7aa',marginBottom:16}}>
+            🤖 L'IA va analyser votre photo et compter automatiquement les bacs gastronormes. Assurez-vous que les bacs sont bien visibles.
+          </div>
+          {img&&<img src={img} className="photo-preview" alt="preview"/>}
+          {result&&(
+            <div style={{background:'rgba(34,197,94,.08)',border:'2px solid rgba(34,197,94,.3)',borderRadius:14,padding:'16px',marginBottom:14,textAlign:'center'}}>
+              <div style={{fontSize:48,fontWeight:900,color:'#22c55e',marginBottom:6}}>{result.nb_bacs}</div>
+              <div style={{fontSize:14,fontWeight:800,color:'#fff',marginBottom:4}}>bacs gastronormes détectés</div>
+              <div style={{fontSize:12,color:'var(--muted)'}}>{result.details}</div>
+            </div>
+          )}
+          <div style={{display:'flex',gap:8,marginBottom:12}}>
+            <button onClick={()=>fileRef.current.click()} style={{flex:1,padding:12,background:'rgba(99,102,241,.12)',border:'1px solid rgba(99,102,241,.3)',borderRadius:12,color:'#818cf8',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+              {img?'🔄 Reprendre':'📷 Photo'}
+            </button>
+            {img&&!result&&(
+              <button onClick={analyserIA} disabled={analyzing} style={{flex:1,padding:12,background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.4)',borderRadius:12,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                {analyzing?'Analyse...':'🤖 Analyser'}
+              </button>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{display:'none'}}/>
+          {result&&typeof result.nb_bacs==='number'&&(
+            <button className="btn-p" onClick={envoyer} disabled={sending}>{sending?'Envoi...':'📤 Envoyer le compte au responsable'}</button>
+          )}
+          {result&&typeof result.nb_bacs!=='number'&&(
+            <button onClick={()=>{setResult(null);setImg(null);}} className="btn-s">Reprendre une photo</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ SIGNATURE ═══════════════════ */
+function SignatureScreen({ch,mission,onBack}){
+  const canvasRef=useRef();
+  const[hasDrawn,setHasDrawn]=useState(false);
+  const[sending,setSending]=useState(false);
+  const[nom,setNom]=useState('');
+  const today=new Date().toISOString().slice(0,10);
+
+  useEffect(()=>{
+    const canvas=canvasRef.current;
+    if(!canvas) return;
+    const rect=canvas.getBoundingClientRect();
+    canvas.width=rect.width*window.devicePixelRatio||600;
+    canvas.height=200*window.devicePixelRatio||200;
+    canvas.style.width=rect.width+'px';
+    canvas.style.height='200px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+    let drawing=false;
+    function getPos(e){
+      const r=canvas.getBoundingClientRect();
+      const src=e.touches?e.touches[0]:e;
+      return{x:(src.clientX-r.left),y:(src.clientY-r.top)};
+    }
+    function start(e){e.preventDefault();drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
+    function move(e){e.preventDefault();if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();setHasDrawn(true);}
+    function end(e){e.preventDefault();drawing=false;}
+    canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);
+    canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end,{passive:false});
+  },[]);
+
+  function effacer(){
+    const canvas=canvasRef.current;if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    setHasDrawn(false);
+  }
+
+  async function envoyer(){
+    if(!hasDrawn){showToast('Demandez la signature d\'abord','var(--red)');return;}
+    setSending(true);
+    try{
+      const canvas=canvasRef.current;
+      const sigData=canvas.toDataURL('image/png');
+      await sPost('planning',{
+        date:'EV_'+Date.now()+'_'+ch.id,
+        donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),signature:sigData,dataUrl:sigData,signataire:nom,ts:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      });
+      showToast('✍️ Signature envoyée au responsable','var(--green)');
+      onBack();
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+
+  return(
+    <div className="screen">
+      <Header title="✍️ Signature client" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{padding:'16px'}}>
+          <div style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.2)',borderRadius:12,padding:12,fontSize:12,color:'#86efac',marginBottom:16}}>
+            ✍️ Faites signer le client sur l'écran pour valider la réception de la livraison.
+          </div>
+          <div className="field"><label>Nom du signataire</label><input value={nom} onChange={e=>setNom(e.target.value)} placeholder="Nom et prénom du client..."/></div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:6}}>Zone de signature</div>
+            <canvas ref={canvasRef} id="sig-canvas" style={{width:'100%',height:200,border:'2px solid var(--border)',borderRadius:12,background:'#071526',touchAction:'none',cursor:'crosshair'}}/>
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:16}}>
+            <button onClick={effacer} className="btn-s" style={{flex:1}}>🗑️ Effacer</button>
+          </div>
+          <button className="btn-p" onClick={envoyer} disabled={!hasDrawn||sending}
+            style={{opacity:!hasDrawn?.5:1}}>
+            {sending?'Envoi...':'📤 Valider et envoyer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ REPRISE ═══════════════════ */
+function RepriseScreen({ch,mission,onBack}){
+  const[article,setArticle]=useState('');
+  const[qte,setQte]=useState('');
+  const[note,setNote]=useState('');
+  const[sending,setSending]=useState(false);
+  const today=new Date().toISOString().slice(0,10);
+  const ARTICLES=['Bacs gastronormes GN1/1','Bacs gastronormes GN1/2','Bacs gastronormes GN 1/3','Couvercles bacs GN','Plateaux de transport','Barquettes aluminium','Contenants plastique','Chafing dish','Brûleurs','Pinces de service','Louches','Spatules','Nappe blanche','Matériel déco','Autre...'];
+
+  async function envoyer(){
+    if(!article){showToast('Précisez l\'article','var(--red)');return;}
+    setSending(true);
+    try{
+      await sPost('planning',{
+        date:'EV_'+Date.now()+'_'+ch.id,
+        donnees:{type:'reprise',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),article,quantite:qte,note,ts:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      });
+      showToast('📦 Reprise signalée au responsable','var(--green)');
+      onBack();
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+
+  return(
+    <div className="screen">
+      <Header title="📦 Signaler une reprise" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{padding:'16px'}}>
+          <div style={{background:'rgba(245,158,11,.06)',border:'1px solid rgba(245,158,11,.2)',borderRadius:12,padding:12,fontSize:12,color:'#fbbf24',marginBottom:16}}>
+            📦 Signalez tout matériel laissé chez le client à récupérer lors du prochain passage.
+          </div>
+          <div className="field">
+            <label>Article à récupérer *</label>
+            <select value={article} onChange={e=>setArticle(e.target.value)}>
+              <option value="">Choisir...</option>
+              {ARTICLES.map(a=><option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+          <div className="field"><label>Quantité</label><input type="number" value={qte} onChange={e=>setQte(e.target.value)} placeholder="Ex: 12"/></div>
+          <div className="field"><label>Note pour le responsable</label><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="Précisions sur l'emplacement, état..." style={{background:'#071526',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'10px 12px',fontSize:13,fontFamily:'inherit',resize:'vertical',width:'100%',boxSizing:'border-box'}}/></div>
+          <button className="btn-p" onClick={envoyer} disabled={sending}>{sending?'Envoi...':'📤 Signaler au responsable'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ CALENDRIER CONNECTÉ AU PLANNING ═══════════════════ */
+function CalendarScreen({ch,planning,onBack,onNavigate}){
+  const[month,setMonth]=useState(()=>{
+    const d=new Date();return{year:d.getFullYear(),month:d.getMonth()};
+  });
+  const[selectedDate,setSelectedDate]=useState(null);
+  const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const JOURS_COURTS=['L','M','M','J','V','S','D'];
+
+  const missionDates=getAllMissionDates(planning,ch.id);
+  const today=new Date().toISOString().slice(0,10);
+
+  function getDays(){
+    const first=new Date(month.year,month.month,1);
+    const last=new Date(month.year,month.month+1,0);
+    let dow=first.getDay();if(dow===0)dow=7;
+    const days=[];
+    for(let i=1;i<dow;i++) days.push(null);
+    for(let d=1;d<=last.getDate();d++){
+      const dt=new Date(month.year,month.month,d);
+      days.push(dt.toISOString().slice(0,10));
+    }
+    return days;
+  }
+
+  const days=getDays();
+  const selMs=selectedDate&&planning?getMissions(planning,ch.id,selectedDate):[];
+
+  return(
+    <div className="screen">
+      <Header title="📅 Mon calendrier" onBack={onBack}/>
+      <div className="scroll">
+        {/* Navigation mois */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px 10px'}}>
+          <button onClick={()=>setMonth(m=>({year:m.month===0?m.year-1:m.year,month:m.month===0?11:m.month-1}))}
+            style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'8px 14px',cursor:'pointer',fontWeight:700,fontFamily:'inherit'}}>←</button>
+          <div style={{fontSize:16,fontWeight:900,color:'#fff'}}>{MOIS[month.month]} {month.year}</div>
+          <button onClick={()=>setMonth(m=>({year:m.month===11?m.year+1:m.year,month:m.month===11?0:m.month+1}))}
+            style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'8px 14px',cursor:'pointer',fontWeight:700,fontFamily:'inherit'}}>→</button>
+        </div>
+
+        {/* En-têtes jours */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',padding:'0 12px',marginBottom:4}}>
+          {JOURS_COURTS.map((j,i)=>(
+            <div key={i} style={{textAlign:'center',fontSize:10,fontWeight:800,color:'var(--muted)',padding:'4px 0'}}>{j}</div>
+          ))}
+        </div>
+
+        {/* Grille */}
+        <div className="cal-grid">
+          {days.map((d,i)=>{
+            if(!d) return <div key={i}/>;
+            const isToday=d===today;
+            const hasMissions=!!missionDates[d];
+            const nb=missionDates[d]||0;
+            const isSel=d===selectedDate;
+            return(
+              <div key={i} className={`cal-day ${isToday?'today':''} ${hasMissions?'has-missions':''}`}
+                onClick={()=>setSelectedDate(d===selectedDate?null:d)}
+                style={{background:isSel&&!isToday?'rgba(249,115,22,.15)':isToday?'var(--orange)':hasMissions?'rgba(34,197,94,.08)':'transparent',border:isSel?'2px solid var(--orange)':'2px solid transparent',cursor:'pointer',borderRadius:10}}>
+                <div style={{fontWeight:isToday?900:hasMissions?700:400,color:isToday?'#fff':hasMissions?'#22c55e':'var(--text)'}}>
+                  {new Date(d+'T12:00:00').getDate()}
+                </div>
+                {hasMissions&&<div style={{fontSize:9,color:isToday?'#fff':'#22c55e',fontWeight:800}}>{nb}</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Missions du jour sélectionné */}
+        {selectedDate&&(
+          <div style={{padding:'16px 16px 8px'}}>
+            <div style={{fontSize:12,fontWeight:900,color:'var(--orange)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>
+              {new Date(selectedDate+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}
+            </div>
+            {selMs.length===0&&<div style={{fontSize:13,color:'var(--muted)',padding:'12px 0'}}>Aucune mission ce jour</div>}
+            {selMs.map((m,i)=>(
+              <div key={i} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'12px 14px',marginBottom:8,display:'flex',alignItems:'center',gap:12}}>
+                <div style={{fontSize:16,fontWeight:900,color:'var(--orange)',flexShrink:0}}>{m.heure}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{m.client||m.task}</div>
+                  {m.adresse&&<div style={{fontSize:11,color:'var(--muted)'}}>📍 {m.adresse}</div>}
+                </div>
+                <div style={{fontSize:10,fontWeight:800,padding:'3px 8px',borderRadius:6,background:m._statut==='done'?'rgba(34,197,94,.15)':'rgba(249,115,22,.1)',color:m._statut==='done'?'#22c55e':'#f97316'}}>
+                  {m._statut==='done'?'✅':'⏳'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!planning&&<div style={{textAlign:'center',padding:30,color:'var(--muted)'}}>Chargement du planning...</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ HORS CARTE ═══════════════════ */
+function HorsCarteScreen({ch,onBack}){
+  const[items,setItems]=useState([]);
+  const[loading,setLoading]=useState(true);
+  const[showForm,setShowForm]=useState(false);
+  const[form,setForm]=useState({client:'',article:'',quantite:'',dateEvenement:'',note:''});
+
+  async function load(){
+    setLoading(true);
+    try{const rows=await sGet('planning?date=eq.HORS_CARTE_SYNC&limit=1');
+      if(rows?.length&&rows[0].donnees?.horsCarte) setItems(rows[0].donnees.horsCarte);
+      else setItems([]);
+    }catch(e){}
+    setLoading(false);
+  }
+  useEffect(()=>{load();const iv=setInterval(load,15000);return()=>clearInterval(iv);},[]);
+
+  async function sync(list){await sPost('planning',{date:'HORS_CARTE_SYNC',donnees:{horsCarte:list,updated_at:new Date().toISOString()},updated_at:new Date().toISOString()});}
+
+  async function envoyer(){
+    if(!form.client||!form.article){showToast('Client et article requis','var(--red)');return;}
+    const n={id:Date.now(),client:form.client,article:form.article,quantite:form.quantite,dateEvenement:form.dateEvenement,note:form.note,saisiepar:ch.display,statut:'atraiter',createdAt:new Date().toISOString(),sourceApp:'chauffeur'};
+    const upd=[...items,n];await sync(upd);setItems(upd);
+    setForm({client:'',article:'',quantite:'',dateEvenement:'',note:''});setShowForm(false);
+    showToast('✅ Hors carte envoyé','var(--green)');
+  }
+
+  const cols={atraiter:'#ef4444',encours:'#f59e0b',traite:'#22c55e'};
+  const lbls={atraiter:'🔴 À traiter',encours:'🟡 En cours',traite:'✅ Traité'};
+  const mine=items.filter(h=>h.chauffeur===ch.display||h.saisiepar===ch.display);
+  const autres=items.filter(h=>!h.chauffeur&&h.statut==='atraiter'&&h.saisiepar!==ch.display);
+
+  return(
+    <div className="screen">
+      <Header title="🛒 Hors Carte" onBack={onBack}/>
+      <div className="scroll">
+        <div style={{padding:'12px 16px'}}>
+          <button onClick={()=>setShowForm(!showForm)} style={{width:'100%',padding:12,background:'rgba(249,115,22,.1)',border:'2px dashed rgba(249,115,22,.35)',borderRadius:14,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+            {showForm?'✕ Annuler':'➕ Signaler un hors carte'}
+          </button>
+        </div>
+        {showForm&&(
+          <div className="card">
+            {[['client','Client / Évènement *','Ex: Mariage Dupont'],['article','Article *','Ex: 50 portions'],['quantite','Quantité','Ex: 50'],['note','Note','Précisions...']].map(([k,l,p])=>(
+              <div className="field" key={k}><label>{l}</label><input value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder={p}/></div>
+            ))}
+            <div className="field"><label>Date besoin</label><input type="date" value={form.dateEvenement} onChange={e=>setForm({...form,dateEvenement:e.target.value})}/></div>
+            <button className="btn-p" onClick={envoyer}>📤 Envoyer au responsable</button>
+          </div>
+        )}
+        {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)'}}>Chargement...</div>}
+        {mine.map((h,i)=>(
+          <div key={h.id||i} style={{background:'var(--card)',borderRadius:12,padding:14,margin:'0 16px 10px',borderLeft:`4px solid ${cols[h.statut]||'#64748b'}`}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+              <div style={{fontSize:14,fontWeight:900,color:'#fff'}}>{h.client}</div>
+              <span style={{fontSize:10,fontWeight:800,padding:'2px 8px',borderRadius:5,background:(cols[h.statut]||'#64748b')+'18',color:cols[h.statut]||'#64748b'}}>{lbls[h.statut]||h.statut}</span>
+            </div>
+            <div style={{fontSize:12,color:'#e2e8f0'}}>📦 {h.article}{h.quantite?' — '+h.quantite:''}</div>
+          </div>
+        ))}
+        {!loading&&mine.length===0&&autres.length===0&&(
+          <div style={{textAlign:'center',padding:32,color:'var(--muted)'}}>
+            <div style={{fontSize:36,marginBottom:12}}>🛒</div>
+            <div style={{fontWeight:700}}>Aucun hors carte</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ INCIDENT ═══════════════════ */
+function IncidentScreen({ch,onBack}){
+  const[type,setType]=useState('');const[desc,setDesc]=useState('');
+  const[gravite,setGravite]=useState('moyen');const[sent,setSent]=useState(false);const[sending,setSending]=useState(false);
+  const types=[{id:'retard',l:'⏰ Retard'},{id:'accident',l:'🚨 Accident'},{id:'panne',l:'🔧 Panne'},{id:'temperature',l:'🌡️ Température'},{id:'client_absent',l:'🚪 Client absent'},{id:'colis_endommage',l:'📦 Colis abîmé'},{id:'autre',l:'⚠️ Autre'}];
+  async function envoyer(){
+    if(!type||!desc){showToast('Remplissez tous les champs','var(--red)');return;}
+    setSending(true);
+    try{
+      await sPost('planning',{date:'INC_'+Date.now()+'_'+ch.id,donnees:{type:'incident',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,gravite,incidentType:type,description:desc,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),ts:new Date().toISOString()},updated_at:new Date().toISOString()});
+      setSent(true);showToast('⚠️ Signalé','var(--red)');
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+  if(sent) return(<div className="screen"><Header title="✅ Signalé" onBack={onBack}/><div className="scroll" style={{textAlign:'center',paddingTop:60}}><div style={{fontSize:64}}>✅</div><div style={{fontSize:18,fontWeight:900,color:'#fff',marginTop:16}}>Responsable notifié</div><button onClick={()=>{setSent(false);setType('');setDesc('');}} style={{marginTop:24,padding:'12px 24px',background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.3)',borderRadius:10,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>+ Autre signalement</button></div></div>);
+  return(
+    <div className="screen"><Header title="⚠️ Incident" onBack={onBack}/>
+    <div className="scroll"><div style={{padding:'12px 16px'}}>
+      {types.map(t=><button key={t.id} onClick={()=>setType(t.id)} style={{display:'block',width:'100%',padding:'12px',background:type===t.id?'rgba(239,68,68,.15)':'var(--card)',border:`2px solid ${type===t.id?'rgba(239,68,68,.5)':'var(--border)'}`,borderRadius:12,color:type===t.id?'#ef4444':'#fff',fontSize:13,fontWeight:800,cursor:'pointer',marginBottom:8,textAlign:'left',fontFamily:'inherit'}}>{t.l}</button>)}
+      <div style={{display:'flex',gap:8,margin:'12px 0'}}>{[['leger','🟡','#f59e0b'],['moyen','🟠','#f97316'],['grave','🔴','#ef4444']].map(([v,e,c])=><button key={v} onClick={()=>setGravite(v)} style={{flex:1,padding:'10px 4px',background:gravite===v?c+'22':'var(--card)',border:`2px solid ${gravite===v?c:'var(--border)'}`,borderRadius:10,color:gravite===v?c:'var(--muted)',fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{e} {v}</button>)}</div>
+      <div className="field"><label>Description *</label><textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={3} placeholder="Décrivez le problème..." style={{background:'#071526',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'10px 12px',fontSize:13,fontFamily:'inherit',resize:'vertical',width:'100%',boxSizing:'border-box'}}/></div>
+      <button className="btn-p" onClick={envoyer} disabled={sending}>{sending?'Envoi...':'🚨 Signaler'}</button>
+    </div></div></div>
+  );
+}
+
+/* ═══════════════════ STATUT ═══════════════════ */
+function StatutScreen({ch,onBack}){
+  const[cur,setCur]=useState('');const[last,setLast]=useState('');const[sending,setSending]=useState(false);
+  const statuts=[{id:'service',l:'✅ En service',d:'Prêt ou en tournée',c:'#22c55e'},{id:'enroute',l:'🚐 En route',d:'Livraison en cours',c:'#3b82f6'},{id:'pause',l:'☕ En pause',d:'Pause courte',c:'#f59e0b'},{id:'retour',l:'🔄 Retour dépôt',d:'Tournée terminée',c:'#a855f7'},{id:'termine',l:'🏁 Terminé',d:'Toutes missions faites',c:'#22c55e'},{id:'probleme',l:'🆘 Problème',d:'Besoin d\'aide urgente',c:'#ef4444'}];
+  async function envoyer(id){
+    setSending(true);const st=statuts.find(s=>s.id===id);
+    try{await sPost('planning',{date:'STATUT_'+Date.now()+'_'+ch.id,donnees:{type:'statut_chauffeur',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,statut:id,label:st?.l||id,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),ts:new Date().toISOString()},updated_at:new Date().toISOString()});
+      setCur(id);setLast(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+      showToast((st?.l||id)+' envoyé','var(--green)');
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+  return(<div className="screen"><Header title="📡 Mon statut" onBack={onBack}/>
+  <div className="scroll"><div style={{padding:'12px 16px'}}>
+    <div style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.2)',borderRadius:12,padding:12,marginBottom:16,fontSize:12,color:'#86efac',textAlign:'center'}}>
+      📡 Visible en temps réel par le responsable{last&&<div style={{fontSize:11,color:'var(--muted)',marginTop:3}}>Envoyé à {last}</div>}
+    </div>
+    {statuts.map(st=><button key={st.id} className="st-btn" onClick={()=>envoyer(st.id)} disabled={sending} style={{borderColor:cur===st.id?st.c:'var(--border)',background:cur===st.id?st.c+'18':'var(--card)'}}>
+      <div className="st-lbl" style={{color:cur===st.id?st.c:'#fff'}}>{st.l}</div>
+      <div className="st-desc">{st.d}</div>
+    </button>)}
+  </div></div></div>);
+}
+
+/* ═══════════════════ BILAN ═══════════════════ */
+function BilanScreen({ch,planning,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const done=ms.filter(m=>m._statut==='done').length;
+  const[km,setKm]=useState('');const[carb,setCarb]=useState('');const[inc,setInc]=useState('0');const[obs,setObs]=useState('');const[humeur,setHumeur]=useState('');const[sent,setSent]=useState(false);const[sending,setSending]=useState(false);
+  async function envoyer(){
+    setSending(true);
+    try{await sPost('planning',{date:'BILAN_'+today+'_'+ch.id,donnees:{type:'bilan_journee',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,date:today,missionsTotal:ms.length,missionsDone:done,km:parseInt(km)||0,carburant:parseFloat(carb)||0,incidents:parseInt(inc)||0,observation:obs,humeur,ts:new Date().toISOString()},updated_at:new Date().toISOString()});
+      setSent(true);showToast('📝 Bilan envoyé','var(--green)');
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+  if(sent) return(<div className="screen"><Header title="📝 Bilan envoyé" onBack={onBack}/><div className="scroll" style={{textAlign:'center',paddingTop:60}}><div style={{fontSize:64}}>✅</div><div style={{fontSize:18,fontWeight:900,color:'#fff',marginTop:16}}>Bilan envoyé !</div><button onClick={onBack} style={{marginTop:24,padding:'12px 24px',background:'rgba(249,115,22,.15)',border:'1px solid rgba(249,115,22,.3)',borderRadius:10,color:'#f97316',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>Retour</button></div></div>);
+  return(<div className="screen"><Header title="📝 Bilan journée" onBack={onBack}/>
+  <div className="scroll"><div style={{padding:'12px 16px'}}>
+    <div style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.2)',borderRadius:12,padding:12,marginBottom:14,display:'flex',gap:10}}>
+      {[{v:ms.length,l:'Total',c:'#e2e8f0'},{v:done,l:'Faites',c:'#22c55e'},{v:ms.length-done,l:'Restantes',c:'#f97316'}].map(k=><div key={k.l} style={{flex:1,textAlign:'center',background:'var(--card)',borderRadius:10,padding:'8px'}}><div style={{fontSize:18,fontWeight:900,color:k.c}}>{k.v}</div><div style={{fontSize:10,color:'var(--muted)'}}>{k.l}</div></div>)}
+    </div>
+    <div className="field"><label>Kilomètres</label><input type="number" value={km} onChange={e=>setKm(e.target.value)} placeholder="Ex: 145"/></div>
+    <div className="field"><label>Carburant (litres)</label><input type="number" value={carb} onChange={e=>setCarb(e.target.value)} placeholder="Ex: 32"/></div>
+    <div className="field"><label>Incidents</label><input type="number" value={inc} onChange={e=>setInc(e.target.value)} placeholder="0"/></div>
+    <div className="field"><label>Observations</label><textarea value={obs} onChange={e=>setObs(e.target.value)} rows={3} style={{background:'#071526',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'10px 12px',fontSize:13,fontFamily:'inherit',resize:'vertical',width:'100%',boxSizing:'border-box'}} placeholder="Ce que le responsable doit savoir..."/></div>
+    <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:10}}>Humeur du jour</div>
+    <div style={{display:'flex',gap:8,marginBottom:16}}>{[['😊','Bien'],['😐','Moyen'],['😓','Difficile'],['💪','Top']].map(([e,l])=><button key={e} onClick={()=>setHumeur(e)} style={{flex:1,padding:'12px 4px',background:humeur===e?'rgba(249,115,22,.2)':'var(--card)',border:`2px solid ${humeur===e?'#f97316':'var(--border)'}`,borderRadius:12,fontSize:20,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,fontFamily:'inherit'}}>{e}<span style={{fontSize:9,color:humeur===e?'#f97316':'var(--muted)',fontWeight:700}}>{l}</span></button>)}</div>
+    <button className="btn-p" onClick={envoyer} disabled={sending}>{sending?'Envoi...':'📤 Envoyer le bilan'}</button>
+  </div></div></div>);
+}
+
+/* ═══════════════════ SCORE ═══════════════════ */
+function ScoreScreen({ch,planning,onBack}){
+  const today=new Date().toISOString().slice(0,10);
+  const ms=planning?getMissions(planning,ch.id,today):[];
+  const done=ms.filter(m=>m._statut==='done').length;
+  const pct=ms.length>0?Math.round(done/ms.length*100):100;
+  const score=Math.min(100,Math.max(0,Math.round(pct*.6+40)));
+  const col=score>=80?'#22c55e':score>=60?'#f59e0b':'#ef4444';
+  const r=50,circ=2*Math.PI*r;
+  return(<div className="screen"><Header title="⭐ Mon score" onBack={onBack}/>
+  <div className="scroll"><div className="card" style={{margin:16,textAlign:'center'}}>
+    <div style={{position:'relative',width:120,height:120,margin:'0 auto 14px'}}>
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#1a3550" strokeWidth="10"/>
+        <circle cx="60" cy="60" r={r} fill="none" stroke={col} strokeWidth="10" strokeDasharray={`${score/100*circ} ${circ}`} strokeLinecap="round" transform="rotate(-90 60 60)"/>
+      </svg>
+      <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+        <div style={{fontSize:28,fontWeight:900,color:col}}>{score}</div>
+        <div style={{fontSize:10,color:'var(--muted)'}}>/ 100</div>
+      </div>
+    </div>
+    <div style={{fontSize:16,fontWeight:800,color:col}}>{score>=90?'Excellent 🏆':score>=80?'Très bien ⭐':score>=70?'Bien 👍':score>=60?'Correct':'À améliorer 💪'}</div>
+    <div style={{fontSize:12,color:'var(--muted)',marginTop:4}}>{done}/{ms.length} missions · {new Date().toLocaleDateString('fr-FR')}</div>
+  </div></div></div>);
+}
+
+/* ═══════════════════ CHECKLIST FIN ═══════════════════ */
+function ChecklistFinScreen({ch,onBack}){
+  const items=[{id:'bls',l:'BL remis et signés',ico:'📋',req:true},{id:'mat',l:'Matériel ramené',ico:'📦',req:true},{id:'cam',l:'Camion nettoyé',ico:'🧹',req:false},{id:'fri',l:'Frigo éteint',ico:'🌡️',req:false},{id:'carb',l:'Plein carburant si besoin',ico:'⛽',req:false},{id:'inc',l:'Incidents signalés',ico:'⚠️',req:true},{id:'km',l:'Kilométrage noté',ico:'📍',req:false},{id:'cles',l:'Clés rendues',ico:'🔑',req:true},{id:'tenue',l:'Tenue rangée',ico:'👔',req:false}];
+  const[checked,setChecked]=useState({});const[sent,setSent]=useState(false);const[sending,setSending]=useState(false);
+  const reqOk=items.filter(i=>i.req).every(i=>checked[i.id]);
+  const count=Object.values(checked).filter(Boolean).length;
+  async function valider(){
+    if(!reqOk){showToast('Points obligatoires manquants','var(--red)');return;}
+    setSending(true);
+    try{await sPost('planning',{date:'CHECKLINFIN_'+new Date().toISOString().slice(0,10)+'_'+ch.id,donnees:{type:'checklist_fin',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,date:new Date().toISOString().slice(0,10),heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),checked,score:`${count}/${items.length}`,ts:new Date().toISOString()},updated_at:new Date().toISOString()});
+      setSent(true);showToast('🏁 Journée clôturée !','var(--green)');
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+  if(sent) return(<div className="screen"><Header title="🏁 Clôturé" onBack={onBack}/><div className="scroll" style={{textAlign:'center',paddingTop:60}}><div style={{fontSize:72}}>🏁</div><div style={{fontSize:20,fontWeight:900,color:'#fff',marginTop:16}}>Bonne fin de journée !</div><div style={{fontSize:13,color:'#22c55e',marginTop:8}}>{count}/{items.length} points</div></div></div>);
+  return(<div className="screen"><Header title="✅ Fin de journée" onBack={onBack}/>
+  <div className="scroll"><div style={{padding:'12px 16px'}}>
+    <div className="card" style={{margin:'0 0 14px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}><div style={{fontWeight:800}}>Progression</div><div style={{fontWeight:900,color:reqOk?'#22c55e':'#f97316'}}>{count}/{items.length}</div></div>
+      <div style={{background:'var(--bg)',borderRadius:4,height:8}}><div style={{width:`${count/items.length*100}%`,height:8,borderRadius:4,background:reqOk?'#22c55e':'#f97316',transition:'.3s'}}/></div>
+    </div>
+    {items.map(item=><div key={item.id} className={`chk-item ${checked[item.id]?'on':''}`} onClick={()=>setChecked(c=>({...c,[item.id]:!c[item.id]}))}>
+
+      <div className="chk-box">{checked[item.id]&&'✓'}</div>
+    </div>)}
+    <button className="btn-p" onClick={valider} disabled={sending||!reqOk} style={{opacity:!reqOk?.5:1,marginTop:8}}>{sending?'Envoi...':'🏁 Clôturer la journée'}</button>
+  </div></div></div>);
+}
+
+/* ═══════════════════ HISTORIQUE ═══════════════════ */
+function HistoriqueScreen({ch,onBack}){
+  const[data,setData]=useState([]);const[loading,setLoading]=useState(true);const[weekOff,setWeekOff]=useState(0);
+  function getWeekDays(off){const now=new Date();const d=now.getDay();const mon=new Date(now);mon.setDate(now.getDate()-(d===0?6:d-1)+off*7);mon.setHours(0,0,0,0);return Array.from({length:7},(_,i)=>{const dd=new Date(mon);dd.setDate(mon.getDate()+i);return dd.toISOString().slice(0,10);});}
+  const days=getWeekDays(weekOff);const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  useEffect(()=>{setLoading(true);Promise.all([sGet('planning?date=like.STATUT_*&select=donnees,updated_at&order=updated_at.desc&limit=200'),sGet('planning?date=like.INC_*&select=donnees,updated_at&order=updated_at.desc&limit=200'),sGet('planning?date=like.BILAN_*&select=donnees,date,updated_at&order=updated_at.desc&limit=200')]).then(([d1,d2,d3])=>{const all=[...(Array.isArray(d1)?d1:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),...(Array.isArray(d2)?d2:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),...(Array.isArray(d3)?d3:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id))];setData(all);setLoading(false);}).catch(()=>setLoading(false));},[weekOff,ch.id]);
+  const weekLabel=`${new Date(days[0]).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → ${new Date(days[6]).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}`;
+  return(<div className="screen"><Header title="📅 Historique" onBack={onBack}/>
+  <div className="scroll"><div style={{padding:'12px 16px'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'10px 14px',marginBottom:14}}>
+      <button onClick={()=>setWeekOff(w=>w-1)} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'#fff',padding:'6px 12px',cursor:'pointer',fontWeight:700,fontFamily:'inherit'}}>←</button>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{weekLabel}</div>
+        {weekOff===0&&<div style={{fontSize:10,color:'var(--orange)',fontWeight:700}}>Semaine actuelle</div>}
+      </div>
+      <button onClick={()=>setWeekOff(w=>w+1)} disabled={weekOff>=0} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:weekOff>=0?'#334155':'#fff',padding:'6px 12px',cursor:weekOff>=0?'not-allowed':'pointer',fontWeight:700,fontFamily:'inherit'}}>→</button>
+    </div>
+    {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)'}}>Chargement...</div>}
+    {!loading&&days.map((date,i)=>{
+      const dd=data.filter(d=>d.date===date||(d.ts&&d.ts.startsWith(date)));
+      const incidents=dd.filter(d=>d.type==='incident');
+      const bilan=dd.find(d=>d.type==='bilan_journee');
+      const isToday=date===new Date().toISOString().slice(0,10);
+      const isPast=date<new Date().toISOString().slice(0,10);
+      return(<div key={date} style={{background:'var(--card)',border:`1px solid ${isToday?'var(--orange)':'var(--border)'}`,borderRadius:14,marginBottom:10,overflow:'hidden'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:isToday?'rgba(249,115,22,.06)':'transparent'}}>
+          <div style={{fontWeight:900,fontSize:13,color:isToday?'var(--orange)':'#fff',width:36}}>{JOURS[i]}</div>
+          <div style={{fontSize:11,color:'var(--muted)',flex:1}}>{new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</div>
+          <div style={{display:'flex',gap:5}}>
+            {incidents.length>0&&<span style={{fontSize:10,fontWeight:800,color:'#ef4444',background:'rgba(239,68,68,.1)',padding:'2px 7px',borderRadius:6}}>⚠️ {incidents.length}</span>}
+            {bilan&&<span style={{fontSize:10,fontWeight:800,color:'#6366f1',background:'rgba(99,102,241,.1)',padding:'2px 7px',borderRadius:6}}>📝</span>}
+            {!dd.length&&<span style={{fontSize:10,color:'#334155'}}>{isPast?'—':'·'}</span>}
+          </div>
+        </div>
+        {bilan&&<div style={{padding:'8px 14px 10px',borderTop:'1px solid var(--border)',display:'flex',gap:8}}>
+          {[{l:'Missions',v:`${bilan.missionsDone||0}/${bilan.missionsTotal||0}`,c:'#22c55e'},{l:'Km',v:bilan.km||0,c:'#3b82f6'},{l:'Carb.',v:`${bilan.carburant||0}L`,c:'#f97316'}].map(k=><div key={k.l} style={{background:'var(--bg)',borderRadius:8,padding:'5px 10px',flex:1,textAlign:'center'}}><div style={{fontSize:13,fontWeight:900,color:k.c}}>{k.v}</div><div style={{fontSize:9,color:'var(--muted)'}}>{k.l}</div></div>)}
+          {bilan.humeur&&<div style={{fontSize:22,display:'flex',alignItems:'center'}}>{bilan.humeur}</div>}
+        </div>}
+      </div>);
+    })}
+  </div></div></div>);
+}
+
+/* ═══════════════════ MES PREUVES ═══════════════════ */
+function PreuvesScreen({ch,onBack}){
+  const[preuves,setPreuves]=useState([]);const[loading,setLoading]=useState(true);
+  const today=new Date().toISOString().slice(0,10);
+  useEffect(()=>{
+    sGet('planning?date=like.EV_*&select=donnees,date&order=date.desc&limit=200').then(rows=>{
+      const ev=(rows||[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&d.chauffeurId===ch.id&&d.date===today);
+      setPreuves(ev);setLoading(false);
+    });
+  },[]);
+  const photos=preuves.filter(e=>e.type==='photo');
+  const sigs=preuves.filter(e=>e.type==='signature');
+  const reprises=preuves.filter(e=>e.type==='reprise');
+  return(<div className="screen"><Header title="📸 Mes preuves du jour" onBack={onBack}/>
+  <div className="scroll">
+    {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)'}}>Chargement...</div>}
+    {!loading&&preuves.length===0&&<div style={{textAlign:'center',padding:40,color:'var(--muted)'}}><div style={{fontSize:40,marginBottom:12}}>📸</div><div style={{fontWeight:700}}>Aucune preuve aujourd'hui</div></div>}
+    {photos.length>0&&<div style={{padding:'12px 16px 4px'}}><div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:10}}>📸 Photos ({photos.length})</div>
+      {photos.map((p,i)=><div key={i} style={{background:'var(--card)',borderRadius:12,padding:14,marginBottom:10,border:'1px solid var(--border)'}}>
+        {p.photo&&<img src={p.photo} style={{width:'100%',borderRadius:10,maxHeight:150,objectFit:'cover',marginBottom:8}} alt=""/>}
+        <div style={{fontSize:12,fontWeight:800,color:'#fff'}}>{p.client}</div>
+        {p.nb_bacs&&<div style={{fontSize:13,fontWeight:900,color:'var(--orange)',marginTop:4}}>🤖 {p.nb_bacs} bacs gastro détectés</div>}
+        <div style={{fontSize:10,color:'var(--muted)',marginTop:3}}>{p.heure}</div>
+      </div>)}
+    </div>}
+    {sigs.length>0&&<div style={{padding:'0 16px 4px'}}><div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:10}}>✍️ Signatures ({sigs.length})</div>
+      {sigs.map((s,i)=><div key={i} style={{background:'var(--card)',borderRadius:12,padding:14,marginBottom:10,border:'1px solid var(--border)'}}>
+        {s.signature&&<img src={s.signature} style={{width:'100%',borderRadius:10,maxHeight:100,objectFit:'contain',background:'#071526',marginBottom:8}} alt=""/>}
+        <div style={{fontSize:12,fontWeight:800,color:'#fff'}}>{s.client}</div>
+        {s.signataire&&<div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>Par : {s.signataire}</div>}
+      </div>)}
+    </div>}
+    {reprises.length>0&&<div style={{padding:'0 16px 4px'}}><div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:10}}>📦 Reprises ({reprises.length})</div>
+      {reprises.map((r,i)=><div key={i} style={{background:'var(--card)',borderRadius:12,padding:14,marginBottom:10,border:'1px solid rgba(245,158,11,.3)',borderLeft:'4px solid #f59e0b'}}>
+        <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{r.article}</div>
+        {r.quantite&&<div style={{fontSize:12,color:'#f59e0b'}}>Qté : {r.quantite}</div>}
+        <div style={{fontSize:11,color:'var(--muted)',marginTop:3}}>Chez : {r.client} · {r.heure}</div>
+      </div>)}
+    </div>}
+  </div></div>);
+}
+
+/* ═══════════════════ MESSAGES ═══════════════════ */
+function MessagesScreen({ch,onBack}){
+  const[msgs,setMsgs]=useState([]);const[text,setText]=useState('');const[loading,setLoading]=useState(true);
+  async function load(){try{const rows=await sGet('planning?date=eq.MESSAGES&select=donnees&limit=1');if(rows?.length&&rows[0].donnees){const d=rows[0].donnees;const list=typeof d==='string'?JSON.parse(d):Array.isArray(d)?d:[];setMsgs(list.slice(-60));}}catch(e){}setLoading(false);}
+  useEffect(()=>{load();const iv=setInterval(load,8000);return()=>clearInterval(iv);},[]);
+  async function envoyer(){if(!text.trim())return;const msg={id:Date.now(),from:ch.id,fromName:ch.display,text:text.trim(),time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),date:new Date().toISOString().slice(0,10)};const nl=[...msgs,msg];setText('');try{await sPost('planning',{date:'MESSAGES',donnees:JSON.stringify(nl),updated_at:new Date().toISOString()});setMsgs(nl);}catch(e){showToast('Erreur','var(--red)');}}
+  return(<div className="screen"><Header title="💬 Messages" onBack={onBack}/>
+  <div className="scroll">
+    {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)'}}>Chargement...</div>}
+    <div style={{padding:'8px 16px'}}>
+      {msgs.map((m,i)=>{const mine=m.from===ch.id;return(<div key={i} style={{display:'flex',justifyContent:mine?'flex-end':'flex-start',marginBottom:10}}>
+        <div style={{maxWidth:'75%',background:mine?ch.color+'22':'var(--card)',border:`1px solid ${mine?ch.color+'44':'var(--border)'}`,borderRadius:12,padding:'8px 12px'}}>
+          {!mine&&<div style={{fontSize:10,fontWeight:800,color:'#64748b',marginBottom:3}}>{m.fromName||'Responsable'}</div>}
+          <div style={{fontSize:13,color:'#fff'}}>{m.text}</div>
+          <div style={{fontSize:10,color:'var(--muted)',marginTop:3,textAlign:mine?'right':'left'}}>{m.time}</div>
+        </div>
+      </div>);})}
+    </div>
+  </div>
+  <div style={{padding:'10px 16px',background:'var(--card)',borderTop:'1px solid var(--border)',display:'flex',gap:8,flexShrink:0}}>
+    <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&envoyer()} placeholder="Message..." style={{flex:1,background:'var(--bg)',border:'1px solid var(--border)',borderRadius:10,color:'#fff',padding:'10px 12px',fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+    <button onClick={envoyer} style={{padding:'10px 16px',background:'var(--orange)',border:'none',borderRadius:10,color:'#fff',fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>→</button>
+  </div></div>);
+}
+
+/* ═══════════════════ AIDE ═══════════════════ */
+function HelpScreen({ch,onBack}){
+  return(<div className="screen"><Header title="🆘 Aide & SOS" onBack={onBack}/>
+  <div className="scroll">
+    <div className="card" style={{margin:'16px 16px 0'}}>
+      <div className="card-title">👔 Mon responsable</div>
+      <a href="tel:+33000000000" style={{display:'block',textDecoration:'none',marginBottom:8}}>
+        <button style={{width:'100%',padding:14,background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.3)',borderRadius:12,color:'#22c55e',fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}>📞 Appeler le responsable logistique</button>
+      </a>
+      <div style={{fontSize:11,color:'var(--muted)',padding:'0 4px'}}>Pour toute question sur ta tournée, un retard, un problème client</div>
+    </div>
+    <div className="card" style={{margin:16}}>
+      <div className="card-title">🚨 Numéros d'urgence</div>
+      {[['📞 SAMU','15','tel:15'],['🚔 Police','17','tel:17'],['🚒 Pompiers','18','tel:18'],['☎️ Urgence Europe','112','tel:112']].map(([l,n,h])=>(
+        <a key={n} href={h} style={{display:'block',textDecoration:'none',marginBottom:8}}>
+          <button style={{width:'100%',padding:13,background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:12,color:'#ef4444',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}>{l} — {n}</button>
+        </a>
+      ))}
+    </div>
+    <div className="card" style={{margin:16}}>
+      <div className="card-title">💡 Aide rapide</div>
+      {[['🚪','Client absent','Attends 5 min · Appelle le client · Appelle le responsable · Ne laisse jamais les repas'],['⏰','En retard','Préviens le responsable ET le client avant d\'arriver · Ne roule jamais plus vite'],['🌡️','Problème température','Signale immédiatement via Incident · Ne livre pas si doute sur la fraîcheur'],['🔧','Panne véhicule','Mets-toi en sécurité · Appelle le responsable · Signale via Incident']].map(([ico,t,d],i)=>(
+        <div key={i} style={{display:'flex',gap:10,padding:'8px 0',borderBottom:i<3?'1px solid var(--border)':'none'}}>
+          <span style={{fontSize:20,flexShrink:0}}>{ico}</span>
+          <div><div style={{fontSize:12,fontWeight:800,color:'#fff'}}>{t}</div><div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{d}</div></div>
+        </div>
+      ))}
+    </div>
+  </div></div>);
+}
+
+/* ═══════════════════ CONGÉS CHAUFFEUR ═══════════════════ */
+function CongesScreen({ch,onBack}){
+  const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+  const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+  const[data,setData]=useState({periodes:[],solde:25,pris:0,demandes:[]});
+  const[loading,setLoading]=useState(true);
+  const[vue,setVue]=useState('calendrier');
+  const[form,setForm]=useState({debut:'',fin:'',type:'conge',note:''});
+  const[sending,setSending]=useState(false);
+  const[sent,setSent]=useState(false);
+  const annee=new Date().getFullYear();
+  const today=new Date().toISOString().slice(0,10);
+
+  const TYPES={
+    conge:{label:'Congé payé',color:'#22c55e',icon:'🏖️'},
+    sans_solde:{label:'Sans solde',color:'#f59e0b',icon:'📋'},
+    maladie:{label:'Maladie',color:'#ef4444',icon:'🏥'},
+    formation:{label:'Formation',color:'#3b82f6',icon:'📚'},
+    rtt:{label:'RTT',color:'#a855f7',icon:'⏰'},
+    absence:{label:'Absence',color:'#64748b',icon:'❌'},
+  };
+
+  const MOIS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const JOURS=['L','M','M','J','V','S','D'];
+
+  function getClef(){
+    return 'CONGES_'+annee+'_'+ch.id;
+  }
+
+  useEffect(()=>{
+    const clef=getClef();
+    sGet('planning?date=eq.'+clef+'&select=donnees&limit=1').then(rows=>{
+      if(rows?.length&&rows[0].donnees) setData(rows[0].donnees);
+      setLoading(false);
+    }).catch(()=>setLoading(false));
+    /* Polling notif validation */
+    const iv=setInterval(()=>{
+      sGet('planning?date=eq.CONGES_NOTIF_'+ch.id+'&select=donnees&limit=1').then(rows=>{
+        if(rows?.length&&rows[0].donnees){
+          const st=rows[0].donnees.statut;
+          if(st==='valide') showToast('✅ Votre demande de congé a été validée !','var(--green)');
+          else if(st==='refuse') showToast('❌ Votre demande a été refusée','var(--red)');
+          /* Recharger les données */
+          sGet('planning?date=eq.'+clef+'&select=donnees&limit=1').then(r=>{
+            if(r?.length&&r[0].donnees) setData(r[0].donnees);
+          });
+        }
+      });
+    },15000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  function getCongeForDate(dateStr){
+    return (data.periodes||[]).find(p=>dateStr>=p.debut&&dateStr<=p.fin)||null;
+  }
+
+  async function envoyerDemande(){
+    if(!form.debut||!form.fin){showToast('Dates obligatoires','var(--red)');return;}
+    if(form.fin<form.debut){showToast('La fin doit être après le début','var(--red)');return;}
+    setSending(true);
+    try{
+      const clef=getClef();
+      const newDemande={
+        id:Date.now(),debut:form.debut,fin:form.fin,
+        type:form.type,note:form.note,statut:'attente',
+        chauffeur:ch.display,chauffeurId:ch.id,
+        createdAt:new Date().toISOString()
+      };
+      const newData={...data,demandes:[...(data.demandes||[]),newDemande]};
+      await sPost('planning',{date:clef,donnees:newData,updated_at:new Date().toISOString()});
+      setData(newData);
+      setSent(true);
+      showToast('📨 Demande envoyée au responsable','var(--green)');
+    }catch(e){showToast('Erreur','var(--red)');}
+    setSending(false);
+  }
+
+  const restant=(data.solde||25)-(data.pris||0);
+  const pct=Math.min(100,Math.round((data.pris||0)/(data.solde||25)*100));
+
+  return(
+    <div className="screen">
+      <Header title="🏖️ Mes congés" onBack={onBack}/>
+      <div className="scroll">
+        {/* KPIs */}
+        <div style={{display:'flex',gap:8,padding:'12px 16px 8px'}}>
+          {[{v:restant,l:'Restants',c:'#22c55e'},{v:data.pris||0,l:'Pris',c:'#f97316'},{v:data.solde||25,l:'Solde',c:'#6366f1'}].map(k=>(
+            <div key={k.l} style={{flex:1,background:'var(--card)',border:`1px solid ${k.c}33`,borderRadius:12,padding:'10px 8px',textAlign:'center'}}>
+              <div style={{fontSize:22,fontWeight:900,color:k.c}}>{k.v}</div>
+              <div style={{fontSize:9,color:'var(--muted)',textTransform:'uppercase'}}>{k.l}</div>
+            </div>
+          ))}
+        </div>
+        {/* Barre progression */}
+        <div style={{padding:'0 16px 10px'}}>
+          <div style={{background:'#1a3550',borderRadius:4,height:6}}>
+            <div style={{width:pct+'%',height:6,borderRadius:4,background:pct>=90?'#ef4444':pct>=70?'#f59e0b':'#22c55e',transition:'.3s'}}/>
+          </div>
+          <div style={{fontSize:10,color:'var(--muted)',marginTop:3,textAlign:'right'}}>{data.pris||0}/{data.solde||25} jours utilisés</div>
+        </div>
+        {/* Onglets */}
+        <div style={{display:'flex',gap:6,padding:'0 16px 12px'}}>
+          {[['calendrier','📅 Calendrier'],['demande','➕ Demande'],['historique','📋 Historique']].map(t=>(
+            <button key={t[0]} onClick={()=>{setVue(t[0]);setSent(false);}}
+              style={{flex:1,padding:'8px 4px',background:vue===t[0]?'rgba(34,197,94,.2)':'var(--card)',border:`2px solid ${vue===t[0]?'#22c55e':'var(--border)'}`,borderRadius:8,color:vue===t[0]?'#22c55e':'var(--muted)',fontSize:10,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+              {t[1]}
+            </button>
+          ))}
+        </div>
+
+        {loading&&<div style={{textAlign:'center',padding:24,color:'var(--muted)'}}>Chargement...</div>}
+
+        {/* VUE CALENDRIER */}
+        {!loading&&vue==='calendrier'&&(
+          <div style={{padding:'0 16px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
+              {Array.from({length:12},(_,m)=>{
+                const fd=new Date(annee,m,1),ld=new Date(annee,m+1,0);
+                let dow=fd.getDay();if(dow===0)dow=7;
+                const isCurr=m===new Date().getMonth();
+                return(
+                  <div key={m} style={{background:'var(--card)',border:`1px solid ${isCurr?'rgba(249,115,22,.4)':'var(--border)'}`,borderRadius:12,padding:10}}>
+                    <div style={{fontSize:12,fontWeight:900,color:isCurr?'var(--orange)':'#fff',marginBottom:6,textAlign:'center'}}>{MOIS[m]}</div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:1,marginBottom:2}}>
+                      {JOURS.map((j,i)=><div key={i} style={{textAlign:'center',fontSize:7,color:'var(--muted)',fontWeight:700}}>{j}</div>)}
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:1}}>
+                      {Array.from({length:dow-1},(_,i)=><div key={'e'+i}/>)}
+                      {Array.from({length:ld.getDate()},(_,d)=>{
+                        const ds=annee+'-'+String(m+1).padStart(2,'0')+'-'+String(d+1).padStart(2,'0');
+                        const ci=getCongeForDate(ds);
+                        const isT=ds===today;
+                        const dw=new Date(ds+'T12:00:00').getDay();
+                        const isWE=dw===0||dw===6;
+                        let bg='transparent',col=isWE?'#2d3748':'#64748b',fw='400';
+                        if(ci){const tc=TYPES[ci.type]||TYPES.conge;bg=ci.statut==='attente'?'rgba(245,158,11,.2)':tc.bg||'rgba(34,197,94,.15)';col=ci.statut==='attente'?'#f59e0b':tc.color;fw='700';}
+                        return(
+                          <div key={d} style={{aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:3,fontSize:8,fontWeight:fw,color:col,background:bg,outline:isT?'2px solid var(--orange)':'none',outlineOffset:-1}}>
+                            {d+1}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Légende */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',padding:'12px 0',marginTop:8,borderTop:'1px solid var(--border)'}}>
+              {Object.entries(TYPES).map(([k,t])=>(
+                <div key={k} style={{display:'flex',alignItems:'center',gap:4}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:t.bg||'rgba(34,197,94,.15)'}}/>
+                  <span style={{fontSize:10,color:'var(--muted)'}}>{t.icon} {t.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VUE DEMANDE */}
+        {!loading&&vue==='demande'&&(
+          <div style={{padding:'0 16px'}}>
+            {sent?(
+              <div style={{textAlign:'center',padding:32}}>
+                <div style={{fontSize:48,marginBottom:12}}>📨</div>
+                <div style={{fontSize:16,fontWeight:900,color:'#fff',marginBottom:6}}>Demande envoyée !</div>
+                <div style={{fontSize:12,color:'var(--muted)',marginBottom:20}}>Le responsable va valider votre demande</div>
+                <button onClick={()=>setSent(false)} style={{padding:'10px 20px',background:'rgba(34,197,94,.15)',border:'1px solid rgba(34,197,94,.3)',borderRadius:10,color:'#22c55e',fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                  Nouvelle demande
+                </button>
+              </div>
+            ):(
+              <div style={{background:'var(--card)',border:'1px solid rgba(34,197,94,.3)',borderRadius:14,padding:16}}>
+                <div style={{fontSize:14,fontWeight:900,color:'#fff',marginBottom:14}}>📝 Demande de congé</div>
+                <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',marginBottom:6}}>Type</div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:12}}>
+                  {Object.entries(TYPES).map(([k,t])=>(
+                    <button key={k} onClick={()=>setForm({...form,type:k})}
+                      style={{padding:'8px 4px',background:form.type===k?t.color+'22':'#071526',border:`2px solid ${form.type===k?t.color:'var(--border)'}`,borderRadius:8,color:form.type===k?t.color:'var(--muted)',fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                      {t.icon} {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="field"><label>Date début *</label><input type="date" value={form.debut} onChange={e=>setForm({...form,debut:e.target.value})}/></div>
+                <div className="field"><label>Date fin *</label><input type="date" value={form.fin} onChange={e=>setForm({...form,fin:e.target.value})}/></div>
+                <div className="field"><label>Motif / Note</label><input value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Précisions pour le responsable..."/></div>
+                <button className="btn-p" onClick={envoyerDemande} disabled={sending} style={{marginTop:4}}>
+                  {sending?'Envoi...':'📨 Envoyer la demande'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* HISTORIQUE */}
+        {!loading&&vue==='historique'&&(
+          <div style={{padding:'0 16px'}}>
+            {(data.periodes||[]).length===0&&(data.demandes||[]).length===0&&(
+              <div style={{textAlign:'center',padding:32,color:'var(--muted)'}}>
+                <div style={{fontSize:36,marginBottom:10}}>📋</div>
+                <div style={{fontWeight:700}}>Aucun congé enregistré</div>
+              </div>
+            )}
+            {(data.periodes||[]).length>0&&(
+              <>
+                <div style={{fontSize:10,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',marginBottom:8}}>Congés validés</div>
+                {[...(data.periodes||[])].sort((a,b)=>b.debut.localeCompare(a.debut)).map((p,i)=>{
+                  const tc=TYPES[p.type]||TYPES.conge;
+                  const sc={valide:'#22c55e',attente:'#f59e0b',refuse:'#ef4444'}[p.statut]||'#64748b';
+                  return(
+                    <div key={i} style={{background:'var(--card)',borderRadius:12,padding:12,marginBottom:8,borderLeft:`3px solid ${tc.color}`}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'start'}}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{tc.icon} {p.debut} → {p.fin}</div>
+                          <div style={{fontSize:11,color:tc.color,marginTop:2}}>{tc.label}</div>
+                          {p.note&&<div style={{fontSize:10,color:'var(--muted)',marginTop:2,fontStyle:'italic'}}>{p.note}</div>}
+                        </div>
+                        <span style={{fontSize:10,fontWeight:800,color:sc,background:sc+'18',padding:'2px 8px',borderRadius:5}}>{p.statut==='valide'?'✅':p.statut==='attente'?'⏳':'❌'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {(data.demandes||[]).filter(d=>d.statut==='attente').length>0&&(
+              <>
+                <div style={{fontSize:10,fontWeight:900,color:'#f59e0b',textTransform:'uppercase',margin:'12px 0 8px'}}>En attente de validation</div>
+                {(data.demandes||[]).filter(d=>d.statut==='attente').map((d,i)=>(
+                  <div key={i} style={{background:'rgba(245,158,11,.06)',border:'1px solid rgba(245,158,11,.2)',borderRadius:12,padding:12,marginBottom:8}}>
+                    <div style={{fontSize:13,fontWeight:800,color:'#fff'}}>{d.debut} → {d.fin}</div>
+                    <div style={{fontSize:11,color:'#f59e0b',marginTop:2}}>⏳ En attente de validation</div>
+                    {d.note&&<div style={{fontSize:10,color:'var(--muted)',marginTop:2,fontStyle:'italic'}}>{d.note}</div>}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+        <div style={{height:20}}/>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════ APP PRINCIPALE ═══════════════════ */
+/* ═══════════════════ ALERTE NOUVELLE MISSION ═══════════════════ */
+var _audioCtx=null;
+function debloquerAudio(){
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    if(!_audioCtx)_audioCtx=new AC();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    /* Jouer un son inaudible pour débloquer */
+    var o=_audioCtx.createOscillator();var g=_audioCtx.createGain();
+    o.connect(g);g.connect(_audioCtx.destination);
+    g.gain.value=0.0001;
+    o.start();o.stop(_audioCtx.currentTime+0.01);
+  }catch(e){}
+}
+function jouerBip(){
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    var ctx=_audioCtx||new AC();
+    if(ctx.state==='suspended')ctx.resume();
+    /* Deux bips courts */
+    [0,0.25].forEach(function(delay){
+      var o=ctx.createOscillator();
+      var g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=880;
+      o.type='sine';
+      g.gain.setValueAtTime(0.001,ctx.currentTime+delay);
+      g.gain.exponentialRampToValueAtTime(0.4,ctx.currentTime+delay+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.18);
+      o.start(ctx.currentTime+delay);
+      o.stop(ctx.currentTime+delay+0.2);
+    });
+  }catch(e){}
+}
+
+function alerterNouvelleMission(mission){
+  /* 1. Bip sonore */
+  jouerBip();
+  /* 2. Vibration (motif : long-court-long) */
+  if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
+  /* 3. Notification système (si autorisée) */
+  try{
+    if('Notification' in window && Notification.permission==='granted'){
+      var n=new Notification('🔔 Nouvelle mission !',{
+        body:(mission.client||mission.task||'Nouvelle livraison')+(mission.heure?' à '+mission.heure:''),
+        icon:'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230ea5e9%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2255%22 text-anchor=%22middle%22%3E%F0%9F%94%94%3C/text%3E%3C/svg%3E',
+        tag:'nouvelle-mission',
+        requireInteraction:true
+      });
+      setTimeout(function(){try{n.close();}catch(e){}},8000);
+    }
+  }catch(e){}
+  /* 4. Bandeau visuel */
+  afficherBandeauMission(mission);
+}
+
+function afficherBandeauMission(mission){
+  var ex=document.getElementById('bandeau-mission');if(ex)ex.remove();
+  var b=document.createElement('div');
+  b.id='bandeau-mission';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999999;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 6px 24px rgba(0,0,0,.4);font-family:-apple-system,Arial,sans-serif;animation:slideDownB .4s ease';
+  b.innerHTML='<div style="font-size:32px;animation:ringB .6s ease infinite">🔔</div>'
+    +'<div style="flex:1"><div style="font-size:15px;font-weight:900">Nouvelle mission ajoutée !</div>'
+    +'<div style="font-size:13px;opacity:.95;margin-top:2px">'+(mission.client||mission.task||'Nouvelle livraison')+(mission.heure?' · '+mission.heure:'')+'</div></div>'
+    +'<button onclick="document.getElementById(\'bandeau-mission\').remove()" style="background:rgba(255,255,255,.25);border:none;border-radius:10px;color:#fff;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">OK</button>';
+  document.body.appendChild(b);
+  /* Style animations */
+  if(!document.getElementById('anim-bandeau')){
+    var s=document.createElement('style');
+    s.id='anim-bandeau';
+    s.textContent='@keyframes slideDownB{from{transform:translateY(-100%)}to{transform:translateY(0)}}@keyframes ringB{0%,100%{transform:rotate(0)}25%{transform:rotate(-15deg)}75%{transform:rotate(15deg)}}';
+    document.head.appendChild(s);
+  }
+  /* Retirer après 10s */
+  setTimeout(function(){var el=document.getElementById('bandeau-mission');if(el){el.style.transition='transform .4s';el.style.transform='translateY(-100%)';setTimeout(function(){el.remove();},400);}},10000);
+}
+
+function demanderPermissionNotif(){
+  try{
+    if('Notification' in window && Notification.permission==='default'){
+      Notification.requestPermission();
+    }
+  }catch(e){}
+}
+
+/* ═══════════════════ GÉOLOCALISATION ═══════════════════ */
+function envoyerPosition(ch,contexte){
+  return new Promise(function(resolve){
+    if(!navigator.geolocation){resolve(false);return;}
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var data={
+        type:'position_chauffeur',_isEvent:true,
+        chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,
+        lat:pos.coords.latitude,lng:pos.coords.longitude,
+        precision:Math.round(pos.coords.accuracy),
+        contexte:contexte||'manuel',
+        date:new Date().toISOString().slice(0,10),
+        heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+        ts:new Date().toISOString()
+      };
+      var headers={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'};
+      fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:headers,body:JSON.stringify({date:'POS_'+ch.id,donnees:data,updated_at:new Date().toISOString()})})
+      .then(function(){resolve(true);}).catch(function(){resolve(false);});
+    },function(){resolve(false);},{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
+  });
+}
+
+/* ═══════════════════ APP ═══════════════════ */
+function App(){
+  const[ch,setCh]=useState(null);
+  const[screen,setScreen]=useState('home');
+  const[screenData,setScreenData]=useState(null);
+  const[planning,setPlanning]=useState(null);
+
+  useEffect(()=>{
+    if(!ch) return;
+    async function loadAll(){
+      try{
+        const today=new Date().toISOString().slice(0,10);
+        const rows=await sGet(`planning?date=gte.${today}&select=date,donnees&order=date.asc&limit=100`);
+        const tasks={};
+        let drivers=null;
+        (rows||[]).forEach(r=>{
+          let d=r.donnees;
+          if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}
+          if(d&&d.tasks){Object.assign(tasks,d.tasks);}
+          /* Récupérer les infos chauffeurs (camions) de la date du jour */
+          if(d&&d.drivers&&r.date===today){drivers=d.drivers;}
+        });
+        /* Mettre à jour le camion du chauffeur connecté si changé côté planning */
+        if(drivers&&Array.isArray(drivers)&&drivers[ch.id]){
+          const nouveauCamion=drivers[ch.id].truck;
+          if(nouveauCamion&&nouveauCamion!==ch.truck){
+            try{localStorage.setItem('cana_ch_truck_'+ch.id,nouveauCamion);}catch(e){}
+            setCh(prev=>({...prev,truck:nouveauCamion}));
+          }
+        }
+        const nouveauPlanning={tasks,drivers};
+        /* Détecter les nouvelles missions du jour pour CE chauffeur */
+        const mesMissionsAvant=window._dernierNbMissions;
+        const mesMissionsMaintenant=getMissions(nouveauPlanning,ch.id,today);
+        const nbMaintenant=mesMissionsMaintenant.length;
+        if(typeof mesMissionsAvant==='number' && nbMaintenant>mesMissionsAvant){
+          /* Une ou plusieurs nouvelles missions ! Alerter avec la dernière ajoutée */
+          const nouvelle=mesMissionsMaintenant[mesMissionsMaintenant.length-1];
+          alerterNouvelleMission(nouvelle||{});
+        }
+        window._dernierNbMissions=nbMaintenant;
+        if(Object.keys(tasks).length>0){setPlanning(nouveauPlanning);}
+        else{
+          const rows2=await sGet(`planning?date=eq.${today}&limit=1`);
+          if(rows2?.length&&rows2[0].donnees){
+            let d2=rows2[0].donnees;
+            if(typeof d2==='string'){try{d2=JSON.parse(d2);}catch(e){}}
+            setPlanning(d2);
+          }
+        }
+      }catch(e){}
+    }
+    loadAll();
+    const iv=setInterval(loadAll,10000);
+    return()=>clearInterval(iv);
+  },[ch]);
+
+  if(!ch) return <Login onLogin={d=>{setCh(d);setScreen('home');demanderPermissionNotif();debloquerAudio();}}/>;
+  const nav=(s,data=null)=>{setScreen(s);setScreenData(data);};
+  const back=()=>{setScreen('home');setScreenData(null);};
+
+  if(screen==='home') return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
+  if(screen==='today') return <TodayScreen ch={ch} planning={planning} onNavigate={nav} onBack={back}/>;
+  if(screen==='mission_detail'&&screenData) return <MissionDetailScreen ch={ch} mission={screenData} planning={planning} onBack={()=>setScreen('today')} onNavigate={nav}/>;
+  if(screen==='calendar') return <CalendarScreen ch={ch} planning={planning} onBack={back} onNavigate={nav}/>;
+  if(screen==='horscarte') return <HorsCarteScreen ch={ch} onBack={back}/>;
+  if(screen==='incident') return <IncidentScreen ch={ch} onBack={back}/>;
+  if(screen==='statut') return <StatutScreen ch={ch} onBack={back}/>;
+  if(screen==='bilan') return <BilanScreen ch={ch} planning={planning} onBack={back}/>;
+  if(screen==='score') return <ScoreScreen ch={ch} planning={planning} onBack={back}/>;
+  if(screen==='checklist_fin') return <ChecklistFinScreen ch={ch} onBack={back}/>;
+  if(screen==='historique') return <HistoriqueScreen ch={ch} onBack={back}/>;
+  if(screen==='preuves') return <PreuvesScreen ch={ch} onBack={back}/>;
+  if(screen==='messages') return <MessagesScreen ch={ch} onBack={back}/>;
+  if(screen==='help') return <HelpScreen ch={ch} onBack={back}/>;
+  if(screen==='conges') return <CongesScreen ch={ch} onBack={back}/>;
+  if(screen==='plus') return <PlusScreen ch={ch} onNavigate={nav} onBack={back} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
+  return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+
+<script>
+/* ═══ AUTO-UPDATE : recharge la dernière version automatiquement ═══ */
+(function(){
+  var APP_TITRE = document.title;
+  /* Vérifier s'il y a une nouvelle version toutes les 2 minutes */
+  var _monVersion = null;
+  function checkUpdate(){
+    /* Ajouter un timestamp pour contourner le cache */
+    fetch(window.location.href + '?v=' + Date.now(), {cache:'no-store'})
+      .then(function(r){return r.text();})
+      .then(function(html){
+        /* Extraire un identifiant de version (taille du fichier) */
+        var v = html.length;
+        if(_monVersion === null){
+          _monVersion = v;
+        } else if(Math.abs(v - _monVersion) > 50){
+          /* Nouvelle version détectée */
+          afficherBanniereUpdate();
+        }
+      })
+      .catch(function(){});
+  }
+
+  function afficherBanniereUpdate(){
+    if(document.getElementById('update-banner')) return;
+    var b = document.createElement('div');
+    b.id = 'update-banner';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:9999999;font-family:-apple-system,Arial,sans-serif;box-shadow:0 -4px 20px rgba(0,0,0,.3);animation:slideUp .3s';
+    b.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔄</span><div><div style="font-size:14px;font-weight:900">Nouvelle version disponible !</div><div style="font-size:11px;opacity:.9">Cliquez pour mettre à jour</div></div></div><button onclick="location.reload(true)" style="background:#fff;color:#16a34a;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:900;cursor:pointer">Mettre à jour</button>';
+    document.body.appendChild(b);
+    var st = document.createElement('style');
+    st.textContent = '@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}';
+    document.head.appendChild(st);
+  }
+
+  /* Vérifier au chargement puis toutes les 2 minutes */
+  setTimeout(checkUpdate, 5000);
+  setInterval(checkUpdate, 120000);
+
+  /* Recharger la dernière version quand on revient sur l'onglet/app */
+  var _lastCheck = Date.now();
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && Date.now() - _lastCheck > 60000){
+      _lastCheck = Date.now();
+      checkUpdate();
+    }
+  });
+})();
+</script>
+
+<script>
+/* ══ PWA - INSTALLATION COMME APPLICATION ══ */
+(function(){
+  var APP_NAME = document.title || "Cana";
+  var manifest = {
+    name: "La Table de Cana",
+    short_name: "Cana Chauffeur",
+    description: "Application chauffeur La Table de Cana",
+    start_url: window.location.pathname,
+    display: "standalone",
+    display_override: ["fullscreen","standalone"],
+    orientation: "portrait",
+    background_color: "#0a1628",
+    theme_color: "#0ea5e9",
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2720%27%20fill%3D%27%23ffffff%27%2F%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2716%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2722%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2770%27%20cy%3D%2730%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2778%27%20cy%3D%2750%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2770%27%20cy%3D%2770%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2778%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%2770%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2722%27%20cy%3D%2750%27%20r%3D%276.5%27%20fill%3D%27%23be185d%27%2F%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%2730%27%20r%3D%276.5%27%20fill%3D%27%23ec4899%27%2F%3E%3C%2Fsvg%3E",
+      sizes: "192x192",
+      type: "image/svg+xml"
+    }]
+  };
+  var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = url;
+  document.head.appendChild(link);
+
+  var metas = [
+    ['apple-mobile-web-app-capable','yes'],
+    ['apple-mobile-web-app-status-bar-style','black-translucent'],
+    ['apple-mobile-web-app-title',APP_NAME.substring(0,20)],
+    ['theme-color','#22c55e']
+  ];
+  metas.forEach(function(m){
+    var el=document.createElement('meta');el.name=m[0];el.content=m[1];document.head.appendChild(el);
+  });
+})();
+
+/* Capturer l'événement d'installation et afficher un bouton flottant */
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  afficherBoutonInstall();
+});
+
+function afficherBoutonInstall(){
+  if(document.getElementById('btn-install-flottant')) return;
+  var btn=document.createElement('button');
+  btn.id='btn-install-flottant';
+  btn.innerHTML='⬇️ Installer l\'application';
+  btn.style.cssText='position:fixed;top:12px;right:12px;z-index:9999999;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(34,197,94,.4);font-family:-apple-system,Arial,sans-serif';
+  btn.onclick=installerApp;
+  document.body.appendChild(btn);
+}
+
+function installerApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choice){
+      deferredPrompt=null;
+      var btn=document.getElementById('btn-install-flottant');
+      if(btn) btn.remove();
+    });
+  } else {
+    var ua=navigator.userAgent;
+    var msg='';
+    if(/iPhone|iPad|iPod/.test(ua)){
+      msg='Sur iPhone :\n1. Appuyez sur Partager (carre avec fleche en bas)\n2. "Sur l\'ecran d\'accueil"\n3. Ajouter';
+    } else if(/Android/.test(ua)){
+      msg='Sur Android :\n1. Menu 3 points en haut a droite\n2. "Installer l\'application"';
+    } else {
+      msg='Sur PC (Chrome/Edge) :\n1. Icone d\'installation dans la barre d\'adresse (a droite)\nOu 3 points > Applications > Installer';
+    }
+    alert(msg);
+  }
+}
+
+/* Si déjà installable au chargement, montrer le bouton après 3s */
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(deferredPrompt && !document.getElementById('btn-install-flottant')){
+      afficherBoutonInstall();
+    }
+  },3000);
+});
+</script>
+
+</body>
+</html>
