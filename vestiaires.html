@@ -425,6 +425,7 @@ function doUnlock(remember){
   document.getElementById('lockMsg').textContent='';
   document.getElementById('lock').classList.remove('open');
   render();
+  afficherBoutonFlottant();
 }
 function lockNow(){ localStorage.removeItem('vest_unlocked'); location.reload(); }
 function changeCode(){
@@ -439,13 +440,28 @@ function changeCode(){
 
 /* ===== Installation (PWA) ===== */
 function registerSW(){ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); } }
+function estInstallee(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+function afficherBoutonFlottant(){
+  if(estInstallee()) return;
+  if(document.getElementById('btn-install-flottant')) return;
+  var btn=document.createElement('button');
+  btn.id='btn-install-flottant';
+  btn.textContent="⬇️ Télécharger l'application";
+  btn.style.cssText="position:fixed;bottom:18px;right:18px;z-index:45;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:12px;padding:14px 18px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(34,197,94,.5);font-family:-apple-system,Arial,sans-serif";
+  btn.onclick=installApp;
+  document.body.appendChild(btn);
+}
 function setupInstall(){
   window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredPrompt=e; });
-  window.addEventListener('appinstalled',function(){ deferredPrompt=null; toast('Application installée'); });
+  window.addEventListener('appinstalled',function(){ deferredPrompt=null; var b=document.getElementById('btn-install-flottant'); if(b)b.remove(); toast('Application installée'); });
 }
 async function installApp(){
-  if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; return; }
-  alert("Pour installer l'application :\n\n• PC (Chrome / Edge) : cliquez sur l'icône d'installation ⊕ dans la barre d'adresse, ou menu ⋮ → « Installer Vestiaires ».\n\n• Android (Chrome) : menu ⋮ → « Installer l'application ».\n\n• iPhone / iPad (Safari) : bouton Partager ⬆️ → « Sur l'écran d'accueil ».");
+  if(deferredPrompt){ deferredPrompt.prompt(); try{ await deferredPrompt.userChoice; }catch(e){} deferredPrompt=null; var b=document.getElementById('btn-install-flottant'); if(b)b.remove(); return; }
+  var ua=navigator.userAgent||'', msg='';
+  if(/iPhone|iPad|iPod/i.test(ua)){ msg="Sur iPhone / iPad (Safari) :\n\n1. Touchez le bouton Partager (carré avec une flèche vers le haut)\n2. « Sur l'écran d'accueil »\n3. Ajouter"; }
+  else if(/Android/i.test(ua)){ msg="Sur Android (Chrome) :\n\n1. Menu 3 points en haut à droite\n2. « Installer l'application »"; }
+  else{ msg="Sur PC (Chrome / Edge) :\n\n1. Cliquez sur l'icône d'installation à droite de la barre d'adresse\nOu menu 3 points → Applications → « Installer Vestiaires »"; }
+  alert(msg);
 }
 
 /* ===== Rendu ===== */
