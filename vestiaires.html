@@ -312,8 +312,6 @@ const DEFAULT_DATA = {
     {num:'14',prenom:'AHIN',code:'612',statut:'occupe',stag:false},
     {num:'15',prenom:'',code:'752',statut:'libre',stag:false},
     {num:'16',prenom:'HOUARIA',code:'',statut:'occupe',stag:false},
-    {num:'C1',prenom:'IME',code:'645',statut:'chef',stag:false},
-    {num:'D4',prenom:'IME',code:'428',statut:'chef',stag:false},
     {num:'6F',prenom:'',code:'845',statut:'libre',stag:false},
     {num:'5E',prenom:'',code:'632',statut:'libre',stag:false},
     {num:'3A',prenom:'',code:'569',statut:'libre',stag:false},
@@ -442,7 +440,7 @@ function doUnlock(remember){
   document.getElementById('lockMsg').textContent='';
   document.getElementById('lock').classList.remove('open');
   render();
-  if(deferredPrompt && !estInstallee()) afficherBoutonFlottant();
+  if(!estInstallee()) afficherBoutonFlottant();
 }
 function lockNow(){
   unlocked=false;
