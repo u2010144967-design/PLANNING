@@ -184,6 +184,7 @@
     <button class="btn ghost" onclick="refresh()" title="Recharger">↻</button>
     <button class="btn ghost small" onclick="exportData()">Sauvegarde</button>
     <button class="btn ghost small" onclick="changeCode()">🔑 Code</button>
+    <button class="btn ghost small" onclick="testBase()">🔍 Tester la base</button>
   </div>
 
   <div class="stats no-print" id="stats"></div>
@@ -466,13 +467,47 @@ function registerSW(){ if('serviceWorker' in navigator){ navigator.serviceWorker
 function estInstallee(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
 function afficherBoutonFlottant(){
   if(estInstallee()) return;
+  if(localStorage.getItem('vest_hide_install')==='1') return;
   if(document.getElementById('btn-install-flottant')) return;
+  var wrap=document.createElement('div');
+  wrap.id='btn-install-flottant';
+  wrap.style.cssText="position:fixed;bottom:18px;right:18px;z-index:45;display:flex;box-shadow:0 6px 20px rgba(34,197,94,.5);border-radius:12px";
   var btn=document.createElement('button');
-  btn.id='btn-install-flottant';
   btn.textContent="⬇️ Télécharger l'application";
-  btn.style.cssText="position:fixed;bottom:18px;right:18px;z-index:45;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:12px;padding:14px 18px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(34,197,94,.5);font-family:-apple-system,Arial,sans-serif";
+  btn.style.cssText="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:12px 0 0 12px;padding:14px 16px;font-size:15px;font-weight:800;cursor:pointer;font-family:-apple-system,Arial,sans-serif";
   btn.onclick=installApp;
-  document.body.appendChild(btn);
+  var x=document.createElement('button');
+  x.textContent="\u2715"; x.title="Masquer ce bouton";
+  x.style.cssText="background:#16a34a;color:#fff;border:none;border-left:1px solid rgba(255,255,255,.35);border-radius:0 12px 12px 0;padding:14px 12px;font-size:14px;font-weight:800;cursor:pointer";
+  x.onclick=function(){ localStorage.setItem('vest_hide_install','1'); wrap.remove(); };
+  wrap.appendChild(btn); wrap.appendChild(x);
+  document.body.appendChild(wrap);
+}
+async function testBase(){
+  var monHakim=(data.hommes.find(function(x){return String(x.num)==='1';})||{}).code||'—';
+  setSync('sync','Test de la base…');
+  var msg="\ud83d\udd0d DIAGNOSTIC DE LA BASE\n\n";
+  try{
+    // A) Lecture de la vraie ligne
+    var before=await cloudLoad();
+    var baseHakim = before ? ((before.donnees.hommes||[]).find(function(x){return String(x.num)==='1';})||{}).code : '(ligne absente)';
+    msg+="1) LECTURE : OK\n";
+    msg+="   Code de Hakim (n\u00b01) DANS LA BASE = "+baseHakim+"\n";
+    msg+="   Code de Hakim SUR CET APPAREIL = "+monHakim+"\n";
+    msg+="   Derni\u00e8re \u00e9criture base : "+(before&&before.stamp?new Date(before.stamp).toLocaleString('fr-FR'):'?')+"\n\n";
+    // B) Test d'ECRITURE (sur une ligne de test, ne touche pas tes donn\u00e9es)
+    var now=new Date().toISOString();
+    var r=await fetch(SUPA_URL+'/rest/v1/planning',{method:'POST',headers:Object.assign({},H,{'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify([{date:'VESTIAIRES_TEST',donnees:{test:now},updated_at:now}]),cache:'no-store'});
+    var rows=[]; try{ rows=await r.json(); }catch(e){}
+    var wrote=rows&&rows[0]?true:false;
+    msg+="2) \u00c9CRITURE test : HTTP "+r.status+" \u2192 "+((r.ok&&wrote)?"ACCEPT\u00c9E \u2713":"REFUS\u00c9E \u2717")+"\n\n";
+    // Conclusion
+    if(!r.ok){ msg+="\u26a0 La base REFUSE les \u00e9critures (erreur "+r.status+").\nC'est un r\u00e9glage de permissions dans Supabase \u2014 envoie-moi ce num\u00e9ro d'erreur."; }
+    else if(baseHakim!==monHakim){ msg+="\u2139 La base fonctionne, mais cet appareil affiche une version diff\u00e9rente.\nSolution : ferme et rouvre l'appli sur cet appareil (ou r\u00e9installe-la) pour recharger la derni\u00e8re version."; }
+    else { msg+="\u2705 Tout est bon : lecture et \u00e9criture marchent, et cet appareil est \u00e0 jour."; }
+    setSync('ok','Synchronis\u00e9');
+  }catch(e){ msg+="\u2717 Impossible de joindre la base : "+e.message+"\n\u2192 V\u00e9rifie ta connexion internet."; setSync('off','Hors ligne'); }
+  alert(msg);
 }
 function setupInstall(){
   window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredPrompt=e; if(unlocked && !estInstallee()) afficherBoutonFlottant(); });
