@@ -69,6 +69,8 @@
   .prenom{font-weight:600}.prenom.empty{color:var(--ink-soft);font-weight:400;font-style:italic}
   .code{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:2px;background:#f1efe8;border:1px solid var(--line);border-radius:6px;padding:3px 9px;display:inline-block;min-width:52px;text-align:center}
   .code.empty{color:var(--ink-soft);letter-spacing:0;font-weight:400}
+  .code.dup{border-color:#c98a1a;background:#fbf0da;color:#8a5a12}
+  .btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   .chip{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 9px;border-radius:20px;display:inline-block}
   .chip.occupe{background:#eceae3;color:var(--ink-soft)}.chip.libre{background:var(--libre-soft);color:var(--libre)}.chip.chef{background:var(--chef-soft);color:var(--chef)}
   .tag-stag{font-size:10px;font-weight:700;background:#efe6f5;color:#6b3fa0;padding:2px 7px;border-radius:20px;margin-left:6px;text-transform:uppercase;letter-spacing:.3px}
@@ -177,10 +179,10 @@
     <button class="btn homme" onclick="openAdd('homme')">+ Homme</button>
     <button class="btn femme" onclick="openAdd('femme')">+ Femme</button>
     <button class="btn couloir" onclick="openAdd('couloir')">+ Couloir</button>
+    <button class="btn ghost small" id="btnFree" onclick="toggleFree()">🔓 Voir les libres</button>
     <button class="btn" onclick="window.print()">🖨️ Imprimer (A4)</button>
     <button class="btn ghost" onclick="refresh()" title="Recharger">↻</button>
     <button class="btn ghost small" onclick="exportData()">Sauvegarde</button>
-    <button class="btn install" id="btnInstall" onclick="installApp()">⬇️ Télécharger l'application</button>
     <button class="btn ghost small" onclick="changeCode()">🔑 Code</button>
   </div>
 
@@ -269,6 +271,7 @@ const POLL_MS  = 7000;                       // vérifie les changements des col
 const H = {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
 const DEFAULT_CODE = "2026";   // <<< code d'acces par defaut (modifiable dans l'appli, bouton 🔑 Code)
 let unlocked=false, deferredPrompt=null;
+let showFreeOnly=false, dupCodes=new Set();
 function defaultCouloir(){return [1,2,3,4,5,6].map(function(n){return {num:String(n),prenom:'',code:'',statut:'libre',stag:false};});}
 
 const DEFAULT_DATA = {
@@ -327,8 +330,10 @@ let editingOpen=false;    // fenêtre d'édition ouverte -> on ne remplace pas s
 function ensureIds(){['hommes','femmes','couloir'].forEach(sec=>data[sec].forEach(r=>{if(!r.id)r.id='id'+Math.random().toString(36).slice(2,9);}));}
 
 /* ===== Supabase ===== */
+function ts(x){ try{ return x?new Date(x).getTime():0; }catch(e){ return 0; } }
+function sig(d){ try{ return JSON.stringify({h:d.hommes,f:d.femmes,c:d.couloir,co:d.codes,a:d.accesCode}); }catch(e){ return ''; } }
 async function cloudLoad(){
-  const r=await fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+ROW_KEY+'&select=donnees,updated_at&limit=1',{headers:H});
+  const r=await fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+ROW_KEY+'&select=donnees,updated_at&limit=1',{headers:H, cache:'no-store'});
   if(!r.ok) throw new Error('HTTP '+r.status);
   const rows=await r.json();
   if(rows[0]&&rows[0].donnees){ return {donnees:rows[0].donnees, stamp:rows[0].updated_at}; }
@@ -336,20 +341,28 @@ async function cloudLoad(){
 }
 async function cloudSave(){
   ensureIds();
+  const payload={hommes:data.hommes,femmes:data.femmes,couloir:data.couloir,codes:data.codes,history:data.history,accesCode:data.accesCode};
   const now=new Date().toISOString();
-  const body=[{date:ROW_KEY, donnees:{hommes:data.hommes,femmes:data.femmes,couloir:data.couloir,codes:data.codes,history:data.history,accesCode:data.accesCode}, updated_at:now}];
   setSync('sync','Enregistrement…');
   try{
     const r=await fetch(SUPA_URL+'/rest/v1/planning',{
       method:'POST',
-      headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify(body)
+      headers:{...H,'Prefer':'resolution=merge-duplicates,return=representation'},
+      body:JSON.stringify([{date:ROW_KEY, donnees:payload, updated_at:now}]),
+      cache:'no-store'
     });
     if(!r.ok) throw new Error('HTTP '+r.status);
-    serverStamp=now; dirty=false;
+    let rows=[]; try{ rows=await r.json(); }catch(e){}
+    const saved=(rows&&rows[0])?rows[0]:null;
+    // On aligne notre repère sur l'HEURE RÉELLE du serveur -> le poll ne rechargera plus l'ancienne version
+    serverStamp=(saved&&saved.updated_at)?saved.updated_at:now;
+    dirty=false;
     localStorage.setItem(CACHE_KEY,JSON.stringify(data));
     localStorage.setItem('vest_code_cache',currentCode());
-    setSync('ok','Synchronisé'); markUpdated();
+    // La base renvoie la ligne enregistrée = écriture bien prise (une écriture refusée renvoie du vide)
+    const okWrite = !!(saved && saved.donnees);
+    if(okWrite){ setSync('ok','Enregistré \u2713'); setTimeout(function(){ if(!dirty&&!saving) setSync('ok','Synchronisé'); },1200); markUpdated(); }
+    else { setSync('off','\u26a0 Base a refusé l\'écriture'); }
   }catch(e){ console.error(e); dirty=true; setSync('off','Hors ligne — réessai auto'); }
 }
 /* file d'attente d'écriture (évite les envois qui se chevauchent) */
@@ -370,12 +383,12 @@ async function poll(){
   if(saving) return;
   try{
     const res=await cloudLoad();
-    if(res && res.stamp && res.stamp!==serverStamp){
+    if(res && res.stamp && ts(res.stamp)>ts(serverStamp)){   // le serveur a une version PLUS RÉCENTE (un collègue a modifié)
       serverStamp=res.stamp;
       data=normalize(res.donnees);
       localStorage.setItem(CACHE_KEY,JSON.stringify(data));
-      render(); markUpdated(); setSync('ok','Mis à jour'); setTimeout(function(){setSync('ok','Synchronisé');},1500);
-    }else if(document.getElementById('syncPill').className.includes('off')){
+      render(); markUpdated(); setSync('ok','Mis à jour'); setTimeout(function(){ if(!dirty&&!saving) setSync('ok','Synchronisé'); },1500);
+    }else if(document.getElementById('syncPill').className.includes('off') && !dirty){
       setSync('ok','Synchronisé');
     }
   }catch(e){ setSync('off','Hors ligne'); }
@@ -429,7 +442,7 @@ function doUnlock(remember){
   document.getElementById('lockMsg').textContent='';
   document.getElementById('lock').classList.remove('open');
   render();
-  afficherBoutonFlottant();
+  if(deferredPrompt && !estInstallee()) afficherBoutonFlottant();
 }
 function lockNow(){
   unlocked=false;
@@ -464,7 +477,7 @@ function afficherBoutonFlottant(){
   document.body.appendChild(btn);
 }
 function setupInstall(){
-  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredPrompt=e; });
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredPrompt=e; if(unlocked && !estInstallee()) afficherBoutonFlottant(); });
   window.addEventListener('appinstalled',function(){ deferredPrompt=null; var b=document.getElementById('btn-install-flottant'); if(b)b.remove(); toast('Application installée'); });
 }
 async function installApp(){
@@ -483,7 +496,8 @@ function rowHtml(sec,r){
   const secKey=sec==='hommes'?'homme':(sec==='femmes'?'femme':'couloir');
   const rowClass=r.statut==='libre'?'libre-row':(r.statut==='chef'?'chef-row':'');
   const prenom=(!r.prenom)?'<span class="prenom empty">— libre —</span>':'<span class="prenom">'+esc(r.prenom)+'</span>'+(r.stag?'<span class="tag-stag">stagiaire</span>':'');
-  const code=r.code?'<span class="code">'+esc(r.code)+'</span>':'<span class="code empty">—</span>';
+  var dup=r.code && dupCodes.has(r.code);
+  const code=r.code?'<span class="code'+(dup?' dup':'')+'" title="'+(dup?'Ce code est utilisé sur un autre casier':'')+'">'+esc(r.code)+(dup?' ⚠':'')+'</span>':'<span class="code empty">—</span>';
   return `<tr class="${rowClass}" data-sec="${secKey}">
     <td data-label="N°"><span class="plate">${esc(r.num)}</span></td>
     <td data-label="Prénom">${prenom}</td>
@@ -494,10 +508,23 @@ function rowHtml(sec,r){
       <button class="icon-btn" title="Modifier" onclick="openEdit('${sec}','${r.id}')">✎</button>
     </div></td></tr>`;
 }
+function computeDupes(){
+  var counts={};
+  ['hommes','femmes','couloir'].forEach(function(s){ (data[s]||[]).forEach(function(r){ if(r.code){ counts[r.code]=(counts[r.code]||0)+1; } }); });
+  dupCodes=new Set(Object.keys(counts).filter(function(k){ return counts[k]>1; }));
+}
+function toggleFree(){
+  showFreeOnly=!showFreeOnly;
+  var b=document.getElementById('btnFree');
+  b.classList.toggle('on',showFreeOnly);
+  b.textContent=showFreeOnly?'↩︎ Tout afficher':'🔓 Voir les libres';
+  render();
+}
 function render(){
   if(!data) return;
+  computeDupes();
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  const match=r=>!q||[r.num,r.prenom,r.code].join(' ').toLowerCase().includes(q);
+  const match=function(r){ if(showFreeOnly && r.statut!=='libre') return false; return !q||[r.num,r.prenom,r.code].join(' ').toLowerCase().includes(q); };
   const Hr=sortRows(data.hommes).filter(match), Fr=sortRows(data.femmes).filter(match), Cr=sortRows(data.couloir).filter(match);
   document.getElementById('bodyH').innerHTML=Hr.map(r=>rowHtml('hommes',r)).join('')||emptyRow();
   document.getElementById('bodyF').innerHTML=Fr.map(r=>rowHtml('femmes',r)).join('')||emptyRow();
