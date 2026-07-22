@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Répartition des tournées — 03/08 au 06/09</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FBD5E4">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<style>
+  :root{
+    --rose:#FBD5E4; --rose-fonce:#E9A9C4;
+    --encre:#1B1B1F; --gris:#6B6B76; --trait:#D9D9E0;
+    --fond:#F5F4F1; --carte:#FFFFFF;
+    --c1:#E8452C; --c2:#1565D8; --c3:#F5A300; --c4:#2E9E4F;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+  header.top{background:var(--rose);border-bottom:2px solid var(--rose-fonce);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  header.top h1{margin:0;font-size:18px;font-weight:800}
+  header.top .sub{font-size:12px;color:#7A4A60;font-weight:600}
+  .barre{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--trait);background:#fff;color:var(--encre);border-radius:8px;padding:8px 12px}
+  button:hover{background:#F0EFEC}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:3px solid #1565D8;outline-offset:2px}
+  button.sombre{background:var(--encre);color:#fff;border-color:var(--encre)}
+  button.sombre:hover{background:#000}
+
+  #synchro{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;background:#fff;border:1px solid var(--trait);border-radius:99px;padding:6px 12px;cursor:pointer}
+  #synchro .point{width:9px;height:9px;border-radius:50%;background:#9A9AA2;flex:none}
+  #synchro.ok .point{background:#2E9E4F}
+  #synchro.envoi .point{background:#F5A300}
+  #synchro.ko .point{background:#E8452C}
+
+  .onglets{background:#fff;border-bottom:1px solid var(--trait);padding:0 18px;display:flex;gap:4px;position:sticky;top:0;z-index:20}
+  .onglets button{border:none;border-radius:0;border-bottom:3px solid transparent;background:none;padding:12px 16px;font-size:15px;font-weight:700;color:var(--gris)}
+  .onglets button.actif{color:var(--encre);border-bottom-color:var(--encre)}
+  .onglets button:hover{background:#FAF9F7}
+
+  .zone{max-width:1180px;margin:0 auto;padding:16px 18px 70px}
+  .semaines{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .semaines button{padding:9px 14px;border-radius:10px;line-height:1.2;text-align:left}
+  .semaines button b{display:block;font-size:15px}
+  .semaines button span{font-size:11px;color:var(--gris);font-weight:600}
+  .semaines button.actif{background:var(--encre);color:#fff;border-color:var(--encre)}
+  .semaines button.actif span{color:#D8D8DC}
+  .semaines button .auj{display:inline-block;background:var(--c1);color:#fff;font-size:10px;border-radius:4px;padding:1px 5px;margin-left:6px}
+
+  .chauffeurs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .ch{background:var(--carte);border:1px solid var(--trait);border-top:5px solid var(--col);border-radius:10px;padding:10px}
+  .ch input{width:100%;border:none;border-bottom:1px dashed var(--trait);background:transparent;font:inherit;font-weight:800;font-size:15px;padding:2px 0;color:var(--encre)}
+  .ch input.camion{font-size:12px;font-weight:600;color:var(--gris);margin-top:4px}
+  .ch input:focus{outline:none;border-bottom-color:var(--col)}
+  .ch input:disabled{opacity:1}
+  .ch .nb{margin-top:8px;font-size:12px;font-weight:700;color:var(--col)}
+  .jauge{height:6px;background:#EDEDF0;border-radius:99px;overflow:hidden;margin-top:5px}
+  .jauge i{display:block;height:100%;background:var(--col)}
+
+  .outils{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .outils input[type=search]{flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--trait);border-radius:8px;font:inherit}
+  .outils label{font-size:12px;font-weight:600;color:var(--gris);display:flex;align-items:center;gap:6px}
+
+  .liste{background:var(--carte);border:1px solid var(--trait);border-radius:12px;overflow:hidden}
+  .fam{background:#EFEEE9;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#5A5A63;border-top:1px solid var(--trait)}
+  .ligne{display:flex;align-items:center;gap:10px;padding:5px 12px;border-top:1px solid #EFEFF2}
+  .ligne:hover{background:#FAF9F7}
+  .ligne .nom{flex:1;font-size:13px;font-weight:700}
+  .peutetre{font-size:10px;font-weight:800;background:#FFE2B0;color:#8A5A00;border-radius:4px;padding:2px 6px;margin-left:8px}
+  .pastilles{display:flex;gap:4px}
+  .pastilles button{width:34px;height:30px;padding:0;border-radius:7px;font-size:12px;font-weight:800;color:#9A9AA2;background:#F3F3F5;border:1px solid #E4E4E9}
+  .pastilles button.on{background:var(--col);border-color:var(--col);color:#fff}
+  .rien{padding:16px;color:var(--gris);text-align:center}
+
+  .alerte{margin:12px 0;padding:10px 12px;border-radius:8px;font-weight:700;font-size:13px;background:#FFF3D6;border:1px solid #F3D48A;color:#7A5600}
+  .alerte.ok{background:#E4F6E9;border-color:#A8DCB8;color:#1E6B36}
+  .alerte.rouge{background:#FDE7E4;border-color:#F1B3A8;color:#8C2A17}
+
+  .consignes,.recap{margin-top:16px;background:var(--carte);border:1px solid var(--trait);border-radius:12px;padding:12px}
+  .consignes h3,.recap h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#5A5A63}
+  .consignes textarea{width:100%;min-height:70px;border:1px solid var(--trait);border-radius:8px;padding:8px;font:inherit;resize:vertical}
+  .consignes .lecture{white-space:pre-wrap;font-size:14px;font-weight:600}
+  .recap{overflow-x:auto}
+  table.recap-t{border-collapse:collapse;width:100%;font-size:13px}
+  table.recap-t th,table.recap-t td{border:1px solid var(--trait);padding:6px 8px;text-align:center}
+  table.recap-t th:first-child,table.recap-t td:first-child{text-align:left;font-weight:700}
+  table.recap-t thead th{background:var(--rose)}
+
+  /* vue distribution */
+  .colonnes{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .col{background:var(--carte);border:1px solid var(--trait);border-top:6px solid var(--col);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+  .col h3{margin:0;padding:10px 12px 4px;font-size:16px;font-weight:800}
+  .col .camion{padding:0 12px;font-size:12px;font-weight:700;color:var(--gris)}
+  .col .compteur{padding:8px 12px 4px;font-size:12px;font-weight:700;color:var(--col)}
+  .col .jauge{margin:0 12px 8px}
+  .col ul{list-style:none;margin:0;padding:0;flex:1}
+  .col li{border-top:1px solid #EFEFF2;padding:6px 12px;display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;cursor:pointer}
+  .col li:hover{background:#FAF9F7}
+  .col li.fait{color:#9A9AA2;text-decoration:line-through}
+  .col li .coche{flex:none;width:18px;height:18px;border:2px solid var(--trait);border-radius:5px;display:grid;place-items:center;font-size:12px;color:#fff;margin-top:1px}
+  .col li.fait .coche{background:var(--col);border-color:var(--col)}
+  .col .pied{padding:10px 12px;border-top:1px solid #EFEFF2;background:#FAF9F7}
+  .col .pied button{width:100%}
+
+  .binome{display:inline-block;font-size:10px;font-weight:800;background:#E3E9FB;color:#1B4CA8;border-radius:4px;padding:2px 6px;margin-left:8px}
+  .astuce{background:#EFF4FE;border:1px solid #C9D9F7;color:#1B4CA8;font-size:12px;font-weight:600;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+  .col li .txt{flex:1}
+  .col li .pastilles.mini{flex:none;opacity:.55}
+  .col li:hover .pastilles.mini{opacity:1}
+  .col li .pastilles.mini button{width:24px;height:22px;font-size:10px;border-radius:5px}
+
+  .voile{position:fixed;inset:0;background:rgba(20,20,25,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .voile.ouvert{display:flex}
+  .modale{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:20px}
+  .modale h2{margin:0 0 4px;font-size:18px}
+  .modale h4{margin:16px 0 4px;font-size:14px}
+  .modale p,.modale li{font-size:13px;line-height:1.55;color:#3A3A42}
+  .modale label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px}
+  .modale input{width:100%;padding:8px 10px;border:1px solid var(--trait);border-radius:8px;font:inherit}
+  .modale pre{background:#F5F4F1;border:1px solid var(--trait);border-radius:8px;padding:10px;font-size:11px;overflow:auto;white-space:pre-wrap}
+  .modale .pied{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+  #testRes{font-size:12px;font-weight:700;margin-top:8px}
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--encre);color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60}
+  #toast.on{opacity:1}
+
+  #impression{display:none}
+  .fiche{padding:8mm 0}
+  .fiche h2{margin:0;font-size:20px}
+  .fiche .meta{margin:2px 0 10px;font-size:13px;color:#333;font-weight:600}
+  .fiche table{border-collapse:collapse;width:100%;font-size:13px}
+  .fiche th,.fiche td{border:1px solid #999;padding:5px 7px}
+  .fiche th{background:#EEE;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .fiche td.case{width:34px;text-align:center}
+  .fiche .note{margin-top:8px;font-size:12px;border:1px dashed #999;padding:6px}
+  .bandeau{height:8px;margin-bottom:6px;border-radius:2px}
+  .guide h2{font-size:22px;margin:0 0 6px}
+  .guide h3{font-size:14px;margin:14px 0 4px}
+  .guide p,.guide li{font-size:13px;line-height:1.6}
+
+  @media (max-width:900px){ .chauffeurs,.colonnes{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:560px){
+    .chauffeurs,.colonnes{grid-template-columns:1fr}
+    .ligne{flex-wrap:wrap}
+    .ligne .nom{flex:1 0 100%}
+  }
+  @media print{
+    body{background:#fff}
+    header.top,.onglets,.zone,.voile,#toast{display:none !important}
+    #impression{display:block !important}
+    .fiche,.guide{page-break-after:always}
+    .fiche:last-child,.guide:last-child{page-break-after:auto}
+    @page{size:A4;margin:12mm}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Répartition des tournées — 4 chauffeurs</h1>
+    <div class="sub">Du lundi 3 août au dimanche 6 septembre · S32 à S36</div>
+  </div>
+  <div class="barre">
+    <div id="synchro" onclick="ouvrirReglages()" title="Réglages de synchronisation"><span class="point"></span><span id="synchroTxt">Local</span></div>
+    <button id="btnInstaller" onclick="installer()">Installer l'application</button>
+    <button onclick="ouvrirGuide()">Mode d'emploi</button>
+    <button onclick="exporter()">Enregistrer un fichier</button>
+    <button onclick="document.getElementById('fichier').click()">Ouvrir un fichier</button>
+    <input type="file" id="fichier" accept=".json" style="display:none" onchange="importer(this)">
+  </div>
+</header>
+
+<nav class="onglets">
+  <button id="ongletDistribuer" onclick="changerVue('distribuer')">Distribuer les bons</button>
+  <button id="ongletRepartir" onclick="changerVue('repartir')">Préparer la répartition</button>
+</nav>
+
+<div class="zone">
+  <div class="semaines" id="semaines"></div>
+  <div id="alerte"></div>
+
+  <!-- VUE DISTRIBUER -->
+  <section id="vueDistribuer">
+    <div class="outils">
+      <button class="sombre" onclick="imprimer('semaine')">Imprimer les 4 fiches de la semaine</button>
+      <button onclick="imprimer('mois')">Imprimer tout le mois</button>
+      <button onclick="reinitRemis()">Décocher toute la semaine</button>
+    </div>
+    <div class="astuce">Cliquez sur un client pour cocher son bon comme remis. Pour le confier à un autre chauffeur, cliquez sur la pastille de couleur à droite de son nom.</div>
+    <div class="colonnes" id="colonnes"></div>
+    <div class="consignes" id="consigneLecture"></div>
+  </section>
+
+  <!-- VUE REPARTIR -->
+  <section id="vueRepartir" hidden>
+    <div class="chauffeurs" id="chauffeurs"></div>
+    <div class="outils">
+      <input type="search" id="recherche" placeholder="Chercher un client…" oninput="dessinerListe()">
+      <label title="Cochez, puis cliquez sur un 2e chauffeur pour le mettre en binôme sur le même client"><input type="checkbox" id="binome"> <b>Binôme</b> : 2 chauffeurs sur le même client</label>
+      <label><input type="checkbox" id="grouper" checked> Garder MIDI et SOIR du même site pour le même chauffeur</label>
+      <button onclick="repartirAuto()">Répartition auto équilibrée</button>
+      <button onclick="copierPrecedente()">Reprendre la semaine précédente</button>
+      <button onclick="viderSemaine()">Tout effacer</button>
+      <button id="btnVerrou" onclick="basculerVerrou()">Verrouiller</button>
+    </div>
+    <div class="liste" id="liste"></div>
+    <div class="consignes">
+      <h3>Consignes de la semaine (imprimées sur chaque fiche)</h3>
+      <textarea id="consigne" placeholder="Ex. : les bons de livraison des centres aérés sont dans la pochette bleue…" oninput="majConsigne()"></textarea>
+    </div>
+    <div class="recap">
+      <h3>Récapitulatif du mois</h3>
+      <div id="recap"></div>
+    </div>
+  </section>
+</div>
+
+<!-- réglages synchro -->
+<div class="voile" id="voile" onclick="if(event.target===this) fermerReglages()">
+  <div class="modale">
+    <h2>Synchronisation</h2>
+    <p>Renseignez le projet Supabase pour que vous et votre collègue travailliez sur la même répartition. Sans ces informations, l'application fonctionne quand même : les données restent dans cet ordinateur.</p>
+    <label for="rNom">Qui utilise l'application ?</label>
+    <input id="rNom" placeholder="Votre prénom — affiché à côté de la dernière modification">
+    <label for="rUrl">URL du projet Supabase</label>
+    <input id="rUrl" placeholder="https://xxxxxxxx.supabase.co">
+    <label for="rCle">Clé publique (anon)</label>
+    <input id="rCle" placeholder="eyJhbGciOi…">
+    <div id="testRes"></div>
+    <p style="margin-top:14px">Table à créer une seule fois dans l'éditeur SQL de Supabase :</p>
+    <pre>create table if not exists repartition_aout (
+  id text primary key,
+  data jsonb not null,
+  auteur text,
+  updated_at timestamptz not null default now()
+);
+alter table repartition_aout enable row level security;
+create policy "acces_public" on repartition_aout
+  for all using (true) with check (true);</pre>
+    <div class="pied">
+      <button onclick="testerConnexion()">Tester la connexion</button>
+      <button onclick="fermerReglages()">Fermer</button>
+      <button class="sombre" onclick="enregistrerReglages()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- mode d'emploi -->
+<div class="voile" id="voileGuide" onclick="if(event.target===this) fermerGuide()">
+  <div class="modale">
+    <h2>Mode d'emploi</h2>
+    <p>Cette application contient la répartition des tournées déjà préparée, semaine par semaine, du 3 août au 6 septembre. Il n'y a rien à décider : tout est fait.</p>
+
+    <h4>Chaque jour de livraison</h4>
+    <ol>
+      <li>Ouvrez l'onglet <b>Distribuer les bons</b>. La semaine en cours est sélectionnée automatiquement (repère « aujourd'hui »).</li>
+      <li>Vous voyez 4 colonnes, une par chauffeur, avec la liste des clients qui lui reviennent.</li>
+      <li>Remettez à chaque chauffeur les bons de livraison de sa colonne, et <b>cochez chaque client</b> au fur et à mesure : la ligne se barre et le compteur avance.</li>
+      <li>En cas de doute, imprimez : <b>Imprimer les 4 fiches de la semaine</b> sort une feuille A4 par chauffeur, à agrafer avec ses bons.</li>
+    </ol>
+
+    <h4>Points d'attention</h4>
+    <ul>
+      <li>Un bandeau rouge signale les clients <b>sans chauffeur</b> : ce sont les seuls cas à trancher, appelez le responsable.</li>
+      <li>Les clients marqués <b>« à confirmer »</b> (semaine du 31/08) ne sont pas encore certains : vérifiez auprès du client avant de sortir le bon.</li>
+      <li>Le cadre <b>Consignes</b> en bas reprend les instructions laissées pour la semaine.</li>
+    </ul>
+
+    <h4>Si vous devez modifier quelque chose</h4>
+    <p>L'onglet <b>Préparer la répartition</b> permet de changer l'affectation d'un client d'un clic. S'il est verrouillé, un code est demandé — demandez-le au responsable. Tout est enregistré automatiquement, et si la synchronisation est active, l'autre poste voit le changement en moins d'une minute.</p>
+
+    <div class="pied">
+      <button onclick="imprimerGuide()">Imprimer ce mode d'emploi</button>
+      <button class="sombre" onclick="fermerGuide()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- aide installation -->
+<div class="voile" id="voileInstall" onclick="if(event.target===this) this.classList.remove('ouvert')">
+  <div class="modale">
+    <h2>Installer sur l'ordinateur</h2>
+    <p>Sur Chrome ou Edge, ouvrez le menu <b>⋮</b> en haut à droite, puis <b>Installer « Répartition des tournées »</b> (ou l'icône d'installation dans la barre d'adresse). L'application s'ouvrira ensuite dans sa propre fenêtre, avec un raccourci sur le bureau, et fonctionnera même sans connexion.</p>
+    <p>Sur téléphone : menu du navigateur → <b>Ajouter à l'écran d'accueil</b>.</p>
+    <p>Si le bouton d'installation n'apparaît pas, c'est que la page a été ouverte depuis un fichier local. Ouvrez-la depuis son adresse web : l'installation devient possible.</p>
+    <div class="pied"><button class="sombre" onclick="document.getElementById('voileInstall').classList.remove('ouvert')">J'ai compris</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="impression"></div>
+
+<script>
+/* ================================================================
+   1. CONFIGURATION — à remplir une fois avant de mettre en ligne
+   ================================================================ */
+const SUPABASE = {
+  url:   "",          // ex. "https://abcdefgh.supabase.co"
+  cle:   "",          // clé publique "anon"
+  table: "repartition_aout",
+  ligne: "aout"
+};
+
+/* ================================================================
+   2. SEMAINES ET CLIENTS (relevé du planning papier S32 → S36)
+   ================================================================ */
+const REG = "Restauration collective / social";
+const CA  = "Centres aérés";
+function c(nom, fam, peutetre){ return {nom:nom, fam:fam, peutetre:!!peutetre}; }
+
+const BASE_REG = [
+  "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ESAT ST JEAN",
+  "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR",
+  "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+  "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
+];
+
+const SEMAINES = [
+  { id:"S32", dates:"Du 03/08 au 09/08", debut:"2026-08-03", fin:"2026-08-09",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "AGA MFA - FLAMANTS IRIS 1","AGA MFA - FLAMANTS IRIS 2","AGA MFA - FLAMANTS IRIS ADO","AGORA",
+      "APIS INGÉNIERIE - COIN JOLI","ASSOCIATION CENTRE SOCIAL LES LIERRES 1","CCO - BERNARD DUBOIS",
+      "CCO - SAINT LOUP","CCO - SAINTE MARTHE","IFAC COURS JULIEN","LA LIGUE 13 CHÂTEAU GOMBERT",
+      "LA LIGUE 13 CHÂTEAU GOMBERT ADO","LA LIGUE 13 LES 3 LUCS","LA LIGUE 13 LES MUSARDISES",
+      "ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","CENTRE SOCIAL FRAIS VALLON","CENTRE SOCIAL LA CASTELLANE",
+      "CENTRE SOCIAL LA CASTELLANE ADO","CENTRE SOCIAL STE ELISABETH MAT","CENTRE SOCIAL STE ELISABETH PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S33", dates:"Du 10/08 au 16/08", debut:"2026-08-10", fin:"2026-08-16",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "APIS INGÉNIERIE - COIN JOLI","IFAC COURS JULIEN","LA LIGUE 13 CHÂTEAU GOMBERT",
+      "LA LIGUE 13 CHÂTEAU GOMBERT ADO","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM",
+      "CENTRE SOCIAL FRAIS VALLON","CENTRE SOCIAL STE ELISABETH MAT","CENTRE SOCIAL STE ELISABETH PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S34", dates:"Du 17/08 au 23/08", debut:"2026-08-17", fin:"2026-08-23",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "APIS INGÉNIERIE - COIN JOLI","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","CENTRE SOCIAL FRAIS VALLON"
+    ].map(n=>c(n,CA))) },
+  { id:"S35", dates:"Du 24/08 au 30/08", debut:"2026-08-24", fin:"2026-08-30",
+    clients: [
+      "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ARGONAUTES","ESAT ST JEAN",
+      "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR",
+      "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+      "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
+    ].map(n=>c(n,REG)).concat([
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ MAT",
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ PRIM",
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ ADO",
+      "ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S36", dates:"Du 31/08 au 06/09", debut:"2026-08-31", fin:"2026-09-06",
+    clients: [
+      "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ARGONAUTES","COMPAGNONS MIDI","COMPAGNONS SOIR",
+      "ESAT ST JEAN","ESAT PHOCEEN","VILLA NIOZELLES",
+      "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR","UNITÉ D",
+      "CAARUD LE SLEEP'IN",
+      "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+      "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
+    ].map(n=>c(n,REG)).concat([
+      c("ASSOCIATION CENTRE SOCIAL LES LIERRES 1",CA), c("ASSOCIATION CENTRE SOCIAL LES LIERRES 2",CA),
+      c("CCO - SAINT LOUP",CA), c("CCO - SAINTE MARTHE",CA,true), c("CCO - LA CABUCELLE",CA,true),
+      c("IFAC CHAVE COPELLO",CA), c("IFAC COURS JULIEN",CA), c("LA LIGUE 13 BONNEVEINE",CA),
+      c("LA LIGUE 13 CHÂTEAU GOMBERT",CA), c("LA LIGUE 13 CHÂTEAU GOMBERT ADO",CA),
+      c("LA LIGUE 13 LES MUSARDISES",CA,true), c("ROY D'ESPAGNE MAT",CA), c("ROY D'ESPAGNE PRIM",CA)
+    ]) }
+];
+
+const COULEURS = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)"];
+const COUL_HEX = ["#E8452C","#1565D8","#F5A300","#2E9E4F"];
+const CLE_LOC = "repartition_chauffeurs_aout";
+const CLE_CFG = "repartition_chauffeurs_cfg";
+
+let etat = {
+  chauffeurs:[
+    {nom:"Chauffeur 1", camion:"Camion 1"},
+    {nom:"Chauffeur 2", camion:"Camion 2"},
+    {nom:"Chauffeur 3", camion:"Camion 3"},
+    {nom:"Chauffeur 4", camion:"Camion 4"}
+  ],
+  affect:{}, consignes:{}, remis:{}, verrou:null
+};
+let semaineActive = "S32";
+let vue = "distribuer";
+let cfg = {url:SUPABASE.url, cle:SUPABASE.cle, nom:""};
+let derniereMaj = null, minuteur = null, envoiEnCours = false;
+let deverrouille = false;
+let invitationInstall = null;
+
+function sem(id){ return SEMAINES.find(s=>s.id===id); }
+function aff(id){ if(!etat.affect[id]) etat.affect[id]={}; return etat.affect[id]; }
+function rem(id){ if(!etat.remis[id]) etat.remis[id]={}; return etat.remis[id]; }
+/* Un client peut avoir 1 chauffeur, ou 2 en binôme. Toujours renvoyé sous forme de liste. */
+function chDe(id, nom){
+  const v = aff(id)[nom];
+  if(v===undefined || v===null) return [];
+  return Array.isArray(v) ? v.slice() : [v];
+}
+function poserCh(id, nom, liste){
+  const a = aff(id);
+  if(!liste || !liste.length) delete a[nom]; else a[nom] = liste.slice().sort((x,y)=>x-y);
+}
+function nomsCh(liste){ return liste.map(i=>etat.chauffeurs[i] ? etat.chauffeurs[i].nom : "?").join(" + "); }
+function connecte(){ return !!(cfg.url && cfg.cle); }
+function verrouille(){ return !!(etat.verrou && !deverrouille); }
+
+/* ================================================================
+   3. SAUVEGARDE : ordinateur d'abord, Supabase ensuite
+   ================================================================ */
+function lireLocal(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function ecrireLocal(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+function sauver(){
+  ecrireLocal(CLE_LOC, JSON.stringify(etat));
+  if(!connecte()) return;
+  statut("envoi","Envoi…");
+  clearTimeout(minuteur);
+  minuteur = setTimeout(envoyer, 700);
+}
+function entetes(extra){
+  const h = {"apikey":cfg.cle,"Authorization":"Bearer "+cfg.cle,"Content-Type":"application/json"};
+  if(extra) Object.assign(h, extra);
+  return h;
+}
+async function envoyer(){
+  if(!connecte()) return;
+  envoiEnCours = true;
+  try{
+    const corps = [{id:SUPABASE.ligne, data:etat, auteur:cfg.nom || "", updated_at:new Date().toISOString()}];
+    const r = await fetch(cfg.url.replace(/\/$/,"")+"/rest/v1/"+SUPABASE.table,
+      {method:"POST", headers:entetes({"Prefer":"resolution=merge-duplicates,return=representation"}), body:JSON.stringify(corps)});
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    derniereMaj = (d[0] && d[0].updated_at) || new Date().toISOString();
+    statut("ok","Enregistré à "+heure(derniereMaj));
+  }catch(e){ statut("ko","Enregistré sur cet ordinateur"); }
+  finally{ envoiEnCours = false; }
+}
+async function recuperer(){
+  if(!connecte()) return null;
+  const u = cfg.url.replace(/\/$/,"")+"/rest/v1/"+SUPABASE.table+"?id=eq."+SUPABASE.ligne+"&select=data,auteur,updated_at";
+  const r = await fetch(u,{headers:entetes()});
+  if(!r.ok) throw new Error(await r.text());
+  const d = await r.json();
+  return d[0] || null;
+}
+async function verifierNouveautes(){
+  if(!connecte() || envoiEnCours || document.querySelector(".voile.ouvert")) return;
+  try{
+    const ligne = await recuperer();
+    if(ligne && ligne.updated_at !== derniereMaj){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      toutDessiner();
+      toast((ligne.auteur ? ligne.auteur+" a" : "Quelqu'un a")+" modifié la répartition — affichage mis à jour");
+      statut("ok","À jour · "+heure(ligne.updated_at)+(ligne.auteur?" · "+ligne.auteur:""));
+    }
+  }catch(e){ statut("ko","Connexion perdue"); }
+}
+function normaliser(d){
+  const affect = (d && d.affect) || {};
+  // compatibilité : ancien format où un client n'avait qu'un seul chauffeur
+  Object.keys(affect).forEach(s=>{
+    Object.keys(affect[s]).forEach(cl=>{
+      if(typeof affect[s][cl] === "number") affect[s][cl] = [affect[s][cl]];
+    });
+  });
+  return {
+    chauffeurs: (d && d.chauffeurs && d.chauffeurs.length===4) ? d.chauffeurs : etat.chauffeurs,
+    affect: affect,
+    consignes: (d && d.consignes) || {},
+    remis: (d && d.remis) || {},
+    verrou: (d && d.verrou) || null
+  };
+}
+function statut(classe, texte){
+  document.getElementById("synchro").className = classe;
+  document.getElementById("synchroTxt").textContent = texte;
+}
+function heure(iso){ try{ return new Date(iso).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+function toast(t){
+  const el = document.getElementById("toast");
+  el.textContent = t; el.classList.add("on");
+  setTimeout(()=>el.classList.remove("on"), 3500);
+}
+
+/* ================================================================
+   4. INSTALLATION (application sur le bureau)
+   ================================================================ */
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault(); invitationInstall = e;
+  document.getElementById("btnInstaller").classList.add("sombre");
+});
+async function installer(){
+  if(invitationInstall){
+    invitationInstall.prompt();
+    const res = await invitationInstall.userChoice;
+    if(res.outcome === "accepted"){ toast("Application installée"); document.getElementById("btnInstaller").hidden = true; }
+    invitationInstall = null;
+  }else{
+    document.getElementById("voileInstall").classList.add("ouvert");
+  }
+}
+window.addEventListener("appinstalled", ()=>{ document.getElementById("btnInstaller").hidden = true; });
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+}
+
+/* ================================================================
+   5. RÉGLAGES ET GUIDE
+   ================================================================ */
+function ouvrirReglages(){
+  document.getElementById("rNom").value = cfg.nom || "";
+  document.getElementById("rUrl").value = cfg.url || "";
+  document.getElementById("rCle").value = cfg.cle || "";
+  document.getElementById("testRes").textContent = "";
+  document.getElementById("voile").classList.add("ouvert");
+}
+function fermerReglages(){ document.getElementById("voile").classList.remove("ouvert"); }
+function ouvrirGuide(){ document.getElementById("voileGuide").classList.add("ouvert"); }
+function fermerGuide(){ document.getElementById("voileGuide").classList.remove("ouvert"); }
+
+async function testerConnexion(){
+  const res = document.getElementById("testRes");
+  const test = {url:document.getElementById("rUrl").value.trim(), cle:document.getElementById("rCle").value.trim()};
+  if(!test.url || !test.cle){ res.style.color="#B3261E"; res.textContent="Il manque l'URL ou la clé."; return; }
+  res.style.color="#6B6B76"; res.textContent="Test en cours…";
+  const memo = cfg; cfg = {url:test.url, cle:test.cle, nom:cfg.nom};
+  try{ await recuperer(); res.style.color="#1E6B36"; res.textContent="Connexion réussie, la table répond."; }
+  catch(e){ res.style.color="#B3261E"; res.textContent="Échec : vérifiez l'URL, la clé, et que la table "+SUPABASE.table+" existe avec sa règle d'accès."; }
+  cfg = memo;
+}
+async function enregistrerReglages(){
+  cfg = {
+    nom: document.getElementById("rNom").value.trim(),
+    url: document.getElementById("rUrl").value.trim(),
+    cle: document.getElementById("rCle").value.trim()
+  };
+  ecrireLocal(CLE_CFG, JSON.stringify(cfg));
+  fermerReglages();
+  if(!connecte()){ statut("","Cet ordinateur seulement"); return; }
+  try{
+    const ligne = await recuperer();
+    if(ligne && confirm("Une répartition existe déjà en ligne (modifiée à "+heure(ligne.updated_at)+(ligne.auteur?" par "+ligne.auteur:"")+").\n\nOK = je récupère celle en ligne.\nAnnuler = j'envoie la mienne à la place.")){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      toutDessiner();
+      statut("ok","À jour · "+heure(ligne.updated_at));
+    }else{ await envoyer(); toutDessiner(); }
+  }catch(e){ statut("ko","Connexion impossible"); }
+}
+
+/* ================================================================
+   6. AFFICHAGE
+   ================================================================ */
+function semaineDuJour(){
+  const auj = new Date(); auj.setHours(12,0,0,0);
+  for(const s of SEMAINES){
+    const d = new Date(s.debut+"T00:00:00"), f = new Date(s.fin+"T23:59:59");
+    if(auj>=d && auj<=f) return s.id;
+  }
+  return null;
+}
+function dessinerSemaines(){
+  const auj = semaineDuJour();
+  document.getElementById("semaines").innerHTML = SEMAINES.map(s=>{
+    const total = s.clients.length;
+    const faits = s.clients.filter(cl=>chDe(s.id, cl.nom).length).length;
+    const sousTitre = vue==="distribuer"
+      ? s.dates + " · " + s.clients.filter(cl=>rem(s.id)[cl.nom]).length + "/" + total + " bons remis"
+      : s.dates + " · " + faits + "/" + total + " attribués";
+    return `<button class="${s.id===semaineActive?'actif':''}" onclick="choisirSemaine('${s.id}')">
+      <b>${s.id}${s.id===auj?'<span class="auj">aujourd\'hui</span>':''}</b><span>${sousTitre}</span></button>`;
+  }).join("");
+}
+function dessinerChauffeurs(){
+  const s = sem(semaineActive);
+  const total = s.clients.length;
+  const bloque = verrouille() ? "disabled" : "";
+  document.getElementById("chauffeurs").innerHTML = etat.chauffeurs.map((ch,i)=>{
+    const nb = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0).length;
+    const pct = total ? Math.round(nb/total*100) : 0;
+    return `<div class="ch" style="--col:${COULEURS[i]}">
+      <input ${bloque} value="${echap(ch.nom)}" onchange="renommer(${i},'nom',this.value)" aria-label="Prénom du chauffeur ${i+1}">
+      <input ${bloque} class="camion" value="${echap(ch.camion)}" onchange="renommer(${i},'camion',this.value)" aria-label="Camion du chauffeur ${i+1}">
+      <div class="nb">${nb} client${nb>1?'s':''} cette semaine</div>
+      <div class="jauge"><i style="width:${pct}%"></i></div>
+    </div>`;
+  }).join("");
+}
+function dessinerListe(){
+  const s = sem(semaineActive);
+  const q = document.getElementById("recherche").value.trim().toLowerCase();
+  const bloque = verrouille() ? "disabled" : "";
+  let html = "", famCourante = "", vus = 0;
+  s.clients.forEach(cl=>{
+    if(q && cl.nom.toLowerCase().indexOf(q) === -1) return;
+    vus++;
+    if(cl.fam !== famCourante){ famCourante = cl.fam; html += `<div class="fam">${famCourante}</div>`; }
+    const cur = chDe(s.id, cl.nom);
+    const past = etat.chauffeurs.map((ch,i)=>
+      `<button ${bloque} class="${cur.indexOf(i)>=0?'on':''}" style="--col:${COULEURS[i]}" onclick="affecter('${echapJs(cl.nom)}',${i})" title="${echap(ch.nom)}">${initiales(ch.nom,i)}</button>`).join("");
+    html += `<div class="ligne"><div class="nom">${echap(cl.nom)}${cl.peutetre?'<span class="peutetre">à confirmer</span>':''}${cur.length>1?'<span class="binome">👥 '+echap(nomsCh(cur))+'</span>':''}</div>
+      <div class="pastilles">${past}</div></div>`;
+  });
+  if(!vus) html = `<div class="rien">Aucun client ne correspond à cette recherche.</div>`;
+  document.getElementById("liste").innerHTML = html;
+}
+function dessinerColonnes(){
+  const s = sem(semaineActive), r = rem(s.id);
+  const bloque = verrouille() ? "disabled" : "";
+  document.getElementById("colonnes").innerHTML = etat.chauffeurs.map((ch,i)=>{
+    const clients = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0);
+    const faits = clients.filter(cl=>r[cl.nom]).length;
+    const pct = clients.length ? Math.round(faits/clients.length*100) : 0;
+    const items = clients.length ? clients.map(cl=>{
+      const equipe = chDe(s.id, cl.nom);
+      const autres = equipe.filter(x=>x!==i);
+      const past = etat.chauffeurs.map((c2,j)=>
+        `<button ${bloque} class="${equipe.indexOf(j)>=0?'on':''}" style="--col:${COULEURS[j]}" title="Confier à ${echap(c2.nom)}"
+           onclick="event.stopPropagation();affecter('${echapJs(cl.nom)}',${j})">${initiales(c2.nom,j)}</button>`).join("");
+      return `<li class="${r[cl.nom]?'fait':''}" onclick="basculerRemis('${echapJs(cl.nom)}')">
+         <span class="coche">${r[cl.nom]?'✓':''}</span>
+         <span class="txt">${echap(cl.nom)}${cl.peutetre?'<span class="peutetre">à confirmer</span>':''}${autres.length?'<span class="binome">👥 avec '+echap(nomsCh(autres))+'</span>':''}</span>
+         <span class="pastilles mini">${past}</span>
+       </li>`;
+    }).join("")
+      : `<li style="color:#9A9AA2;cursor:default">Aucun client cette semaine</li>`;
+    return `<div class="col" style="--col:${COULEURS[i]}">
+      <h3>${echap(ch.nom)}</h3>
+      <div class="camion">${echap(ch.camion)}</div>
+      <div class="compteur">${faits}/${clients.length} bons remis</div>
+      <div class="jauge"><i style="width:${pct}%"></i></div>
+      <ul>${items}</ul>
+      <div class="pied"><button onclick="imprimerFiche(${i})">Imprimer sa fiche</button></div>
+    </div>`;
+  }).join("");
+
+  const cons = etat.consignes[semaineActive];
+  document.getElementById("consigneLecture").innerHTML = cons
+    ? `<h3>Consignes de la semaine</h3><div class="lecture">${echap(cons)}</div>`
+    : `<h3>Consignes de la semaine</h3><div class="lecture" style="color:#9A9AA2">Aucune consigne particulière.</div>`;
+}
+function dessinerAlerte(){
+  const s = sem(semaineActive);
+  const reste = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0);
+  const aConfirmer = s.clients.filter(cl=>cl.peutetre);
+  let h = "";
+  if(reste.length===0){
+    h += `<div class="alerte ok">Semaine ${s.id} complète : les ${s.clients.length} clients ont un chauffeur.</div>`;
+  }else{
+    h += `<div class="alerte rouge">${reste.length} client${reste.length>1?'s':''} sans chauffeur en ${s.id} : ${echap(reste.slice(0,4).map(r=>r.nom).join(" · "))}${reste.length>4?' …':''}</div>`;
+  }
+  if(aConfirmer.length && vue==="distribuer"){
+    h += `<div class="alerte">${aConfirmer.length} client${aConfirmer.length>1?'s':''} à confirmer avant de sortir les bons : ${echap(aConfirmer.map(r=>r.nom).join(" · "))}</div>`;
+  }
+  document.getElementById("alerte").innerHTML = h;
+}
+function dessinerRecap(){
+  let h = `<table class="recap-t"><thead><tr><th>Chauffeur</th>${SEMAINES.map(s=>`<th>${s.id}<br><span style="font-weight:400;font-size:11px">${s.dates.replace('Du ','')}</span></th>`).join("")}<th>Total mois</th></tr></thead><tbody>`;
+  etat.chauffeurs.forEach((ch,i)=>{
+    let tot=0;
+    const cells = SEMAINES.map(s=>{ const n = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0).length; tot+=n; return `<td>${n}</td>`; }).join("");
+    h += `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COUL_HEX[i]};margin-right:6px"></span>${echap(ch.nom)} — ${echap(ch.camion)}</td>${cells}<td><b>${tot}</b></td></tr>`;
+  });
+  const nonAff = SEMAINES.map(s=>{ const n = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0).length; return `<td${n?' style="color:#B3261E;font-weight:800"':''}>${n}</td>`; }).join("");
+  const totalNon = SEMAINES.reduce((t,s)=>t+s.clients.filter(cl=>chDe(s.id, cl.nom).length===0).length,0);
+  h += `<tr><td>Sans chauffeur</td>${nonAff}<td><b>${totalNon}</b></td></tr></tbody></table>`;
+  document.getElementById("recap").innerHTML = h;
+}
+function majOnglets(){
+  document.getElementById("ongletDistribuer").className = vue==="distribuer" ? "actif" : "";
+  document.getElementById("ongletRepartir").className = vue==="repartir" ? "actif" : "";
+  document.getElementById("vueDistribuer").hidden = vue!=="distribuer";
+  document.getElementById("vueRepartir").hidden = vue!=="repartir";
+  const b = document.getElementById("btnVerrou");
+  b.textContent = etat.verrou ? "Retirer le verrou" : "Verrouiller";
+}
+function toutDessiner(){
+  majOnglets(); dessinerSemaines(); dessinerAlerte();
+  if(vue==="distribuer"){ dessinerColonnes(); }
+  else{
+    dessinerChauffeurs(); dessinerListe(); dessinerRecap();
+    document.getElementById("consigne").value = etat.consignes[semaineActive] || "";
+    document.getElementById("consigne").disabled = verrouille();
+  }
+}
+
+/* ================================================================
+   7. ACTIONS
+   ================================================================ */
+function changerVue(v){
+  if(v==="repartir" && verrouille()){
+    const code = prompt("Cette partie est verrouillée. Code d'accès :");
+    if(code === null) return;
+    if(code !== etat.verrou){ alert("Code incorrect."); return; }
+    deverrouille = true;
+  }
+  vue = v; toutDessiner();
+}
+function choisirSemaine(id){ semaineActive = id; toutDessiner(); }
+
+function affecter(nom, i){
+  if(verrouille()){ toast("Répartition verrouillée — onglet « Préparer la répartition » pour la déverrouiller"); return; }
+  const cur = chDe(semaineActive, nom);
+  const cb = document.getElementById("binome");
+  const binome = cb && cb.checked;
+  let suite;
+  if(cur.indexOf(i)>=0) suite = cur.filter(x=>x!==i);      // on retire ce chauffeur
+  else if(binome){
+    if(cur.length>=2){ toast("Deux chauffeurs maximum sur un client — retirez-en un d'abord"); return; }
+    suite = cur.concat([i]);                                // on ajoute un 2e chauffeur
+  }
+  else suite = [i];                                         // on remplace
+  poserCh(semaineActive, nom, suite);
+  sauver(); toutDessiner();
+}
+function basculerRemis(nom){
+  const r = rem(semaineActive);
+  if(r[nom]) delete r[nom]; else r[nom] = true;
+  sauver(); dessinerColonnes(); dessinerSemaines();
+}
+function reinitRemis(){
+  if(!confirm("Décocher tous les bons remis de "+semaineActive+" ?")) return;
+  etat.remis[semaineActive] = {};
+  sauver(); toutDessiner();
+}
+function renommer(i, champ, val){
+  if(verrouille()) return;
+  etat.chauffeurs[i][champ] = val.trim() || (champ==="nom" ? "Chauffeur "+(i+1) : "Camion "+(i+1));
+  sauver(); toutDessiner();
+}
+function majConsigne(){
+  if(verrouille()) return;
+  etat.consignes[semaineActive] = document.getElementById("consigne").value;
+  sauver();
+}
+function basculerVerrou(){
+  if(etat.verrou){
+    if(!confirm("Retirer le verrou ? Tout le monde pourra modifier la répartition.")) return;
+    etat.verrou = null; deverrouille = true;
+  }else{
+    const code = prompt("Choisissez un code à 4 chiffres. Il sera demandé pour modifier la répartition — la partie « Distribuer les bons » reste libre d'accès.");
+    if(!code) return;
+    etat.verrou = code.trim(); deverrouille = true;
+    alert("Verrou posé. Notez bien ce code : "+etat.verrou);
+  }
+  sauver(); toutDessiner();
+}
+function base(nom){ return nom.replace(/\s+(MIDI|SOIR)$/,""); }
+
+function repartirAuto(){
+  if(verrouille()) return;
+  const s = sem(semaineActive);
+  if(!confirm("Répartir automatiquement les "+s.clients.length+" clients de "+s.id+" entre les 4 chauffeurs ? La répartition actuelle de cette semaine sera remplacée.")) return;
+  const grouper = document.getElementById("grouper").checked;
+  const a = {}; etat.affect[semaineActive] = a;
+  const charges = [0,0,0,0], paquets = [], index = {};
+  s.clients.forEach(cl=>{
+    const cle = grouper ? cl.fam+"|"+base(cl.nom) : cl.fam+"|"+cl.nom;
+    if(index[cle]===undefined){ index[cle] = paquets.length; paquets.push([]); }
+    paquets[index[cle]].push(cl.nom);
+  });
+  paquets.forEach(p=>{
+    let min = 0;
+    for(let i=1;i<4;i++) if(charges[i] < charges[min]) min = i;
+    p.forEach(n=>{ a[n] = [min]; });
+    charges[min] += p.length;
+  });
+  sauver(); toutDessiner();
+}
+function copierPrecedente(){
+  if(verrouille()) return;
+  const idx = SEMAINES.findIndex(s=>s.id===semaineActive);
+  if(idx<=0){ alert("S32 est la première semaine : il n'y a rien à reprendre avant."); return; }
+  const prec = SEMAINES[idx-1], a = aff(prec.id), cible = aff(semaineActive);
+  let repris=0, nouveaux=0;
+  sem(semaineActive).clients.forEach(cl=>{
+    const src = chDe(prec.id, cl.nom);
+    if(src.length){ cible[cl.nom] = src; repris++; }
+    else if(cible[cl.nom]===undefined) nouveaux++;
+  });
+  sauver(); toutDessiner();
+  alert(repris+" client(s) repris de "+prec.id+". "+nouveaux+" client(s) nouveaux restent à attribuer.");
+}
+function viderSemaine(){
+  if(verrouille()) return;
+  if(!confirm("Effacer toute la répartition de "+semaineActive+" ?")) return;
+  etat.affect[semaineActive] = {};
+  sauver(); toutDessiner();
+}
+
+/* ================================================================
+   8. FICHIERS
+   ================================================================ */
+function exporter(){
+  const blob = new Blob([JSON.stringify(etat,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "repartition-chauffeurs-aout.json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importer(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e=>{
+    try{
+      const d = JSON.parse(e.target.result);
+      if(!d.chauffeurs || !d.affect) throw 0;
+      etat = normaliser(d);
+      sauver(); toutDessiner();
+      toast("Répartition chargée depuis le fichier");
+    }catch(err){ alert("Ce fichier n'est pas une sauvegarde de répartition. Choisissez le fichier .json enregistré depuis cette application."); }
+    input.value = "";
+  };
+  r.readAsText(f);
+}
+
+/* ================================================================
+   9. IMPRESSION
+   ================================================================ */
+function imprimer(portee){
+  const liste = portee==="mois" ? SEMAINES : [sem(semaineActive)];
+  let h = "";
+  liste.forEach(s=>{
+    etat.chauffeurs.forEach((ch,i)=>{ h += ficheHtml(s, ch, i, s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0)); });
+    const orphelins = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0);
+    if(orphelins.length) h += ficheHtml(s, {nom:"À ATTRIBUER", camion:"—"}, null, orphelins);
+  });
+  lancerImpression(h);
+}
+function imprimerFiche(i){
+  const s = sem(semaineActive);
+  lancerImpression(ficheHtml(s, etat.chauffeurs[i], i, s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0)));
+}
+function imprimerGuide(){
+  const g = document.querySelector("#voileGuide .modale").cloneNode(true);
+  g.querySelector(".pied").remove();
+  lancerImpression('<div class="guide">'+g.innerHTML+'</div>');
+}
+function lancerImpression(html){
+  document.getElementById("impression").innerHTML = html;
+  window.print();
+}
+function ficheHtml(s, ch, i, clients){
+  const coul = i===null ? "#B3261E" : COUL_HEX[i];
+  const r = rem(s.id);
+  const lignes = clients.length ? clients.map(cl=>{
+    const autres = i===null ? [] : chDe(s.id, cl.nom).filter(x=>x!==i);
+    return `<tr>
+      <td class="case">${r[cl.nom]?'☑':'☐'}</td>
+      <td>${echap(cl.nom)}${cl.peutetre?' <b>(à confirmer)</b>':''}${autres.length?' <i>— en binôme avec '+echap(nomsCh(autres))+'</i>':''}</td>
+      <td style="font-size:11px;color:#555">${cl.fam===REG?"Resto collective":"Centre aéré"}</td>
+      <td style="width:120px"></td></tr>`;
+  }).join("")
+    : `<tr><td colspan="4" style="text-align:center;color:#777">Aucun client attribué pour cette semaine.</td></tr>`;
+  const note = etat.consignes[s.id] ? `<div class="note"><b>Consignes :</b> ${echap(etat.consignes[s.id])}</div>` : "";
+  return `<div class="fiche">
+    <div class="bandeau" style="background:${coul}"></div>
+    <h2>${echap(ch.nom)} — ${echap(ch.camion)}</h2>
+    <div class="meta">Semaine ${s.id} · ${s.dates} · ${clients.length} client${clients.length>1?'s':''} · bons de livraison à remettre</div>
+    <table><thead><tr><th>Remis</th><th>Client</th><th>Type</th><th>Observation</th></tr></thead>
+    <tbody>${lignes}</tbody></table>
+    ${note}
+    <div style="margin-top:14px;font-size:12px">Signature du chauffeur : ______________________&nbsp;&nbsp;&nbsp;Date : ____ / ____</div>
+  </div>`;
+}
+
+/* ================================================================
+   10. UTILITAIRES
+   ================================================================ */
+function echap(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function echapJs(t){ return String(t).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+function initiales(nom,i){
+  const n = String(nom).trim();
+  if(/^Chauffeur \d$/.test(n)) return String(i+1);
+  const p = n.split(/\s+/);
+  return (p.length>1 ? p[0][0]+p[1][0] : n.slice(0,2)).toUpperCase();
+}
+
+/* ================================================================
+   11. DÉMARRAGE
+   ================================================================ */
+(async function(){
+  const cfgLoc = lireLocal(CLE_CFG);
+  if(cfgLoc){ try{ const d = JSON.parse(cfgLoc); cfg = {url:d.url||SUPABASE.url, cle:d.cle||SUPABASE.cle, nom:d.nom||""}; }catch(e){} }
+
+  const loc = lireLocal(CLE_LOC);
+  if(loc){ try{ etat = normaliser(JSON.parse(loc)); }catch(e){} }
+
+  semaineActive = semaineDuJour() || "S32";
+  const rienDeFait = SEMAINES.every(s=>Object.keys(aff(s.id)).length===0);
+  vue = rienDeFait ? "repartir" : "distribuer";
+  toutDessiner();
+
+  if(!connecte()){ statut("","Cet ordinateur — cliquez pour synchroniser"); return; }
+  statut("envoi","Connexion…");
+  try{
+    const ligne = await recuperer();
+    if(ligne){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      toutDessiner();
+      statut("ok","À jour · "+heure(ligne.updated_at)+(ligne.auteur?" · "+ligne.auteur:""));
+    }else{ await envoyer(); }
+  }catch(e){ statut("ko","Hors ligne — travail enregistré ici"); }
+
+  setInterval(verifierNouveautes, 30000);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) verifierNouveautes(); });
+})();
+</script>
+</body>
+</html>
