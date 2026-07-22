@@ -1,43 +1,1067 @@
-/* Service worker de l'application « Répartition des tournées ».
-   Il ne s'occupe QUE de ses propres fichiers : les autres applications
-   du dépôt (App Chauffeur, Planning, Vestiaires…) ne sont pas touchées. */
-const VERSION = "repartition-v3";
-const FICHIERS = [
-  "./REPARTITION_AOUT.html",
-  "./manifest-repartition.json",
-  "./icone-repartition-192.png",
-  "./icone-repartition-512.png"
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Répartition des tournées — 03/08 au 06/09</title>
+<link rel="manifest" href="manifest-repartition.json">
+<meta name="theme-color" content="#FBD5E4">
+<link rel="icon" href="icone-repartition-192.png">
+<link rel="apple-touch-icon" href="icone-repartition-192.png">
+<style>
+  :root{
+    --rose:#FBD5E4; --rose-fonce:#E9A9C4;
+    --encre:#1B1B1F; --gris:#6B6B76; --trait:#D9D9E0;
+    --fond:#F5F4F1; --carte:#FFFFFF;
+    --c1:#E8452C; --c2:#1565D8; --c3:#F5A300; --c4:#2E9E4F;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+  button{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--trait);background:#fff;color:var(--encre);border-radius:8px;padding:8px 12px}
+  button:hover{background:#F0EFEC}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:3px solid #1565D8;outline-offset:2px}
+  button.sombre{background:var(--encre);color:#fff;border-color:var(--encre)}
+  button.sombre:hover{background:#000}
+
+  /* ---------- CONNEXION ---------- */
+  #connexion{position:fixed;inset:0;background:var(--fond);display:grid;place-items:center;padding:20px;z-index:100}
+  #connexion .boite{background:#fff;border:1px solid var(--trait);border-radius:16px;max-width:400px;width:100%;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.08)}
+  #connexion .tete{background:var(--rose);border-bottom:2px solid var(--rose-fonce);padding:20px}
+  #connexion .tete h1{margin:0;font-size:19px;font-weight:800}
+  #connexion .tete p{margin:4px 0 0;font-size:12px;font-weight:600;color:#7A4A60}
+  #connexion .corps{padding:20px}
+  #connexion label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+  #connexion input{width:100%;padding:14px;border:2px solid var(--trait);border-radius:10px;font:inherit;font-size:22px;font-weight:800;text-align:center;letter-spacing:8px}
+  #connexion input:focus{outline:none;border-color:var(--encre)}
+  #connexion button{width:100%;margin-top:12px;padding:13px;font-size:15px}
+  #connexion .err{color:#B3261E;font-size:13px;font-weight:700;margin-top:10px;min-height:18px}
+  #connexion .aide{margin-top:14px;font-size:12px;color:var(--gris);line-height:1.5}
+  #connexion .defaut{margin-top:10px;background:#FFF3D6;border:1px solid #F3D48A;color:#7A5600;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600}
+
+  /* ---------- EN-TÊTE ---------- */
+  header.top{background:var(--rose);border-bottom:2px solid var(--rose-fonce);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  header.top h1{margin:0;font-size:18px;font-weight:800}
+  header.top .sub{font-size:12px;color:#7A4A60;font-weight:600}
+  .barre{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .qui{font-size:12px;font-weight:800;background:#fff;border:1px solid var(--trait);border-radius:99px;padding:6px 12px}
+
+  #synchro{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;background:#fff;border:1px solid var(--trait);border-radius:99px;padding:6px 12px;cursor:pointer}
+  #synchro .point{width:9px;height:9px;border-radius:50%;background:#9A9AA2;flex:none}
+  #synchro.ok .point{background:#2E9E4F}
+  #synchro.envoi .point{background:#F5A300}
+  #synchro.ko .point{background:#E8452C}
+
+  .onglets{background:#fff;border-bottom:1px solid var(--trait);padding:0 18px;display:flex;gap:4px;position:sticky;top:0;z-index:20}
+  .onglets button{border:none;border-radius:0;border-bottom:3px solid transparent;background:none;padding:12px 16px;font-size:15px;font-weight:700;color:var(--gris)}
+  .onglets button.actif{color:var(--encre);border-bottom-color:var(--encre)}
+  .onglets button:hover{background:#FAF9F7}
+
+  .zone{max-width:1400px;margin:0 auto;padding:16px 18px 70px}
+  .semaines{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .semaines button{padding:9px 14px;border-radius:10px;line-height:1.2;text-align:left}
+  .semaines button b{display:block;font-size:15px}
+  .semaines button span{font-size:11px;color:var(--gris);font-weight:600}
+  .semaines button.actif{background:var(--encre);color:#fff;border-color:var(--encre)}
+  .semaines button.actif span{color:#D8D8DC}
+  .semaines button .auj{display:inline-block;background:var(--c1);color:#fff;font-size:10px;border-radius:4px;padding:1px 5px;margin-left:6px}
+
+  .outils{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .outils input[type=search]{flex:1;min-width:170px;padding:8px 10px;border:1px solid var(--trait);border-radius:8px;font:inherit}
+
+  .interrupteur{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--trait);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;user-select:none}
+  .interrupteur .voyant{width:34px;height:20px;border-radius:99px;background:#DDD;position:relative;transition:background .15s;flex:none}
+  .interrupteur .voyant::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .interrupteur.on{background:#E3E9FB;border-color:#1B4CA8;color:#1B4CA8}
+  .interrupteur.on .voyant{background:#1565D8}
+  .interrupteur.on .voyant::after{left:16px}
+
+  .astuce{background:#EFF4FE;border:1px solid #C9D9F7;color:#1B4CA8;font-size:12px;font-weight:600;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+  .alerte{margin:12px 0;padding:10px 12px;border-radius:8px;font-weight:700;font-size:13px;background:#FFF3D6;border:1px solid #F3D48A;color:#7A5600}
+  .alerte.ok{background:#E4F6E9;border-color:#A8DCB8;color:#1E6B36}
+  .alerte.rouge{background:#FDE7E4;border-color:#F1B3A8;color:#8C2A17}
+
+  /* ---------- COLONNES ---------- */
+  .tableau{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start}
+  .tableau.quatre{grid-template-columns:repeat(4,1fr)}
+  .colonne{background:var(--carte);border:1px solid var(--trait);border-top:6px solid var(--col);border-radius:12px;display:flex;flex-direction:column;min-height:180px}
+  .colonne.attente{--col:#9A9AA2;border-top-style:dashed;background:#FAFAF8}
+  .colonne.survol{background:#EFF4FE;border-color:#1565D8}
+  .colonne .tete{padding:10px 12px 8px}
+  .colonne .tete input{width:100%;border:none;border-bottom:1px dashed var(--trait);background:transparent;font:inherit;font-weight:800;font-size:15px;padding:2px 0;color:var(--encre)}
+  .colonne .tete input.camion{font-size:12px;font-weight:700;color:var(--gris);margin-top:3px}
+  .colonne .tete input:focus{outline:none;border-bottom-color:var(--col)}
+  .colonne .tete h3{margin:0;font-size:15px;font-weight:800}
+  .colonne .compteur{padding:6px 12px 0;font-size:12px;font-weight:800;color:var(--col)}
+  .jauge{height:6px;background:#EDEDF0;border-radius:99px;overflow:hidden;margin:5px 12px 8px}
+  .jauge i{display:block;height:100%;background:var(--col)}
+  .colonne .contenu{padding:0 8px 8px;flex:1;display:flex;flex-direction:column;gap:6px;min-height:60px}
+  .colonne .pied{padding:8px 12px;border-top:1px solid #EFEFF2;background:#FAF9F7;border-radius:0 0 11px 11px}
+  .colonne .pied button{width:100%;font-size:12px;padding:6px}
+  .vide{color:#B4B4BC;font-size:12px;font-weight:600;text-align:center;padding:14px 4px;border:1px dashed var(--trait);border-radius:8px}
+
+  .carte{background:#fff;border:1px solid var(--trait);border-left:4px solid var(--col);border-radius:8px;padding:7px 8px;cursor:grab}
+  .carte:active{cursor:grabbing}
+  .carte.glisse{opacity:.4}
+  .carte .nom{font-size:13px;font-weight:700;line-height:1.25}
+  .carte .marques{margin-top:3px}
+  .carte .boutons{display:flex;gap:3px;margin-top:6px}
+  .carte .boutons button{flex:1;padding:0;height:24px;font-size:11px;font-weight:800;border-radius:5px;background:#F3F3F5;border:1px solid #E4E4E9;color:#9A9AA2}
+  .carte .boutons button.on{background:var(--cb);border-color:var(--cb);color:#fff}
+  .carte .boutons button.retirer{flex:0 0 26px;color:#B3261E;background:#fff}
+  .peutetre{display:inline-block;font-size:10px;font-weight:800;background:#FFE2B0;color:#8A5A00;border-radius:4px;padding:2px 6px;margin-right:4px}
+  .binome{display:inline-block;font-size:10px;font-weight:800;background:#E3E9FB;color:#1B4CA8;border-radius:4px;padding:2px 6px}
+
+  .colonne ul{list-style:none;margin:0;padding:0}
+  .colonne li{border-top:1px solid #EFEFF2;padding:7px 12px;display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;cursor:pointer}
+  .colonne li:hover{background:#FAF9F7}
+  .colonne li.fait{color:#9A9AA2;text-decoration:line-through}
+  .colonne li .coche{flex:none;width:18px;height:18px;border:2px solid var(--trait);border-radius:5px;display:grid;place-items:center;font-size:12px;color:#fff;margin-top:1px}
+  .colonne li.fait .coche{background:var(--col);border-color:var(--col)}
+  .colonne li .txt{flex:1}
+
+  .consignes,.recap{margin-top:16px;background:var(--carte);border:1px solid var(--trait);border-radius:12px;padding:12px}
+  .consignes h3,.recap h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#5A5A63}
+  .consignes textarea{width:100%;min-height:70px;border:1px solid var(--trait);border-radius:8px;padding:8px;font:inherit;resize:vertical}
+  .consignes .lecture{white-space:pre-wrap;font-size:14px;font-weight:600}
+  .recap{overflow-x:auto}
+  table.recap-t{border-collapse:collapse;width:100%;font-size:13px}
+  table.recap-t th,table.recap-t td{border:1px solid var(--trait);padding:6px 8px;text-align:center}
+  table.recap-t th:first-child,table.recap-t td:first-child{text-align:left;font-weight:700}
+  table.recap-t thead th{background:var(--rose)}
+
+  .voile{position:fixed;inset:0;background:rgba(20,20,25,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .voile.ouvert{display:flex}
+  .modale{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:20px}
+  .modale h2{margin:0 0 4px;font-size:18px}
+  .modale h4{margin:16px 0 4px;font-size:14px}
+  .modale p,.modale li{font-size:13px;line-height:1.55;color:#3A3A42}
+  .modale label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px}
+  .modale input{width:100%;padding:8px 10px;border:1px solid var(--trait);border-radius:8px;font:inherit}
+  .modale pre{background:#F5F4F1;border:1px solid var(--trait);border-radius:8px;padding:10px;font-size:11px;overflow:auto;white-space:pre-wrap}
+  .modale .pied{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+  #testRes,#codeRes{font-size:12px;font-weight:700;margin-top:8px}
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--encre);color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60}
+  #toast.on{opacity:1}
+
+  #impression{display:none}
+  .fiche{padding:8mm 0}
+  .fiche h2{margin:0;font-size:20px}
+  .fiche .meta{margin:2px 0 10px;font-size:13px;color:#333;font-weight:600}
+  .fiche table{border-collapse:collapse;width:100%;font-size:13px}
+  .fiche th,.fiche td{border:1px solid #999;padding:5px 7px}
+  .fiche th{background:#EEE;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .fiche td.case{width:34px;text-align:center}
+  .fiche .note{margin-top:8px;font-size:12px;border:1px dashed #999;padding:6px}
+  .bandeau{height:8px;margin-bottom:6px;border-radius:2px}
+  .guide h2{font-size:22px;margin:0 0 6px}
+  .guide h3{font-size:14px;margin:14px 0 4px}
+  .guide p,.guide li{font-size:13px;line-height:1.6}
+
+  @media (max-width:1100px){ .tableau,.tableau.quatre{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:640px){ .tableau,.tableau.quatre{grid-template-columns:1fr} }
+  @media print{
+    body{background:#fff}
+    header.top,.onglets,.zone,.voile,#toast,#connexion{display:none !important}
+    #impression{display:block !important}
+    .fiche,.guide{page-break-after:always}
+    .fiche:last-child,.guide:last-child{page-break-after:auto}
+    @page{size:A4;margin:12mm}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= CONNEXION ================= -->
+<div id="connexion">
+  <div class="boite">
+    <div class="tete">
+      <h1>Répartition des tournées</h1>
+      <p>4 chauffeurs · du 3 août au 6 septembre</p>
+    </div>
+    <div class="corps">
+      <label for="codeSaisi">Code d'accès</label>
+      <input id="codeSaisi" type="password" inputmode="numeric" maxlength="8" placeholder="••••"
+             onkeydown="if(event.key==='Enter') connecter()">
+      <button class="sombre" onclick="connecter()">Entrer</button>
+      <div class="err" id="erreurCode"></div>
+      <div class="aide">
+        <b>Code responsable</b> : accès complet, préparation de la répartition.<br>
+        <b>Code distribution</b> : remise des bons de livraison uniquement.
+      </div>
+      <div class="defaut" id="codesDefaut" hidden>
+        Premier démarrage — code responsable : <b>1234</b>, code distribution : <b>5678</b>.
+        Changez-les tout de suite avec le bouton « Codes d'accès ».
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APPLICATION ================= -->
+<div id="appli" hidden>
+<header class="top">
+  <div>
+    <h1>Répartition des tournées — 4 chauffeurs</h1>
+    <div class="sub">Du lundi 3 août au dimanche 6 septembre · S32 à S36</div>
+  </div>
+  <div class="barre">
+    <span class="qui" id="qui"></span>
+    <div id="synchro" onclick="ouvrirReglages()" title="Réglages de synchronisation"><span class="point"></span><span id="synchroTxt">Local</span></div>
+    <button id="btnCodes" onclick="ouvrirCodes()">Codes d'accès</button>
+    <button id="btnInstaller" onclick="installer()">Installer l'application</button>
+    <button onclick="ouvrirGuide()">Mode d'emploi</button>
+    <button id="btnExport" onclick="exporter()">Enregistrer un fichier</button>
+    <button id="btnImport" onclick="document.getElementById('fichier').click()">Ouvrir un fichier</button>
+    <input type="file" id="fichier" accept=".json" style="display:none" onchange="importer(this)">
+    <button onclick="deconnecter()">Déconnexion</button>
+  </div>
+</header>
+
+<nav class="onglets">
+  <button id="ongletDistribuer" onclick="changerVue('distribuer')">Distribuer les bons</button>
+  <button id="ongletRepartir" onclick="changerVue('repartir')">Préparer la répartition</button>
+</nav>
+
+<div class="zone">
+  <div class="semaines" id="semaines"></div>
+  <div id="alerte"></div>
+
+  <section id="vueDistribuer">
+    <div class="outils">
+      <button class="sombre" onclick="imprimer('semaine')">Imprimer les 4 fiches de la semaine</button>
+      <button onclick="imprimer('mois')">Imprimer tout le mois</button>
+      <button onclick="reinitRemis()">Décocher toute la semaine</button>
+    </div>
+    <div class="astuce">Cliquez sur un client pour cocher son bon comme remis.</div>
+    <div class="tableau quatre" id="colonnesDistrib"></div>
+    <div class="consignes" id="consigneLecture"></div>
+  </section>
+
+  <section id="vueRepartir" hidden>
+    <div class="outils">
+      <input type="search" id="recherche" placeholder="Chercher un client…" oninput="dessinerPreparation()">
+      <div class="interrupteur" id="interBinome" onclick="basculerModeBinome()">
+        <span class="voyant"></span> Mode binôme (2 chauffeurs)
+      </div>
+      <button onclick="repartirAuto()">Répartition auto équilibrée</button>
+      <button onclick="copierPrecedente()">Reprendre la semaine précédente</button>
+      <button onclick="viderSemaine()">Tout remettre à attribuer</button>
+    </div>
+    <div class="astuce" id="astucePrep"></div>
+    <div class="tableau" id="colonnesPrep"></div>
+
+    <div class="consignes">
+      <h3>Consignes de la semaine (imprimées sur chaque fiche)</h3>
+      <textarea id="consigne" placeholder="Ex. : les bons de livraison des centres aérés sont dans la pochette bleue…" oninput="majConsigne()"></textarea>
+    </div>
+    <div class="recap">
+      <h3>Récapitulatif du mois</h3>
+      <div id="recap"></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="voile" id="voile" onclick="if(event.target===this) fermerReglages()">
+  <div class="modale">
+    <h2>Synchronisation</h2>
+    <p>Renseignez le projet Supabase pour que vous et votre collègue travailliez sur la même répartition. Sans ces informations, l'application fonctionne quand même : les données restent sur cet ordinateur.</p>
+    <label for="rNom">Qui utilise l'application ?</label>
+    <input id="rNom" placeholder="Votre prénom — affiché à côté de la dernière modification">
+    <label for="rUrl">URL du projet Supabase</label>
+    <input id="rUrl" placeholder="https://xxxxxxxx.supabase.co">
+    <label for="rCle">Clé publique (anon)</label>
+    <input id="rCle" placeholder="eyJhbGciOi…">
+    <div id="testRes"></div>
+    <p style="margin-top:14px">Table à créer une seule fois dans l'éditeur SQL de Supabase :</p>
+    <pre>create table if not exists repartition_aout (
+  id text primary key,
+  data jsonb not null,
+  auteur text,
+  updated_at timestamptz not null default now()
+);
+alter table repartition_aout enable row level security;
+create policy "acces_public" on repartition_aout
+  for all using (true) with check (true);</pre>
+    <div class="pied">
+      <button onclick="testerConnexion()">Tester la connexion</button>
+      <button onclick="fermerReglages()">Fermer</button>
+      <button class="sombre" onclick="enregistrerReglages()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="voile" id="voileCodes" onclick="if(event.target===this) fermerCodes()">
+  <div class="modale">
+    <h2>Codes d'accès</h2>
+    <p>Deux codes différents. Le code distribution est celui que vous donnez à votre collègue : il pourra remettre les bons et cocher, mais pas modifier la répartition.</p>
+    <label for="codeResp">Code responsable (accès complet)</label>
+    <input id="codeResp" inputmode="numeric" maxlength="8">
+    <label for="codeDist">Code distribution (collègue)</label>
+    <input id="codeDist" inputmode="numeric" maxlength="8">
+    <div id="codeRes"></div>
+    <p style="margin-top:12px;color:#8C2A17"><b>Notez-les de côté :</b> si les deux codes sont perdus, il faut réinstaller l'application.</p>
+    <div class="pied">
+      <button onclick="fermerCodes()">Annuler</button>
+      <button class="sombre" onclick="enregistrerCodes()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="voile" id="voileGuide" onclick="if(event.target===this) fermerGuide()">
+  <div class="modale">
+    <h2>Mode d'emploi</h2>
+    <p>Cette application contient la répartition des tournées déjà préparée, semaine par semaine, du 3 août au 6 septembre. Il n'y a rien à décider : tout est fait.</p>
+
+    <h4>À l'ouverture</h4>
+    <p>Tapez votre code d'accès. Avec le <b>code distribution</b>, vous arrivez directement sur l'écran de remise des bons — c'est le seul dont vous avez besoin. Le bouton <b>Déconnexion</b>, en haut à droite, referme l'accès quand vous quittez le poste.</p>
+
+    <h4>Chaque jour de livraison</h4>
+    <ol>
+      <li>La semaine en cours est sélectionnée automatiquement (repère « aujourd'hui »).</li>
+      <li>Vous voyez 4 colonnes, une par chauffeur, avec la liste des clients qui lui reviennent.</li>
+      <li>Remettez à chaque chauffeur les bons de livraison de sa colonne, et <b>cochez chaque client</b> au fur et à mesure : la ligne se barre et le compteur avance.</li>
+      <li>Au besoin : <b>Imprimer les 4 fiches de la semaine</b> sort une feuille A4 par chauffeur, à agrafer avec ses bons.</li>
+    </ol>
+
+    <h4>Points d'attention</h4>
+    <ul>
+      <li>Un bandeau rouge signale les clients <b>sans chauffeur</b> : appelez le responsable.</li>
+      <li>Les clients marqués <b>« à confirmer »</b> (semaine du 31/08) ne sont pas certains : vérifiez auprès du client avant de sortir le bon.</li>
+      <li>Un client marqué <b>👥</b> est livré par deux chauffeurs ensemble : il apparaît dans les deux colonnes.</li>
+      <li>Le cadre <b>Consignes</b> en bas reprend les instructions laissées pour la semaine.</li>
+    </ul>
+
+    <div class="pied">
+      <button onclick="imprimerGuide()">Imprimer ce mode d'emploi</button>
+      <button class="sombre" onclick="fermerGuide()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="voile" id="voileInstall" onclick="if(event.target===this) this.classList.remove('ouvert')">
+  <div class="modale">
+    <h2>Installer sur l'ordinateur</h2>
+    <p>Sur Chrome ou Edge, ouvrez le menu <b>⋮</b> en haut à droite, puis <b>Installer « Répartition des tournées »</b> (ou l'icône d'installation dans la barre d'adresse). L'application s'ouvre ensuite dans sa propre fenêtre, avec un raccourci sur le bureau, et fonctionne même sans connexion.</p>
+    <p>Sur téléphone : menu du navigateur → <b>Ajouter à l'écran d'accueil</b>.</p>
+    <p>Si le bouton n'apparaît pas, c'est que la page a été ouverte depuis un fichier local. Ouvrez-la depuis son adresse web : l'installation devient possible.</p>
+    <div class="pied"><button class="sombre" onclick="document.getElementById('voileInstall').classList.remove('ouvert')">J'ai compris</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="impression"></div>
+
+<script>
+/* ================================================================
+   1. CONFIGURATION — à remplir une fois avant de mettre en ligne
+   ================================================================ */
+const SUPABASE = {
+  url:   "",          // ex. "https://abcdefgh.supabase.co"
+  cle:   "",          // clé publique "anon"
+  table: "repartition_aout",
+  ligne: "aout"
+};
+const CODES_DEFAUT = { resp:"1234", dist:"5678" };
+
+/* ================================================================
+   2. SEMAINES ET CLIENTS (relevé du planning papier S32 → S36)
+   ================================================================ */
+const REG = "Restauration collective / social";
+const CA  = "Centres aérés";
+function c(nom, fam, peutetre){ return {nom:nom, fam:fam, peutetre:!!peutetre}; }
+
+const BASE_REG = [
+  "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ESAT ST JEAN",
+  "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR",
+  "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+  "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
 ];
 
-self.addEventListener("install", e=>{
-  e.waitUntil(caches.open(VERSION).then(c=>c.addAll(FICHIERS)).then(()=>self.skipWaiting()));
+const SEMAINES = [
+  { id:"S32", dates:"Du 03/08 au 09/08", debut:"2026-08-03", fin:"2026-08-09",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "AGA MFA - FLAMANTS IRIS 1","AGA MFA - FLAMANTS IRIS 2","AGA MFA - FLAMANTS IRIS ADO","AGORA",
+      "APIS INGÉNIERIE - COIN JOLI","ASSOCIATION CENTRE SOCIAL LES LIERRES 1","CCO - BERNARD DUBOIS",
+      "CCO - SAINT LOUP","CCO - SAINTE MARTHE","IFAC COURS JULIEN","LA LIGUE 13 CHÂTEAU GOMBERT",
+      "LA LIGUE 13 CHÂTEAU GOMBERT ADO","LA LIGUE 13 LES 3 LUCS","LA LIGUE 13 LES MUSARDISES",
+      "ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","CENTRE SOCIAL FRAIS VALLON","CENTRE SOCIAL LA CASTELLANE",
+      "CENTRE SOCIAL LA CASTELLANE ADO","CENTRE SOCIAL STE ELISABETH MAT","CENTRE SOCIAL STE ELISABETH PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S33", dates:"Du 10/08 au 16/08", debut:"2026-08-10", fin:"2026-08-16",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "APIS INGÉNIERIE - COIN JOLI","IFAC COURS JULIEN","LA LIGUE 13 CHÂTEAU GOMBERT",
+      "LA LIGUE 13 CHÂTEAU GOMBERT ADO","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM",
+      "CENTRE SOCIAL FRAIS VALLON","CENTRE SOCIAL STE ELISABETH MAT","CENTRE SOCIAL STE ELISABETH PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S34", dates:"Du 17/08 au 23/08", debut:"2026-08-17", fin:"2026-08-23",
+    clients: BASE_REG.map(n=>c(n,REG)).concat([
+      "APIS INGÉNIERIE - COIN JOLI","ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM","CENTRE SOCIAL FRAIS VALLON"
+    ].map(n=>c(n,CA))) },
+  { id:"S35", dates:"Du 24/08 au 30/08", debut:"2026-08-24", fin:"2026-08-30",
+    clients: [
+      "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ARGONAUTES","ESAT ST JEAN",
+      "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR",
+      "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+      "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
+    ].map(n=>c(n,REG)).concat([
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ MAT",
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ PRIM",
+      "CENTRE SOCIAL SAINT GINIEZ MILAN - ACM ST GINIEZ ADO",
+      "ROY D'ESPAGNE MAT","ROY D'ESPAGNE PRIM"
+    ].map(n=>c(n,CA))) },
+  { id:"S36", dates:"Du 31/08 au 06/09", debut:"2026-08-31", fin:"2026-09-06",
+    clients: [
+      "AMPM BMPM Barquette","AMPM BMPM","SECURITE CIVILE","ARGONAUTES","COMPAGNONS MIDI","COMPAGNONS SOIR",
+      "ESAT ST JEAN","ESAT PHOCEEN","VILLA NIOZELLES",
+      "UNITÉ A MIDI","UNITÉ A SOIR","UNITÉ B MIDI","UNITÉ B SOIR","UNITÉ C MIDI","UNITÉ C SOIR","UNITÉ D",
+      "CAARUD LE SLEEP'IN",
+      "CHRS CHEZ SIMONE MIDI","CHRS CHEZ SIMONE SOIR","CHRS LA MINOTERIE MIDI","CHRS LA MINOTERIE SOIR",
+      "CHRS LA SELONNE MIDI","CHRS LA SELONNE SOIR","LHSS FONTAINIEU MIDI","LHSS FONTAINIEU SOIR","BAGAGERIE"
+    ].map(n=>c(n,REG)).concat([
+      c("ASSOCIATION CENTRE SOCIAL LES LIERRES 1",CA), c("ASSOCIATION CENTRE SOCIAL LES LIERRES 2",CA),
+      c("CCO - SAINT LOUP",CA), c("CCO - SAINTE MARTHE",CA,true), c("CCO - LA CABUCELLE",CA,true),
+      c("IFAC CHAVE COPELLO",CA), c("IFAC COURS JULIEN",CA), c("LA LIGUE 13 BONNEVEINE",CA),
+      c("LA LIGUE 13 CHÂTEAU GOMBERT",CA), c("LA LIGUE 13 CHÂTEAU GOMBERT ADO",CA),
+      c("LA LIGUE 13 LES MUSARDISES",CA,true), c("ROY D'ESPAGNE MAT",CA), c("ROY D'ESPAGNE PRIM",CA)
+    ]) }
+];
+
+const COULEURS = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)"];
+const COUL_HEX = ["#E8452C","#1565D8","#F5A300","#2E9E4F"];
+const CLE_LOC = "repartition_chauffeurs_aout";
+const CLE_CFG = "repartition_chauffeurs_cfg";
+const CLE_SESSION = "repartition_profil";
+
+let etat = {
+  chauffeurs:[
+    {nom:"Chauffeur 1", camion:"Camion 1"},
+    {nom:"Chauffeur 2", camion:"Camion 2"},
+    {nom:"Chauffeur 3", camion:"Camion 3"},
+    {nom:"Chauffeur 4", camion:"Camion 4"}
+  ],
+  affect:{}, consignes:{}, remis:{}, codes:null
+};
+let semaineActive = "S32";
+let vue = "distribuer";
+let profil = null;
+let modeBinome = false;
+let cfg = {url:SUPABASE.url, cle:SUPABASE.cle, nom:""};
+let derniereMaj = null, minuteur = null, envoiEnCours = false;
+let invitationInstall = null;
+let carteEnCours = null;
+
+function sem(id){ return SEMAINES.find(s=>s.id===id); }
+function aff(id){ if(!etat.affect[id]) etat.affect[id]={}; return etat.affect[id]; }
+function rem(id){ if(!etat.remis[id]) etat.remis[id]={}; return etat.remis[id]; }
+function connecte(){ return !!(cfg.url && cfg.cle); }
+function responsable(){ return profil === "resp"; }
+function codes(){ return etat.codes || CODES_DEFAUT; }
+
+/* Un client a 1 chauffeur, ou 2 en binôme. Toujours renvoyé sous forme de liste. */
+function chDe(id, nom){
+  const v = aff(id)[nom];
+  if(v===undefined || v===null) return [];
+  return Array.isArray(v) ? v.slice() : [v];
+}
+function poserCh(id, nom, liste){
+  const a = aff(id);
+  if(!liste || !liste.length) delete a[nom]; else a[nom] = liste.slice().sort((x,y)=>x-y);
+}
+function nomsCh(liste){ return liste.map(i=>etat.chauffeurs[i] ? etat.chauffeurs[i].nom : "?").join(" + "); }
+
+/* ================================================================
+   3. CONNEXION
+   ================================================================ */
+function connecter(){
+  const saisi = document.getElementById("codeSaisi").value.trim();
+  const err = document.getElementById("erreurCode");
+  if(saisi === codes().resp) ouvrirSession("resp");
+  else if(saisi === codes().dist) ouvrirSession("dist");
+  else{
+    err.textContent = "Code incorrect.";
+    document.getElementById("codeSaisi").value = "";
+    document.getElementById("codeSaisi").focus();
+  }
+}
+function ouvrirSession(p){
+  profil = p;
+  try{ sessionStorage.setItem(CLE_SESSION, p); }catch(e){}
+  document.getElementById("connexion").hidden = true;
+  document.getElementById("appli").hidden = false;
+  document.getElementById("erreurCode").textContent = "";
+  document.getElementById("codeSaisi").value = "";
+  appliquerProfil();
+  if(!responsable()) vue = "distribuer";
+  toutDessiner();
+  demarrerSynchro();
+}
+function deconnecter(){
+  profil = null;
+  try{ sessionStorage.removeItem(CLE_SESSION); }catch(e){}
+  document.getElementById("appli").hidden = true;
+  document.getElementById("connexion").hidden = false;
+  document.getElementById("codeSaisi").focus();
+}
+function appliquerProfil(){
+  const resp = responsable();
+  document.getElementById("qui").textContent = resp ? "Responsable" : "Distribution";
+  document.getElementById("ongletRepartir").hidden = !resp;
+  document.getElementById("btnCodes").hidden = !resp;
+  document.getElementById("btnExport").hidden = !resp;
+  document.getElementById("btnImport").hidden = !resp;
+  document.getElementById("codesDefaut").hidden = !!etat.codes;
+}
+function ouvrirCodes(){
+  document.getElementById("codeResp").value = codes().resp;
+  document.getElementById("codeDist").value = codes().dist;
+  document.getElementById("codeRes").textContent = "";
+  document.getElementById("voileCodes").classList.add("ouvert");
+}
+function fermerCodes(){ document.getElementById("voileCodes").classList.remove("ouvert"); }
+function enregistrerCodes(){
+  const r = document.getElementById("codeResp").value.trim();
+  const d = document.getElementById("codeDist").value.trim();
+  const res = document.getElementById("codeRes");
+  if(r.length<4 || d.length<4){ res.style.color="#B3261E"; res.textContent="Chaque code doit faire au moins 4 caractères."; return; }
+  if(r===d){ res.style.color="#B3261E"; res.textContent="Les deux codes doivent être différents."; return; }
+  etat.codes = {resp:r, dist:d};
+  sauver(); fermerCodes(); appliquerProfil();
+  toast("Codes enregistrés");
+}
+
+/* ================================================================
+   4. SAUVEGARDE
+   ================================================================ */
+function lireLocal(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function ecrireLocal(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+function sauver(){
+  ecrireLocal(CLE_LOC, JSON.stringify(etat));
+  if(!connecte()) return;
+  statut("envoi","Envoi…");
+  clearTimeout(minuteur);
+  minuteur = setTimeout(envoyer, 700);
+}
+function entetes(extra){
+  const h = {"apikey":cfg.cle,"Authorization":"Bearer "+cfg.cle,"Content-Type":"application/json"};
+  if(extra) Object.assign(h, extra);
+  return h;
+}
+async function envoyer(){
+  if(!connecte()) return;
+  envoiEnCours = true;
+  try{
+    const corps = [{id:SUPABASE.ligne, data:etat, auteur:cfg.nom || "", updated_at:new Date().toISOString()}];
+    const r = await fetch(cfg.url.replace(/\/$/,"")+"/rest/v1/"+SUPABASE.table,
+      {method:"POST", headers:entetes({"Prefer":"resolution=merge-duplicates,return=representation"}), body:JSON.stringify(corps)});
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    derniereMaj = (d[0] && d[0].updated_at) || new Date().toISOString();
+    statut("ok","Enregistré à "+heure(derniereMaj));
+  }catch(e){ statut("ko","Enregistré sur cet ordinateur"); }
+  finally{ envoiEnCours = false; }
+}
+async function recuperer(){
+  if(!connecte()) return null;
+  const u = cfg.url.replace(/\/$/,"")+"/rest/v1/"+SUPABASE.table+"?id=eq."+SUPABASE.ligne+"&select=data,auteur,updated_at";
+  const r = await fetch(u,{headers:entetes()});
+  if(!r.ok) throw new Error(await r.text());
+  const d = await r.json();
+  return d[0] || null;
+}
+async function verifierNouveautes(){
+  if(!profil || !connecte() || envoiEnCours || document.querySelector(".voile.ouvert")) return;
+  try{
+    const ligne = await recuperer();
+    if(ligne && ligne.updated_at !== derniereMaj){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      toutDessiner();
+      toast((ligne.auteur ? ligne.auteur+" a" : "Quelqu'un a")+" modifié la répartition — affichage mis à jour");
+      statut("ok","À jour · "+heure(ligne.updated_at)+(ligne.auteur?" · "+ligne.auteur:""));
+    }
+  }catch(e){ statut("ko","Connexion perdue"); }
+}
+function normaliser(d){
+  const affect = (d && d.affect) || {};
+  Object.keys(affect).forEach(s=>{
+    Object.keys(affect[s]).forEach(cl=>{
+      if(typeof affect[s][cl] === "number") affect[s][cl] = [affect[s][cl]];
+    });
+  });
+  return {
+    chauffeurs: (d && d.chauffeurs && d.chauffeurs.length===4) ? d.chauffeurs : etat.chauffeurs,
+    affect: affect,
+    consignes: (d && d.consignes) || {},
+    remis: (d && d.remis) || {},
+    codes: (d && d.codes) || null
+  };
+}
+function statut(classe, texte){
+  document.getElementById("synchro").className = classe;
+  document.getElementById("synchroTxt").textContent = texte;
+}
+function heure(iso){ try{ return new Date(iso).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+function toast(t){
+  const el = document.getElementById("toast");
+  el.textContent = t; el.classList.add("on");
+  setTimeout(()=>el.classList.remove("on"), 3200);
+}
+
+/* ================================================================
+   5. INSTALLATION
+   ================================================================ */
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault(); invitationInstall = e;
+  document.getElementById("btnInstaller").classList.add("sombre");
 });
+async function installer(){
+  if(invitationInstall){
+    invitationInstall.prompt();
+    const res = await invitationInstall.userChoice;
+    if(res.outcome === "accepted"){ toast("Application installée"); document.getElementById("btnInstaller").hidden = true; }
+    invitationInstall = null;
+  }else{
+    document.getElementById("voileInstall").classList.add("ouvert");
+  }
+}
+window.addEventListener("appinstalled", ()=>{ document.getElementById("btnInstaller").hidden = true; });
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw-repartition.js").catch(()=>{}); });
+}
 
-self.addEventListener("activate", e=>{
-  e.waitUntil(
-    caches.keys()
-      .then(cles=>Promise.all(cles.filter(k=>k!==VERSION).map(k=>caches.delete(k))))
-      .then(()=>self.clients.claim())
-  );
-});
+/* ================================================================
+   6. RÉGLAGES ET GUIDE
+   ================================================================ */
+function ouvrirReglages(){
+  document.getElementById("rNom").value = cfg.nom || "";
+  document.getElementById("rUrl").value = cfg.url || "";
+  document.getElementById("rCle").value = cfg.cle || "";
+  document.getElementById("testRes").textContent = "";
+  document.getElementById("voile").classList.add("ouvert");
+}
+function fermerReglages(){ document.getElementById("voile").classList.remove("ouvert"); }
+function ouvrirGuide(){ document.getElementById("voileGuide").classList.add("ouvert"); }
+function fermerGuide(){ document.getElementById("voileGuide").classList.remove("ouvert"); }
 
-self.addEventListener("fetch", e=>{
-  const url = new URL(e.request.url);
-  if(e.request.method !== "GET" || url.origin !== location.origin) return;
+async function testerConnexion(){
+  const res = document.getElementById("testRes");
+  const test = {url:document.getElementById("rUrl").value.trim(), cle:document.getElementById("rCle").value.trim()};
+  if(!test.url || !test.cle){ res.style.color="#B3261E"; res.textContent="Il manque l'URL ou la clé."; return; }
+  res.style.color="#6B6B76"; res.textContent="Test en cours…";
+  const memo = cfg; cfg = {url:test.url, cle:test.cle, nom:cfg.nom};
+  try{ await recuperer(); res.style.color="#1E6B36"; res.textContent="Connexion réussie, la table répond."; }
+  catch(e){ res.style.color="#B3261E"; res.textContent="Échec : vérifiez l'URL, la clé, et que la table "+SUPABASE.table+" existe avec sa règle d'accès."; }
+  cfg = memo;
+}
+async function enregistrerReglages(){
+  cfg = {
+    nom: document.getElementById("rNom").value.trim(),
+    url: document.getElementById("rUrl").value.trim(),
+    cle: document.getElementById("rCle").value.trim()
+  };
+  ecrireLocal(CLE_CFG, JSON.stringify(cfg));
+  fermerReglages();
+  if(!connecte()){ statut("","Cet ordinateur seulement"); return; }
+  try{
+    const ligne = await recuperer();
+    if(ligne && confirm("Une répartition existe déjà en ligne (modifiée à "+heure(ligne.updated_at)+(ligne.auteur?" par "+ligne.auteur:"")+").\n\nOK = je récupère celle en ligne.\nAnnuler = j'envoie la mienne à la place.")){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      toutDessiner();
+      statut("ok","À jour · "+heure(ligne.updated_at));
+    }else{ await envoyer(); toutDessiner(); }
+  }catch(e){ statut("ko","Connexion impossible"); }
+}
 
-  // On ne répond que pour les fichiers de cette application.
-  const aMoi = ["REPARTITION_AOUT.html","manifest-repartition.json",
-                "icone-repartition-192.png","icone-repartition-512.png"]
-               .some(f => url.pathname.endsWith(f));
-  if(!aMoi) return;
+/* ================================================================
+   7. AFFICHAGE
+   ================================================================ */
+function semaineDuJour(){
+  const auj = new Date(); auj.setHours(12,0,0,0);
+  for(const s of SEMAINES){
+    const d = new Date(s.debut+"T00:00:00"), f = new Date(s.fin+"T23:59:59");
+    if(auj>=d && auj<=f) return s.id;
+  }
+  return null;
+}
+function dessinerSemaines(){
+  const auj = semaineDuJour();
+  document.getElementById("semaines").innerHTML = SEMAINES.map(s=>{
+    const total = s.clients.length;
+    const sousTitre = vue==="distribuer"
+      ? s.dates + " · " + s.clients.filter(cl=>rem(s.id)[cl.nom]).length + "/" + total + " bons remis"
+      : s.dates + " · " + s.clients.filter(cl=>chDe(s.id, cl.nom).length).length + "/" + total + " attribués";
+    return `<button class="${s.id===semaineActive?'actif':''}" onclick="choisirSemaine('${s.id}')">
+      <b>${s.id}${s.id===auj?'<span class="auj">aujourd\'hui</span>':''}</b><span>${sousTitre}</span></button>`;
+  }).join("");
+}
 
-  e.respondWith(
-    fetch(e.request)
-      .then(rep=>{
-        const copie = rep.clone();
-        caches.open(VERSION).then(c=>c.put(e.request, copie));
-        return rep;
-      })
-      .catch(()=>caches.match(e.request).then(r=>r || caches.match("./REPARTITION_AOUT.html")))
-  );
-});
+function dessinerPreparation(){
+  const s = sem(semaineActive);
+  const q = (document.getElementById("recherche").value || "").trim().toLowerCase();
+  const filtre = cl => !q || cl.nom.toLowerCase().indexOf(q) >= 0;
+
+  document.getElementById("astucePrep").innerHTML = modeBinome
+    ? "<b>Mode binôme actif</b> — cliquez sur un 2<sup>e</sup> chauffeur pour l'ajouter au client (2 maximum). Recliquez sur une pastille allumée pour retirer ce chauffeur."
+    : "Glissez une carte d'une colonne à l'autre, ou cliquez sur la pastille du chauffeur voulu. Le bouton ✕ renvoie le client dans « À attribuer ».";
+
+  const attente = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0 && filtre(cl));
+  const totalAttente = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0).length;
+  let html = `<div class="colonne attente" ondragover="survol(event,true)" ondragleave="survol(event,false)" ondrop="deposer(event,-1)">
+      <div class="tete"><h3>À attribuer</h3>
+        <div style="font-size:12px;font-weight:700;color:var(--gris);margin-top:3px">clients sans chauffeur</div></div>
+      <div class="compteur">${totalAttente} client${totalAttente>1?'s':''}</div>
+      <div class="jauge"><i style="width:${s.clients.length?Math.round(totalAttente/s.clients.length*100):0}%"></i></div>
+      <div class="contenu">${attente.length ? attente.map(cl=>carteHtml(s, cl, null)).join("") : '<div class="vide">Rien en attente 👍</div>'}</div>
+    </div>`;
+
+  html += etat.chauffeurs.map((ch,i)=>{
+    const tous = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0);
+    const vus = tous.filter(filtre);
+    const pct = s.clients.length ? Math.round(tous.length/s.clients.length*100) : 0;
+    return `<div class="colonne" style="--col:${COULEURS[i]}" ondragover="survol(event,true)" ondragleave="survol(event,false)" ondrop="deposer(event,${i})">
+      <div class="tete">
+        <input value="${echap(ch.nom)}" onchange="renommer(${i},'nom',this.value)" aria-label="Prénom du chauffeur ${i+1}">
+        <input class="camion" value="${echap(ch.camion)}" onchange="renommer(${i},'camion',this.value)" aria-label="Camion du chauffeur ${i+1}">
+      </div>
+      <div class="compteur">${tous.length} client${tous.length>1?'s':''}</div>
+      <div class="jauge"><i style="width:${pct}%"></i></div>
+      <div class="contenu">${vus.length ? vus.map(cl=>carteHtml(s, cl, i)).join("") : '<div class="vide">Déposez un client ici</div>'}</div>
+      <div class="pied"><button onclick="imprimerFiche(${i})">Imprimer sa fiche</button></div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("colonnesPrep").innerHTML = html;
+  document.getElementById("interBinome").className = "interrupteur" + (modeBinome ? " on" : "");
+  document.getElementById("consigne").value = etat.consignes[semaineActive] || "";
+}
+
+function carteHtml(s, cl, colonne){
+  const equipe = chDe(s.id, cl.nom);
+  const autres = colonne===null ? [] : equipe.filter(x=>x!==colonne);
+  const past = etat.chauffeurs.map((ch,j)=>
+    `<button class="${equipe.indexOf(j)>=0?'on':''}" style="--cb:${COUL_HEX[j]}" title="${echap(ch.nom)}"
+       onclick="affecter('${echapJs(cl.nom)}',${j})">${initiales(ch.nom,j)}</button>`).join("");
+  const retirer = equipe.length ? `<button class="retirer" title="Remettre dans « À attribuer »" onclick="detacher('${echapJs(cl.nom)}')">✕</button>` : "";
+  const marques = (cl.peutetre ? '<span class="peutetre">à confirmer</span>' : '')
+                + (autres.length ? '<span class="binome">👥 avec '+echap(nomsCh(autres))+'</span>' : '');
+  return `<div class="carte" style="--col:${colonne===null?'#C8C8CE':COULEURS[colonne]}" draggable="true"
+      ondragstart="glisser(event,'${echapJs(cl.nom)}')" ondragend="finGlisse(event)">
+    <div class="nom">${echap(cl.nom)}</div>
+    ${marques ? '<div class="marques">'+marques+'</div>' : ''}
+    <div class="boutons">${past}${retirer}</div>
+  </div>`;
+}
+
+function dessinerDistribution(){
+  const s = sem(semaineActive), r = rem(s.id);
+  document.getElementById("colonnesDistrib").innerHTML = etat.chauffeurs.map((ch,i)=>{
+    const clients = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0);
+    const faits = clients.filter(cl=>r[cl.nom]).length;
+    const pct = clients.length ? Math.round(faits/clients.length*100) : 0;
+    const items = clients.length ? clients.map(cl=>{
+      const autres = chDe(s.id, cl.nom).filter(x=>x!==i);
+      return `<li class="${r[cl.nom]?'fait':''}" onclick="basculerRemis('${echapJs(cl.nom)}')">
+         <span class="coche">${r[cl.nom]?'✓':''}</span>
+         <span class="txt">${echap(cl.nom)}
+           ${cl.peutetre?'<span class="peutetre">à confirmer</span>':''}
+           ${autres.length?'<span class="binome">👥 avec '+echap(nomsCh(autres))+'</span>':''}</span>
+       </li>`;
+    }).join("") : `<li style="color:#9A9AA2;cursor:default">Aucun client cette semaine</li>`;
+    return `<div class="colonne" style="--col:${COULEURS[i]}">
+      <div class="tete"><h3>${echap(ch.nom)}</h3>
+        <div style="font-size:12px;font-weight:700;color:var(--gris);margin-top:3px">${echap(ch.camion)}</div></div>
+      <div class="compteur">${faits}/${clients.length} bons remis</div>
+      <div class="jauge"><i style="width:${pct}%"></i></div>
+      <ul>${items}</ul>
+      <div class="pied"><button onclick="imprimerFiche(${i})">Imprimer sa fiche</button></div>
+    </div>`;
+  }).join("");
+
+  const cons = etat.consignes[semaineActive];
+  document.getElementById("consigneLecture").innerHTML = cons
+    ? `<h3>Consignes de la semaine</h3><div class="lecture">${echap(cons)}</div>`
+    : `<h3>Consignes de la semaine</h3><div class="lecture" style="color:#9A9AA2">Aucune consigne particulière.</div>`;
+}
+
+function dessinerAlerte(){
+  const s = sem(semaineActive);
+  const reste = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0);
+  const aConfirmer = s.clients.filter(cl=>cl.peutetre);
+  let h = reste.length===0
+    ? `<div class="alerte ok">Semaine ${s.id} complète : les ${s.clients.length} clients ont un chauffeur.</div>`
+    : `<div class="alerte rouge">${reste.length} client${reste.length>1?'s':''} sans chauffeur en ${s.id}${vue==="distribuer"?" — prévenez le responsable":""}.</div>`;
+  if(aConfirmer.length && vue==="distribuer"){
+    h += `<div class="alerte">${aConfirmer.length} client${aConfirmer.length>1?'s':''} à confirmer avant de sortir les bons : ${echap(aConfirmer.map(x=>x.nom).join(" · "))}</div>`;
+  }
+  document.getElementById("alerte").innerHTML = h;
+}
+function dessinerRecap(){
+  let h = `<table class="recap-t"><thead><tr><th>Chauffeur</th>${SEMAINES.map(s=>`<th>${s.id}<br><span style="font-weight:400;font-size:11px">${s.dates.replace('Du ','')}</span></th>`).join("")}<th>Total mois</th></tr></thead><tbody>`;
+  etat.chauffeurs.forEach((ch,i)=>{
+    let tot=0;
+    const cells = SEMAINES.map(s=>{ const n = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0).length; tot+=n; return `<td>${n}</td>`; }).join("");
+    h += `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COUL_HEX[i]};margin-right:6px"></span>${echap(ch.nom)} — ${echap(ch.camion)}</td>${cells}<td><b>${tot}</b></td></tr>`;
+  });
+  const nonAff = SEMAINES.map(s=>{ const n = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0).length; return `<td${n?' style="color:#B3261E;font-weight:800"':''}>${n}</td>`; }).join("");
+  const totalNon = SEMAINES.reduce((t,s)=>t+s.clients.filter(cl=>chDe(s.id, cl.nom).length===0).length,0);
+  h += `<tr><td>Sans chauffeur</td>${nonAff}<td><b>${totalNon}</b></td></tr></tbody></table>`;
+  document.getElementById("recap").innerHTML = h;
+}
+function majOnglets(){
+  document.getElementById("ongletDistribuer").className = vue==="distribuer" ? "actif" : "";
+  document.getElementById("ongletRepartir").className = vue==="repartir" ? "actif" : "";
+  document.getElementById("vueDistribuer").hidden = vue!=="distribuer";
+  document.getElementById("vueRepartir").hidden = vue!=="repartir";
+}
+function toutDessiner(){
+  if(!profil) return;
+  majOnglets(); dessinerSemaines(); dessinerAlerte();
+  if(vue==="distribuer") dessinerDistribution();
+  else{ dessinerPreparation(); dessinerRecap(); }
+}
+
+/* ================================================================
+   8. ACTIONS
+   ================================================================ */
+function changerVue(v){
+  if(v==="repartir" && !responsable()){ toast("Réservé au responsable"); return; }
+  vue = v; toutDessiner();
+}
+function choisirSemaine(id){ semaineActive = id; toutDessiner(); }
+function basculerModeBinome(){ modeBinome = !modeBinome; dessinerPreparation(); }
+
+function affecter(nom, i){
+  if(!responsable()){ toast("Réservé au responsable"); return; }
+  const cur = chDe(semaineActive, nom);
+  let suite;
+  if(cur.indexOf(i)>=0) suite = cur.filter(x=>x!==i);
+  else if(modeBinome){
+    if(cur.length>=2){ toast("Deux chauffeurs maximum sur un client — retirez-en un d'abord"); return; }
+    suite = cur.concat([i]);
+  }
+  else suite = [i];
+  poserCh(semaineActive, nom, suite);
+  sauver(); toutDessiner();
+}
+function detacher(nom){
+  if(!responsable()) return;
+  poserCh(semaineActive, nom, []);
+  sauver(); toutDessiner();
+}
+function glisser(ev, nom){
+  if(!responsable()){ ev.preventDefault(); return; }
+  carteEnCours = nom;
+  ev.dataTransfer.effectAllowed = "move";
+  try{ ev.dataTransfer.setData("text/plain", nom); }catch(e){}
+  ev.target.classList.add("glisse");
+}
+function finGlisse(ev){ ev.target.classList.remove("glisse"); carteEnCours = null; }
+function survol(ev, entre){
+  ev.preventDefault();
+  if(entre) ev.currentTarget.classList.add("survol");
+  else ev.currentTarget.classList.remove("survol");
+}
+function deposer(ev, i){
+  ev.preventDefault();
+  ev.currentTarget.classList.remove("survol");
+  let nom = carteEnCours;
+  try{ nom = ev.dataTransfer.getData("text/plain") || carteEnCours; }catch(e){}
+  if(!nom) return;
+  if(i === -1) detacher(nom); else affecter(nom, i);
+}
+function basculerRemis(nom){
+  const r = rem(semaineActive);
+  if(r[nom]) delete r[nom]; else r[nom] = true;
+  sauver(); dessinerDistribution(); dessinerSemaines();
+}
+function reinitRemis(){
+  if(!confirm("Décocher tous les bons remis de "+semaineActive+" ?")) return;
+  etat.remis[semaineActive] = {};
+  sauver(); toutDessiner();
+}
+function renommer(i, champ, val){
+  if(!responsable()) return;
+  etat.chauffeurs[i][champ] = val.trim() || (champ==="nom" ? "Chauffeur "+(i+1) : "Camion "+(i+1));
+  sauver(); toutDessiner();
+}
+function majConsigne(){
+  if(!responsable()) return;
+  etat.consignes[semaineActive] = document.getElementById("consigne").value;
+  sauver();
+}
+function base(nom){ return nom.replace(/\s+(MIDI|SOIR)$/,""); }
+
+function repartirAuto(){
+  if(!responsable()) return;
+  const s = sem(semaineActive);
+  if(!confirm("Répartir automatiquement les "+s.clients.length+" clients de "+s.id+" entre les 4 chauffeurs ? La répartition actuelle de cette semaine sera remplacée.")) return;
+  const a = {}; etat.affect[semaineActive] = a;
+  const charges = [0,0,0,0], paquets = [], index = {};
+  s.clients.forEach(cl=>{
+    const cle = cl.fam+"|"+base(cl.nom);
+    if(index[cle]===undefined){ index[cle] = paquets.length; paquets.push([]); }
+    paquets[index[cle]].push(cl.nom);
+  });
+  paquets.forEach(p=>{
+    let min = 0;
+    for(let i=1;i<4;i++) if(charges[i] < charges[min]) min = i;
+    p.forEach(n=>{ a[n] = [min]; });
+    charges[min] += p.length;
+  });
+  sauver(); toutDessiner();
+}
+function copierPrecedente(){
+  if(!responsable()) return;
+  const idx = SEMAINES.findIndex(s=>s.id===semaineActive);
+  if(idx<=0){ alert("S32 est la première semaine : il n'y a rien à reprendre avant."); return; }
+  const prec = SEMAINES[idx-1], cible = aff(semaineActive);
+  let repris=0, nouveaux=0;
+  sem(semaineActive).clients.forEach(cl=>{
+    const src = chDe(prec.id, cl.nom);
+    if(src.length){ cible[cl.nom] = src; repris++; }
+    else if(chDe(semaineActive, cl.nom).length===0) nouveaux++;
+  });
+  sauver(); toutDessiner();
+  alert(repris+" client(s) repris de "+prec.id+". "+nouveaux+" client(s) nouveaux restent à attribuer.");
+}
+function viderSemaine(){
+  if(!responsable()) return;
+  if(!confirm("Remettre tous les clients de "+semaineActive+" dans « À attribuer » ?")) return;
+  etat.affect[semaineActive] = {};
+  sauver(); toutDessiner();
+}
+
+/* ================================================================
+   9. FICHIERS
+   ================================================================ */
+function exporter(){
+  const blob = new Blob([JSON.stringify(etat,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "repartition-chauffeurs-aout.json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importer(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e=>{
+    try{
+      const d = JSON.parse(e.target.result);
+      if(!d.chauffeurs || !d.affect) throw 0;
+      etat = normaliser(d);
+      sauver(); toutDessiner();
+      toast("Répartition chargée depuis le fichier");
+    }catch(err){ alert("Ce fichier n'est pas une sauvegarde de répartition. Choisissez le fichier .json enregistré depuis cette application."); }
+    input.value = "";
+  };
+  r.readAsText(f);
+}
+
+/* ================================================================
+   10. IMPRESSION
+   ================================================================ */
+function imprimer(portee){
+  const liste = portee==="mois" ? SEMAINES : [sem(semaineActive)];
+  let h = "";
+  liste.forEach(s=>{
+    etat.chauffeurs.forEach((ch,i)=>{ h += ficheHtml(s, ch, i, s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0)); });
+    const orphelins = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0);
+    if(orphelins.length) h += ficheHtml(s, {nom:"À ATTRIBUER", camion:"—"}, null, orphelins);
+  });
+  lancerImpression(h);
+}
+function imprimerFiche(i){
+  const s = sem(semaineActive);
+  lancerImpression(ficheHtml(s, etat.chauffeurs[i], i, s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0)));
+}
+function imprimerGuide(){
+  const g = document.querySelector("#voileGuide .modale").cloneNode(true);
+  g.querySelector(".pied").remove();
+  lancerImpression('<div class="guide">'+g.innerHTML+'</div>');
+}
+function lancerImpression(html){
+  document.getElementById("impression").innerHTML = html;
+  window.print();
+}
+function ficheHtml(s, ch, i, clients){
+  const coul = i===null ? "#B3261E" : COUL_HEX[i];
+  const r = rem(s.id);
+  const lignes = clients.length ? clients.map(cl=>{
+    const autres = i===null ? [] : chDe(s.id, cl.nom).filter(x=>x!==i);
+    return `<tr>
+      <td class="case">${r[cl.nom]?'☑':'☐'}</td>
+      <td>${echap(cl.nom)}${cl.peutetre?' <b>(à confirmer)</b>':''}${autres.length?' <i>— en binôme avec '+echap(nomsCh(autres))+'</i>':''}</td>
+      <td style="font-size:11px;color:#555">${cl.fam===REG?"Resto collective":"Centre aéré"}</td>
+      <td style="width:120px"></td></tr>`;
+  }).join("") : `<tr><td colspan="4" style="text-align:center;color:#777">Aucun client attribué pour cette semaine.</td></tr>`;
+  const note = etat.consignes[s.id] ? `<div class="note"><b>Consignes :</b> ${echap(etat.consignes[s.id])}</div>` : "";
+  return `<div class="fiche">
+    <div class="bandeau" style="background:${coul}"></div>
+    <h2>${echap(ch.nom)} — ${echap(ch.camion)}</h2>
+    <div class="meta">Semaine ${s.id} · ${s.dates} · ${clients.length} client${clients.length>1?'s':''} · bons de livraison à remettre</div>
+    <table><thead><tr><th>Remis</th><th>Client</th><th>Type</th><th>Observation</th></tr></thead>
+    <tbody>${lignes}</tbody></table>
+    ${note}
+    <div style="margin-top:14px;font-size:12px">Signature du chauffeur : ______________________&nbsp;&nbsp;&nbsp;Date : ____ / ____</div>
+  </div>`;
+}
+
+/* ================================================================
+   11. UTILITAIRES
+   ================================================================ */
+function echap(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function echapJs(t){ return String(t).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+function initiales(nom,i){
+  const n = String(nom).trim();
+  if(/^Chauffeur \d$/.test(n)) return String(i+1);
+  const p = n.split(/\s+/);
+  return (p.length>1 ? p[0][0]+p[1][0] : n.slice(0,2)).toUpperCase();
+}
+
+/* ================================================================
+   12. DÉMARRAGE
+   ================================================================ */
+async function demarrerSynchro(){
+  if(!connecte()){ statut("","Cet ordinateur — cliquez pour synchroniser"); return; }
+  statut("envoi","Connexion…");
+  try{
+    const ligne = await recuperer();
+    if(ligne){
+      derniereMaj = ligne.updated_at;
+      etat = normaliser(ligne.data);
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      appliquerProfil(); toutDessiner();
+      statut("ok","À jour · "+heure(ligne.updated_at)+(ligne.auteur?" · "+ligne.auteur:""));
+    }else{ await envoyer(); }
+  }catch(e){ statut("ko","Hors ligne — travail enregistré ici"); }
+}
+
+(function(){
+  const cfgLoc = lireLocal(CLE_CFG);
+  if(cfgLoc){ try{ const d = JSON.parse(cfgLoc); cfg = {url:d.url||SUPABASE.url, cle:d.cle||SUPABASE.cle, nom:d.nom||""}; }catch(e){} }
+
+  const loc = lireLocal(CLE_LOC);
+  if(loc){ try{ etat = normaliser(JSON.parse(loc)); }catch(e){} }
+
+  semaineActive = semaineDuJour() || "S32";
+  const rienDeFait = SEMAINES.every(s=>Object.keys(aff(s.id)).length===0);
+  vue = rienDeFait ? "repartir" : "distribuer";
+  document.getElementById("codesDefaut").hidden = !!etat.codes;
+
+  let session = null;
+  try{ session = sessionStorage.getItem(CLE_SESSION); }catch(e){}
+  if(session === "resp" || session === "dist") ouvrirSession(session);
+  else document.getElementById("codeSaisi").focus();
+
+  setInterval(verifierNouveautes, 30000);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) verifierNouveautes(); });
+})();
+</script>
+</body>
+</html>
