@@ -1,7 +1,7 @@
 /* Service worker de l'application Â« RÃ©partition des tournÃ©es Â».
    Il ne s'occupe QUE de ses propres fichiers : les autres applications
    du dÃ©pÃ´t (App Chauffeur, Planning, Vestiairesâ€¦) ne sont pas touchÃ©es. */
-const VERSION = "repartition-v5";
+const VERSION = "repartition-v6";
 const FICHIERS = [
   "./REPARTITION_AOUT.html",
   "./manifest-repartition.json",
