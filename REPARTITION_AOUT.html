@@ -34,6 +34,9 @@
   #connexion label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
   #connexion input{width:100%;padding:14px;border:2px solid var(--trait);border-radius:10px;font:inherit;font-size:22px;font-weight:800;text-align:center;letter-spacing:8px}
   #connexion input:focus{outline:none;border-color:var(--encre)}
+  #connexion .champCode{display:flex;gap:8px;align-items:stretch}
+  #connexion .champCode input{flex:1}
+  #connexion .champCode button{width:52px;margin:0;padding:0;font-size:18px;border-radius:10px}
   #connexion button{width:100%;margin-top:12px;padding:13px;font-size:15px}
   #connexion .err{color:#B3261E;font-size:13px;font-weight:700;margin-top:10px;min-height:18px}
   #connexion .aide{margin-top:14px;font-size:12px;color:var(--gris);line-height:1.5}
@@ -182,8 +185,13 @@
     </div>
     <div class="corps">
       <label for="codeSaisi">Code d'accès</label>
-      <input id="codeSaisi" type="password" inputmode="numeric" maxlength="8" placeholder="••••"
-             onkeydown="if(event.key==='Enter') connecter()">
+      <div class="champCode">
+        <input id="codeSaisi" type="password" inputmode="numeric" maxlength="12" placeholder="••••"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="acces-repartition"
+               oninput="document.getElementById('erreurCode').textContent=''"
+               onkeydown="if(event.key==='Enter') connecter()">
+        <button type="button" id="oeil" onclick="voirCode()" title="Afficher le code">👁</button>
+      </div>
       <button class="sombre" onclick="connecter()">Entrer</button>
       <div class="err" id="erreurCode"></div>
       <div class="aide">
@@ -474,13 +482,22 @@ function nomsCh(liste){ return liste.map(i=>etat.chauffeurs[i] ? etat.chauffeurs
 /* ================================================================
    3. CONNEXION
    ================================================================ */
+function voirCode(){
+  const ch = document.getElementById("codeSaisi");
+  ch.type = ch.type === "password" ? "text" : "password";
+  ch.focus();
+}
+function propre(x){ return String(x==null?"":x).replace(/\s+/g,""); }
 function connecter(){
-  const saisi = document.getElementById("codeSaisi").value.trim();
+  const saisi = propre(document.getElementById("codeSaisi").value);
   const err = document.getElementById("erreurCode");
-  if(saisi === codes().resp) ouvrirSession("resp");
-  else if(saisi === codes().dist) ouvrirSession("dist");
+  if(!saisi){ err.textContent = "Tapez votre code, puis Entrer."; return; }
+  if(saisi === propre(codes().resp)) ouvrirSession("resp");
+  else if(saisi === propre(codes().dist)) ouvrirSession("dist");
   else{
-    err.textContent = "Code incorrect.";
+    err.innerHTML = etat.codes
+      ? "Code incorrect. Vérifiez avec le responsable."
+      : "Code incorrect. Aucun code personnalisé n'est enregistré : essayez <b>1234</b> (responsable) ou <b>5678</b> (distribution).";
     document.getElementById("codeSaisi").value = "";
     document.getElementById("codeSaisi").focus();
   }
@@ -1050,6 +1067,15 @@ async function demarrerSynchro(){
   if(loc){ try{ etat = normaliser(JSON.parse(loc)); }catch(e){} }
 
   semaineActive = semaineDuJour() || "S32";
+
+  // Porte de secours : ouvrir l'adresse avec ?raz remet les codes 1234 / 5678
+  if(location.search.indexOf("raz") >= 0){
+    if(confirm("Remettre les codes d'accès d'origine (1234 responsable, 5678 distribution) ?\n\nLa répartition n'est pas touchée.")){
+      etat.codes = null;
+      ecrireLocal(CLE_LOC, JSON.stringify(etat));
+      alert("Codes remis à 1234 et 5678.");
+    }
+  }
   const rienDeFait = SEMAINES.every(s=>Object.keys(aff(s.id)).length===0);
   vue = rienDeFait ? "repartir" : "distribuer";
   document.getElementById("codesDefaut").hidden = !!etat.codes;
