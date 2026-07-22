@@ -46,6 +46,8 @@
   .btn.install{background:#2f7d4f;border-color:#2f7d4f;color:#fff;font-weight:700}.btn.install:hover{background:#276a43}
   .btn.logout{background:#b23b3b;border-color:#b23b3b;color:#fff;font-weight:700}.btn.logout:hover{background:#9c3030}
   .topbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+  .errbanner{background:#fdecec;border:2px solid #b23b3b;color:#7a1f1f;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;font-weight:600}
+  .errbanner b{display:block;font-size:15px;margin-bottom:4px}
   .btn.ghost{background:transparent}.btn.small{padding:7px 10px;font-size:13px}
   .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
   .stat{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
@@ -158,6 +160,7 @@
 </head>
 <body>
 <div class="wrap">
+  <div id="errBanner" class="errbanner no-print" style="display:none"></div>
   <div class="topbar no-print"><button class="btn logout" onclick="lockNow()">⎋ Déconnexion</button></div>
   <header class="app">
     <div class="title">
@@ -333,7 +336,7 @@ function ts(x){ try{ return x?new Date(x).getTime():0; }catch(e){ return 0; } }
 function sig(d){ try{ return JSON.stringify({h:d.hommes,f:d.femmes,c:d.couloir,co:d.codes,a:d.accesCode}); }catch(e){ return ''; } }
 async function cloudLoad(){
   const r=await fetch(SUPA_URL+'/rest/v1/planning?date=eq.'+ROW_KEY+'&select=donnees,updated_at&limit=1',{headers:H, cache:'no-store'});
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!r.ok){ let t=''; try{ t=await r.text(); }catch(e){} throw new Error('LECTURE refusée — HTTP '+r.status+' '+t.slice(0,200)); }
   const rows=await r.json();
   if(rows[0]&&rows[0].donnees){ return {donnees:rows[0].donnees, stamp:rows[0].updated_at}; }
   return null;
@@ -350,7 +353,7 @@ async function cloudSave(){
       body:JSON.stringify([{date:ROW_KEY, donnees:payload, updated_at:now}]),
       cache:'no-store'
     });
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok){ let t=''; try{ t=await r.text(); }catch(e){} throw new Error('ÉCRITURE refusée — HTTP '+r.status+' '+t.slice(0,300)); }
     let rows=[]; try{ rows=await r.json(); }catch(e){}
     const saved=(rows&&rows[0])?rows[0]:null;
     // On aligne notre repère sur l'HEURE RÉELLE du serveur -> le poll ne rechargera plus l'ancienne version
@@ -360,9 +363,9 @@ async function cloudSave(){
     localStorage.setItem('vest_code_cache',currentCode());
     // La base renvoie la ligne enregistrée = écriture bien prise (une écriture refusée renvoie du vide)
     const okWrite = !!(saved && saved.donnees);
-    if(okWrite){ setSync('ok','Enregistré \u2713'); setTimeout(function(){ if(!dirty&&!saving) setSync('ok','Synchronisé'); },1200); markUpdated(); }
+    if(okWrite){ hideErr(); setSync('ok','Enregistré \u2713'); setTimeout(function(){ if(!dirty&&!saving) setSync('ok','Synchronisé'); },1200); markUpdated(); }
     else { setSync('off','\u26a0 Base a refusé l\'écriture'); }
-  }catch(e){ console.error(e); dirty=true; setSync('off','Hors ligne — réessai auto'); }
+  }catch(e){ console.error(e); dirty=true; setSync('off','\u26a0 NON ENREGISTRÉ'); showErr(e.message); }
 }
 /* file d'attente d'écriture (évite les envois qui se chevauchent) */
 let saveQueued=false, saving=false;
@@ -409,12 +412,11 @@ async function boot(){
   try{
     let res=await cloudLoad();
     if(!res){ data=normalize(JSON.parse(JSON.stringify(DEFAULT_DATA))); ensureIds(); await save(); }
-    else{ data=normalize(res.donnees); serverStamp=res.stamp; ensureIds(); }
+    else{ data=normalize(res.donnees); serverStamp=res.stamp; ensureIds(); hideErr(); setSync('ok','Synchronisé'); markUpdated(); }
     localStorage.setItem('vest_code_cache',currentCode());
-    setSync('ok','Synchronisé'); markUpdated();
   }catch(e){
     if(!data){ data=normalize(JSON.parse(JSON.stringify(DEFAULT_DATA))); ensureIds(); }
-    setSync('off','Hors ligne — données locales');
+    setSync('off','\u26a0 BASE INACCESSIBLE'); showErr(e.message);
   }
   render();
   enableLock();
@@ -633,6 +635,17 @@ function exportData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:'a
 async function refresh(){serverStamp=null;await poll();toast('Rechargé');}
 function setSync(cls,txt){const p=document.getElementById('syncPill');p.className='pill '+cls;document.getElementById('syncTxt').textContent=txt;}
 function markUpdated(){const el=document.getElementById('updated');el.textContent='Mise à jour : '+new Date().toLocaleString('fr-FR');document.getElementById('printDate').textContent='Édité le '+new Date().toLocaleDateString('fr-FR');}
+function showErr(detail){
+  var el=document.getElementById('errBanner'); if(!el) return;
+  var aide="";
+  if(/violates row-level security|42501|new row/i.test(detail)) aide="\n\n\u2192 CAUSE : la base interdit de CRÉER une nouvelle ligne (sécurité RLS).\n\u2192 SOLUTION : dans Supabase, table « planning », créer À LA MAIN une ligne avec date = VESTIAIRES (voir mes explications).";
+  else if(/HTTP 40[13]/.test(detail)) aide="\n\n\u2192 CAUSE : la base refuse l'accès (permissions).";
+  else if(/HTTP 4/.test(detail)) aide="\n\n\u2192 CAUSE : la base a rejeté les données (colonne manquante ou format).";
+  else aide="\n\n\u2192 CAUSE probable : pas d'accès internet vers la base.";
+  el.style.display='block';
+  el.textContent="\u26a0 LA SYNCHRONISATION NE MARCHE PAS\n"+detail+aide+"\n\nMontre ce message à Claude.";
+}
+function hideErr(){ var el=document.getElementById('errBanner'); if(el) el.style.display='none'; }
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let toastTimer=null;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
 document.getElementById('search').addEventListener('input',render);
