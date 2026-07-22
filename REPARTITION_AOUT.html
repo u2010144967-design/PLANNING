@@ -186,22 +186,17 @@
     <div class="corps">
       <label for="codeSaisi">Code d'accès</label>
       <div class="champCode">
-        <input id="codeSaisi" type="password" inputmode="numeric" maxlength="12" placeholder="••••"
+        <input id="codeSaisi" type="text" inputmode="numeric" maxlength="12" placeholder="2026"
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="acces-repartition"
                oninput="document.getElementById('erreurCode').textContent=''"
                onkeydown="if(event.key==='Enter') connecter()">
-        <button type="button" id="oeil" onclick="voirCode()" title="Afficher le code">👁</button>
       </div>
       <button class="sombre" onclick="connecter()">Entrer</button>
       <div class="err" id="erreurCode"></div>
-      <div class="aide">
-        <b>Code responsable</b> : accès complet, préparation de la répartition.<br>
-        <b>Code distribution</b> : remise des bons de livraison uniquement.
-      </div>
-      <div class="defaut" id="codesDefaut" hidden>
-        Premier démarrage — code responsable : <b>1234</b>, code distribution : <b>5678</b>.
-        Changez-les tout de suite avec le bouton « Codes d'accès ».
-      </div>
+      <div class="defaut">Le code est <b>2026</b>. Tapez-le puis cliquez sur Entrer.</div>
+      <div class="aide" id="aideCodes"></div>
+      <button style="background:#fff;font-size:12px;padding:8px" onclick="rechargerTout()">Ça ne marche pas — recharger l'application</button>
+      <div style="text-align:center;font-size:11px;color:#B4B4BC;margin-top:10px">version <span id="versionAppli"></span></div>
     </div>
   </div>
 </div>
@@ -303,13 +298,13 @@ create policy "acces_public" on repartition_aout
 <div class="voile" id="voileCodes" onclick="if(event.target===this) fermerCodes()">
   <div class="modale">
     <h2>Codes d'accès</h2>
-    <p>Deux codes différents. Le code distribution est celui que vous donnez à votre collègue : il pourra remettre les bons et cocher, mais pas modifier la répartition.</p>
-    <label for="codeResp">Code responsable (accès complet)</label>
-    <input id="codeResp" inputmode="numeric" maxlength="8">
-    <label for="codeDist">Code distribution (collègue)</label>
-    <input id="codeDist" inputmode="numeric" maxlength="8">
+    <p>Le code <b>2026</b> ouvre l'application avec l'accès complet, et il fonctionne en permanence. Vous pouvez en plus donner un code à votre collègue : avec celui-là, il pourra remettre les bons et cocher, mais pas modifier la répartition.</p>
+    <label for="codeResp">Votre code (accès complet)</label>
+    <input id="codeResp" inputmode="numeric" maxlength="12">
+    <label for="codeDist">Code du collègue — laissez vide si vous n'en voulez pas</label>
+    <input id="codeDist" inputmode="numeric" maxlength="12" placeholder="(aucun)">
     <div id="codeRes"></div>
-    <p style="margin-top:12px;color:#8C2A17"><b>Notez-les de côté :</b> si les deux codes sont perdus, il faut réinstaller l'application.</p>
+    <p style="margin-top:12px;color:#1E6B36"><b>Rassurez-vous :</b> le code <b>2026</b> fonctionnera toujours, même si vous oubliez celui que vous mettez ici.</p>
     <div class="pied">
       <button onclick="fermerCodes()">Annuler</button>
       <button class="sombre" onclick="enregistrerCodes()">Enregistrer</button>
@@ -371,7 +366,7 @@ const SUPABASE = {
   table: "repartition_aout",
   ligne: "aout"
 };
-const CODES_DEFAUT = { resp:"1234", dist:"5678" };
+
 
 /* ================================================================
    2. SEMAINES ET CLIENTS (relevé du planning papier S32 → S36)
@@ -465,7 +460,7 @@ function aff(id){ if(!etat.affect[id]) etat.affect[id]={}; return etat.affect[id
 function rem(id){ if(!etat.remis[id]) etat.remis[id]={}; return etat.remis[id]; }
 function connecte(){ return !!(cfg.url && cfg.cle); }
 function responsable(){ return profil === "resp"; }
-function codes(){ return etat.codes || CODES_DEFAUT; }
+function codes(){ return etat.codes || {resp:CODE_MAITRE, dist:""}; }
 
 /* Un client a 1 chauffeur, ou 2 en binôme. Toujours renvoyé sous forme de liste. */
 function chDe(id, nom){
@@ -482,25 +477,38 @@ function nomsCh(liste){ return liste.map(i=>etat.chauffeurs[i] ? etat.chauffeurs
 /* ================================================================
    3. CONNEXION
    ================================================================ */
-function voirCode(){
-  const ch = document.getElementById("codeSaisi");
-  ch.type = ch.type === "password" ? "text" : "password";
-  ch.focus();
-}
+const CODE_MAITRE = "2026";   // code du responsable — fonctionne toujours
+const VERSION_APPLI = "5 — 22/07";
+
 function propre(x){ return String(x==null?"":x).replace(/\s+/g,""); }
+function codeDistribution(){ return etat.codes && etat.codes.dist ? propre(etat.codes.dist) : null; }
+
 function connecter(){
   const saisi = propre(document.getElementById("codeSaisi").value);
   const err = document.getElementById("erreurCode");
-  if(!saisi){ err.textContent = "Tapez votre code, puis Entrer."; return; }
-  if(saisi === propre(codes().resp)) ouvrirSession("resp");
-  else if(saisi === propre(codes().dist)) ouvrirSession("dist");
+  if(!saisi){ err.textContent = "Tapez 2026, puis cliquez sur Entrer."; return; }
+  if(saisi === CODE_MAITRE || (etat.codes && saisi === propre(etat.codes.resp))) ouvrirSession("resp");
+  else if(codeDistribution() && saisi === codeDistribution()) ouvrirSession("dist");
   else{
-    err.innerHTML = etat.codes
-      ? "Code incorrect. Vérifiez avec le responsable."
-      : "Code incorrect. Aucun code personnalisé n'est enregistré : essayez <b>1234</b> (responsable) ou <b>5678</b> (distribution).";
+    err.innerHTML = "Code incorrect. Le code est <b>2026</b>.";
     document.getElementById("codeSaisi").value = "";
     document.getElementById("codeSaisi").focus();
   }
+}
+
+/* Supprime tout ce que le navigateur a gardé en mémoire et recharge la dernière version. */
+async function rechargerTout(){
+  try{
+    if("serviceWorker" in navigator){
+      const enregistres = await navigator.serviceWorker.getRegistrations();
+      for(const e of enregistres) await e.unregister();
+    }
+    if(window.caches){
+      const cles = await caches.keys();
+      for(const k of cles) await caches.delete(k);
+    }
+  }catch(e){}
+  location.reload(true);
 }
 function ouvrirSession(p){
   profil = p;
@@ -528,23 +536,29 @@ function appliquerProfil(){
   document.getElementById("btnCodes").hidden = !resp;
   document.getElementById("btnExport").hidden = !resp;
   document.getElementById("btnImport").hidden = !resp;
-  document.getElementById("codesDefaut").hidden = !!etat.codes;
+  majAideCodes();
+}
+function majAideCodes(){
+  const d = codeDistribution();
+  document.getElementById("aideCodes").innerHTML = d
+    ? "Un code collègue est enregistré : il ouvre uniquement la remise des bons."
+    : "Ce code donne l'accès complet. Vous pouvez ajouter un code réservé au collègue avec le bouton « Codes d'accès ».";
 }
 function ouvrirCodes(){
-  document.getElementById("codeResp").value = codes().resp;
-  document.getElementById("codeDist").value = codes().dist;
+  document.getElementById("codeResp").value = etat.codes ? etat.codes.resp : CODE_MAITRE;
+  document.getElementById("codeDist").value = codeDistribution() || "";
   document.getElementById("codeRes").textContent = "";
   document.getElementById("voileCodes").classList.add("ouvert");
 }
 function fermerCodes(){ document.getElementById("voileCodes").classList.remove("ouvert"); }
 function enregistrerCodes(){
-  const r = document.getElementById("codeResp").value.trim();
-  const d = document.getElementById("codeDist").value.trim();
+  const r = propre(document.getElementById("codeResp").value) || CODE_MAITRE;
+  const d = propre(document.getElementById("codeDist").value);
   const res = document.getElementById("codeRes");
-  if(r.length<4 || d.length<4){ res.style.color="#B3261E"; res.textContent="Chaque code doit faire au moins 4 caractères."; return; }
-  if(r===d){ res.style.color="#B3261E"; res.textContent="Les deux codes doivent être différents."; return; }
+  if(d && d.length<4){ res.style.color="#B3261E"; res.textContent="Le code collègue doit faire au moins 4 chiffres (ou laissez la case vide)."; return; }
+  if(d && (d===r || d===CODE_MAITRE)){ res.style.color="#B3261E"; res.textContent="Le code collègue doit être différent du vôtre."; return; }
   etat.codes = {resp:r, dist:d};
-  sauver(); fermerCodes(); appliquerProfil();
+  sauver(); fermerCodes(); appliquerProfil(); majAideCodes();
   toast("Codes enregistrés");
 }
 
@@ -1078,7 +1092,8 @@ async function demarrerSynchro(){
   }
   const rienDeFait = SEMAINES.every(s=>Object.keys(aff(s.id)).length===0);
   vue = rienDeFait ? "repartir" : "distribuer";
-  document.getElementById("codesDefaut").hidden = !!etat.codes;
+  document.getElementById("versionAppli").textContent = VERSION_APPLI;
+  majAideCodes();
 
   let session = null;
   try{ session = sessionStorage.getItem(CLE_SESSION); }catch(e){}
