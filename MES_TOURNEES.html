@@ -149,6 +149,7 @@
   #toast.on{opacity:1}
 
   #impression{display:none}
+  .affiche{display:none}
   .fiche{padding:8mm 0}
   .fiche h2{margin:0;font-size:20px}
   .fiche .meta{margin:2px 0 10px;font-size:13px;color:#333;font-weight:600}
@@ -171,6 +172,35 @@
     .fiche,.guide{page-break-after:always}
     .fiche:last-child,.guide:last-child{page-break-after:auto}
     @page{size:A4;margin:12mm}
+    body.modeA3 .fiche{display:none}
+  }
+
+  /* ---------- AFFICHE A3 POUR LE TABLEAU DE LOGISTIQUE ---------- */
+  .affiche{padding:0;page-break-after:always}
+  .affiche:last-child{page-break-after:auto}
+  .affiche .entete{display:flex;justify-content:space-between;align-items:baseline;border-bottom:4px solid #1B1B1F;padding-bottom:6px;margin-bottom:10px}
+  .affiche .entete h2{margin:0;font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .affiche .entete .dates{font-size:20px;font-weight:700}
+  .affiche .entete .total{font-size:14px;font-weight:700;color:#444}
+  .affiche .grille{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .affiche .bloc{border:2px solid #1B1B1F;border-radius:6px;overflow:hidden;break-inside:avoid}
+  .affiche .bloc .titre{color:#fff;padding:6px 8px}
+  .affiche .bloc .titre .nom{font-size:19px;font-weight:800;line-height:1.1}
+  .affiche .bloc .titre .cam{font-size:13px;font-weight:700;opacity:.92}
+  .affiche .bloc .nb{background:#F0F0F2;font-size:12px;font-weight:800;padding:3px 8px;border-bottom:1px solid #CFCFD6}
+  .affiche .bloc ol{margin:0;padding:4px 8px 6px 26px}
+  .affiche .bloc li{font-size:13px;font-weight:600;line-height:1.35;break-inside:avoid}
+  .affiche .bloc li .duo{font-size:10px;font-weight:800;color:#1B4CA8}
+  .affiche .bloc li .conf{font-size:10px;font-weight:800;color:#8A5A00}
+  .affiche .bloc .aucun{padding:8px;font-size:12px;color:#777;font-style:italic}
+  .affiche .orphelins{margin-top:8px;border:2px dashed #B3261E;border-radius:6px;padding:6px 10px}
+  .affiche .orphelins b{color:#B3261E;font-size:13px}
+  .affiche .orphelins span{font-size:12px;font-weight:600}
+  .affiche .bas{margin-top:8px;display:flex;justify-content:space-between;font-size:11px;color:#555;border-top:1px solid #BBB;padding-top:5px}
+  .affiche .bas .cons{font-weight:700;color:#1B1B1F;max-width:70%}
+
+  @media print{
+    body.modeA3 .affiche{display:block !important}
   }
 </style>
 </head>
@@ -205,8 +235,10 @@
 
   <section id="vueDistribuer">
     <div class="outils">
-      <button class="sombre" onclick="imprimer('semaine')">Imprimer les 4 fiches de la semaine</button>
-      <button onclick="imprimer('mois')">Imprimer tout le mois</button>
+      <button class="sombre" onclick="afficheA3('mois')">Affiche A3 — les 5 semaines</button>
+      <button onclick="afficheA3('semaine')">Affiche A3 — cette semaine</button>
+      <button onclick="imprimer('semaine')">Fiches A4 de la semaine</button>
+      <button onclick="imprimer('mois')">Fiches A4 du mois</button>
       <button onclick="reinitRemis()">Décocher toute la semaine</button>
     </div>
     <div class="astuce">Cliquez sur un client pour cocher son bon comme remis.</div>
@@ -962,9 +994,66 @@ function imprimerGuide(){
   g.querySelector(".pied").remove();
   lancerImpression('<div class="guide">'+g.innerHTML+'</div>');
 }
-function lancerImpression(html){
+/* Affiche A3 paysage : une page par semaine, les 4 chauffeurs cote a cote.
+   Pensee pour etre punaisee sur le tableau de logistique. */
+function afficheA3(portee){
+  const liste = portee === "mois" ? SEMAINES : [sem(semaineActive)];
+  let h = "";
+  liste.forEach(s=>{
+    const orphelins = s.clients.filter(cl=>chDe(s.id, cl.nom).length===0);
+    const blocs = etat.chauffeurs.map((ch,i)=>{
+      const clients = s.clients.filter(cl=>chDe(s.id, cl.nom).indexOf(i)>=0);
+      const items = clients.length
+        ? "<ol>" + clients.map(cl=>{
+            const autres = chDe(s.id, cl.nom).filter(x=>x!==i);
+            return "<li>" + echap(cl.nom)
+                 + (cl.peutetre ? ' <span class="conf">(à confirmer)</span>' : '')
+                 + (autres.length ? ' <span class="duo">+ '+echap(nomsCh(autres))+'</span>' : '')
+                 + "</li>";
+          }).join("") + "</ol>"
+        : '<div class="aucun">Aucun client cette semaine</div>';
+      return `<div class="bloc">
+          <div class="titre" style="background:${COUL_HEX[i]}">
+            <div class="nom">${echap(ch.nom)}</div>
+            <div class="cam">${echap(ch.camion)}</div>
+          </div>
+          <div class="nb">${clients.length} client${clients.length>1?'s':''}</div>
+          ${items}
+        </div>`;
+    }).join("");
+
+    const manquants = orphelins.length
+      ? `<div class="orphelins"><b>À ATTRIBUER (${orphelins.length}) :</b>
+           <span>${echap(orphelins.map(x=>x.nom).join(" · "))}</span></div>`
+      : "";
+    const cons = etat.consignes[s.id]
+      ? `<div class="cons">Consignes : ${echap(etat.consignes[s.id])}</div>` : "<div></div>";
+
+    h += `<div class="affiche">
+      <div class="entete">
+        <h2>SEMAINE ${s.id}</h2>
+        <div class="dates">${echap(s.dates)}</div>
+        <div class="total">${s.clients.length} clients · 4 chauffeurs</div>
+      </div>
+      <div class="grille">${blocs}</div>
+      ${manquants}
+      <div class="bas">${cons}<div>Répartition des tournées · imprimé le ${new Date().toLocaleDateString("fr-FR")}</div></div>
+    </div>`;
+  });
+  lancerImpression(h, true);
+}
+
+function lancerImpression(html, a3){
   document.getElementById("impression").innerHTML = html;
+  const ancien = document.getElementById("formatPage");
+  if(ancien) ancien.remove();
+  const st = document.createElement("style");
+  st.id = "formatPage";
+  st.textContent = a3 ? "@page{size:A3 landscape;margin:8mm}" : "@page{size:A4;margin:12mm}";
+  document.head.appendChild(st);
+  document.body.classList.toggle("modeA3", !!a3);
   window.print();
+  setTimeout(()=>document.body.classList.remove("modeA3"), 1500);
 }
 function ficheHtml(s, ch, i, clients){
   const coul = i===null ? "#B3261E" : COUL_HEX[i];
