@@ -1554,7 +1554,7 @@ function SignatureScreen({ch,mission,onBack}){
       const canvas=canvasRef.current;
       const sigData=canvas.toDataURL('image/png');
       await sPost('planning',{
-        date:'EV_'+Date.now()+'_'+ch.id,
+        date:'PHOTO_'+Date.now()+'_'+ch.id,
         donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),signature:sigData,dataUrl:sigData,signataire:nom,ts:new Date().toISOString()},
         updated_at:new Date().toISOString()
       });
@@ -1604,7 +1604,7 @@ function RepriseScreen({ch,mission,onBack}){
     setSending(true);
     try{
       await sPost('planning',{
-        date:'EV_'+Date.now()+'_'+ch.id,
+        date:'EV_REP_'+Date.now()+'_'+ch.id,
         donnees:{type:'reprise',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:mission.client||mission.task,date:today,heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),article,quantite:qte,note,ts:new Date().toISOString()},
         updated_at:new Date().toISOString()
       });
@@ -2445,19 +2445,38 @@ async function chargerFiches(){
 }
 /* ═══ PROPOSITIONS CLIENTS : tape 1 lettre → la liste sort ═══ */
 function SuggestionsClients({cli,setCli}){
-  /* Construire une liste complète à chaque rendu : CLIENTS_LISTE + FICHES + fallback missions */
+  const [tick,setTick]=React.useState(0);
+  /* Recharger depuis le cloud si liste vide */
+  React.useEffect(()=>{
+    const total=(window.CLIENTS_LISTE||[]).length+Object.keys(typeof FICHES!=='undefined'&&FICHES?FICHES:{}).length;
+    if(total<3){
+      const SK=typeof SUPA_KEY!=='undefined'?SUPA_KEY:KEY;
+      const SU=typeof SUPA_URL!=='undefined'?SUPA_URL:SUPA;
+      fetch(SU+'/rest/v1/planning?date=eq.FICHES_CLIENTS&select=donnees&limit=1',
+        {headers:{'apikey':SK,'Authorization':'Bearer '+SK}})
+      .then(r=>r.ok?r.json():[])
+      .then(rows=>{
+        if(rows&&rows[0]&&rows[0].donnees){
+          let d=rows[0].donnees;
+          if(typeof d==='string')try{d=JSON.parse(d);}catch(e){d=null;}
+          if(d&&d.clients&&d.clients.length){window.CLIENTS_LISTE=d.clients;}
+          if(d&&d.fiches)window.FICHES=Object.assign(window.FICHES||{},d.fiches);
+        }
+        setTick(t=>t+1);
+      }).catch(()=>{});
+    }
+  },[]);
   const liste=React.useMemo(()=>{
     const s={};
     (window.CLIENTS_LISTE||[]).forEach(n=>{if(n)s[String(n)]=1;});
     try{Object.keys(typeof FICHES!=='undefined'&&FICHES?FICHES:{}).forEach(n=>{if(n)s[String(n)]=1;});}catch(e){}
-    /* Si toujours vide : extraire des tâches en mémoire */
     if(!Object.keys(s).length&&window._allTasks){
       Object.values(window._allTasks).forEach(arr=>{
         (arr||[]).forEach(t=>{if(t&&t.client&&t.client.length>2)s[String(t.client).replace(/^[^A-Za-zÀ-ɏ0-9]+/,'').trim()]=1;});
       });
     }
     return Object.keys(s).filter(x=>x&&x.length>1).sort();
-  },[]);
+  },[tick]);
   const q=(cli||'').trim().toUpperCase();
   const props=q?liste.filter(n=>String(n).toUpperCase().includes(q)&&String(n).toUpperCase()!==q).slice(0,8):[];
   return (
