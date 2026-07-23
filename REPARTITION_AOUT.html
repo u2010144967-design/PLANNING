@@ -353,6 +353,7 @@ create policy "acces_public" on repartition_aout
   </div>
 </div>
 
+<div id="panne" style="display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:#B3261E;color:#fff;font-size:12px;font-weight:700;padding:8px 12px"></div>
 <div id="toast"></div>
 <div id="impression"></div>
 
@@ -478,10 +479,17 @@ function nomsCh(liste){ return liste.map(i=>etat.chauffeurs[i] ? etat.chauffeurs
    3. CONNEXION
    ================================================================ */
 const CODE_MAITRE = "2026";   // code du responsable — fonctionne toujours
-const VERSION_APPLI = "5 — 22/07";
+const VERSION_APPLI = "6 — 22/07";
 
 function propre(x){ return String(x==null?"":x).replace(/\s+/g,""); }
 function codeDistribution(){ return etat.codes && etat.codes.dist ? propre(etat.codes.dist) : null; }
+
+window.addEventListener("error", function(ev){
+  const b = document.getElementById("panne");
+  if(!b) return;
+  b.style.display = "block";
+  b.textContent = "Anomalie détectée : " + (ev.message || "erreur inconnue") + "  —  faites une photo de ce bandeau.";
+});
 
 function connecter(){
   const saisi = propre(document.getElementById("codeSaisi").value);
@@ -1094,6 +1102,8 @@ async function demarrerSynchro(){
   vue = rienDeFait ? "repartir" : "distribuer";
   document.getElementById("versionAppli").textContent = VERSION_APPLI;
   majAideCodes();
+
+  if(location.search.indexOf("entrer") >= 0){ ouvrirSession("resp"); return; }
 
   let session = null;
   try{ session = sessionStorage.getItem(CLE_SESSION); }catch(e){}
