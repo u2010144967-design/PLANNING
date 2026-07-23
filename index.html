@@ -2599,7 +2599,12 @@ function App(){
     async function loadAll(){
       try{
         const today=new Date().toISOString().slice(0,10);
-        const rows=await sGet(`planning?date=gte.${today}&select=date,donnees&order=date.asc&limit=100`);
+        /* Charger les lignes de jours ET CONFIG_PRINCIPALE (qui contient les drivers) */
+        const [rowsJours, rowsConfig] = await Promise.all([
+          sGet(`planning?date=gte.${today}&select=date,donnees&order=date.asc&limit=100`),
+          sGet(`planning?date=eq.CONFIG_PRINCIPALE&select=date,donnees&limit=1`)
+        ]);
+        const rows=[...(rowsJours||[]),...(rowsConfig||[])];
         const tasks={};
         let drivers=null;
         let binomes=null;
@@ -2624,6 +2629,10 @@ function App(){
           if(d&&d.drivers&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)){
             driversParDate[r.date]=d.drivers;
             if(r.date===today)drivers=d.drivers;
+          }
+          /* CONFIG_PRINCIPALE contient aussi les drivers */
+          if(d&&d.drivers&&r.date==='CONFIG_PRINCIPALE'){
+            if(!drivers)drivers=d.drivers;
           }
         });
         const _lc=Object.keys(_cliSet).filter(x=>x&&x.length>1).sort();
