@@ -3,545 +3,543 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>La Table de Cana – Planning</title>
+<title>La Table de Cana – Planning Logistique</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,Arial,sans-serif;background:#0a1628;color:#e2e8f0;min-height:100vh}
-/* TOPBAR */
-#topbar{background:#071120;border-bottom:2px solid #1e3a5f;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
-#topbar h1{font-size:14px;font-weight:900;color:#60a5fa;white-space:nowrap}
-.nav-btn{padding:7px 12px;border:1px solid #1e3a5f;border-radius:8px;background:transparent;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-.nav-btn:hover,.nav-btn.act{background:#1e3a5f;color:#e2e8f0}
-#sync-led{width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0}
-#sync-txt{font-size:11px;color:#64748b}
+body{font-family:-apple-system,Arial,sans-serif;background:#060e1a;color:#e2e8f0;min-height:100vh;overflow:hidden}
+
+/* ═══ TOPBAR ═══ */
+#topbar{
+  background:linear-gradient(90deg,#071120,#0a1628);
+  border-bottom:1px solid #1e3a5f;
+  padding:0 14px;
+  height:52px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  box-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+#topbar .logo{font-size:13px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px;white-space:nowrap}
+#topbar .logo span{color:#f97316}
+.tb-btn{padding:6px 12px;border:1px solid #1e3a5f;border-radius:8px;background:transparent;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s}
+.tb-btn:hover{background:#1e3a5f;color:#fff}
+.tb-btn.primary{background:#1e3a5f;color:#60a5fa;border-color:#3b82f6}
+#sync-wrap{display:flex;align-items:center;gap:6px;margin-left:4px}
+#sync-led{width:8px;height:8px;border-radius:50%;background:#f59e0b;transition:background .4s}
+#sync-txt{font-size:11px;color:#64748b;white-space:nowrap}
 #nav-date{display:flex;align-items:center;gap:6px;margin-left:auto}
-#nav-date button{padding:5px 10px;border:1px solid #1e3a5f;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-weight:700}
-#nav-date button:hover{background:#1e3a5f;color:#fff}
-#date-lbl{font-size:13px;font-weight:900;color:#fff;min-width:180px;text-align:center}
-/* GRILLE */
-#grid-wrap{overflow-x:auto;overflow-y:auto;height:calc(100vh - 56px)}
-#grid{display:grid;border-collapse:collapse}
-.gh{background:#fdf2f8;border-right:2px solid #1e3a5f;border-bottom:3px solid #3b82f6;padding:8px 6px;position:sticky;top:0;z-index:10;min-width:170px;text-align:center}
-.gh-name{font-size:14px;font-weight:900;color:#000;display:block}
-.gh-truck{font-size:11px;font-weight:700;color:#c05f00;background:#ffedd5;border:1.5px solid #f97316;border-radius:6px;padding:2px 7px;display:inline-block;margin:3px 0}
-.gh-hrs{font-size:11px;font-weight:900;color:#000}
-.gh-menu{padding:4px 10px;background:#e0e7ff;border:1.5px solid #6366f1;border-radius:6px;font-size:11px;font-weight:900;color:#3730a3;cursor:pointer;margin-top:4px}
-.gtc{font-size:11px;font-weight:700;color:#475569;padding:0 6px;background:#071120;border-right:1px solid #0d1f3a;position:sticky;left:0;z-index:5;display:flex;align-items:center;min-width:58px}
-.gcw{border-right:1px solid #0d1f3a;border-bottom:1px solid #0d1f3a;min-height:38px;padding:3px 4px;position:relative;cursor:pointer}
-.gcw:hover{background:rgba(59,130,246,.05)}
-.gcw.hl{background:rgba(59,130,246,.06)}
-.pill{font-size:13px;font-weight:800;padding:4px 6px;border-radius:6px;border-left:4px solid;margin-bottom:2px;word-break:break-word;cursor:pointer}
-.pill:hover{opacity:.85}
-.pill.tr{background:#fff7ed;border-color:#f97316;color:#431407}
+#nav-date .arr{width:30px;height:30px;border:1px solid #1e3a5f;border-radius:7px;background:transparent;color:#94a3b8;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s}
+#nav-date .arr:hover{background:#1e3a5f;color:#fff}
+#date-lbl{font-size:13px;font-weight:900;color:#fff;min-width:200px;text-align:center;background:#0a1e38;border:1px solid #1e3a5f;border-radius:8px;padding:5px 10px}
+
+/* ═══ GRILLE ═══ */
+#grid-wrap{
+  position:fixed;top:52px;bottom:0;left:0;right:0;
+  overflow:auto;
+}
+#grid{display:grid;min-width:max-content}
+
+/* En-têtes chauffeurs */
+.gh{
+  background:linear-gradient(180deg,#fdf2f8,#fce7f3);
+  border-right:2px solid #1e3a5f;
+  border-bottom:3px solid #3b82f6;
+  padding:9px 8px;
+  position:sticky;top:0;z-index:20;
+  min-width:160px;
+  text-align:center;
+  user-select:none;
+}
+.gh-name{font-size:13px;font-weight:900;color:#0f172a;display:block;letter-spacing:.3px}
+.gh-truck{
+  font-size:10px;font-weight:800;color:#c05f00;
+  background:#ffedd5;border:1.5px solid #f97316;
+  border-radius:6px;padding:2px 7px;
+  display:inline-block;margin:3px 0;
+}
+.gh-hrs{font-size:10px;font-weight:700;color:#374151}
+.gh-menu{
+  padding:3px 9px;background:#e0e7ff;
+  border:1.5px solid #6366f1;border-radius:6px;
+  font-size:10px;font-weight:900;color:#3730a3;
+  cursor:pointer;margin-top:4px;
+}
+.badge-tc{
+  font-size:9px;font-weight:900;padding:2px 7px;
+  border-radius:8px;border:2px solid;
+  display:inline-block;margin-top:2px;
+}
+
+/* Colonne heures */
+.gtc{
+  font-size:10px;font-weight:700;color:#334155;
+  padding:0 8px;
+  background:#071120;
+  border-right:2px solid #0f1f35;
+  position:sticky;left:0;z-index:15;
+  display:flex;align-items:center;
+  min-width:56px;min-height:36px;
+  user-select:none;
+}
+.gtc.hdr-corner{top:0;z-index:25;border-bottom:3px solid #1e3a5f}
+
+/* Cellules */
+.gcw{
+  border-right:1px solid #0d1f3a;
+  border-bottom:1px solid #0d1f3a;
+  min-height:36px;
+  padding:2px 3px;
+  cursor:pointer;
+  transition:background .1s;
+  min-width:160px;
+}
+.gcw:hover{background:rgba(59,130,246,.07)}
+.gcw.now{background:rgba(239,68,68,.06)}
+.gcw.now-stripe{border-top:2px solid #ef4444}
+
+/* Mission pill */
+.pill{
+  font-size:12px;font-weight:800;
+  padding:3px 6px;border-radius:5px;
+  border-left:3px solid;
+  margin-bottom:2px;word-break:break-word;
+  cursor:pointer;line-height:1.3;
+  transition:opacity .12s;
+}
+.pill:hover{opacity:.8}
 .pill.co{background:#f0fdf4;border-color:#16a34a;color:#052e16}
+.pill.tr{background:#fff7ed;border-color:#f97316;color:#431407}
 .pill.ta{background:#faf5ff;border-color:#8b5cf6;color:#2e1065}
-.pill-heure{font-size:10px;color:#94a3b8;font-weight:700}
-.pill-fin{font-size:9px;color:#64748b}
-.badge-tournee{font-size:10px;font-weight:900;padding:2px 7px;border-radius:10px;border:2px solid;display:inline-block;margin-top:2px}
-/* NOW LINE */
-.now-line{position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:20;pointer-events:none}
-.now-line::before{content:'▶';color:#ef4444;font-size:10px;position:absolute;left:-2px;top:-5px}
-/* MODAL */
-.mover{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:12px}
-.mbox{background:#0f172a;border:1.5px solid #1e3a5f;border-radius:16px;padding:20px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
-.mbox h3{font-size:16px;font-weight:900;color:#fff;margin-bottom:14px}
-.mclose{float:right;background:transparent;border:none;color:#64748b;font-size:18px;cursor:pointer;font-weight:700}
-input.fi,select.fi{width:100%;padding:10px;background:#0a1628;border:1px solid #334155;border-radius:9px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;margin-bottom:10px}
-.btn-g{padding:11px 18px;border:none;border-radius:9px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit}
-.btn-g.green{background:#16a34a;color:#fff}
-.btn-g.red{background:#dc2626;color:#fff}
-.btn-g.gray{background:#334155;color:#fff}
-/* MENU POPUP */
-#ctx-menu{position:fixed;z-index:9999;background:#0f172a;border:1.5px solid #334155;border-radius:14px;padding:8px;min-width:230px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
-#ctx-menu .sec-title{font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:1px;padding:7px 10px 3px}
+.pill-fin{font-size:9px;color:#94a3b8;font-weight:600}
+
+/* ligne rouge maintenant */
+.now-bar{position:sticky;left:0;height:2px;background:#ef4444;z-index:10;pointer-events:none;grid-column:1/-1}
+
+/* ═══ MODALS ═══ */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;display:none;align-items:center;justify-content:center;padding:12px}
+.mover.open{display:flex}
+.mbox{background:#0d1b2e;border:1.5px solid #1e3a5f;border-radius:18px;padding:22px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.mbox h3{font-size:16px;font-weight:900;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.mclose{background:transparent;border:none;color:#475569;font-size:20px;cursor:pointer;line-height:1}
+.mclose:hover{color:#fff}
+.flabel{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+input.fi,select.fi{
+  width:100%;padding:11px 13px;
+  background:#060e1a;border:1px solid #1e3a5f;
+  border-radius:10px;color:#fff;font-size:14px;
+  font-weight:600;font-family:inherit;
+  margin-bottom:14px;transition:border .15s;
+}
+input.fi:focus,select.fi:focus{outline:none;border-color:#3b82f6}
+.btn-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.bg{padding:11px 18px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;transition:.15s}
+.bg:active{transform:scale(.97)}
+.bg.green{background:#16a34a;color:#fff}
+.bg.red{background:#dc2626;color:#fff}
+.bg.gray{background:#1e293b;color:#94a3b8;border:1px solid #334155}
+.client-suggestions{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;margin-bottom:10px}
+.sug-btn{text-align:left;padding:9px 12px;border:1px solid #1e3a5f;border-radius:9px;background:transparent;color:#cbd5e1;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.sug-btn:hover{background:#1e3a5f;color:#fff;border-color:#3b82f6}
+
+/* ═══ MENU POPUP ═══ */
+#ctx-menu{
+  position:fixed;z-index:5000;
+  background:#0d1b2e;border:1.5px solid #1e3a5f;
+  border-radius:14px;padding:8px;min-width:220px;
+  box-shadow:0 16px 48px rgba(0,0,0,.6);
+  display:none;
+}
+#ctx-menu .sec{font-size:9px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:1px;padding:7px 10px 3px}
 #ctx-menu button{display:block;width:100%;text-align:left;background:transparent;border:none;border-radius:9px;padding:9px 10px;font-size:13px;font-weight:800;color:#e2e8f0;cursor:pointer;font-family:inherit}
 #ctx-menu button:hover{background:#1e293b}
+
+/* ═══ TOAST ═══ */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d1b2e;border:1px solid #1e3a5f;border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:#fff;z-index:9999;opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div id="topbar">
-  <h1>🚛 La Table de Cana</h1>
-  <button class="nav-btn" onclick="ouvrirAjout()">➕ Ajouter</button>
-  <button class="nav-btn" onclick="forceLoad()">🔄 Charger</button>
-  <button class="nav-btn" onclick="forceSave()">💾 Sauver</button>
-  <div id="sync-led"></div>
-  <span id="sync-txt">—</span>
+  <div class="logo">🚛 La Table <span>de Cana</span></div>
+  <button class="tb-btn primary" onclick="ouvrirAjout()">➕ Mission</button>
+  <button class="tb-btn" onclick="forceLoad()">🔄</button>
+  <button class="tb-btn" onclick="forceSave()">💾</button>
+  <div id="sync-wrap"><div id="sync-led"></div><span id="sync-txt">—</span></div>
   <div id="nav-date">
-    <button onclick="navJour(-1)">◀</button>
+    <button class="arr" onclick="navJour(-1)">◀</button>
     <span id="date-lbl">—</span>
-    <button onclick="navJour(1)">▶</button>
-    <button class="nav-btn" onclick="goToday()">Aujourd'hui</button>
+    <button class="arr" onclick="navJour(1)">▶</button>
+    <button class="tb-btn" onclick="goToday()">Aujourd'hui</button>
   </div>
 </div>
 
-<div id="grid-wrap">
-  <div id="grid"><!-- généré par JS --></div>
-</div>
+<!-- GRILLE -->
+<div id="grid-wrap"><div id="grid"></div></div>
 
-<!-- Modal ajout mission -->
-<div id="m-add" style="display:none" class="mover">
+<!-- MODAL : Ajouter mission -->
+<div id="m-add" class="mover">
   <div class="mbox">
-    <h3>Ajouter une mission <button class="mclose" onclick="closeMod('m-add')">✕</button></h3>
-    <label style="font-size:12px;color:#64748b">Chauffeur</label>
+    <h3>➕ Nouvelle mission <button class="mclose" onclick="closeMod('m-add')">✕</button></h3>
+    <label class="flabel">Chauffeur</label>
     <select class="fi" id="add-di"></select>
-    <label style="font-size:12px;color:#64748b">Heure début</label>
+    <label class="flabel">Heure de début</label>
     <select class="fi" id="add-heure"></select>
-    <label style="font-size:12px;color:#64748b">Client / Mission</label>
-    <input class="fi" id="add-client" placeholder="ex: LES POMPIERS" list="add-client-list" autocomplete="off">
-    <datalist id="add-client-list"></datalist>
-    <label style="font-size:12px;color:#64748b">Catégorie</label>
+    <label class="flabel">Client ou mission</label>
+    <input class="fi" id="add-client" placeholder="Tape pour chercher..." autocomplete="off" oninput="suggestClients(this.value,'add-sugg')">
+    <div class="client-suggestions" id="add-sugg"></div>
+    <label class="flabel">Catégorie</label>
     <select class="fi" id="add-cat">
       <option value="co">🏕 Centres Aérés / Collectivité</option>
       <option value="tr">🍽 Traiteur</option>
       <option value="ta">📋 Tâche</option>
     </select>
-    <label style="font-size:12px;color:#64748b">Heure de fin (optionnel)</label>
+    <label class="flabel">Heure de fin (optionnel)</label>
     <input class="fi" id="add-fin" placeholder="ex: 14:00">
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn-g green" onclick="confirmerAjout()">✅ Ajouter</button>
-      <button class="btn-g gray" onclick="closeMod('m-add')">Annuler</button>
+    <div class="btn-row">
+      <button class="bg green" onclick="confirmerAjout()">✅ Ajouter</button>
+      <button class="bg gray" onclick="closeMod('m-add')">Annuler</button>
     </div>
   </div>
 </div>
 
-<!-- Modal modifier mission -->
-<div id="m-edit" style="display:none" class="mover">
+<!-- MODAL : Modifier mission -->
+<div id="m-edit" class="mover">
   <div class="mbox">
-    <h3>Mission <button class="mclose" onclick="closeMod('m-edit')">✕</button></h3>
+    <h3>✏️ Modifier la mission <button class="mclose" onclick="closeMod('m-edit')">✕</button></h3>
+    <label class="flabel">Client ou mission</label>
     <input class="fi" id="edit-client" placeholder="Client">
-    <input class="fi" id="edit-fin" placeholder="Fin (ex: 14:00)">
+    <label class="flabel">Heure de fin</label>
+    <input class="fi" id="edit-fin" placeholder="ex: 14:00">
+    <label class="flabel">Catégorie</label>
     <select class="fi" id="edit-cat">
       <option value="co">🏕 Centres Aérés / Collectivité</option>
       <option value="tr">🍽 Traiteur</option>
       <option value="ta">📋 Tâche</option>
     </select>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn-g green" onclick="confirmerEdit()">💾 Modifier</button>
-      <button class="btn-g red" onclick="supprimerMission()">🗑 Supprimer</button>
-      <button class="btn-g gray" onclick="closeMod('m-edit')">Annuler</button>
+    <div class="btn-row">
+      <button class="bg green" onclick="confirmerEdit()">💾 Enregistrer</button>
+      <button class="bg red" onclick="supprimerMission()">🗑 Supprimer</button>
+      <button class="bg gray" onclick="closeMod('m-edit')">Annuler</button>
     </div>
   </div>
 </div>
 
 <!-- Menu contextuel chauffeur -->
-<div id="ctx-menu" style="display:none"></div>
+<div id="ctx-menu"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   LA TABLE DE CANA — Planning v3
-   Architecture propre : une source de vérité (Supabase), sync fiable
-═══════════════════════════════════════════════════════════════ */
+const SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co';
+const KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+const H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
 
-/* ── CONFIG ── */
-const SUPA = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
-const KEY  = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
-const H    = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
-
-/* ── DONNÉES DE BASE ── */
-const DRIVERS_DEFAULT = [
-  {name:'OTMANE',       truck:'VIVARO 1',       start:'06:00',end:'14:00',code:'1111'},
-  {name:'NICOLAS',      truck:'VIVARO LOCATION', start:'06:00',end:'14:00',code:'2222'},
-  {name:'MICKAEL',      truck:'IVECO',           start:'06:00',end:'15:00',code:'3333'},
-  {name:'KARIM',        truck:'VIVARO 2',        start:'06:00',end:'14:00',code:'4444'},
-  {name:"MAITRE D'HOTEL",truck:'CAMION 5',       start:'06:00',end:'14:00',code:'5555'},
-  {name:'ANTHONY',      truck:'A DEFINIR',       start:'06:00',end:'14:00',code:'6666'}
+const DRIVERS=[
+  {name:'OTMANE',       truck:'VIVARO 1',       start:'06:00',end:'14:00'},
+  {name:'NICOLAS',      truck:'VIVARO LOCATION', start:'06:00',end:'14:00'},
+  {name:'MICKAEL',      truck:'IVECO',           start:'06:00',end:'15:00'},
+  {name:'KARIM',        truck:'VIVARO 2',        start:'06:00',end:'14:00'},
+  {name:"MAITRE D'HOTEL",truck:'CAMION 5',       start:'06:00',end:'14:00'},
+  {name:'ANTHONY',      truck:'A DEFINIR',       start:'06:00',end:'14:00'}
 ];
 
-const LIBRARY = {
-  co: ['LES POMPIERS','LE SAMU SOCIAL','LES COMPAGNONS','AA 13','ENDOUME','ARS PACA','CG 13'],
-  tr: ['LES ARGONAUTES','ESAT PHOCENN','VILLAGE CLUB SOLEIL','LECOURTIER','FRAIKIN'],
-  ta: ['CHERCHER MATERIELS','PREPARER COMMANDE','PETIT DEJ ECOLE','CHARGER CAMION','DECHARGER CAMION','PLEIN CARBURANT']
+const LIBRARY={
+  co:['LES POMPIERS','LE SAMU SOCIAL','LES COMPAGNONS','AA 13','ENDOUME','ARS PACA','CG 13'],
+  tr:['LES ARGONAUTES','ESAT PHOCENN','VILLAGE CLUB SOLEIL','LECOURTIER','FRAIKIN'],
+  ta:['CHERCHER MATERIELS','PREPARER COMMANDE','PETIT DEJ ECOLE','CHARGER CAMION','DECHARGER CAMION','PLEIN CARBURANT']
 };
+const ALL_CLIENTS=[...new Set([...LIBRARY.co,...LIBRARY.tr,...LIBRARY.ta])].sort();
 
-const HEURES = [
-  '05:00','05:30','06:00','06:30','07:00','07:30','08:00','08:30',
+const HEURES=['05:00','05:30','06:00','06:30','07:00','07:30','08:00','08:30',
   '09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30',
   '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30',
-  '17:00','17:30','18:00','18:30','19:00','19:30','20:00'
+  '17:00','17:30','18:00','18:30','19:00','19:30','20:00'];
+
+const TC=[
+  {mots:['bleu','bleue'],color:'#2563eb',bg:'rgba(37,99,235,.3)'},
+  {mots:['rose'],        color:'#ec4899',bg:'rgba(236,72,153,.3)'},
+  {mots:['vert','verte'],color:'#16a34a',bg:'rgba(22,163,74,.3)'},
+  {mots:['violet'],      color:'#8b5cf6',bg:'rgba(139,92,246,.3)'},
+  {mots:['jaune'],       color:'#eab308',bg:'rgba(234,179,8,.4)'},
+  {mots:['orange'],      color:'#f97316',bg:'rgba(249,115,22,.35)'}
 ];
 
-const TOURNEE_COULEURS = [
-  {mots:['bleu','bleue'], color:'#2563eb', bg:'rgba(37,99,235,.35)'},
-  {mots:['rose'],         color:'#ec4899', bg:'rgba(236,72,153,.35)'},
-  {mots:['vert','verte'], color:'#16a34a', bg:'rgba(22,163,74,.35)'},
-  {mots:['violet'],       color:'#8b5cf6', bg:'rgba(139,92,246,.35)'},
-  {mots:['jaune'],        color:'#eab308', bg:'rgba(234,179,8,.45)'},
-  {mots:['orange'],       color:'#f97316', bg:'rgba(249,115,22,.4)'}
-];
+let ST={cur:new Date().toISOString().slice(0,10),drivers:JSON.parse(JSON.stringify(DRIVERS)),tasks:{},tournees:{}};
+let _editKey=null,_saveTimer=null,_chargementOk=false,_pollRef='';
 
-/* ── ÉTAT ── */
-let ST = {
-  cur: new Date().toISOString().slice(0,10),
-  drivers: JSON.parse(JSON.stringify(DRIVERS_DEFAULT)),
-  tasks: {},      /* clés : "date|driverIdx|heure" */
-  tournees: {},   /* clés : "date|driverIdx" → {nom, couleur} */
-};
-let _editKey = null;
-let _lastSaved = '';
-let _saveTimer = null;
-let _chargementOk = false;
-
-/* ── SUPABASE ── */
-async function dbGet(path) {
-  try {
-    const r = await fetch(SUPA+'/rest/v1/'+path, {headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
-    if (!r.ok) return null;
-    return await r.json();
-  } catch(e) { return null; }
+/* ─── SUPABASE ─── */
+async function dbGet(p){
+  try{const r=await fetch(SUPA+'/rest/v1/'+p,{headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});return r.ok?r.json():null;}catch{return null;}
 }
-
-async function dbUpsert(date, donnees) {
-  try {
-    /* Toujours DELETE puis POST : garanti sans doublon */
-    await fetch(SUPA+'/rest/v1/planning?date=eq.'+date, {method:'DELETE', headers:H});
-    const r = await fetch(SUPA+'/rest/v1/planning', {
-      method:'POST', headers:H,
-      body: JSON.stringify({date, donnees, updated_at: new Date().toISOString()})
-    });
+async function dbUpsert(date,donnees){
+  try{
+    await fetch(SUPA+'/rest/v1/planning?date=eq.'+date,{method:'DELETE',headers:H});
+    const r=await fetch(SUPA+'/rest/v1/planning',{method:'POST',headers:H,body:JSON.stringify({date,donnees,updated_at:new Date().toISOString()})});
     return r.ok;
-  } catch(e) { return false; }
+  }catch{return false;}
 }
 
-/* ── SAUVEGARDE ── */
-function save() {
-  /* Sauvegarde locale immédiate */
-  try { localStorage.setItem('cana_v3', JSON.stringify(ST)); } catch(e) {}
-  /* Sauvegarde cloud avec debounce 1.5s */
+/* ─── SAVE ─── */
+function save(){
+  try{localStorage.setItem('cana_v3',JSON.stringify(ST));}catch{}
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(saveCloud, 1500);
-  ST._ts = Date.now();
+  _saveTimer=setTimeout(saveCloud,1500);
 }
-
-async function saveCloud() {
-  setSyncLed('orange', '...');
-  const donnees = {
-    drivers:  ST.drivers,
-    tasks:    ST.tasks,
-    tournees: ST.tournees,
-    _ts:      Date.now(),
-    _auteur:  'Responsable'
-  };
-  const ok = await dbUpsert(ST.cur, donnees);
-  if (ok) {
-    _lastSaved = new Date().toISOString();
-    setSyncLed('green', 'Sync ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
-  } else {
-    setSyncLed('red', 'Erreur');
-  }
+async function saveCloud(){
+  setSL('orange','...');
+  const ok=await dbUpsert(ST.cur,{drivers:ST.drivers,tasks:ST.tasks,tournees:ST.tournees,_ts:Date.now()});
+  setSL(ok?'green':'red', ok?'Sync '+now2():'Erreur');
+  if(ok) toast('✅ Sauvegardé','#16a34a');
 }
+async function forceSave(){await saveCloud();}
 
-async function forceSave() { await saveCloud(); }
-
-/* ── CHARGEMENT ── */
-async function loadCloud() {
-  setSyncLed('orange', 'Chargement...');
-  /* Charger aujourd'hui + les 30 prochains jours */
-  const today = new Date().toISOString().slice(0,10);
-  const rows = await dbGet('planning?date=gte.'+today+'&select=date,donnees,updated_at&order=date.asc&limit=60');
-  
-  if (!rows || !rows.length) {
-    /* Rien dans le cloud : utiliser le local */
-    const loc = localStorage.getItem('cana_v3');
-    if (loc) try { Object.assign(ST, JSON.parse(loc)); } catch(e) {}
-    _chargementOk = true;
-    renderGrid();
-    setSyncLed('orange', 'Local');
-    /* Envoyer le local vers le cloud */
-    setTimeout(saveCloud, 2000);
-    return;
+/* ─── LOAD ─── */
+async function loadCloud(){
+  setSL('orange','Chargement...');
+  const today=new Date().toISOString().slice(0,10);
+  const rows=await dbGet('planning?date=gte.'+today+'&select=date,donnees,updated_at&order=date.asc&limit=60');
+  if(!rows||!rows.length){
+    const loc=localStorage.getItem('cana_v3');
+    if(loc)try{Object.assign(ST,JSON.parse(loc));}catch{}
+    _chargementOk=true;renderGrid();setSL('orange','Local');
+    setTimeout(saveCloud,2000);return;
   }
-
-  /* Appliquer les données du cloud */
-  ST.tasks = {};
-  ST.tournees = {};
-  rows.forEach(r => {
-    let d = r.donnees;
-    if (typeof d === 'string') try { d = JSON.parse(d); } catch(e) { d = null; }
-    if (!d) return;
-    /* La ligne la plus récente a les drivers */
-    if (d.drivers && d.drivers.length) ST.drivers = d.drivers;
-    /* Fusionner toutes les tasks (pas d'écrasement) */
-    if (d.tasks) Object.assign(ST.tasks, d.tasks);
-    if (d.tournees) Object.assign(ST.tournees, d.tournees);
+  ST.tasks={};ST.tournees={};
+  rows.forEach(r=>{
+    let d=r.donnees;
+    if(typeof d==='string')try{d=JSON.parse(d);}catch{d=null;}
+    if(!d)return;
+    if(d.drivers&&d.drivers.length)ST.drivers=d.drivers;
+    if(d.tasks)Object.assign(ST.tasks,d.tasks);
+    if(d.tournees)Object.assign(ST.tournees,d.tournees);
   });
-
-  try { localStorage.setItem('cana_v3', JSON.stringify(ST)); } catch(e) {}
-  _chargementOk = true;
-  renderGrid();
-  setSyncLed('green', 'Sync ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+  try{localStorage.setItem('cana_v3',JSON.stringify(ST));}catch{}
+  _chargementOk=true;renderGrid();
+  setSL('green','Sync '+now2());
 }
+async function forceLoad(){await loadCloud();}
 
-async function forceLoad() { await loadCloud(); }
-
-/* Poll léger toutes les 5s : vérifie si quelqu'un a modifié */
-let _pollRef = '';
-async function poll() {
-  if (!_chargementOk) return;
-  const today = new Date().toISOString().slice(0,10);
-  const rows = await dbGet('planning?date=gte.'+today+'&select=date,updated_at&order=updated_at.desc&limit=5');
-  if (!rows || !rows.length) return;
-  const ref = rows.map(r=>r.date+r.updated_at).join('|');
-  if (ref === _pollRef) return;
-  _pollRef = ref;
-  /* Quelque chose a changé → recharger */
+/* Poll 5s */
+async function poll(){
+  if(!_chargementOk)return;
+  const today=new Date().toISOString().slice(0,10);
+  const rows=await dbGet('planning?date=gte.'+today+'&select=date,updated_at&order=updated_at.desc&limit=5');
+  if(!rows||!rows.length)return;
+  const ref=rows.map(r=>r.date+r.updated_at).join('|');
+  if(ref===_pollRef)return;
+  _pollRef=ref;
   await loadCloud();
 }
-setInterval(poll, 5000);
+setInterval(poll,5000);
 
-/* ── RENDU ── */
-function renderGrid() {
-  const date = ST.cur;
-  const dayName = new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('date-lbl').textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+/* ─── RENDU GRILLE ─── */
+function renderGrid(){
+  const date=ST.cur;
+  const dn=new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('date-lbl').textContent=dn.charAt(0).toUpperCase()+dn.slice(1);
 
-  const cols = ST.drivers.length;
-  const grid = document.getElementById('grid');
-  grid.style.gridTemplateColumns = '60px ' + ('1fr '.repeat(cols)).trim();
+  const cols=ST.drivers.length;
+  const grid=document.getElementById('grid');
+  grid.style.gridTemplateColumns='56px '+('minmax(160px,1fr) '.repeat(cols)).trim();
 
-  let html = '<div class="gtc" style="background:#071120;border-bottom:3px solid #1e3a5f"></div>';
+  let h='<div class="gtc hdr-corner"></div>';
 
-  /* En-têtes chauffeurs */
-  ST.drivers.forEach((dr, di) => {
-    const tc = getTournee(date, di);
-    html += `<div class="gh">
+  /* En-têtes */
+  ST.drivers.forEach((dr,di)=>{
+    const tc=getTournee(date,di);
+    h+=`<div class="gh">
       <span class="gh-name">${dr.name}</span>
       <span class="gh-truck">${dr.truck}</span>
-      ${tc ? `<span class="badge-tournee" style="color:#000;background:${tc.bg};border-color:${tc.color}">${tc.nom.toUpperCase()}</span>` : ''}
-      <div class="gh-hrs" style="margin-top:4px">${dr.start} → ${dr.end}</div>
-      <button class="gh-menu" onclick="ouvrirMenuChauffeur(${di},this)">☰ Menu</button>
+      ${tc?`<span class="badge-tc" style="color:#000;background:${tc.bg};border-color:${tc.color}">${tc.nom.toUpperCase()}</span>`:''}
+      <div class="gh-hrs">${dr.start} → ${dr.end}</div>
+      <button class="gh-menu" onclick="openMenu(${di},this)">☰ Menu</button>
     </div>`;
   });
 
-  /* Lignes horaires */
-  HEURES.forEach(h => {
-    const isHalf = h.endsWith(':30');
-    html += `<div class="gtc${isHalf?' style=opacity:.6':''}">${h}</div>`;
-    ST.drivers.forEach((dr, di) => {
-      const key = `${date}|${di}|${h}`;
-      const tasks = (ST.tasks[key] || []).filter(t => t && (t.client || t.task));
-      let inner = '';
-      tasks.forEach((t, ti) => {
-        const cat = t.cat || 'co';
-        const label = t.client || t.task || '';
-        inner += `<div class="pill ${cat}" onclick="ouvrirEdit('${key}',${ti})">${label}${t.fin?'<div class="pill-fin">fin '+t.fin+'</div>':''}</div>`;
+  /* Lignes */
+  const hNow=nowH();
+  HEURES.forEach(hh=>{
+    const isNow=hh===hNow;
+    const dim=hh.endsWith(':30')?'opacity:.55;':'';
+    h+=`<div class="gtc" style="${dim}">${hh}</div>`;
+    ST.drivers.forEach((dr,di)=>{
+      const key=`${date}|${di}|${hh}`;
+      const tasks=(ST.tasks[key]||[]).filter(t=>t&&(t.client||t.task));
+      let inner='';
+      tasks.forEach((t,ti)=>{
+        const cat=t.cat||'co';
+        const lbl=t.client||t.task||'';
+        inner+=`<div class="pill ${cat}" onclick="stopProp(event);ouvrirEdit('${key}',${ti})">${lbl}${t.fin?`<div class="pill-fin">→ fin ${t.fin}</div>`:''}</div>`;
       });
-      const hNow = nowHeure();
-      const hl = h === hNow ? ' hl' : '';
-      html += `<div class="gcw${hl}" onclick="clickCell('${key}')">${inner}</div>`;
+      h+=`<div class="gcw${isNow?' now-stripe':''}" onclick="clickCell('${key}')">${inner}</div>`;
     });
   });
 
-  grid.innerHTML = html;
-  drawNowLine();
+  grid.innerHTML=h;
 }
 
-function getTournee(date, di) {
-  const key = `${date}|${di}`;
-  const t = ST.tournees && ST.tournees[key];
-  if (!t || !t.nom) return null;
-  const nom = t.nom.toLowerCase();
-  const tc = TOURNEE_COULEURS.find(c => c.mots.some(m => nom.includes(m)));
-  return tc ? {nom:t.nom, color:tc.color, bg:tc.bg} : {nom:t.nom, color:'#64748b', bg:'rgba(100,116,139,.3)'};
+function getTournee(date,di){
+  const t=ST.tournees&&ST.tournees[`${date}|${di}`];
+  if(!t||!t.nom)return null;
+  const nom=t.nom.toLowerCase();
+  const tc=TC.find(c=>c.mots.some(m=>nom.includes(m)));
+  return tc?{nom:t.nom,...tc}:{nom:t.nom,color:'#64748b',bg:'rgba(100,116,139,.3)'};
 }
 
-function nowHeure() {
-  const n = new Date();
-  const h = String(n.getHours()).padStart(2,'0');
-  const m = n.getMinutes() < 30 ? '00' : '30';
-  return h+':'+m;
-}
+function nowH(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+(n.getMinutes()<30?'00':'30');}
+function now2(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function stopProp(e){e.stopPropagation();}
 
-function drawNowLine() {
-  document.querySelectorAll('.now-line').forEach(e=>e.remove());
-  const today = new Date().toISOString().slice(0,10);
-  if (ST.cur !== today) return;
-  const pct = (new Date().getHours()*60+new Date().getMinutes() - 5*60) / (15*60) * 100;
-  if (pct < 0 || pct > 100) return;
-  const cells = document.querySelectorAll('.gcw');
-  if (!cells.length) return;
-  const cell = cells[0];
-  const line = document.createElement('div');
-  line.className = 'now-line';
-  line.style.top = pct+'%';
-  document.getElementById('grid-wrap').style.position = 'relative';
-  document.getElementById('grid').style.position = 'relative';
-  document.getElementById('grid').appendChild(line);
-}
+/* ─── NAV ─── */
+function navJour(d){const dd=new Date(ST.cur+'T12:00:00');dd.setDate(dd.getDate()+d);ST.cur=dd.toISOString().slice(0,10);renderGrid();}
+function goToday(){ST.cur=new Date().toISOString().slice(0,10);renderGrid();}
 
-/* ── NAVIGATION ── */
-function navJour(delta) {
-  const d = new Date(ST.cur+'T12:00:00');
-  d.setDate(d.getDate() + delta);
-  ST.cur = d.toISOString().slice(0,10);
-  renderGrid();
-}
-
-function goToday() {
-  ST.cur = new Date().toISOString().slice(0,10);
-  renderGrid();
-}
-
-/* ── AJOUT MISSION ── */
-function ouvrirAjout(key) {
-  const sel = document.getElementById('add-di');
-  sel.innerHTML = ST.drivers.map((d,i)=>`<option value="${i}">${d.name}</option>`).join('');
-  const hSel = document.getElementById('add-heure');
-  hSel.innerHTML = HEURES.map(h=>`<option value="${h}"${h==='07:00'?' selected':''}>${h}</option>`).join('');
-  /* Pré-remplir si clic sur cellule */
-  if (key) {
-    const [, di, h] = key.split('|');
-    sel.value = di;
-    hSel.value = h;
-  }
-  /* Remplir datalist */
-  const dl = document.getElementById('add-client-list');
-  const tous = [...new Set([...LIBRARY.co,...LIBRARY.tr,...LIBRARY.ta])].sort();
-  dl.innerHTML = tous.map(c=>`<option value="${c}">`).join('');
-  document.getElementById('add-client').value = '';
-  document.getElementById('add-fin').value = '';
+/* ─── AJOUT ─── */
+function ouvrirAjout(key){
+  document.getElementById('add-di').innerHTML=ST.drivers.map((d,i)=>`<option value="${i}">${d.name}</option>`).join('');
+  document.getElementById('add-heure').innerHTML=HEURES.map(h=>`<option value="${h}"${h==='07:00'?' selected':''}>${h}</option>`).join('');
+  if(key){const[,di,hh]=key.split('|');document.getElementById('add-di').value=di;document.getElementById('add-heure').value=hh;}
+  document.getElementById('add-client').value='';
+  document.getElementById('add-fin').value='';
+  document.getElementById('add-sugg').innerHTML='';
   showMod('m-add');
+  setTimeout(()=>document.getElementById('add-client').focus(),100);
 }
 
-function confirmerAjout() {
-  const di = parseInt(document.getElementById('add-di').value);
-  const h  = document.getElementById('add-heure').value;
-  const cl = document.getElementById('add-client').value.trim().toUpperCase();
-  const cat= document.getElementById('add-cat').value;
-  const fin= document.getElementById('add-fin').value.trim();
-  if (!cl) return alert('Indique le nom du client ou de la mission.');
-  const key = `${ST.cur}|${di}|${h}`;
-  if (!ST.tasks[key]) ST.tasks[key] = [];
-  ST.tasks[key].push({client:cl, cat, fin:fin||undefined});
-  closeMod('m-add');
-  save();
-  renderGrid();
+function suggestClients(q,targetId){
+  const div=document.getElementById(targetId);
+  if(!q||q.length<1){div.innerHTML='';return;}
+  const matches=ALL_CLIENTS.filter(c=>c.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  div.innerHTML=matches.map(c=>`<button class="sug-btn" onclick="chooseClient('${c.replace(/'/g,"\\'")}','${targetId}')">${c}</button>`).join('');
+}
+function chooseClient(nom,targetId){
+  document.getElementById(targetId==='add-sugg'?'add-client':'edit-client').value=nom;
+  document.getElementById(targetId).innerHTML='';
 }
 
-/* ── MODIFIER / SUPPRIMER ── */
-function ouvrirEdit(key, idx) {
-  _editKey = {key, idx};
-  const t = (ST.tasks[key]||[])[idx];
-  if (!t) return;
-  document.getElementById('edit-client').value = t.client||t.task||'';
-  document.getElementById('edit-fin').value = t.fin||'';
-  document.getElementById('edit-cat').value = t.cat||'co';
+function confirmerAjout(){
+  const di=parseInt(document.getElementById('add-di').value);
+  const hh=document.getElementById('add-heure').value;
+  const cl=document.getElementById('add-client').value.trim().toUpperCase();
+  const cat=document.getElementById('add-cat').value;
+  const fin=document.getElementById('add-fin').value.trim();
+  if(!cl)return toast('⚠️ Indique le client ou la mission','#f59e0b');
+  const key=`${ST.cur}|${di}|${hh}`;
+  if(!ST.tasks[key])ST.tasks[key]=[];
+  ST.tasks[key].push({client:cl,cat,fin:fin||undefined});
+  closeMod('m-add');save();renderGrid();
+  toast('✅ Mission ajoutée pour '+ST.drivers[di].name,'#16a34a');
+}
+
+/* ─── EDIT ─── */
+function ouvrirEdit(key,idx){
+  _editKey={key,idx};
+  const t=(ST.tasks[key]||[])[idx];if(!t)return;
+  document.getElementById('edit-client').value=t.client||t.task||'';
+  document.getElementById('edit-fin').value=t.fin||'';
+  document.getElementById('edit-cat').value=t.cat||'co';
   showMod('m-edit');
 }
-
-function confirmerEdit() {
-  if (!_editKey) return;
-  const {key, idx} = _editKey;
-  const arr = ST.tasks[key];
-  if (!arr || !arr[idx]) return;
-  arr[idx].client = document.getElementById('edit-client').value.trim().toUpperCase();
-  arr[idx].fin    = document.getElementById('edit-fin').value.trim()||undefined;
-  arr[idx].cat    = document.getElementById('edit-cat').value;
-  closeMod('m-edit');
-  save();
-  renderGrid();
+function confirmerEdit(){
+  if(!_editKey)return;
+  const{key,idx}=_editKey;
+  const arr=ST.tasks[key];if(!arr||!arr[idx])return;
+  arr[idx].client=document.getElementById('edit-client').value.trim().toUpperCase();
+  arr[idx].fin=document.getElementById('edit-fin').value.trim()||undefined;
+  arr[idx].cat=document.getElementById('edit-cat').value;
+  closeMod('m-edit');save();renderGrid();
+}
+function supprimerMission(){
+  if(!_editKey)return;
+  const{key,idx}=_editKey;
+  if(ST.tasks[key])ST.tasks[key].splice(idx,1);
+  closeMod('m-edit');save();renderGrid();
+  toast('🗑 Mission supprimée','#94a3b8');
 }
 
-function supprimerMission() {
-  if (!_editKey) return;
-  const {key, idx} = _editKey;
-  if (ST.tasks[key]) ST.tasks[key].splice(idx, 1);
-  closeMod('m-edit');
-  save();
-  renderGrid();
-}
-
-/* ── CLIC SUR CELLULE ── */
-function clickCell(key) {
-  /* Fermer menu ouvert */
-  document.getElementById('ctx-menu').style.display = 'none';
+function clickCell(key){
+  document.getElementById('ctx-menu').style.display='none';
   ouvrirAjout(key);
 }
 
-/* ── MENU CHAUFFEUR ── */
-function ouvrirMenuChauffeur(di, btn) {
-  const menu = document.getElementById('ctx-menu');
-  /* Toggle */
-  if (menu.dataset.di === String(di) && menu.style.display !== 'none') {
-    menu.style.display = 'none'; return;
-  }
-  menu.dataset.di = di;
-  const dr = ST.drivers[di];
-  menu.innerHTML = `
-    <div class="sec-title">${dr.name} — ${dr.truck}</div>
-    <button onclick="menuTournee(${di})">🎨 Tournée du jour</button>
-    <button onclick="menuEffacerTournee(${di})">❌ Effacer la tournée</button>
-    <div class="sec-title">Actions</div>
-    <button onclick="menuAjouterClient(${di})">➕ Ajouter une mission</button>
-    <button onclick="menuEffacerJour(${di})">🗑 Effacer toutes les missions du jour</button>
+/* ─── MENU CHAUFFEUR ─── */
+function openMenu(di,btn){
+  const menu=document.getElementById('ctx-menu');
+  if(menu.dataset.di===String(di)&&menu.style.display!=='none'){menu.style.display='none';return;}
+  menu.dataset.di=di;
+  const dr=ST.drivers[di];
+  menu.innerHTML=`
+    <div class="sec">${dr.name} — ${dr.truck}</div>
+    <button onclick="mTournee(${di})">🎨 Définir la tournée</button>
+    <button onclick="mEffTournee(${di})">❌ Effacer la tournée</button>
+    <div class="sec">Missions du jour</div>
+    <button onclick="mAjouter(${di})">➕ Ajouter une mission</button>
+    <button onclick="mEffJour(${di})" style="color:#f87171">🗑 Effacer toutes les missions</button>
   `;
-  const r = btn.getBoundingClientRect();
-  menu.style.display = 'block';
-  menu.style.left = Math.min(r.left, window.innerWidth-250) + 'px';
-  menu.style.top  = (r.bottom + 6) + 'px';
+  const r=btn.getBoundingClientRect();
+  menu.style.display='block';
+  menu.style.left=Math.min(r.left,window.innerWidth-240)+'px';
+  menu.style.top=(r.bottom+6)+'px';
 }
-
-function menuTournee(di) {
-  document.getElementById('ctx-menu').style.display = 'none';
-  const nom = prompt('Nom de la tournée (ex: Tournée bleue) :');
-  if (!nom) return;
-  if (!ST.tournees) ST.tournees = {};
-  ST.tournees[`${ST.cur}|${di}`] = {nom: nom.trim()};
-  save();
-  renderGrid();
+function mTournee(di){
+  document.getElementById('ctx-menu').style.display='none';
+  const nom=prompt('Nom de la tournée (ex: Tournée bleue, Tournée jaune…) :');
+  if(!nom)return;
+  if(!ST.tournees)ST.tournees={};
+  ST.tournees[`${ST.cur}|${di}`]={nom:nom.trim()};
+  save();renderGrid();
 }
-
-function menuEffacerTournee(di) {
-  document.getElementById('ctx-menu').style.display = 'none';
-  if (!ST.tournees) return;
-  delete ST.tournees[`${ST.cur}|${di}`];
-  save();
-  renderGrid();
+function mEffTournee(di){
+  document.getElementById('ctx-menu').style.display='none';
+  if(ST.tournees)delete ST.tournees[`${ST.cur}|${di}`];
+  save();renderGrid();
 }
-
-function menuAjouterClient(di) {
-  document.getElementById('ctx-menu').style.display = 'none';
+function mAjouter(di){
+  document.getElementById('ctx-menu').style.display='none';
   ouvrirAjout(`${ST.cur}|${di}|07:00`);
 }
-
-function menuEffacerJour(di) {
-  document.getElementById('ctx-menu').style.display = 'none';
-  if (!confirm(`Effacer toutes les missions de ${ST.drivers[di].name} pour cette journée ?`)) return;
-  const prefix = `${ST.cur}|${di}|`;
-  Object.keys(ST.tasks).forEach(k => { if (k.startsWith(prefix)) delete ST.tasks[k]; });
-  save();
-  renderGrid();
+function mEffJour(di){
+  document.getElementById('ctx-menu').style.display='none';
+  if(!confirm(`Effacer TOUTES les missions de ${ST.drivers[di].name} pour aujourd'hui ?`))return;
+  const pf=`${ST.cur}|${di}|`;
+  Object.keys(ST.tasks).forEach(k=>{if(k.startsWith(pf))delete ST.tasks[k];});
+  save();renderGrid();toast('🗑 Missions effacées','#94a3b8');
 }
 
-/* ── UTILITAIRES ── */
-function showMod(id) { document.getElementById(id).style.display='flex'; }
-function closeMod(id) { document.getElementById(id).style.display='none'; }
-function setSyncLed(color, txt) {
-  const colors = {green:'#22c55e', orange:'#f59e0b', red:'#ef4444'};
-  document.getElementById('sync-led').style.background = colors[color]||color;
-  document.getElementById('sync-txt').textContent = txt;
+/* ─── UTILS ─── */
+function showMod(id){document.getElementById(id).classList.add('open');}
+function closeMod(id){document.getElementById(id).classList.remove('open');}
+function setSL(c,txt){
+  document.getElementById('sync-led').style.background={green:'#22c55e',orange:'#f59e0b',red:'#ef4444'}[c]||c;
+  document.getElementById('sync-txt').textContent=txt;
+}
+let _toastTimer=null;
+function toast(msg,color='#16a34a'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.borderColor=color;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-/* Fermer menus en cliquant ailleurs */
-document.addEventListener('click', e => {
-  const menu = document.getElementById('ctx-menu');
-  if (!menu.contains(e.target) && !e.target.classList.contains('gh-menu')) {
-    menu.style.display = 'none';
-  }
+document.addEventListener('click',e=>{
+  const m=document.getElementById('ctx-menu');
+  if(!m.contains(e.target)&&!e.target.classList.contains('gh-menu'))m.style.display='none';
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeMod('m-add');closeMod('m-edit');document.getElementById('ctx-menu').style.display='none';}
 });
 
-/* ── DÉMARRAGE ── */
-window.addEventListener('load', async () => {
-  /* 1. Afficher immédiatement depuis le cache local */
-  const loc = localStorage.getItem('cana_v3');
-  if (loc) try { Object.assign(ST, JSON.parse(loc)); renderGrid(); } catch(e) {}
+/* ─── DÉMARRAGE ─── */
+window.addEventListener('load',async()=>{
+  const loc=localStorage.getItem('cana_v3');
+  if(loc)try{Object.assign(ST,JSON.parse(loc));renderGrid();}catch{}
   else renderGrid();
-  /* 2. Charger le cloud */
   await loadCloud();
-  /* 3. Mettre à jour l'heure maintenant */
-  setInterval(() => {
-    if (ST.cur === new Date().toISOString().slice(0,10)) drawNowLine();
-  }, 30000);
+  setInterval(()=>{if(ST.cur===new Date().toISOString().slice(0,10))renderGrid();},60000);
 });
 </script>
 </body>
