@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest-chauffeur.json">
+<title>La Table de Cana – Chauffeur</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a1628;--card:#0f1e33;--border:#1e3a5f;--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--blue:#3b82f6;--orange:#f97316;--purple:#8b5cf6;--red:#ef4444}
+body{font-family:-apple-system,'SF Pro Display',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto}
+/* LOGIN */
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;gap:16px}
+#login img{width:100px;height:100px;border-radius:20px;object-fit:contain;background:#fff;padding:10px}
+#login h1{font-size:22px;font-weight:900;color:#fff;text-align:center}
+#login p{font-size:14px;color:var(--muted);text-align:center}
+.login-btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;transition:.15s}
+.login-btn:active{transform:scale(.97)}
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh}
+/* HEADER */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.hdr-back{background:transparent;border:none;color:var(--blue);font-size:22px;cursor:pointer;padding:4px 8px 4px 0}
+.hdr-title{font-size:17px;font-weight:900;color:#fff;flex:1}
+.hdr-sub{font-size:12px;color:var(--muted)}
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:14px 14px 80px}
+/* MISSION CARD */
+.miss-card{background:var(--card);border:2px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;cursor:pointer;transition:.15s}
+.miss-card:active{transform:scale(.98)}
+.miss-card.done{opacity:.65;border-color:rgba(34,197,94,.3)}
+.miss-stripe{height:4px}
+.miss-body{padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.miss-time{text-align:center;min-width:52px}
+.miss-time .heure{font-size:22px;font-weight:900;color:#fff;line-height:1}
+.miss-time .date-lbl{font-size:9px;font-weight:800;color:var(--orange)}
+.miss-info{flex:1}
+.miss-client{font-size:16px;font-weight:900;color:#fff;margin-bottom:4px}
+.miss-fin{font-size:12px;color:var(--muted)}
+.miss-cat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-top:4px;display:inline-block}
+.miss-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.miss-check.ok{background:var(--green);border-color:var(--green);color:#fff}
+/* VIDE */
+.vide{text-align:center;padding:50px 20px;color:var(--muted)}
+.vide .ico{font-size:48px;margin-bottom:12px}
+/* DÉTAIL */
+#detail{display:none;flex-direction:column;min-height:100vh}
+.det-row{margin-bottom:12px}
+.det-row label{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px}
+.det-row .val{font-size:15px;font-weight:700;color:#fff}
+.big-btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.big-btn:active{transform:scale(.97)}
+.big-btn.green{background:var(--green);color:#fff}
+.big-btn.blue{background:var(--blue);color:#fff}
+.big-btn.purple{background:var(--purple);color:#fff}
+.big-btn.outline{background:transparent;border:2px solid var(--border);color:var(--text)}
+/* PHOTO */
+#photo-screen{display:none;flex-direction:column;min-height:100vh}
+.photo-preview{width:100%;border-radius:14px;margin-bottom:12px;max-height:280px;object-fit:cover}
+/* BADGE */
+.badge-count{background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
+/* SYNC */
+#sync-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ÉCRAN LOGIN -->
+<div id="login">
+  <div style="width:100px;height:100px;border-radius:20px;background:linear-gradient(135deg,#fff5f7,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px">
+    <div style="font-size:36px">☀️</div>
+    <div style="font-size:9px;font-weight:900;color:#1a1a1a;margin-top:2px">LA TABLE</div>
+    <div style="font-size:8px;font-weight:700;color:#666">DE CANA</div>
+  </div>
+  <h1>Bienvenue</h1>
+  <p>Choisis ton prénom pour accéder à ton planning</p>
+  <div id="login-btns" style="width:100%;display:flex;flex-direction:column;gap:10px"></div>
+</div>
+
+<!-- APP PRINCIPALE -->
+<div id="app">
+
+  <!-- ÉCRAN MISSIONS -->
+  <div id="screen-main" style="display:flex;flex-direction:column;min-height:100vh">
+    <div class="hdr">
+      <div style="flex:1">
+        <div class="hdr-title" id="main-name">—</div>
+        <div class="hdr-sub" id="main-date">—</div>
+      </div>
+      <div id="sync-dot"></div>
+    </div>
+    <div class="scroll" id="main-list"></div>
+    <!-- Bouton photo flottant -->
+    <div style="position:fixed;bottom:20px;right:16px;z-index:99">
+      <button onclick="ouvrirPhotoScreen()" style="width:58px;height:58px;border-radius:50%;background:var(--purple);border:none;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.5)">📸</button>
+    </div>
+  </div>
+
+  <!-- ÉCRAN DÉTAIL MISSION -->
+  <div id="screen-detail" style="display:none;flex-direction:column;min-height:100vh">
+    <div class="hdr">
+      <button class="hdr-back" onclick="showScreen('main')">←</button>
+      <div style="flex:1">
+        <div class="hdr-title" id="det-client">—</div>
+        <div class="hdr-sub" id="det-heure">—</div>
+      </div>
+    </div>
+    <div class="scroll" id="det-body"></div>
+  </div>
+
+  <!-- ÉCRAN PHOTO -->
+  <div id="screen-photo" style="display:none;flex-direction:column;min-height:100vh">
+    <div class="hdr">
+      <button class="hdr-back" onclick="showScreen('main')">←</button>
+      <div class="hdr-title">📸 Photo de preuve</div>
+    </div>
+    <div class="scroll">
+      <div id="photo-cli-block" style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:900;color:var(--orange);margin-bottom:8px">📍 Pour quel client ?</div>
+        <input id="photo-cli-input" placeholder="Tape ou cherche le client..." autocomplete="off"
+          style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:#fff;font-size:16px;font-weight:800;font-family:inherit"
+          oninput="filtrerClientsPhoto(this.value)">
+        <div id="photo-cli-list" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto"></div>
+      </div>
+      <img id="photo-preview" style="display:none" class="photo-preview">
+      <input type="file" id="photo-file" accept="image/*" capture="environment" style="display:none" onchange="photoChoisie(this)">
+      <button class="big-btn blue" onclick="document.getElementById('photo-file').click()">📷 Prendre une photo</button>
+      <button id="photo-send-btn" class="big-btn purple" style="display:none" onclick="envoyerPhoto()">📤 Envoyer la photo</button>
+      <div id="photo-status" style="text-align:center;font-size:13px;color:var(--muted);margin-top:8px"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   LA TABLE DE CANA — App Chauffeur v3
+   Architecture propre : Supabase direct, sync fiable
+═══════════════════════════════════════════════════════ */
+
+const SUPA = 'https://lllzlidwtcjwsxbgkygn.supabase.co';
+const KEY  = 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
+const H    = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+
+const DRIVERS = [
+  {name:'OTMANE',        code:'1111', color:'#3b82f6'},
+  {name:'NICOLAS',       code:'2222', color:'#22c55e'},
+  {name:'MICKAEL',       code:'3333', color:'#f97316'},
+  {name:'KARIM',         code:'4444', color:'#a855f7'},
+  {name:"MAITRE D'HOTEL",code:'5555', color:'#ec4899'},
+  {name:'ANTHONY',       code:'6666', color:'#06b6d4'}
+];
+
+const CAT_COLORS = {co:'#22c55e', tr:'#f97316', ta:'#8b5cf6'};
+const CAT_LABELS = {co:'Collectivité', tr:'Traiteur', ta:'Tâche'};
+
+let CH = null; /* chauffeur connecté */
+let PLANNING = {}; /* tasks du cloud */
+let CLIENTS_LISTE = [];
+let _photoImg = null;
+let _photoCli = '';
+let _currentMission = null;
+let _pollInterval = null;
+
+/* ── CONNEXION SUPABASE ── */
+async function sGet(path) {
+  try {
+    const r = await fetch(SUPA+'/rest/v1/'+path, {headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+    if (!r.ok) return null;
+    return r.json();
+  } catch(e) { return null; }
+}
+
+async function sPost(body) {
+  try {
+    await fetch(SUPA+'/rest/v1/planning?date=eq.'+body.date, {method:'DELETE', headers:H});
+    const r = await fetch(SUPA+'/rest/v1/planning', {method:'POST', headers:H, body:JSON.stringify(body)});
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function sPostEvent(body) {
+  try {
+    const r = await fetch(SUPA+'/rest/v1/planning', {
+      method:'POST', headers:H,
+      body:JSON.stringify(body)
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+/* ── LOGIN ── */
+function initLogin() {
+  const container = document.getElementById('login-btns');
+  /* Vérifier si déjà connecté */
+  const saved = localStorage.getItem('cana_ch');
+  if (saved) {
+    try {
+      CH = JSON.parse(saved);
+      demarrerApp();
+      return;
+    } catch(e) {}
+  }
+  container.innerHTML = DRIVERS.map((d,i) =>
+    `<button class="login-btn" onclick="seConnecter(${i})"
+      style="background:${d.color}22;border:2px solid ${d.color};color:#fff">
+      ${d.name}
+    </button>`
+  ).join('');
+}
+
+function seConnecter(idx) {
+  CH = {id:idx, name:DRIVERS[idx].name, color:DRIVERS[idx].color};
+  localStorage.setItem('cana_ch', JSON.stringify(CH));
+  demarrerApp();
+}
+
+function demarrerApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('main-name').textContent = '🚛 ' + CH.name;
+  const today = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('main-date').textContent = today.charAt(0).toUpperCase()+today.slice(1);
+  chargerMissions();
+  _pollInterval = setInterval(chargerMissions, 5000);
+}
+
+/* ── CHARGER MISSIONS ── */
+async function chargerMissions() {
+  const today = new Date().toISOString().slice(0,10);
+  const rows = await sGet(`planning?date=gte.${today}&select=date,donnees&order=date.asc&limit=30`);
+  if (!rows) return;
+
+  const tasks = {};
+  const cliSet = {};
+
+  rows.forEach(r => {
+    let d = r.donnees;
+    if (typeof d === 'string') try { d = JSON.parse(d); } catch(e) { d = null; }
+    if (!d) return;
+    if (d.tasks) Object.assign(tasks, d.tasks);
+    /* Collecter les clients */
+    if (d.library) Object.values(d.library).flat().forEach(n => { if(n) cliSet[n]=1; });
+    if (d.tasks) Object.values(d.tasks).flat().forEach(t => {
+      if (t && t.client) cliSet[t.client.replace(/^[^A-Za-zÀ-ÿ0-9]+/,'').trim()] = 1;
+    });
+  });
+
+  PLANNING = tasks;
+  CLIENTS_LISTE = Object.keys(cliSet).filter(x=>x&&x.length>1).sort();
+  setSyncOk();
+  afficherMissions();
+}
+
+function afficherMissions() {
+  const today = new Date().toISOString().slice(0,10);
+  const missions = [];
+  /* Chercher sur 14 jours */
+  for (let offset=0; offset<15; offset++) {
+    const d = new Date();
+    d.setDate(d.getDate()+offset);
+    const ds = d.toISOString().slice(0,10);
+    Object.keys(PLANNING).forEach(k => {
+      const [date, di, h] = k.split('|');
+      if (date !== ds || parseInt(di) !== CH.id) return;
+      (PLANNING[k]||[]).forEach((t,ti) => {
+        if (!t || !(t.client||t.task)) return;
+        missions.push({key:k, idx:ti, date:ds, heure:h, task:t, isToday:ds===today});
+      });
+    });
+  }
+  missions.sort((a,b) => a.date!==b.date ? a.date.localeCompare(b.date) : a.heure.localeCompare(b.heure));
+
+  const list = document.getElementById('main-list');
+  if (!missions.length) {
+    list.innerHTML = `<div class="vide"><div class="ico">📭</div><div style="font-size:16px;font-weight:700">Pas de mission prévue</div><div style="font-size:13px;margin-top:8px">Le responsable n'a pas encore planifié.</div></div>`;
+    return;
+  }
+
+  const done = JSON.parse(localStorage.getItem('cana_done_'+CH.id)||'{}');
+
+  list.innerHTML = missions.map(m => {
+    const t = m.task;
+    const label = t.client || t.task || '';
+    const cat = t.cat || 'co';
+    const color = CAT_COLORS[cat] || '#64748b';
+    const isDone = !!done[m.key+'_'+m.idx];
+    const dateLabel = !m.isToday ? new Date(m.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+    return `
+      <div class="miss-card ${isDone?'done':''}" onclick="ouvrirDetail('${m.key}',${m.idx})">
+        <div class="miss-stripe" style="background:${isDone?'#22c55e':color}"></div>
+        <div class="miss-body">
+          <div class="miss-time">
+            ${dateLabel?`<div class="date-lbl">${dateLabel}</div>`:''}
+            <div class="heure">${m.heure}</div>
+            ${t.fin?`<div style="font-size:10px;color:#64748b">→${t.fin}</div>`:''}
+          </div>
+          <div class="miss-info">
+            <div class="miss-client">${label}</div>
+            <span class="miss-cat" style="background:${color}22;color:${color}">${CAT_LABELS[cat]||cat}</span>
+          </div>
+          <div class="miss-check ${isDone?'ok':''}">${isDone?'✓':''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ── DÉTAIL MISSION ── */
+function ouvrirDetail(key, idx) {
+  const [date, di, h] = key.split('|');
+  const t = (PLANNING[key]||[])[idx];
+  if (!t) return;
+  _currentMission = {key, idx, date, heure:h, task:t};
+
+  document.getElementById('det-client').textContent = t.client || t.task || '—';
+  document.getElementById('det-heure').textContent = h + (t.fin ? ' → '+t.fin : '');
+
+  const done = JSON.parse(localStorage.getItem('cana_done_'+CH.id)||'{}');
+  const isDone = !!done[key+'_'+idx];
+
+  let html = '';
+  if (t.adresse) html += `<div class="det-row"><label>📍 Adresse</label><div class="val">${t.adresse}</div></div>`;
+  if (t.tel) html += `<div class="det-row"><label>📞 Téléphone client</label><div class="val">${t.tel}</div></div>`;
+
+  html += '<div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">';
+
+  /* Livraison confirmée */
+  html += `<button class="big-btn ${isDone?'outline':'green'}" onclick="toggleLivraison('${key}',${idx})">
+    ${isDone?'✅ Livré — appuie pour annuler':'✅ Confirmer la livraison'}
+  </button>`;
+
+  /* Waze / Maps */
+  if (t.adresse) {
+    const q = encodeURIComponent(t.adresse);
+    html += `<button class="big-btn blue" onclick="window.open('https://waze.com/ul?q=${q}','_blank')">🗺 Ouvrir dans Waze</button>`;
+    html += `<button class="big-btn outline" onclick="window.open('https://maps.google.com/?q=${q}','_blank')">📍 Google Maps</button>`;
+  }
+
+  /* Appeler client */
+  if (t.tel) {
+    html += `<button class="big-btn blue" onclick="window.location.href='tel:${t.tel.replace(/\s/g,'')}'" style="background:#7c3aed">📞 Appeler le client</button>`;
+  }
+
+  /* Photo */
+  html += `<button class="big-btn purple" onclick="ouvrirPhotoAvecClient('${(t.client||'').replace(/'/g,"\\'")}')">📸 Prendre une photo de preuve</button>`;
+
+  html += '</div>';
+  document.getElementById('det-body').innerHTML = html;
+  showScreen('detail');
+}
+
+/* ── LIVRAISON CONFIRMÉE ── */
+async function toggleLivraison(key, idx) {
+  const done = JSON.parse(localStorage.getItem('cana_done_'+CH.id)||'{}');
+  const k = key+'_'+idx;
+  const t = (PLANNING[key]||[])[idx];
+  if (!t) return;
+
+  if (done[k]) {
+    delete done[k];
+  } else {
+    done[k] = Date.now();
+    /* Envoyer événement vers le planning */
+    await sPostEvent({
+      date: 'EV_LIV_'+Date.now()+'_'+CH.id,
+      donnees: {
+        type:'livraison_confirmee', _isEvent:true,
+        chauffeurId:CH.id, chauffeur:CH.name,
+        client:t.client||t.task||'',
+        heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+        date:new Date().toISOString().slice(0,10),
+        ts:Date.now()
+      },
+      updated_at: new Date().toISOString()
+    });
+  }
+  localStorage.setItem('cana_done_'+CH.id, JSON.stringify(done));
+  afficherMissions();
+  showScreen('main');
+}
+
+/* ── PHOTOS ── */
+function ouvrirPhotoScreen() {
+  _photoImg = null;
+  _photoCli = '';
+  document.getElementById('photo-cli-input').value = '';
+  document.getElementById('photo-cli-list').innerHTML = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-send-btn').style.display = 'none';
+  document.getElementById('photo-status').textContent = '';
+  document.getElementById('photo-file').value = '';
+  showScreen('photo');
+}
+
+function ouvrirPhotoAvecClient(nom) {
+  ouvrirPhotoScreen();
+  if (nom) {
+    document.getElementById('photo-cli-input').value = nom;
+    _photoCli = nom;
+  }
+}
+
+function filtrerClientsPhoto(q) {
+  _photoCli = q;
+  const list = document.getElementById('photo-cli-list');
+  if (!q || q.length < 1) { list.innerHTML=''; return; }
+  const props = CLIENTS_LISTE.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  list.innerHTML = props.map(n =>
+    `<button onclick="choisirClientPhoto('${n.replace(/'/g,"\\'")}') "
+      style="text-align:left;padding:10px 12px;border-radius:10px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.08);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">
+      📍 ${n}
+    </button>`
+  ).join('');
+}
+
+function choisirClientPhoto(nom) {
+  _photoCli = nom;
+  document.getElementById('photo-cli-input').value = nom;
+  document.getElementById('photo-cli-list').innerHTML = '';
+}
+
+function photoChoisie(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _photoImg = e.target.result;
+    const preview = document.getElementById('photo-preview');
+    preview.src = _photoImg;
+    preview.style.display = 'block';
+    document.getElementById('photo-send-btn').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function envoyerPhoto() {
+  if (!_photoImg) return;
+  document.getElementById('photo-status').textContent = '⏳ Envoi en cours...';
+  document.getElementById('photo-send-btn').disabled = true;
+
+  const ok = await sPostEvent({
+    date: 'PHOTO_'+Date.now()+'_'+CH.id,
+    donnees: {
+      type:'photo', _isEvent:true,
+      chauffeurId:CH.id, chauffeur:CH.name,
+      client:_photoCli||'Sans client',
+      clientPhoto:_photoCli||'',
+      photo:_photoImg,
+      heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+      date:new Date().toISOString().slice(0,10),
+      ts:Date.now()
+    },
+    updated_at:new Date().toISOString()
+  });
+
+  if (ok) {
+    /* Sauvegarder localement */
+    try {
+      const photos = JSON.parse(localStorage.getItem('cana_photos_'+CH.id)||'[]');
+      photos.unshift({img:_photoImg, client:_photoCli, heure:new Date().toISOString(), ts:Date.now()});
+      if (photos.length>50) photos.splice(50);
+      localStorage.setItem('cana_photos_'+CH.id, JSON.stringify(photos));
+    } catch(e) {}
+    document.getElementById('photo-status').textContent = '✅ Photo envoyée !';
+    /* Vider pour permettre une autre photo */
+    setTimeout(()=>{
+      _photoImg = null;
+      document.getElementById('photo-preview').style.display = 'none';
+      document.getElementById('photo-send-btn').style.display = 'none';
+      document.getElementById('photo-send-btn').disabled = false;
+      document.getElementById('photo-status').textContent = 'Prends une autre photo si besoin, ou reviens en arrière.';
+      document.getElementById('photo-file').value = '';
+    }, 1500);
+  } else {
+    document.getElementById('photo-status').textContent = '❌ Erreur — vérifie ta connexion.';
+    document.getElementById('photo-send-btn').disabled = false;
+  }
+}
+
+/* ── NAVIGATION ── */
+function showScreen(name) {
+  document.getElementById('screen-main').style.display = name==='main'?'flex':'none';
+  document.getElementById('screen-detail').style.display = name==='detail'?'flex':'none';
+  document.getElementById('screen-photo').style.display = name==='photo'?'flex':'none';
+}
+
+function setSyncOk() {
+  document.getElementById('sync-dot').style.background = '#22c55e';
+}
+
+/* ── BOUTON INSTALLER (iOS) ── */
+(function(){
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent||'');
+  if(ios&&!window.navigator.standalone){
+    window.addEventListener('load',()=>{
+      setTimeout(()=>{
+        if(document.getElementById('install-hint'))return;
+        const b=document.createElement('div');
+        b.id='install-hint';
+        b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#0ea5e9,#0284c7);padding:14px 16px 22px;font-family:system-ui;z-index:9999;font-size:13px;color:#fff;line-height:1.5';
+        b.innerHTML='<b>📲 Installer l\'app :</b> touche <b>Partager ↑</b> puis <b>Sur l\'écran d\'accueil</b><button onclick="this.parentElement.remove()" style="float:right;background:transparent;border:none;color:rgba(255,255,255,.7);font-size:20px;cursor:pointer">✕</button>';
+        document.body.appendChild(b);
+      },2000);
+    });
+  }
+})();
+
+/* ── DÉMARRAGE ── */
+window.addEventListener('load', initLogin);
+</script>
+</body>
+</html>
