@@ -59,6 +59,7 @@ label.f{display:block;font-size:11px;font-weight:600;letter-spacing:.6px;color:v
 .in:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(47,93,80,.15)}
 textarea.in{resize:none;overflow:hidden;min-height:38px}
 .amt{text-align:right}
+.in.calc{background:var(--green-t);border-color:var(--field-b);color:var(--ink);font-weight:600}
 /* TABLES */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:separate;border-spacing:0;min-width:560px}
@@ -161,7 +162,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
           <th>Nature de la dépense et motif</th>
           <th class="r" style="width:90px">Montant HT</th>
           <th class="r" style="width:80px">TVA</th>
-          <th class="r" style="width:95px">Montant TTC</th>
+          <th class="r" style="width:105px">Montant TTC (auto)</th>
           <th style="width:34px"></th>
         </tr></thead>
         <tbody id="expBody"></tbody>
@@ -224,6 +225,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
         <button class="btn ghost" id="sigClear">Effacer</button>
       </div>
     </div>
+    <div style="margin-top:14px"><label class="f">Nom et prénom du signataire</label><input class="in" id="f_signataire"></div>
   </section>
 
   <div class="actions">
@@ -274,7 +276,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
       '<td data-l="Nature de la dépense et motif"><textarea class="in nature" rows="1" placeholder="Nature de la dépense et motif du déplacement"></textarea></td>'+
       '<td data-l="Montant HT"><input class="in ht amt" inputmode="decimal" placeholder="0,00"></td>'+
       '<td data-l="TVA"><input class="in tva amt" inputmode="decimal" placeholder="0,00"></td>'+
-      '<td data-l="Montant TTC"><input class="in ttc amt" inputmode="decimal" placeholder="0,00"></td>'+
+      '<td data-l="Montant TTC"><input class="in ttc amt calc" readonly tabindex="-1" placeholder="auto"></td>'+
       '<td class="rm"><button type="button" aria-label="Supprimer la ligne">&times;</button></td>';
     tr.querySelector('.rm button').addEventListener('click', function(){tr.remove();recalc();});
     autoGrow(tr.querySelector('textarea'));
@@ -288,7 +290,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
       '<td data-l="Trajet et motif"><textarea class="in trajet" rows="1" placeholder="Trajet et motif du déplacement"></textarea></td>'+
       '<td data-l="Nb de km"><input class="in nb amt" inputmode="decimal" placeholder="0"></td>'+
       '<td data-l="Taux €/km"><input class="in taux amt" inputmode="decimal" value="0,50"></td>'+
-      '<td data-l="Montant"><input class="in montant amt" readonly tabindex="-1" placeholder="0,00"></td>'+
+      '<td data-l="Montant"><input class="in montant amt calc" readonly tabindex="-1" placeholder="0,00"></td>'+
       '<td class="rm"><button type="button" aria-label="Supprimer la ligne">&times;</button></td>';
     tr.querySelector('.rm button').addEventListener('click', function(){tr.remove();recalc();});
     autoGrow(tr.querySelector('textarea'));
@@ -317,8 +319,8 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
       var ht=num(tr.querySelector('.ht').value);
       var tva=num(tr.querySelector('.tva').value);
       var ttcEl=tr.querySelector('.ttc');
-      var ttc=num(ttcEl.value);
-      if(!String(ttcEl.value||'').trim() && (ht||tva)){ ttc=ht+tva; ttcEl.value=eur(ttc); }
+      var ttc=ht+tva;
+      ttcEl.value=(ht||tva)?eur(ttc):'';
       tHT+=ht; tTVA+=tva; tTTC+=ttc;
     });
     var kmTot=0;
@@ -576,8 +578,10 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     T(m+bw/2, y+4.7, 'Visa du bénéficiaire', 8.5, 'bold', IK, 'center');
     T(m+bw+6+bw/2, y+4.7, "Visa de l'encadrant", 8.5, 'bold', IK, 'center');
     if(hasSig){
-      try{ doc.addImage(getSignaturePNG(),'PNG', m+3, y+8.5, bw-6, bh-11); }catch(e){}
+      try{ doc.addImage(getSignaturePNG(),'PNG', m+3, y+8, bw-6, bh-15); }catch(e){}
     }
+    var signataire=val('f_signataire');
+    if(signataire){ T(m+bw/2, y+bh-3, signataire, 8.5, 'bold', IK, 'center'); }
     y+=bh+6;
 
     /* Pied */
