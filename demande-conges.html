@@ -81,6 +81,11 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
 .btn.primary{background:var(--green);color:#fff;font-size:16px;padding:14px 24px;flex:1;min-width:240px}
 .btn.primary:hover{background:var(--green-d)}
 .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:22px}
+canvas#sig{width:100%;max-width:520px;height:170px;background:#fff;border:1px solid var(--field-b);border-radius:12px;touch-action:none;display:block;cursor:crosshair}
+.sigbar{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:12px;max-width:520px}
+.sighint{font-size:13px;color:var(--muted)}
+.hint{color:var(--muted);font-size:13px;margin:0 0 10px}
+.gsum{margin-top:16px;background:var(--green-t);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:14.5px;font-weight:600;color:var(--green);text-align:center}
 .alertbar{display:flex;align-items:flex-start;gap:10px;background:#FFF3E0;border:1px solid #F0C48A;border-left:5px solid #E8833A;border-radius:12px;padding:12px 14px;margin-top:14px}
 .alertbar .al-ic{font-size:18px;line-height:1.3}
 .alertbar .al-tx{flex:1;font-size:14px;color:#7a4a12}
@@ -135,6 +140,17 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
 
   <button class="addbtn" id="addSal">+ Ajouter un salarié</button>
 
+  <section class="sec">
+    <div class="sec-h"><span class="dot"></span><h2>Signature du responsable</h2></div>
+    <p class="hint">Votre signature et votre nom seront ajoutés à chaque demande (cadre « Accord du responsable ») et sur la page de synthèse.</p>
+    <div style="margin-bottom:12px;max-width:440px"><label class="f">Nom et prénom du responsable</label><input class="in" id="f_resp_nom"></div>
+    <label class="f">Signature</label>
+    <canvas id="sig"></canvas>
+    <div class="sigbar"><span class="sighint">Signez au doigt (tablette) ou à la souris.</span><button class="btn ghost" id="sigClear">Effacer</button></div>
+  </section>
+
+  <div id="globalSum" class="gsum"></div>
+
   <div class="actions">
     <button class="btn primary" id="btnAll">Générer le PDF (tous)</button>
     <button class="btn sec" id="btnReset">Tout vider</button>
@@ -177,10 +193,12 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
     $('addSal').addEventListener('click', function(){ addSalarie(); });
     $('btnAll').addEventListener('click', generateAll);
     $('btnReset').addEventListener('click', resetAll);
+    if($('sigClear')) $('sigClear').addEventListener('click', clearSig);
+    setupSig();
     document.addEventListener('input', scheduleSave);
     document.addEventListener('change', scheduleSave);
     if(hasDraft()){ restoreDraft(); showDraftAlert(); }
-    renumber();
+    renumber(); updateSummary();
   }
 
   /* ---------- Salariés ---------- */
@@ -238,6 +256,7 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
     card.querySelector('.cardtot b').textContent=fmtn(tot);
     card.querySelector('.tcp').textContent=fmtn(cp);
     card.querySelector('.trtt').textContent=fmtn(rtt);
+    updateSummary();
   }
   function renumber(){
     var cards=listEl.querySelectorAll('.salcard');
@@ -269,12 +288,25 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
   }
   function globals(){ return {remise:val('f_remise'), lieu:val('f_lieu'), datesign:val('f_datesign')}; }
 
+  function sumRows(S){ var cp=0,rtt=0; (S.rows||[]).forEach(function(r){ var v=parseFloat(String(r.nb||'').replace(',','.')); if(isNaN(v))return; if(r.type==='RTT') rtt+=v; else cp+=v; }); return {cp:cp,rtt:rtt,tot:cp+rtt}; }
+  function updateSummary(){ var el=$('globalSum'); if(!el) return; var list=collectAll(); var cp=0,rtt=0; list.forEach(function(S){var s=sumRows(S);cp+=s.cp;rtt+=s.rtt;}); el.textContent=list.length+' salarié(s) · Total '+fmtn(cp+rtt)+' j  (CP '+fmtn(cp)+' · RTT '+fmtn(rtt)+')'; }
+
+  var canvas,ctx,drawing=false,hasSig=false;
+  function setupSig(){ canvas=$('sig'); if(!canvas) return; ctx=canvas.getContext('2d'); fit(); window.addEventListener('resize',fit); canvas.addEventListener('pointerdown',down); canvas.addEventListener('pointermove',move); window.addEventListener('pointerup',up); canvas.addEventListener('pointerleave',up); }
+  function fit(){ if(!canvas) return; var ratio=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect(); var data=hasSig?canvas.toDataURL():null; canvas.width=Math.max(1,Math.round(rect.width*ratio)); canvas.height=Math.max(1,Math.round(rect.height*ratio)); ctx.setTransform(ratio,0,0,ratio,0,0); ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#14231d'; if(data){var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,rect.width,rect.height);};img.src=data;} }
+  function P(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+  function down(e){e.preventDefault();drawing=true;var p=P(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
+  function move(e){if(!drawing)return;e.preventDefault();var p=P(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasSig=true;}
+  function up(){drawing=false;}
+  function clearSig(){if(!canvas)return;var r=canvas.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);hasSig=false;}
+  function getSignaturePNG(){var tmp=document.createElement('canvas');tmp.width=canvas.width;tmp.height=canvas.height;var tc=tmp.getContext('2d');tc.fillStyle='#ffffff';tc.fillRect(0,0,tmp.width,tmp.height);tc.drawImage(canvas,0,0);return tmp.toDataURL('image/png');}
+
   /* ---------- Brouillon ---------- */
   var LSKEY='conges_groupe_v1', _sv;
-  function scheduleSave(){ renumber(); clearTimeout(_sv); _sv=setTimeout(saveDraft,500); }
+  function scheduleSave(){ renumber(); updateSummary(); clearTimeout(_sv); _sv=setTimeout(saveDraft,500); }
   function saveDraft(){
     try{
-      var st={g:{remise:val('f_remise'),lieu:val('f_lieu'),datesign:val('f_datesign')}, sal:[]};
+      var st={g:{remise:val('f_remise'),lieu:val('f_lieu'),datesign:val('f_datesign'),resp:val('f_resp_nom')}, sal:[]};
       Array.prototype.forEach.call(listEl.querySelectorAll('.salcard'), function(c){
         var S={nom:c.querySelector('.snom').value, prenom:c.querySelector('.sprenom').value, rows:[]};
         Array.prototype.forEach.call(c.querySelectorAll('.sline'), function(tr){
@@ -292,7 +324,7 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
   function restoreDraft(){
     try{
       var st=JSON.parse(localStorage.getItem(LSKEY)); if(!st) return;
-      if(st.g){ if($('f_remise'))$('f_remise').value=st.g.remise||''; if($('f_lieu'))$('f_lieu').value=st.g.lieu||''; if($('f_datesign'))$('f_datesign').value=st.g.datesign||''; }
+      if(st.g){ if($('f_remise'))$('f_remise').value=st.g.remise||''; if($('f_lieu'))$('f_lieu').value=st.g.lieu||''; if($('f_datesign'))$('f_datesign').value=st.g.datesign||''; if($('f_resp_nom'))$('f_resp_nom').value=st.g.resp||''; }
       listEl.innerHTML='';
       (st.sal&&st.sal.length?st.sal:[{}]).forEach(function(S){ addSalarie(S); });
       renumber();
@@ -388,19 +420,84 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
     C.sF(C.WT); C.sD(C.LN); doc.setLineWidth(0.5); doc.roundedRect(m,y,bw,bh,2.5,2.5,'FD'); doc.roundedRect(m+bw+6,y,bw,bh,2.5,2.5,'FD');
     C.sF(C.GS); doc.rect(m+0.6,y+0.6,bw-1.2,7,'F'); doc.rect(m+bw+6+0.6,y+0.6,bw-1.2,7,'F');
     C.T(m+bw/2,y+5,'Visa du bénéficiaire',9.5,'bold',C.IK,'center'); C.T(m+bw+6+bw/2,y+5,"Accord du responsable",9.5,'bold',C.IK,'center');
+    if(gl.respSig){ try{ doc.addImage(gl.respSig,'PNG', m+bw+6+3, y+9, bw-6, bh-16); }catch(e){} }
     var who=((S.nom||'')+' '+(S.prenom||'')).trim(); if(who){ C.T(m+bw/2,y+bh-3,who,9.5,'bold',C.IK,'center'); }
+    if(gl.respNom){ C.T(m+bw+6+bw/2,y+bh-3,gl.respNom,9.5,'bold',C.IK,'center'); }
     y+=bh+6;
     // Pied
     doc.setFont(C.F,'normal'); doc.setFontSize(8.5); doc.setTextColor(C.MU[0],C.MU[1],C.MU[2]);
     doc.text('La Table de Cana — Marseille   ·   Demande de congés (CP et RTT)', pageW/2, 297-8, {align:'center'});
   }
 
-  function build(list){
+  function drawSummary(C, list, gl){
+    var doc=C.doc, m=16, pageW=210, pageH=297, xR=pageW-m, cw=pageW-2*m, y=16;
+    function f2(n){return String(Math.round(n*100)/100).replace('.',',');}
+    var H=30; C.sF(C.G); doc.roundedRect(m,y,cw,H,4,4,'F');
+    var chipH=20,imgH=14,imgW=imgH*(431/316),chipW=imgW+8,chipX=m+7,chipY=y+(H-chipH)/2;
+    C.sF(C.WT); doc.roundedRect(chipX,chipY,chipW,chipH,3,3,'F');
+    try{ if(LOGO) doc.addImage(LOGO,'PNG',chipX+(chipW-imgW)/2,chipY+(chipH-imgH)/2,imgW,imgH,'logo'); }catch(e){}
+    C.T(xR-8,y+12,'RÉCAPITULATIF DES CONGÉS',15,'bold',C.WT,'right');
+    C.sD(C.CR); doc.setLineWidth(1.6); doc.line(xR-8-60,y+15,xR-8,y+15);
+    C.T(xR-8,y+22,'La Table de Cana · Marseille',10,'normal',[233,243,239],'right');
+    y+=H+8;
+    C.T(m,y,'Établi le '+(fmtDate(gl.datesign)||fmtDate(todayISO()))+' — '+list.length+' salarié(s)',10.5,'normal',C.MU,'left');
+    y+=7;
+    var nameW=cw-90, cCP=30,cRTT=30,cTOT=30, oCP=nameW,oRTT=nameW+cCP,oTOT=nameW+cCP+cRTT;
+    function head(){
+      C.sF(C.GS); doc.rect(m,y,cw,9,'F');
+      C.T(m+3,y+6,'Salarié',9.5,'bold',C.IK,'left');
+      C.T(m+oCP+cCP/2,y+6,'CP (j)',9.5,'bold',C.IK,'center');
+      C.T(m+oRTT+cRTT/2,y+6,'RTT (j)',9.5,'bold',C.IK,'center');
+      C.T(m+oTOT+cTOT/2,y+6,'Total (j)',9.5,'bold',C.IK,'center');
+      y+=9;
+    }
+    head();
+    var GCP=0,GRTT=0, rh=9;
+    list.forEach(function(S){
+      if(y+rh>pageH-22){ doc.addPage(); y=16; head(); }
+      var s=sumRows(S); GCP+=s.cp; GRTT+=s.rtt;
+      C.sD(C.LN); doc.setLineWidth(0.3); doc.rect(m,y,cw,rh);
+      [oCP,oRTT,oTOT].forEach(function(off){ doc.line(m+off,y,m+off,y+rh); });
+      var who=((S.nom||'')+' '+(S.prenom||'')).trim()||'—';
+      C.T(m+3,y+6,who,10,'normal',C.IK,'left');
+      C.T(m+oCP+cCP/2,y+6, s.cp?f2(s.cp):'',10,'normal',C.IK,'center');
+      C.T(m+oRTT+cRTT/2,y+6, s.rtt?f2(s.rtt):'',10,'normal',C.IK,'center');
+      C.T(m+oTOT+cTOT/2,y+6, s.tot?f2(s.tot):'',10,'bold',C.IK,'center');
+      y+=rh;
+    });
+    if(y+12>pageH-22){ doc.addPage(); y=16; }
+    C.sF(C.GL); doc.rect(m,y,cw,10,'F'); C.sD(C.G); doc.setLineWidth(0.6); doc.rect(m,y,cw,10);
+    [oCP,oRTT,oTOT].forEach(function(off){ doc.line(m+off,y,m+off,y+10); });
+    C.T(m+3,y+6.6,'TOTAL GÉNÉRAL',10.5,'bold',C.IK,'left');
+    C.T(m+oCP+cCP/2,y+6.6,f2(GCP),10.5,'bold',C.G,'center');
+    C.T(m+oRTT+cRTT/2,y+6.6,f2(GRTT),10.5,'bold',C.G,'center');
+    C.T(m+oTOT+cTOT/2,y+6.6,f2(GCP+GRTT),10.5,'bold',C.G,'center');
+    y+=10+10;
+    if(y+34>pageH-16){ doc.addPage(); y=16; }
+    C.T(m,y,'Fait à '+(gl.lieu||'..............')+', le '+(fmtDate(gl.datesign)||'..............'),10.5,'normal',C.IK,'left');
+    y+=6;
+    var bw=80,bh=28;
+    C.sF(C.WT); C.sD(C.LN); doc.setLineWidth(0.5); doc.roundedRect(m,y,bw,bh,2.5,2.5,'FD');
+    C.sF(C.GS); doc.rect(m+0.6,y+0.6,bw-1.2,7,'F');
+    C.T(m+bw/2,y+5,'Le responsable',9.5,'bold',C.IK,'center');
+    if(gl.respSig){ try{ doc.addImage(gl.respSig,'PNG', m+3, y+9, bw-6, bh-16); }catch(e){} }
+    if(gl.respNom){ C.T(m+bw/2,y+bh-3, gl.respNom, 9.5,'bold',C.IK,'center'); }
+    doc.setFont(C.F,'normal'); doc.setFontSize(8.5); doc.setTextColor(C.MU[0],C.MU[1],C.MU[2]);
+    doc.text('La Table de Cana — Marseille   ·   Récapitulatif des congés', pageW/2, pageH-8, {align:'center'});
+  }
+
+  function build(list, withSummary){
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({unit:'mm',format:'a4'});
     doc.setProperties({title:'Demandes de congés - La Table de Cana Marseille', author:'La Table de Cana Marseille'});
     var C=makeCtx(doc), gl=globals();
-    list.forEach(function(S,i){ if(i>0) doc.addPage(); drawOneDemande(C,S,gl); });
+    gl.respNom=val('f_resp_nom'); gl.respSig=(hasSig?getSignaturePNG():null);
+    if(withSummary){
+      drawSummary(C, list, gl);
+      list.forEach(function(S){ doc.addPage(); drawOneDemande(C,S,gl); });
+    } else {
+      list.forEach(function(S,i){ if(i>0) doc.addPage(); drawOneDemande(C,S,gl); });
+    }
     return doc;
   }
 
@@ -409,7 +506,7 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
       if(!window.jspdf||!window.jspdf.jsPDF){ alert("Le module PDF n'a pas pu se charger (connexion ?). Réessaie."); return; }
       var list=sortByName(collectAll());
       if(list.length===0){ alert("Ajoute au moins un salarié avec des dates."); return; }
-      var doc=build(list);
+      var doc=build(list,true);
       deliver(doc, 'Demandes_conges_'+todayISO()+'.pdf');
     }catch(e){ alert("Erreur pendant la génération : "+(e&&e.message?e.message:e)); }
   }
@@ -418,7 +515,7 @@ td.rm button{border:none;background:transparent;color:var(--coral);font-size:20p
       if(!window.jspdf||!window.jspdf.jsPDF){ alert("Le module PDF n'a pas pu se charger (connexion ?). Réessaie."); return; }
       var S={nom:card.querySelector('.snom').value.trim(), prenom:card.querySelector('.sprenom').value.trim(), rows:[]};
       Array.prototype.forEach.call(card.querySelectorAll('.sline'), function(tr){ var o={type:tr.querySelector('.stype').value,du:tr.querySelector('.sdu').value,au:tr.querySelector('.sau').value,nb:tr.querySelector('.snb').value.trim()}; if(o.du||o.au||o.nb) S.rows.push(o); });
-      var doc=build([S]);
+      var doc=build([S],false);
       var nm=((S.nom||'')+'_'+(S.prenom||'')).replace(/[^a-zA-Z0-9_-]/g,'_');
       deliver(doc, 'Demande_conges_'+(nm||'salarie')+'_'+todayISO()+'.pdf');
     }catch(e){ alert("Erreur pendant la génération : "+(e&&e.message?e.message:e)); }
