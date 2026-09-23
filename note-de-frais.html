@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 :root{
   --green:#2F5D50; --green-l:#356B5C; --green-d:#244A40; --green-t:#E7F0EC;
@@ -60,6 +61,12 @@ label.f{display:block;font-size:11px;font-weight:600;letter-spacing:.6px;color:v
 textarea.in{resize:none;overflow:hidden;min-height:38px}
 .amt{text-align:right}
 .in.calc{background:var(--green-t);border-color:var(--field-b);color:var(--ink);font-weight:600}
+.filelist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.filelist li{display:flex;align-items:center;gap:10px;background:var(--field);border:1px solid var(--field-b);border-radius:10px;padding:9px 12px;font-size:13.5px}
+.filelist li .ic{font-size:10px;font-weight:700;color:#fff;background:var(--green);border-radius:5px;padding:2px 6px}
+.filelist li .ic.pdf{background:var(--coral-d)}
+.filelist li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filelist li .rmf{border:none;background:transparent;color:var(--coral);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
 /* TABLES */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:separate;border-spacing:0;min-width:560px}
@@ -210,6 +217,15 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     </div>
   </section>
 
+  <!-- JUSTIFICATIFS -->
+  <section class="sec">
+    <div class="sec-h"><span class="dot"></span><h2>Justificatifs</h2></div>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 12px">Ajoutez les photos ou PDF de vos reçus et factures. Ils seront joints au PDF (pages suivantes) pour que le comptable puisse contrôler.</p>
+    <input type="file" id="files" accept="image/*,application/pdf" multiple hidden>
+    <button class="addbtn" id="addFiles">+ Ajouter un justificatif</button>
+    <ul id="fileList" class="filelist"></ul>
+  </section>
+
   <!-- SIGNATURE -->
   <section class="sec">
     <div class="sec-h"><span class="dot"></span><h2>Signature</h2></div>
@@ -249,6 +265,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
   function eur0(n){ return n?eur(n):''; }
 
   var expBody, kmBody;
+  var attachments=[];
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -260,6 +277,8 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     for(i=0;i<2;i++) addKm();
     $('addExp').addEventListener('click', function(){addExp();});
     $('addKm').addEventListener('click', function(){addKm();});
+    $('addFiles').addEventListener('click', function(){ $('files').click(); });
+    $('files').addEventListener('change', onFiles);
     document.addEventListener('input', onInput);
     $('btnPdf').addEventListener('click', generatePDF);
     $('btnReset').addEventListener('click', resetAll);
@@ -366,6 +385,40 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     return a;
   }
 
+  /* ---------- Justificatifs ---------- */
+  function onFiles(e){
+    var list=e.target.files; if(!list) return;
+    Array.prototype.forEach.call(list, function(f){ readAttachment(f); });
+    e.target.value='';
+  }
+  function readAttachment(file){
+    var isImg=/^image\//.test(file.type);
+    var isPdf=file.type==='application/pdf' || /\.pdf$/i.test(file.name);
+    if(!isImg && !isPdf){ alert('Format non pris en charge : '+file.name+'\nAjoute une photo (JPG/PNG) ou un PDF.'); return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      if(isImg){
+        var dataURL=reader.result, img=new Image();
+        img.onload=function(){ attachments.push({kind:'img',name:file.name,dataURL:dataURL,w:img.naturalWidth||img.width,h:img.naturalHeight||img.height}); renderFiles(); };
+        img.onerror=function(){ attachments.push({kind:'img',name:file.name,dataURL:dataURL,w:1000,h:1400}); renderFiles(); };
+        img.src=dataURL;
+      } else {
+        attachments.push({kind:'pdf',name:file.name,buf:reader.result}); renderFiles();
+      }
+    };
+    if(isImg) reader.readAsDataURL(file); else reader.readAsArrayBuffer(file);
+  }
+  function renderFiles(){
+    var ul=$('fileList'); if(!ul) return; ul.innerHTML='';
+    attachments.forEach(function(a,idx){
+      var li=document.createElement('li');
+      li.innerHTML='<span class="ic '+(a.kind==='pdf'?'pdf':'')+'">'+(a.kind==='pdf'?'PDF':'IMG')+'</span><span class="nm"></span><button class="rmf" aria-label="Retirer">&times;</button>';
+      li.querySelector('.nm').textContent=a.name;
+      li.querySelector('.rmf').addEventListener('click', function(){ attachments.splice(idx,1); renderFiles(); });
+      ul.appendChild(li);
+    });
+  }
+
   /* ---------- Signature ---------- */
   var canvas, ctx, drawing=false, hasSig=false;
   function setupSig(){
@@ -406,6 +459,7 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     ['f_nom','f_prenom','f_fonction','f_periode','f_num','f_date','f_lieu','f_datesign','f_avance'].forEach(function(id){var e=$(id); if(e) e.value='';});
     expBody.innerHTML=''; kmBody.innerHTML='';
     var i; for(i=0;i<4;i++) addExp(); for(i=0;i<2;i++) addKm();
+    attachments=[]; renderFiles();
     clearSig(); recalc();
   }
 
@@ -584,43 +638,93 @@ canvas#sig{width:100%;height:180px;background:#fff;border:1px solid var(--field-
     if(signataire){ T(m+bw/2, y+bh-3, signataire, 8.5, 'bold', IK, 'center'); }
     y+=bh+6;
 
+    if(attachments.length){ ensure(8); T(m, y+3, attachments.length+' justificatif(s) joint(s) — voir pages suivantes.', 9, 'normal', MU, 'left'); y+=6; }
+
     /* Pied */
     doc.setFont(F,'normal'); doc.setFontSize(7.5); sT(MU);
     doc.text('La Table de Cana — Marseille   ·   Note de frais', pageW/2, pageH-8, {align:'center'});
 
     var nom=(val('f_nom')||'').replace(/[^a-zA-Z0-9_-]/g,'_');
     var filename='Note_de_frais'+(nom?('_'+nom):'')+'.pdf';
-    deliverPDF(doc, filename);
+    finishAndDeliver(doc, filename);
   }
 
-  function deliverPDF(doc, filename){
-    var blob=null;
-    try{ blob=doc.output('blob'); }catch(e){}
-    var btn=document.getElementById('btnPdf');
-    var old=btn?btn.textContent:'';
+  function finishAndDeliver(doc, filename){
+    var imgs=[], pdfs=[];
+    attachments.forEach(function(a){ (a.kind==='pdf'?pdfs:imgs).push(a); });
+    imgs.forEach(function(a){ addImagePage(doc, a); });
+    if(pdfs.length && window.PDFLib){
+      mergePdfs(doc, pdfs, filename);
+    } else {
+      if(pdfs.length && !window.PDFLib){ alert("Les photos ont été jointes. Les justificatifs au format PDF n'ont pas pu être ajoutés (module non chargé) — réessaie dans un instant."); }
+      var blob=null; try{ blob=doc.output('blob'); }catch(e){}
+      deliverBlob(blob, filename, doc);
+    }
+  }
+
+  function addImagePage(doc, a){
+    try{
+      doc.addPage();
+      var pw=210, ph=297, mg=12;
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(47,93,80);
+      doc.text('Justificatif : '+a.name, mg, mg+2);
+      var maxW=pw-2*mg, maxH=ph-2*mg-8;
+      var w=a.w||1000, h=a.h||1400, r=Math.min(maxW/w, maxH/h);
+      if(!isFinite(r) || r<=0) r=maxW/1000;
+      var dw=w*r, dh=h*r, x=(pw-dw)/2, yy=mg+8;
+      var fmt=(String(a.dataURL).indexOf('image/png')>=0)?'PNG':'JPEG';
+      doc.addImage(a.dataURL, fmt, x, yy, dw, dh);
+    }catch(e){
+      try{ doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(120,120,120);
+        doc.text("Aperçu indisponible pour ce format ("+a.name+").", 14, 40); }catch(e2){}
+    }
+  }
+
+  function mergePdfs(doc, pdfs, filename){
+    var mainBytes;
+    try{ mainBytes=doc.output('arraybuffer'); }
+    catch(e){ deliverBlob(doc.output('blob'), filename, doc); return; }
+    PDFLib.PDFDocument.load(mainBytes).then(function(merged){
+      var chain=Promise.resolve();
+      pdfs.forEach(function(a){
+        chain=chain.then(function(){
+          return PDFLib.PDFDocument.load(a.buf).then(function(src){
+            return merged.copyPages(src, src.getPageIndices()).then(function(pages){
+              pages.forEach(function(p){ merged.addPage(p); });
+            });
+          }).catch(function(){});
+        });
+      });
+      return chain.then(function(){ return merged.save(); }).then(function(out){
+        deliverBlob(new Blob([out], {type:'application/pdf'}), filename, null);
+      });
+    }).catch(function(err){
+      alert("Souci en ajoutant les justificatifs PDF : "+(err&&err.message?err.message:err)+"\nLe document sera généré sans eux.");
+      deliverBlob(doc.output('blob'), filename, doc);
+    });
+  }
+
+  function deliverBlob(blob, filename, docFb){
+    var btn=document.getElementById('btnPdf'), old=btn?btn.textContent:'';
     function restore(){ if(btn) btn.textContent=old; }
-    function fallback(){
-      try{ doc.save(filename); }
-      catch(e){
-        try{ window.open(doc.output('bloburl'),'_blank'); }
-        catch(e2){ alert("Impossible de générer le PDF sur cet appareil."); }
-      }
+    function fb(){
+      if(docFb){ try{ docFb.save(filename); return; }catch(e){} }
+      try{
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a'); a.href=url; a.download=filename;
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ URL.revokeObjectURL(url); if(a.parentNode) a.parentNode.removeChild(a); },1500);
+      }catch(e){ try{ window.open(URL.createObjectURL(blob),'_blank'); }catch(e2){ alert("Téléchargement impossible sur cet appareil."); } }
     }
     if(window.claude && typeof window.claude.use==='function' && blob){
       if(btn){ btn.textContent='Génération…'; }
       window.claude.use('downloads').then(function(dl){
         if(dl && typeof dl.save==='function'){
-          dl.save({filename:filename, data:blob}).then(function(){
-            restore(); toast('PDF généré ✓');
-          }).catch(function(err){
-            restore();
-            if(!(err && err.code==='declined')) fallback();
-          });
-        } else { restore(); fallback(); }
-      }).catch(function(){ restore(); fallback(); });
-    } else {
-      fallback();
-    }
+          dl.save({filename:filename, data:blob}).then(function(){ restore(); toast('PDF généré ✓'); })
+          .catch(function(err){ restore(); if(!(err&&err.code==='declined')) fb(); });
+        } else { restore(); fb(); }
+      }).catch(function(){ restore(); fb(); });
+    } else { fb(); }
   }
 
   function toast(msg){
