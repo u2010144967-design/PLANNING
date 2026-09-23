@@ -68,7 +68,7 @@ td.rm button:hover{background:rgba(248,112,112,.12)}
 .addbtn{margin-top:12px;border:1px dashed var(--field-b);background:var(--field);color:var(--green);
   font:inherit;font-weight:600;font-size:14px;border-radius:10px;padding:9px 14px;cursor:pointer}
 .addbtn:hover{border-color:var(--green)}
-.totals{display:flex;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.totals{display:flex;flex-wrap:wrap;gap:18px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .totals .big{font-size:15px;color:var(--muted)}
 .totals .big b{color:var(--green);font-size:19px}
 .memo{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--coral);
@@ -87,6 +87,11 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
 .btn.primary:hover{background:var(--green-d)}
 .btn.sec{background:var(--field);border-color:var(--field-b);color:var(--ink)}
 .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:22px}
+.draftbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--green-t);border:1px solid var(--line);border-left:5px solid var(--green);
+  border-radius:12px;padding:11px 14px;margin-top:14px;font-size:14.5px}
+.btn.mini{font-size:13.5px;padding:8px 13px;border-radius:9px;background:var(--green);color:#fff}
+.btn.mini.ghost{background:transparent;border-color:var(--field-b);color:var(--ink)}
 @media (max-width:640px){
   table,thead,tbody,tr,td{display:block;min-width:0}
   table{min-width:0}
@@ -142,7 +147,11 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
       </table>
     </div>
     <button class="addbtn" id="addRow">+ Ajouter une ligne</button>
-    <div class="totals"><span class="big">Total&nbsp; <b id="t_jours">0</b> jour(s)</span></div>
+    <div class="totals">
+      <span class="big">CP&nbsp; <b id="t_cp">0</b></span>
+      <span class="big">RTT&nbsp; <b id="t_rtt">0</b></span>
+      <span class="big">Total&nbsp; <b id="t_jours">0</b> jour(s)</span>
+    </div>
   </section>
 
   <div class="memo">
@@ -227,6 +236,37 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     return p[2]+'/'+p[1]+'/'+p[0];
   }
 
+  function todayISO(){var d=new Date();function p(n){return(n<10?'0':'')+n;}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  var LSKEY='conges_draft_v1', _sv;
+  function scheduleSave(){ clearTimeout(_sv); _sv=setTimeout(saveDraft,500); }
+  function saveDraft(){
+    try{
+      var st={f:{},rows:[]};
+      ['f_nom','f_prenom','f_service','f_remise','f_lieu','f_datesign','f_signataire'].forEach(function(id){ st.f[id]=val(id); });
+      Array.prototype.forEach.call(demBody.querySelectorAll('tr.dem'),function(tr){ st.rows.push({type:tr.querySelector('.type').value,du:tr.querySelector('.du').value,au:tr.querySelector('.au').value,nb:tr.querySelector('.nb').value}); });
+      localStorage.setItem(LSKEY, JSON.stringify(st));
+    }catch(e){}
+  }
+  function hasDraft(){ try{ return !!localStorage.getItem(LSKEY); }catch(e){ return false; } }
+  function clearDraft(){ try{ localStorage.removeItem(LSKEY); }catch(e){} }
+  function restoreDraft(){
+    try{
+      var st=JSON.parse(localStorage.getItem(LSKEY)); if(!st) return;
+      Object.keys(st.f||{}).forEach(function(id){ var e=$(id); if(e) e.value=st.f[id]||''; });
+      if(st.rows){ demBody.innerHTML=''; (st.rows.length?st.rows:[{}]).forEach(function(r){ addRow(); var tr=demBody.lastChild; var sel=tr.querySelector('.type'); if(r.type) sel.value=r.type; recolor(sel); tr.querySelector('.du').value=r.du||''; tr.querySelector('.au').value=r.au||''; tr.querySelector('.nb').value=r.nb||''; }); }
+      recalc();
+    }catch(e){}
+  }
+  function showDraftBanner(){
+    try{
+      var b=document.createElement('div'); b.className='draftbar';
+      b.innerHTML='<span>Un brouillon non terminé a été trouvé sur cet appareil.</span><span><button class="btn mini" id="dY">Reprendre</button> <button class="btn mini ghost" id="dN">Ignorer</button></span>';
+      var page=document.querySelector('.page'); page.insertBefore(b, page.children[1]);
+      $('dY').addEventListener('click', function(){ restoreDraft(); if(b.parentNode)b.parentNode.removeChild(b); });
+      $('dN').addEventListener('click', function(){ clearDraft(); if(b.parentNode)b.parentNode.removeChild(b); });
+    }catch(e){}
+  }
+
   var demBody;
 
   document.addEventListener('DOMContentLoaded', init);
@@ -235,12 +275,16 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     var img=$('logo'); if(img && LOGO) img.src=LOGO;
     demBody=$('demBody');
     addRow(); addRow();
+    var t=todayISO(); ['f_remise','f_datesign'].forEach(function(id){var e=$(id); if(e && !e.value) e.value=t;});
     $('addRow').addEventListener('click', function(){addRow();});
+    document.addEventListener('input', scheduleSave);
+    document.addEventListener('change', scheduleSave);
     $('btnPdf').addEventListener('click', generatePDF);
     $('btnReset').addEventListener('click', resetAll);
     $('sigClear').addEventListener('click', clearSig);
     setupSig();
     recalc();
+    if(hasDraft()) showDraftBanner();
   }
 
   function addRow(){
@@ -277,13 +321,17 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     if(d>0) tr.querySelector('.nb').value=d;
   }
 
+  function fmtn(n){ return n?String(Math.round(n*100)/100).replace('.',','):'0'; }
   function recalc(){
-    var tot=0;
+    var tot=0,cp=0,rtt=0;
     Array.prototype.forEach.call(demBody.querySelectorAll('tr.dem'), function(tr){
       var v=parseFloat(String(tr.querySelector('.nb').value||'').replace(',','.'));
-      if(!isNaN(v)) tot+=v;
+      if(isNaN(v)) return;
+      tot+=v;
+      if(tr.querySelector('.type').value==='RTT') rtt+=v; else cp+=v;
     });
-    $('t_jours').textContent = tot?String(Math.round(tot*100)/100).replace('.',','):'0';
+    $('t_jours').textContent=fmtn(tot);
+    var a=$('t_cp'), b=$('t_rtt'); if(a) a.textContent=fmtn(cp); if(b) b.textContent=fmtn(rtt);
   }
 
   function collect(){
@@ -331,7 +379,7 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
   function resetAll(){
     if(!confirm('Effacer toute la demande ?')) return;
     ['f_nom','f_prenom','f_service','f_remise','f_lieu','f_datesign','f_signataire'].forEach(function(id){var e=$(id); if(e) e.value='';});
-    demBody.innerHTML=''; addRow(); addRow(); clearSig(); recalc();
+    demBody.innerHTML=''; addRow(); addRow(); clearDraft(); clearSig(); recalc();
   }
 
   /* ---------- PDF ---------- */
@@ -344,9 +392,11 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
       alert("Le module PDF n'a pas pu se charger (connexion ?). Réessaie dans un instant."); return;
     }
     if(!hasSig && !confirm("Aucune signature n'a été tracée. Générer le PDF quand même ?")) return;
+    if(!val('f_nom') && !confirm("Le nom n'est pas renseigné. Générer quand même ?")) return;
 
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({unit:'mm', format:'a4'});
+    doc.setProperties({title:'Demande de congés - La Table de Cana Marseille', author:'La Table de Cana Marseille'});
     var G=[47,93,80], GS=[220,232,228], GL=[233,241,238], LN=[196,204,201],
         IK=[34,48,44], MU=[124,138,133], CR=[248,112,112], CRT=[252,230,228], CRD=[201,82,76],
         PP=[246,250,248], WT=[255,255,255];
@@ -406,7 +456,7 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     T(m+oN+cN/2, y+7, 'Nombre de jour(s)', 10, 'bold', IK, 'center');
     y+=hh;
     var rows=collect(); if(rows.length===0) rows=[{type:'Congés payés',du:'',au:'',nb:''}];
-    var tot=0;
+    var tot=0,cp=0,rtt=0;
     rows.forEach(function(r){
       ensure(rh);
       sD(LN); doc.setLineWidth(0.3); doc.rect(m,y,cw,rh);
@@ -416,13 +466,14 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
       T(m+oD+cD/2, y+8, r.du||'', 11, 'normal', IK, 'center');
       T(m+oA+cA/2, y+8, r.au||'', 11, 'normal', IK, 'center');
       T(m+oN+cN/2, y+8, r.nb||'', 11.5, 'bold', IK, 'center');
-      var v=parseFloat(String(r.nb||'').replace(',','.')); if(!isNaN(v)) tot+=v;
+      var v=parseFloat(String(r.nb||'').replace(',','.')); if(!isNaN(v)){ tot+=v; if(isRTT) rtt+=v; else cp+=v; }
       y+=rh;
     });
     ensure(11);
+    function f2(n){return String(Math.round(n*100)/100).replace('.',',');}
     sF(GL); doc.rect(m,y,cw,10,'F'); sD(G); doc.setLineWidth(0.6); doc.rect(m,y,cw,10);
-    T(m+oN-3, y+6.6, 'TOTAL', 11, 'bold', IK, 'right');
-    T(m+oN+cN/2, y+6.6, (tot?String(Math.round(tot*100)/100).replace('.',','):'')+(tot?' j':''), 11.5, 'bold', G, 'center');
+    T(m+3, y+6.6, 'TOTAL   —   CP : '+f2(cp)+' j   ·   RTT : '+f2(rtt)+' j', 11, 'bold', IK, 'left');
+    T(m+oN+cN/2, y+6.6, (tot?f2(tot):'')+(tot?' j':''), 11.5, 'bold', G, 'center');
     y+=10+8;
 
     /* Mémento */
@@ -467,7 +518,7 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     doc.text('La Table de Cana — Marseille   ·   Demande de congés (CP et RTT)', pageW/2, pageH-8, {align:'center'});
 
     var nom=(val('f_nom')||'').replace(/[^a-zA-Z0-9_-]/g,'_');
-    deliverPDF(doc, 'Demande_conges'+(nom?('_'+nom):'')+'.pdf');
+    deliverPDF(doc, 'Demande_conges'+(nom?('_'+nom):'')+'_'+todayISO()+'.pdf');
   }
 
   function deliverPDF(doc, filename){
@@ -475,14 +526,14 @@ canvas#sig{width:100%;height:190px;background:#fff;border:1px solid var(--field-
     var btn=$('btnPdf'), old=btn?btn.textContent:'';
     function restore(){ if(btn) btn.textContent=old; }
     function fallback(){
-      try{ doc.save(filename); }
+      try{ doc.save(filename); clearDraft(); }
       catch(e){ try{ window.open(doc.output('bloburl'),'_blank'); }catch(e2){ alert("Impossible de générer le PDF sur cet appareil."); } }
     }
     if(window.claude && typeof window.claude.use==='function' && blob){
       if(btn){ btn.textContent='Génération…'; }
       window.claude.use('downloads').then(function(dl){
         if(dl && typeof dl.save==='function'){
-          dl.save({filename:filename, data:blob}).then(function(){ restore(); toast('PDF généré ✓'); })
+          dl.save({filename:filename, data:blob}).then(function(){ restore(); toast('PDF généré ✓'); clearDraft(); })
           .catch(function(err){ restore(); if(!(err&&err.code==='declined')) fallback(); });
         } else { restore(); fallback(); }
       }).catch(function(){ restore(); fallback(); });
