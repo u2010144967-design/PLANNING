@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon Compagnon</title>
+<meta name="theme-color" content="#17243B">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest-compagnon.json">
+<link rel="icon" href="icon-compagnon.png">
+<link rel="apple-touch-icon" href="icon-compagnon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Compagnon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papier:#EDF0F3; --carte:#FFFFFF; --encre:#17243B; --gris:#5B6778; --trait:#D5DBE3;
+  --jaune:#F2B705; --vert:#1E8E5A; --ambre:#D17200; --rouge:#C8322B; --bleu:#2C5DA8;
+  --vert-f:#E3F4EB; --ambre-f:#FDF0DE; --rouge-f:#FBE6E4; --bleu-f:#E6EDF8;
+  --texte:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --titre:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--papier);color:var(--encre);font-family:var(--texte);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+input,textarea{font:inherit;color:var(--encre)}
+:focus-visible{outline:3px solid var(--bleu);outline-offset:2px}
+
+/* En-tête */
+.top{background:var(--encre);color:#fff;border-bottom:5px solid var(--jaune);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.top-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+.marque{font-family:var(--titre);font-weight:700;font-size:1.45rem;letter-spacing:.01em;flex:1}
+.statut{font-size:.85rem;opacity:.9;white-space:nowrap}
+@media (max-width:420px){ .marque{font-size:1.25rem} }
+.ic{background:transparent;border:0;font-size:1.35rem;padding:6px;border-radius:8px}
+.ic:hover{background:rgba(255,255,255,.12)}
+
+main{max-width:1100px;margin:0 auto;padding:14px 14px calc(96px + env(safe-area-inset-bottom,0px))}
+.vue[hidden]{display:none}
+
+/* Barre de date */
+.datebar{display:flex;align-items:center;gap:10px;margin:4px 0 6px}
+.nav{width:46px;height:46px;border-radius:12px;border:1px solid var(--trait);background:var(--carte);font-size:1.6rem;line-height:1;flex:none}
+.dt{flex:1;text-align:center}
+.dt-l{font-size:.9rem;color:var(--gris);min-height:1.2em}
+.dt-d{font-family:var(--titre);font-weight:700;font-size:1.7rem;line-height:1.1}
+.lien{background:none;border:0;color:var(--bleu);text-decoration:underline;padding:4px 0;display:block;margin:0 auto 6px}
+
+/* Colonnes */
+.grille{display:grid;gap:16px}
+@media (min-width:900px){ .grille{grid-template-columns:1.1fr 1fr;align-items:start} }
+
+.bloc{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:14px}
+.bloc + .bloc{margin-top:16px}
+.bloc h2{font-family:var(--titre);font-weight:700;font-size:1.35rem;margin:0 0 4px}
+.compte{margin:0 0 12px;color:var(--gris);font-size:.95rem}
+
+/* Pointage chauffeurs */
+.ch{border-top:1px solid var(--trait);padding:12px 0;display:grid;grid-template-columns:1fr;gap:8px}
+.ch:first-of-type{border-top:0}
+.ch-nom{font-family:var(--titre);font-weight:700;font-size:1.3rem;line-height:1.1}
+.ch-info{font-size:.92rem;color:var(--gris)}
+.ch-info.present{color:var(--vert)} .ch-info.retard{color:var(--ambre)} .ch-info.absent{color:var(--rouge)}
+.btns3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bp{border:2px solid var(--trait);background:#fff;border-radius:12px;padding:8px 4px;font-weight:600;font-size:1rem;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1}
+.bp i{font-style:normal;font-size:1.15rem}
+.bp.present{border-color:#9fd3b8;color:var(--vert)}
+.bp.retard{border-color:#f0c58d;color:var(--ambre)}
+.bp.absent{border-color:#eeb0ab;color:var(--rouge)}
+.bp.present.on{background:var(--vert);border-color:var(--vert);color:#fff}
+.bp.retard.on{background:var(--ambre);border-color:var(--ambre);color:#fff}
+.bp.absent.on{background:var(--rouge);border-color:var(--rouge);color:#fff}
+@media (min-width:600px){ .ch{grid-template-columns:1fr 330px;align-items:center} }
+
+/* Boutons */
+.btn{border:1px solid var(--trait);background:#fff;border-radius:10px;padding:10px 14px;font-weight:600}
+.btn.plein{background:var(--encre);color:#fff;border-color:var(--encre)}
+.btn.large{width:100%}
+.btn.danger{color:var(--rouge);border-color:#eeb0ab}
+.btn:disabled{opacity:.45;cursor:default}
+.ligne-btn{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* Saisie */
+textarea,input[type=text],input[type=password],input[type=search]{width:100%;border:1px solid var(--trait);border-radius:10px;padding:10px 12px;background:#fff}
+textarea{min-height:76px;resize:vertical}
+.saisie{display:flex;gap:8px;align-items:stretch}
+.saisie input{flex:1}
+
+/* Notes */
+.note{border-top:1px solid var(--trait);padding:10px 0;display:flex;gap:10px}
+.note:first-of-type{border-top:0}
+.note-h{font-weight:600;color:var(--bleu);font-size:.9rem;min-width:44px;padding-top:1px}
+.note-t{flex:1;white-space:pre-wrap;word-break:break-word}
+.mini{background:none;border:0;padding:2px 6px;font-size:1.05rem;opacity:.7}
+.mini:hover{opacity:1}
+.vide{color:var(--gris);font-size:.95rem;margin:8px 0 0}
+.liste{margin-top:10px}
+
+/* Tâches */
+.tache{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--trait);padding:10px 0}
+.tache:first-of-type{border-top:0}
+.case{width:28px;height:28px;border:2px solid var(--encre);border-radius:7px;background:#fff;flex:none;font-size:1rem;line-height:1;padding:0;color:#fff}
+.case.fait{background:var(--vert);border-color:var(--vert)}
+.tache-t{flex:1;padding-top:2px}
+.tache.fait .tache-t{text-decoration:line-through;color:var(--gris)}
+.depuis{display:block;font-size:.82rem;color:var(--ambre)}
+
+/* Calendrier */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.cal .jn{text-align:center;font-size:.8rem;color:var(--gris);padding:2px 0}
+.jour{border:1px solid var(--trait);background:#fff;border-radius:9px;min-height:54px;padding:4px;text-align:left;display:flex;flex-direction:column;gap:3px}
+.jour.hors{visibility:hidden}
+.jour .n{font-weight:600;font-size:.95rem}
+.jour.auj .n{color:#fff;background:var(--encre);border-radius:6px;padding:0 5px;align-self:flex-start}
+.jour.choisi{border:2px solid var(--bleu)}
+.pts{display:flex;gap:3px;flex-wrap:wrap}
+.pt{display:inline-block;width:8px;height:8px;border-radius:50%}
+.pt.r{background:var(--ambre)} .pt.a{background:var(--rouge)} .pt.n{background:var(--bleu)} .pt.t{background:var(--vert)}
+.legende{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--gris);margin-top:8px}
+.legende span{display:inline-flex;align-items:center;gap:5px}
+
+.entete-mois{display:flex;align-items:center;gap:10px}
+.entete-mois .titre{flex:1;text-align:center;font-family:var(--titre);font-weight:700;font-size:1.45rem}
+
+/* Récap / tableaux */
+.tabl{width:100%;border-collapse:collapse;font-size:.97rem}
+.tabl th,.tabl td{padding:9px 6px;border-bottom:1px solid var(--trait);text-align:center}
+.tabl th:first-child,.tabl td:first-child{text-align:left}
+.tabl th{font-size:.85rem;color:var(--gris);font-weight:600}
+.tabl td.nom{font-family:var(--titre);font-weight:700;font-size:1.15rem}
+.tabl tr.cliq{cursor:pointer}
+.tabl tr.cliq:hover td{background:#F6F8FA}
+.nb-r{color:var(--ambre);font-weight:700} .nb-a{color:var(--rouge);font-weight:700}
+.detail td{text-align:left;background:#F6F8FA;font-size:.92rem}
+.detail ul{margin:4px 0;padding-left:18px}
+.choix{display:inline-flex;border:1px solid var(--trait);border-radius:10px;overflow:hidden;background:#fff}
+.choix button{border:0;background:none;padding:9px 16px;font-weight:600}
+.choix button.on{background:var(--encre);color:#fff}
+.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:10px 0 4px}
+.chiffre{border:1px solid var(--trait);border-radius:12px;padding:10px 12px;background:#fff}
+.chiffre b{display:block;font-family:var(--titre);font-size:1.9rem;line-height:1}
+.chiffre span{font-size:.88rem;color:var(--gris)}
+.jour-titre{font-weight:700;margin:12px 0 2px}
+.res{border-top:1px solid var(--trait);padding:9px 0}
+.res button{background:none;border:0;color:var(--bleu);padding:0;font-weight:600;text-decoration:underline}
+
+/* Onglets du bas */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--carte);border-top:1px solid var(--trait);display:flex;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs-in{display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:640px}
+.tab{background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:.8rem;color:var(--gris);border-top:3px solid transparent}
+.tab .e{font-size:1.3rem}
+.tab.on{color:var(--encre);font-weight:700;border-top-color:var(--jaune)}
+
+/* Fenêtre du bas */
+.fond{position:fixed;inset:0;background:rgba(23,36,59,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.fond[hidden]{display:none}
+.sheet{background:var(--carte);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){ .fond{align-items:center} .sheet{border-radius:18px} }
+.sheet h3{font-family:var(--titre);font-size:1.5rem;margin:0 0 4px}
+.sheet p.sous{margin:0 0 12px;color:var(--gris)}
+.puces{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.puce{border:2px solid var(--trait);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600}
+.puce.on{background:var(--encre);color:#fff;border-color:var(--encre)}
+.lab{font-weight:600;margin:10px 0 4px;display:block}
+.r-ch{display:flex;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--trait)}
+.r-ch:first-child{border-top:0}
+.r-ch input{flex:1}
+.aide{font-size:.9rem;color:var(--gris)}
+
+/* Verrou */
+.lock{position:fixed;inset:0;background:var(--encre);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px}
+.lock[hidden]{display:none}
+.lock-in{background:#fff;border-radius:18px;padding:24px 20px;width:100%;max-width:340px;text-align:center;border-top:6px solid var(--jaune)}
+.lock-in .marque{color:var(--encre);font-size:1.8rem}
+.lock-in input{text-align:center;font-size:1.6rem;letter-spacing:.3em;margin:10px 0}
+.msg{color:var(--rouge);min-height:1.3em;margin:8px 0 0}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--encre);color:#fff;padding:10px 16px;border-radius:10px;z-index:70;font-size:.95rem;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.vu{opacity:1}
+.seul-impr{display:none}
+
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  body{background:#fff}
+  .top,.tabs,.no-print,.toast,.fond{display:none!important}
+  main{padding:0;max-width:none}
+  .bloc{border:0;padding:0}
+  .detail{display:table-row!important}
+  .seul-impr{display:block}
+  .tabl tr{break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="marque">Mon Compagnon</div>
+    <div class="statut" id="statut">Connexion…</div>
+    <button class="ic" data-act="reglages" aria-label="Réglages" title="Réglages">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <section id="v-jour" class="vue"></section>
+  <section id="v-journal" class="vue" hidden></section>
+  <section id="v-chauffeurs" class="vue" hidden></section>
+  <section id="v-recap" class="vue" hidden></section>
+</main>
+
+<nav class="tabs" aria-label="Menu">
+  <div class="tabs-in">
+    <button class="tab" data-act="onglet" data-v="jour"><span class="e">📋</span>Ma journée</button>
+    <button class="tab" data-act="onglet" data-v="journal"><span class="e">📅</span>Calendrier</button>
+    <button class="tab" data-act="onglet" data-v="chauffeurs"><span class="e">🚚</span>Chauffeurs</button>
+    <button class="tab" data-act="onglet" data-v="recap"><span class="e">📊</span>Récap</button>
+  </div>
+</nav>
+
+<div id="fond" class="fond" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<div id="lock" class="lock" hidden>
+  <div class="lock-in">
+    <div class="marque">Mon Compagnon</div>
+    <p>Tape ton code pour ouvrir.</p>
+    <input id="lockCode" type="password" inputmode="numeric" autocomplete="off" aria-label="Code">
+    <button class="btn plein large" data-act="lock-ok">Ouvrir</button>
+    <p class="msg" id="lockMsg"></p>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+/* =================================================================
+   MON COMPAGNON — Farid
+   Synchro PC <-> téléphone via Firebase (même base que les vestiaires,
+   dans un dossier séparé "compagnon" : aucun mélange).
+   Chaque info est envoyée séparément -> rien ne s'écrase.
+   ================================================================= */
+const BASE = "https://code-vestiaires-default-rtdb.europe-west1.firebasedatabase.app/compagnon";
+const CODE_DEFAUT = "2026";
+const CHAUFFEURS_DEFAUT = ["OTMANE","NICOLAS","RIYAD","MOMO","ABDOU"];
+
+const JOURS = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const MOIS  = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const MOTIFS = ["Malade","Sans prévenir","A prévenu","Congé","Autre"];
+const MINUTES = [5,10,15,20,30,45,60];
+
+/* ---------- petits outils ---------- */
+const $ = id => document.getElementById(id);
+const p2 = n => String(n).padStart(2,"0");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function ymd(d){ return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()); }
+function aujourdhui(){ return ymd(new Date()); }
+function parse(s){ const [a,b,c] = s.split("-").map(Number); return new Date(a,b-1,c||1); }
+function plusJours(s,n){ const d=parse(s); d.setDate(d.getDate()+n); return ymd(d); }
+function dateLongue(s){ const d=parse(s); return cap(JOURS[d.getDay()])+" "+d.getDate()+" "+MOIS[d.getMonth()]+" "+d.getFullYear(); }
+function dateCourte(s){ const d=parse(s); return cap(JOURS[d.getDay()]).slice(0,3)+". "+d.getDate()+" "+MOIS[d.getMonth()]; }
+function moisTexte(m){ const d=parse(m+"-01"); return cap(MOIS[d.getMonth()])+" "+d.getFullYear(); }
+function moisPlus(m,n){ const d=parse(m+"-01"); d.setMonth(d.getMonth()+n); return ymd(d).slice(0,7); }
+function heureNow(){ const d=new Date(); return p2(d.getHours())+":"+p2(d.getMinutes()); }
+function heureDe(ts){ const d=new Date(ts); return p2(d.getHours())+":"+p2(d.getMinutes()); }
+function id(pref){ return pref + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmtMin(m){ m=Number(m)||0; if(m>=60) return "1 h ou plus"; return m+" min"; }
+function lundiDe(s){ const d=parse(s); const k=(d.getDay()+6)%7; d.setDate(d.getDate()-k); return ymd(d); }
+function dernierJourMois(m){ const d=parse(m+"-01"); d.setMonth(d.getMonth()+1); d.setDate(0); return ymd(d); }
+
+let toastT;
+function toast(t,ms=2200){ const e=$("toast"); e.textContent=t; e.classList.add("vu"); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove("vu"),ms); }
+
+/* ---------- données ---------- */
+function normaliser(d){
+  d = (d && typeof d==="object") ? d : {};
+  const o = x => (x && typeof x==="object" && !Array.isArray(x)) ? x : {};
+  return { chauffeurs:o(d.chauffeurs), pointage:o(d.pointage), notes:o(d.notes), taches:o(d.taches), reglages:o(d.reglages) };
+}
+function lireJSON(k,def){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return def; } }
+function ecrireJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+let state  = normaliser(lireJSON("compagnon_state",{}));
+let outbox = lireJSON("compagnon_outbox",[]);   // modifs pas encore envoyées
+let dejaSynchro = false;
+
+function sauverLocal(){ ecrireJSON("compagnon_state",state); ecrireJSON("compagnon_outbox",outbox); }
+
+function setPath(obj,path,val){
+  const k=path.split("/"); let o=obj;
+  for(let i=0;i<k.length-1;i++){ if(typeof o[k[i]]!=="object"||o[k[i]]===null) o[k[i]]={}; o=o[k[i]]; }
+  if(val===null||val===undefined) delete o[k[k.length-1]]; else o[k[k.length-1]]=val;
+}
+
+/* Enregistrer une info : tout de suite sur l'appareil, puis en ligne */
+function ecrire(path,val){
+  setPath(state,path,val);
+  outbox = outbox.filter(op => op.path!==path);
+  outbox.push({path, val: (val===undefined?null:val)});
+  sauverLocal();
+  rendre();
+  envoyer();
+}
+
+/* ---------- synchro ---------- */
+function statut(etat){
+  const s=$("statut");
+  if(etat==="ok") s.textContent="🟢 À jour "+heureNow();
+  else if(etat==="attente") s.textContent = outbox.length ? "🟡 "+outbox.length+" en attente" : "🟡 Hors ligne";
+  else s.textContent="…";
+}
+
+let envoiEnCours=false;
+async function envoyer(){
+  if(envoiEnCours) return;
+  envoiEnCours=true;
+  try{
+    while(outbox.length){
+      const op=outbox[0];
+      const url=BASE+"/"+op.path+".json";
+      const r = await fetch(url, op.val===null ? {method:"DELETE"} : {method:"PUT", body:JSON.stringify(op.val)});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const i=outbox.indexOf(op); if(i>=0) outbox.splice(i,1);
+      sauverLocal();
+    }
+    statut("ok");
+  }catch(e){ statut("attente"); }
+  finally{ envoiEnCours=false; }
+}
+
+async function synchro(){
+  await envoyer();
+  if(outbox.length) return;
+  try{
+    const r = await fetch(BASE+".json?t="+Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const distant = (await r.json()) || {};
+    for(const op of outbox) setPath(distant, op.path, op.val);   // on garde ce qui part en ce moment
+    const avant = JSON.stringify(state);
+    state = normaliser(distant);
+    dejaSynchro = true;
+    if(Object.keys(state.chauffeurs).length===0 && !localStorage.getItem("compagnon_init")){
+      localStorage.setItem("compagnon_init","1");
+      CHAUFFEURS_DEFAUT.forEach((n,i)=>ecrire("chauffeurs/c"+(i+1),{nom:n,ordre:i+1,actif:true}));
+    }
+    if(JSON.stringify(state)!==avant){ sauverLocal(); rendreSiPossible(); }
+    statut("ok");
+  }catch(e){ statut("attente"); }
+}
+
+/* ne pas effacer ce que tu es en train de taper */
+let rendreApres=false;
+function rendreSiPossible(){
+  const a=document.activeElement;
+  if(a && (a.tagName==="INPUT"||a.tagName==="TEXTAREA") && a.closest("main")){ rendreApres=true; return; }
+  rendre();
+}
+document.addEventListener("focusout",()=>{ if(rendreApres){ setTimeout(()=>{ const a=document.activeElement; if(!(a && (a.tagName==="INPUT"||a.tagName==="TEXTAREA") && a.closest("main"))){ rendreApres=false; rendre(); } },50); } });
+
+/* ---------- lectures pratiques ---------- */
+function chauffeursActifs(){
+  return Object.entries(state.chauffeurs).filter(([,c])=>c && c.actif!==false)
+    .sort((a,b)=>(a[1].ordre||0)-(b[1].ordre||0)).map(([k,c])=>({id:k,nom:c.nom||"?"}));
+}
+function tousChauffeurs(){
+  return Object.entries(state.chauffeurs).filter(([,c])=>c)
+    .sort((a,b)=>(a[1].ordre||0)-(b[1].ordre||0)).map(([k,c])=>({id:k,nom:c.nom||"?",actif:c.actif!==false,ordre:c.ordre||0}));
+}
+function nomDe(cid){ return (state.chauffeurs[cid]&&state.chauffeurs[cid].nom) || "Chauffeur supprimé"; }
+function notesDu(D){ return Object.entries(state.notes).filter(([,n])=>n&&n.date===D).map(([k,n])=>({id:k,...n})).sort((a,b)=>(a.ts||0)-(b.ts||0)); }
+function toutesTaches(){ return Object.entries(state.taches).filter(([,t])=>t).map(([k,t])=>({id:k,...t})); }
+function tachesPour(D){
+  const auj=aujourdhui(), T=toutesTaches();
+  let l;
+  if(D===auj) l = T.filter(t=>(!t.fait && t.date<=D) || (t.fait && t.faitLe===D));
+  else if(D<auj) l = T.filter(t=>(t.fait && t.faitLe===D) || (!t.fait && t.date===D));
+  else l = T.filter(t=>t.date===D);
+  return l.sort((a,b)=>(a.fait?1:0)-(b.fait?1:0) || (a.date||"").localeCompare(b.date||"") || (a.ts||0)-(b.ts||0));
+}
+function texteStatut(p){
+  if(!p) return "Pas encore pointé";
+  if(p.statut==="present") return "Présent, pointé à "+(p.heure||"?");
+  if(p.statut==="retard") return "En retard de "+fmtMin(p.minutes)+(p.commentaire?" : "+p.commentaire:"");
+  if(p.statut==="absent") return "Absent"+(p.motif?" ("+p.motif.toLowerCase()+")":"")+(p.commentaire?" : "+p.commentaire:"");
+  return "";
+}
+function stats(du,au){
+  const par={}; let nbR=0,nbA=0,nbP=0,minT=0;
+  for(const [D,jour] of Object.entries(state.pointage)){
+    if(D<du||D>au||!jour) continue;
+    for(const [cid,p] of Object.entries(jour)){
+      if(!p) continue;
+      const s = par[cid] || (par[cid]={retards:0,minutes:0,absences:0,presents:0,lignes:[]});
+      if(p.statut==="retard"){ s.retards++; s.minutes+=Number(p.minutes)||0; nbR++; minT+=Number(p.minutes)||0; }
+      else if(p.statut==="absent"){ s.absences++; nbA++; }
+      else if(p.statut==="present"){ s.presents++; nbP++; }
+      if(p.statut!=="present") s.lignes.push({D,p});
+    }
+  }
+  for(const s of Object.values(par)) s.lignes.sort((a,b)=>a.D.localeCompare(b.D));
+  return {par,nbR,nbA,nbP,minT};
+}
+
+/* ================================================================
+   AFFICHAGE
+   ================================================================ */
+let vue="jour", sel=aujourdhui(), jMois=sel.slice(0,7), jJour=sel, cMois=sel.slice(0,7);
+let rMode="semaine", rAncre=sel, recherche="", ouverts=new Set();
+let brouillonNote="", brouillonTache="";
+
+function rendre(){
+  for(const v of ["jour","journal","chauffeurs","recap"]) $("v-"+v).hidden = (v!==vue);
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.v===vue));
+  if(vue==="jour") rendreJour();
+  else if(vue==="journal") rendreJournal();
+  else if(vue==="chauffeurs") rendreChauffeurs();
+  else rendreRecap();
+}
+
+/* ----- Ma journée ----- */
+function rendreJour(){
+  const D=sel, auj=aujourdhui();
+  const etiquette = D===auj?"Aujourd'hui":D===plusJours(auj,-1)?"Hier":D===plusJours(auj,1)?"Demain":"";
+  const ch=chauffeursActifs(), pj=state.pointage[D]||{};
+  let nP=0,nR=0,nA=0; ch.forEach(c=>{const p=pj[c.id]; if(p){ if(p.statut==="present")nP++; else if(p.statut==="retard")nR++; else if(p.statut==="absent")nA++; }});
+  const nNon = ch.length-nP-nR-nA;
+
+  let h = `<div class="datebar">
+    <button class="nav" data-act="j-prev" aria-label="Jour précédent">‹</button>
+    <div class="dt"><div class="dt-l">${etiquette}</div><div class="dt-d">${dateLongue(D)}</div></div>
+    <button class="nav" data-act="j-next" aria-label="Jour suivant">›</button></div>`;
+  if(D!==auj) h += `<button class="lien" data-act="j-auj">Revenir à aujourd'hui</button>`;
+
+  h += `<div class="grille"><div><div class="bloc"><h2>Chauffeurs</h2>`;
+  h += `<p class="compte">${nP} présent${nP>1?"s":""}, ${nR} retard${nR>1?"s":""}, ${nA} absent${nA>1?"s":""}${nNon?", "+nNon+" pas encore pointé"+(nNon>1?"s":""):""}</p>`;
+  if(!ch.length) h += `<p class="vide">Aucun chauffeur. Ajoute-les dans ⚙️ Réglages.</p>`;
+  for(const c of ch){
+    const p=pj[c.id], s=p?p.statut:"";
+    h += `<div class="ch">
+      <div><div class="ch-nom">${esc(c.nom)}</div><div class="ch-info ${s}">${esc(texteStatut(p))}</div></div>
+      <div class="btns3">
+        <button class="bp present ${s==="present"?"on":""}" data-act="pt-present" data-c="${c.id}"><i>✅</i>Présent</button>
+        <button class="bp retard ${s==="retard"?"on":""}" data-act="pt-retard" data-c="${c.id}"><i>⏰</i>Retard</button>
+        <button class="bp absent ${s==="absent"?"on":""}" data-act="pt-absent" data-c="${c.id}"><i>❌</i>Absent</button>
+      </div></div>`;
+  }
+  if(nNon>0 && ch.length) h += `<button class="btn large" style="margin-top:8px" data-act="pt-tous">✅ Marquer les ${nNon} autre${nNon>1?"s":""} présent${nNon>1?"s":""}</button>`;
+  h += `</div></div><div>`;
+
+  // Notes
+  const notes=notesDu(D);
+  h += `<div class="bloc"><h2>Notes du jour</h2>
+    <textarea id="noteTxt" placeholder="Écris ou dicte ce qu'on vient de te dire…">${esc(brouillonNote)}</textarea>
+    <div class="ligne-btn"><button class="btn plein" data-act="note-add">Ajouter la note</button></div>
+    <div class="liste">`;
+  if(!notes.length) h += `<p class="vide">Aucune note pour ce jour.</p>`;
+  for(const n of notes) h += `<div class="note"><div class="note-h">${heureDe(n.ts)}</div><div class="note-t">${esc(n.texte)}</div>
+      <button class="mini" data-act="note-edit" data-id="${n.id}" aria-label="Modifier">✏️</button>
+      <button class="mini" data-act="note-del" data-id="${n.id}" aria-label="Supprimer">🗑️</button></div>`;
+  h += `</div></div>`;
+
+  // Tâches
+  const T=tachesPour(D);
+  h += `<div class="bloc"><h2>Tâches</h2>
+    <div class="saisie"><input type="text" id="tacheTxt" placeholder="${D>auj?"Tâche prévue ce jour-là…":"Nouvelle tâche…"}" value="${esc(brouillonTache)}">
+    <button class="btn plein" data-act="tache-add">Ajouter</button></div><div class="liste">`;
+  if(!T.length) h += `<p class="vide">Rien à faire. Ajoute une tâche au-dessus.</p>`;
+  for(const t of T){
+    const reportee = !t.fait && t.date<D;
+    h += `<div class="tache ${t.fait?"fait":""}">
+      <button class="case ${t.fait?"fait":""}" data-act="tache-ok" data-id="${t.id}" aria-label="${t.fait?"Remettre à faire":"Marquer comme faite"}">${t.fait?"✓":""}</button>
+      <div class="tache-t">${esc(t.texte)}${reportee?`<span class="depuis">Reportée, notée le ${dateCourte(t.date)}</span>`:""}</div>
+      <button class="mini" data-act="tache-del" data-id="${t.id}" aria-label="Supprimer">🗑️</button></div>`;
+  }
+  h += `</div><p class="aide" style="margin:10px 0 0">Une tâche pas faite passe toute seule au lendemain.</p></div></div></div>`;
+  $("v-jour").innerHTML = h;
+}
+
+/* ----- Calendrier ----- */
+function marqueursJour(D){
+  const pj=state.pointage[D]||{}; let r=0,a=0;
+  for(const p of Object.values(pj)){ if(p&&p.statut==="retard")r++; if(p&&p.statut==="absent")a++; }
+  const n=notesDu(D).length, t=toutesTaches().filter(x=>x.fait&&x.faitLe===D).length;
+  return {r,a,n,t};
+}
+function resumeJourHTML(D){
+  const ch=chauffeursActifs(), pj=state.pointage[D]||{};
+  let h="";
+  const lignes = Object.entries(pj).filter(([,p])=>p);
+  if(lignes.length){
+    h += `<p class="jour-titre">Chauffeurs</p><ul style="margin:0;padding-left:18px">`;
+    const ordre = id => { const i=ch.findIndex(c=>c.id===id); return i<0?99:i; };
+    lignes.sort((a,b)=>ordre(a[0])-ordre(b[0])).forEach(([cid,p])=>{
+      const cl = p.statut==="retard"?"nb-r":p.statut==="absent"?"nb-a":"";
+      h += `<li><b>${esc(nomDe(cid))}</b> : <span class="${cl}">${esc(texteStatut(p))}</span></li>`;
+    });
+    h += `</ul>`;
+  } else h += `<p class="vide">Pas de pointage ce jour-là.</p>`;
+  const notes=notesDu(D);
+  if(notes.length){ h += `<p class="jour-titre">Notes</p>`; notes.forEach(n=>h+=`<div class="note"><div class="note-h">${heureDe(n.ts)}</div><div class="note-t">${esc(n.texte)}</div></div>`); }
+  const faites=toutesTaches().filter(t=>t.fait&&t.faitLe===D);
+  if(faites.length){ h += `<p class="jour-titre">Tâches faites</p><ul style="margin:0;padding-left:18px">`; faites.forEach(t=>h+=`<li>${esc(t.texte)}</li>`); h+=`</ul>`; }
+  return h;
+}
+function rendreJournal(){
+  const auj=aujourdhui();
+  let h = `<div class="bloc no-print"><h2>Chercher dans mes notes</h2>
+    <input type="search" id="rech" placeholder="Un mot, un client, un nom…" value="${esc(recherche)}"><div id="resRech"></div></div>`;
+  h += `<div class="bloc"><div class="entete-mois">
+      <button class="nav" data-act="cal-prev" aria-label="Mois précédent">‹</button>
+      <div class="titre">${moisTexte(jMois)}</div>
+      <button class="nav" data-act="cal-next" aria-label="Mois suivant">›</button></div><div class="cal">`;
+  ["L","M","M","J","V","S","D"].forEach(j=>h+=`<div class="jn">${j}</div>`);
+  const premier=parse(jMois+"-01"), decal=(premier.getDay()+6)%7, fin=parse(dernierJourMois(jMois)).getDate();
+  for(let i=0;i<decal;i++) h+=`<div class="jour hors"></div>`;
+  for(let d=1; d<=fin; d++){
+    const D=jMois+"-"+p2(d), m=marqueursJour(D);
+    let pts=""; for(let i=0;i<m.a;i++)pts+=`<span class="pt a"></span>`; for(let i=0;i<m.r;i++)pts+=`<span class="pt r"></span>`;
+    if(m.n)pts+=`<span class="pt n"></span>`; if(m.t)pts+=`<span class="pt t"></span>`;
+    h += `<button class="jour ${D===auj?"auj":""} ${D===jJour?"choisi":""}" data-act="cal-jour" data-d="${D}" aria-label="${dateLongue(D)}"><span class="n">${d}</span><span class="pts">${pts}</span></button>`;
+  }
+  h += `</div><div class="legende"><span><i class="pt a"></i>Absence</span><span><i class="pt r"></i>Retard</span><span><i class="pt n"></i>Notes</span><span><i class="pt t"></i>Tâche faite</span></div></div>`;
+  h += `<div class="bloc"><h2>${dateLongue(jJour)}</h2>${resumeJourHTML(jJour)}
+    <div class="ligne-btn no-print"><button class="btn" data-act="cal-ouvrir">✏️ Ouvrir ce jour pour modifier</button></div></div>`;
+  $("v-journal").innerHTML = h;
+  majRecherche();
+}
+function majRecherche(){
+  const box=$("resRech"); if(!box) return;
+  const q=recherche.trim().toLowerCase();
+  if(q.length<2){ box.innerHTML=""; return; }
+  const res=Object.entries(state.notes).filter(([,n])=>n&&String(n.texte||"").toLowerCase().includes(q))
+    .map(([k,n])=>({id:k,...n})).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.ts||0)-(a.ts||0)).slice(0,40);
+  if(!res.length){ box.innerHTML=`<p class="vide">Aucune note ne contient « ${esc(recherche)} ».</p>`; return; }
+  box.innerHTML = `<p class="compte" style="margin:10px 0 0">${res.length} note${res.length>1?"s":""} trouvée${res.length>1?"s":""}</p>` +
+    res.map(n=>`<div class="res"><button data-act="rech-go" data-d="${n.date}">${dateCourte(n.date)} à ${heureDe(n.ts)}</button><div class="note-t">${esc(n.texte)}</div></div>`).join("");
+}
+
+/* ----- Suivi chauffeurs ----- */
+function rendreChauffeurs(){
+  const du=cMois+"-01", au=dernierJourMois(cMois), S=stats(du,au);
+  const liste=tousChauffeurs().filter(c=>c.actif || S.par[c.id]);
+  let h = `<div class="bloc"><div class="entete-mois no-print">
+      <button class="nav" data-act="cm-prev" aria-label="Mois précédent">‹</button>
+      <div class="titre">${moisTexte(cMois)}</div>
+      <button class="nav" data-act="cm-next" aria-label="Mois suivant">›</button></div>
+    <h2 class="seul-impr">Suivi des chauffeurs : ${moisTexte(cMois)}</h2>
+    <div class="chiffres">
+      <div class="chiffre"><b class="nb-r">${S.nbR}</b><span>retard${S.nbR>1?"s":""} (${S.minT} min au total)</span></div>
+      <div class="chiffre"><b class="nb-a">${S.nbA}</b><span>absence${S.nbA>1?"s":""}</span></div>
+      <div class="chiffre"><b>${S.nbP}</b><span>présence${S.nbP>1?"s":""} pointée${S.nbP>1?"s":""}</span></div>
+    </div>
+    <div style="overflow-x:auto"><table class="tabl"><thead><tr><th>Chauffeur</th><th>Retards</th><th>Minutes</th><th>Absences</th><th>Présents</th></tr></thead><tbody>`;
+  for(const c of liste){
+    const s=S.par[c.id]||{retards:0,minutes:0,absences:0,presents:0,lignes:[]};
+    const ouvert=ouverts.has(c.id);
+    h += `<tr class="cliq" data-act="cm-detail" data-c="${c.id}"><td class="nom">${ouvert?"▾":"▸"} ${esc(c.nom)}</td>
+      <td class="${s.retards?"nb-r":""}">${s.retards}</td><td>${s.minutes}</td><td class="${s.absences?"nb-a":""}">${s.absences}</td><td>${s.presents}</td></tr>`;
+    h += `<tr class="detail" ${ouvert?"":'style="display:none"'}><td colspan="5">`;
+    if(!s.lignes.length) h += `Aucun retard ni absence ce mois-ci.`;
+    else { h += `<ul>`; s.lignes.forEach(({D,p})=>{ h+=`<li><b>${dateCourte(D)}</b> : <span class="${p.statut==="retard"?"nb-r":"nb-a"}">${esc(texteStatut(p))}</span></li>`; }); h += `</ul>`; }
+    h += `</td></tr>`;
+  }
+  h += `</tbody></table></div>
+    <p class="aide no-print">Touche un chauffeur pour voir le détail jour par jour.</p>
+    <div class="ligne-btn no-print"><button class="btn plein" data-act="imprimer">🖨️ Imprimer ou enregistrer en PDF</button></div></div>`;
+  $("v-chauffeurs").innerHTML = h;
+}
+
+/* ----- Récap ----- */
+function periode(){
+  if(rMode==="semaine"){ const du=lundiDe(rAncre), au=plusJours(du,6); return {du,au,titre:"Semaine du "+dateCourte(du)+" au "+dateCourte(au)}; }
+  const m=rAncre.slice(0,7); return {du:m+"-01",au:dernierJourMois(m),titre:moisTexte(m)};
+}
+function rendreRecap(){
+  const {du,au,titre}=periode(), S=stats(du,au);
+  const notes=Object.values(state.notes).filter(n=>n&&n.date>=du&&n.date<=au).sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.ts||0)-(b.ts||0));
+  const T=toutesTaches(), faites=T.filter(t=>t.fait&&t.faitLe>=du&&t.faitLe<=au), restantes=T.filter(t=>!t.fait&&t.date<=au);
+  let h = `<div class="bloc"><div class="ligne-btn no-print" style="margin:0 0 12px;justify-content:center">
+      <div class="choix"><button class="${rMode==="semaine"?"on":""}" data-act="r-mode" data-m="semaine">Semaine</button><button class="${rMode==="mois"?"on":""}" data-act="r-mode" data-m="mois">Mois</button></div></div>
+    <div class="entete-mois"><button class="nav no-print" data-act="r-prev" aria-label="Précédent">‹</button><div class="titre">${titre}</div><button class="nav no-print" data-act="r-next" aria-label="Suivant">›</button></div>
+    <div class="chiffres">
+      <div class="chiffre"><b class="nb-r">${S.nbR}</b><span>retard${S.nbR>1?"s":""}</span></div>
+      <div class="chiffre"><b class="nb-a">${S.nbA}</b><span>absence${S.nbA>1?"s":""}</span></div>
+      <div class="chiffre"><b>${notes.length}</b><span>note${notes.length>1?"s":""}</span></div>
+      <div class="chiffre"><b style="color:var(--vert)">${faites.length}</b><span>tâche${faites.length>1?"s":""} faite${faites.length>1?"s":""}</span></div>
+    </div></div>`;
+
+  h += `<div class="bloc"><h2>Chauffeurs</h2>`;
+  const avec=tousChauffeurs().filter(c=>S.par[c.id]&&(S.par[c.id].retards||S.par[c.id].absences));
+  if(!avec.length) h += `<p class="vide">Aucun retard ni absence sur cette période.</p>`;
+  for(const c of avec){
+    const s=S.par[c.id];
+    h += `<p class="jour-titre">${esc(c.nom)} : ${s.retards?`<span class="nb-r">${s.retards} retard${s.retards>1?"s":""} (${s.minutes} min)</span>`:""}${s.retards&&s.absences?", ":""}${s.absences?`<span class="nb-a">${s.absences} absence${s.absences>1?"s":""}</span>`:""}</p><ul style="margin:0;padding-left:18px">`;
+    s.lignes.forEach(({D,p})=>h+=`<li>${dateCourte(D)} : ${esc(texteStatut(p))}</li>`);
+    h += `</ul>`;
+  }
+  h += `</div><div class="bloc"><h2>Tâches</h2>`;
+  if(faites.length){ h+=`<p class="jour-titre">Faites (${faites.length})</p><ul style="margin:0;padding-left:18px">`; faites.forEach(t=>h+=`<li>${esc(t.texte)} <span class="aide">(${dateCourte(t.faitLe)})</span></li>`); h+=`</ul>`; }
+  if(restantes.length){ h+=`<p class="jour-titre" style="color:var(--ambre)">Encore à faire (${restantes.length})</p><ul style="margin:0;padding-left:18px">`; restantes.forEach(t=>h+=`<li>${esc(t.texte)}</li>`); h+=`</ul>`; }
+  if(!faites.length&&!restantes.length) h+=`<p class="vide">Aucune tâche sur cette période.</p>`;
+  h += `</div><div class="bloc"><h2>Notes</h2>`;
+  if(!notes.length) h += `<p class="vide">Aucune note sur cette période.</p>`;
+  let dPrec="";
+  notes.forEach(n=>{ if(n.date!==dPrec){ h+=`<p class="jour-titre">${dateLongue(n.date)}</p>`; dPrec=n.date; } h+=`<div class="note"><div class="note-h">${heureDe(n.ts)}</div><div class="note-t">${esc(n.texte)}</div></div>`; });
+  h += `</div><div class="ligne-btn no-print"><button class="btn plein" data-act="r-copier">📋 Copier le récap (pour un mail)</button><button class="btn" data-act="imprimer">🖨️ Imprimer / PDF</button></div>`;
+  $("v-recap").innerHTML = h;
+}
+function texteRecap(){
+  const {du,au,titre}=periode(), S=stats(du,au);
+  const notes=Object.values(state.notes).filter(n=>n&&n.date>=du&&n.date<=au).sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.ts||0)-(b.ts||0));
+  const T=toutesTaches(), faites=T.filter(t=>t.fait&&t.faitLe>=du&&t.faitLe<=au), restantes=T.filter(t=>!t.fait&&t.date<=au);
+  let t=`RÉCAP : ${titre}\n\n${S.nbR} retard(s), ${S.nbA} absence(s), ${notes.length} note(s), ${faites.length} tâche(s) faite(s)\n\nCHAUFFEURS\n`;
+  const avec=tousChauffeurs().filter(c=>S.par[c.id]&&(S.par[c.id].retards||S.par[c.id].absences));
+  if(!avec.length) t+="Aucun retard ni absence.\n";
+  avec.forEach(c=>{ const s=S.par[c.id]; t+=`${c.nom} : ${s.retards} retard(s) (${s.minutes} min), ${s.absences} absence(s)\n`; s.lignes.forEach(({D,p})=>t+=`  - ${dateCourte(D)} : ${texteStatut(p)}\n`); });
+  t+=`\nTÂCHES FAITES\n`; t+= faites.length? faites.map(x=>"  - "+x.texte).join("\n")+"\n" : "Aucune.\n";
+  if(restantes.length) t+=`\nENCORE À FAIRE\n`+restantes.map(x=>"  - "+x.texte).join("\n")+"\n";
+  t+=`\nNOTES\n`; if(!notes.length) t+="Aucune.\n";
+  let dP=""; notes.forEach(n=>{ if(n.date!==dP){ t+=`${dateLongue(n.date)}\n`; dP=n.date; } t+=`  ${heureDe(n.ts)}  ${n.texte}\n`; });
+  return t;
+}
+
+/* ================================================================
+   FENÊTRES (retard, absence, réglages)
+   ================================================================ */
+let fen={};
+function ouvrir(html){ $("sheet").innerHTML=html; $("fond").hidden=false; }
+function fermer(){ $("fond").hidden=true; $("sheet").innerHTML=""; fen={}; }
+$("fond").addEventListener("click",e=>{ if(e.target.id==="fond") fermer(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("fond").hidden) fermer(); });
+
+function fenRetard(cid){
+  const p=(state.pointage[sel]||{})[cid];
+  fen={type:"retard",cid,minutes:(p&&p.statut==="retard")?Number(p.minutes)||null:null};
+  const dessiner=()=>{
+    ouvrir(`<h3>⏰ ${esc(nomDe(cid))} en retard</h3><p class="sous">${dateLongue(sel)}</p>
+      <span class="lab">De combien ?</span>
+      <div class="puces">${MINUTES.map(m=>`<button class="puce ${fen.minutes===m?"on":""}" data-act="f-min" data-m="${m}">${m>=60?"1 h et +":m+" min"}</button>`).join("")}</div>
+      <label class="lab" for="fCom">Commentaire (facultatif)</label>
+      <input type="text" id="fCom" placeholder="Ex : bouchons, a prévenu…" value="${esc(p&&p.statut==="retard"?p.commentaire||"":"")}">
+      <div class="ligne-btn"><button class="btn plein" data-act="f-ok-retard" ${fen.minutes?"":"disabled"}>Enregistrer le retard</button>
+      ${p?`<button class="btn danger" data-act="f-effacer">Effacer le pointage</button>`:""}<button class="btn" data-act="f-fermer">Annuler</button></div>`);
+  };
+  fen.dessiner=dessiner; dessiner();
+}
+function fenAbsent(cid){
+  const p=(state.pointage[sel]||{})[cid];
+  fen={type:"absent",cid,motif:(p&&p.statut==="absent")?p.motif||null:null};
+  const dessiner=()=>{
+    const com = $("fCom")?$("fCom").value:(p&&p.statut==="absent"?p.commentaire||"":"");
+    ouvrir(`<h3>❌ ${esc(nomDe(cid))} absent</h3><p class="sous">${dateLongue(sel)}</p>
+      <span class="lab">Pourquoi ? (facultatif)</span>
+      <div class="puces">${MOTIFS.map(m=>`<button class="puce ${fen.motif===m?"on":""}" data-act="f-motif" data-m="${m}">${m}</button>`).join("")}</div>
+      <label class="lab" for="fCom">Commentaire (facultatif)</label>
+      <input type="text" id="fCom" placeholder="Ex : certificat médical à venir…" value="${esc(com)}">
+      <div class="ligne-btn"><button class="btn plein" data-act="f-ok-absent">Enregistrer l'absence</button>
+      ${p?`<button class="btn danger" data-act="f-effacer">Effacer le pointage</button>`:""}<button class="btn" data-act="f-fermer">Annuler</button></div>`);
+  };
+  fen.dessiner=dessiner; dessiner();
+}
+
+let invitInstall=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); invitInstall=e; });
+
+function fenReglages(){
+  fen={type:"reglages"};
+  const L=tousChauffeurs();
+  const actifs=L.filter(c=>c.actif), caches=L.filter(c=>!c.actif);
+  let h=`<h3>⚙️ Réglages</h3><span class="lab">Mes chauffeurs</span><div>`;
+  actifs.forEach((c,i)=>{ h+=`<div class="r-ch"><input type="text" data-nom="${c.id}" value="${esc(c.nom)}" aria-label="Nom">
+      <button class="mini" data-act="r-haut" data-c="${c.id}" ${i===0?"disabled":""} aria-label="Monter">⬆️</button>
+      <button class="mini" data-act="r-bas" data-c="${c.id}" ${i===actifs.length-1?"disabled":""} aria-label="Descendre">⬇️</button>
+      <button class="mini" data-act="r-masquer" data-c="${c.id}" aria-label="Retirer de la liste">🙈</button></div>`; });
+  h+=`</div><div class="saisie" style="margin-top:8px"><input type="text" id="nvCh" placeholder="Prénom du nouveau chauffeur"><button class="btn" data-act="r-ajout">Ajouter</button></div>`;
+  if(caches.length){ h+=`<p class="aide" style="margin:10px 0 4px">Retirés de la liste (leur historique est gardé) :</p>`; caches.forEach(c=>h+=`<div class="r-ch"><span style="flex:1">${esc(c.nom)}</span><button class="btn" data-act="r-remettre" data-c="${c.id}">Remettre</button></div>`); }
+  h+=`<span class="lab" style="margin-top:18px">Code d'ouverture</span>
+    <div class="saisie"><input type="password" inputmode="numeric" id="nvCode" placeholder="Nouveau code"><button class="btn" data-act="r-code">Changer</button></div>
+    <p class="aide">Le code est le même sur ton PC et ton téléphone. Chaque appareil ne le demande qu'une fois.</p>
+    <div class="ligne-btn"><button class="btn" data-act="r-verrou">🔒 Verrouiller maintenant</button></div>
+    <span class="lab" style="margin-top:18px">Installer l'appli</span>
+    <div class="ligne-btn" style="margin-top:0"><button class="btn" data-act="r-installer">📲 Installer sur cet appareil</button></div>
+    <p class="aide">Sur iPhone : bouton Partager de Safari, puis « Sur l'écran d'accueil ».</p>
+    <span class="lab" style="margin-top:18px">Sauvegarde</span>
+    <div class="ligne-btn" style="margin-top:0"><button class="btn" data-act="r-export">💾 Télécharger une copie de secours</button></div>
+    <div class="ligne-btn" style="margin-top:22px"><button class="btn plein large" data-act="f-fermer">Fermer</button></div>`;
+  ouvrir(h);
+}
+function echangerOrdre(cid,dir){
+  const actifs=tousChauffeurs().filter(c=>c.actif);
+  const i=actifs.findIndex(c=>c.id===cid), j=i+dir;
+  if(i<0||j<0||j>=actifs.length) return;
+  actifs.forEach((c,k)=>{ if(c.ordre!==k+1) ecrire("chauffeurs/"+c.id+"/ordre",k+1); });
+  ecrire("chauffeurs/"+actifs[i].id+"/ordre",j+1);
+  ecrire("chauffeurs/"+actifs[j].id+"/ordre",i+1);
+  fenReglages();
+}
+
+/* ================================================================
+   ACTIONS (tous les clics)
+   ================================================================ */
+const actions={
+  "onglet":b=>{ vue=b.dataset.v; rendre(); window.scrollTo(0,0); },
+  "j-prev":()=>{ sel=plusJours(sel,-1); rendre(); },
+  "j-next":()=>{ sel=plusJours(sel,1); rendre(); },
+  "j-auj":()=>{ sel=aujourdhui(); rendre(); },
+
+  "pt-present":b=>{ const c=b.dataset.c, p=(state.pointage[sel]||{})[c];
+    if(p&&p.statut==="present"){ ecrire(`pointage/${sel}/${c}`,null); toast("Pointage effacé"); }
+    else { ecrire(`pointage/${sel}/${c}`,{statut:"present",heure:heureNow(),ts:Date.now()}); toast(nomDe(c)+" : présent ✓"); } },
+  "pt-retard":b=>fenRetard(b.dataset.c),
+  "pt-absent":b=>fenAbsent(b.dataset.c),
+  "pt-tous":()=>{ const pj=state.pointage[sel]||{}; const h=heureNow(); chauffeursActifs().forEach(c=>{ if(!pj[c.id]) ecrire(`pointage/${sel}/${c.id}`,{statut:"present",heure:h,ts:Date.now()}); }); toast("Tout le monde est pointé ✓"); },
+
+  "f-min":b=>{ fen.minutes=Number(b.dataset.m); const com=$("fCom").value; fen.dessiner(); $("fCom").value=com; },
+  "f-motif":b=>{ fen.motif = fen.motif===b.dataset.m ? null : b.dataset.m; fen.dessiner(); },
+  "f-ok-retard":()=>{ if(!fen.minutes) return; const cid=fen.cid;
+    ecrire(`pointage/${sel}/${cid}`,{statut:"retard",minutes:fen.minutes,commentaire:$("fCom").value.trim(),heure:heureNow(),ts:Date.now()});
+    fermer(); toast(nomDe(cid)+" : retard noté"); },
+  "f-ok-absent":()=>{ const cid=fen.cid;
+    ecrire(`pointage/${sel}/${cid}`,{statut:"absent",motif:fen.motif||"",commentaire:$("fCom").value.trim(),heure:heureNow(),ts:Date.now()});
+    fermer(); toast(nomDe(cid)+" : absence notée"); },
+  "f-effacer":()=>{ ecrire(`pointage/${sel}/${fen.cid}`,null); fermer(); toast("Pointage effacé"); },
+  "f-fermer":()=>fermer(),
+
+  "note-add":()=>{ const t=($("noteTxt").value||"").trim(); if(!t){ $("noteTxt").focus(); return; }
+    brouillonNote=""; ecrire("notes/"+id("n"),{date:sel,texte:t,ts:Date.now()}); toast("Note ajoutée ✓"); },
+  "note-edit":b=>{ const n=state.notes[b.dataset.id]; if(!n) return; const t=prompt("Modifier la note :",n.texte); if(t===null) return;
+    if(!t.trim()){ ecrire("notes/"+b.dataset.id,null); return; } ecrire("notes/"+b.dataset.id+"/texte",t.trim()); },
+  "note-del":b=>{ if(confirm("Supprimer cette note ?")) ecrire("notes/"+b.dataset.id,null); },
+
+  "tache-add":()=>{ const t=($("tacheTxt").value||"").trim(); if(!t){ $("tacheTxt").focus(); return; }
+    brouillonTache=""; ecrire("taches/"+id("t"),{texte:t,date:sel,fait:false,faitLe:"",ts:Date.now()}); },
+  "tache-ok":b=>{ const t=state.taches[b.dataset.id]; if(!t) return; const auj=aujourdhui();
+    if(t.fait) ecrire("taches/"+b.dataset.id,{...t,fait:false,faitLe:""});
+    else { ecrire("taches/"+b.dataset.id,{...t,fait:true,faitLe:(sel>auj?auj:sel)}); toast("Bien joué ✓"); } },
+  "tache-del":b=>{ if(confirm("Supprimer cette tâche ?")) ecrire("taches/"+b.dataset.id,null); },
+
+  "cal-prev":()=>{ jMois=moisPlus(jMois,-1); rendre(); },
+  "cal-next":()=>{ jMois=moisPlus(jMois,1); rendre(); },
+  "cal-jour":b=>{ jJour=b.dataset.d; rendre(); },
+  "cal-ouvrir":()=>{ sel=jJour; vue="jour"; rendre(); window.scrollTo(0,0); },
+  "rech-go":b=>{ jJour=b.dataset.d; jMois=jJour.slice(0,7); rendre(); },
+
+  "cm-prev":()=>{ cMois=moisPlus(cMois,-1); rendre(); },
+  "cm-next":()=>{ cMois=moisPlus(cMois,1); rendre(); },
+  "cm-detail":b=>{ const c=b.dataset.c; ouverts.has(c)?ouverts.delete(c):ouverts.add(c); rendre(); },
+  "imprimer":()=>window.print(),
+
+  "r-mode":b=>{ rMode=b.dataset.m; rendre(); },
+  "r-prev":()=>{ rAncre = rMode==="semaine"?plusJours(rAncre,-7):moisPlus(rAncre.slice(0,7),-1)+"-01"; rendre(); },
+  "r-next":()=>{ rAncre = rMode==="semaine"?plusJours(rAncre,7):moisPlus(rAncre.slice(0,7),1)+"-01"; rendre(); },
+  "r-copier":async()=>{ const t=texteRecap(); try{ await navigator.clipboard.writeText(t); toast("Récap copié, colle-le dans ton mail ✓"); }
+    catch(e){ prompt("Copie ce texte :",t); } },
+
+  "reglages":()=>fenReglages(),
+  "r-haut":b=>echangerOrdre(b.dataset.c,-1),
+  "r-bas":b=>echangerOrdre(b.dataset.c,1),
+  "r-masquer":b=>{ if(confirm("Retirer "+nomDe(b.dataset.c)+" de la liste ? Son historique est gardé.")){ ecrire("chauffeurs/"+b.dataset.c+"/actif",false); fenReglages(); } },
+  "r-remettre":b=>{ ecrire("chauffeurs/"+b.dataset.c+"/actif",true); fenReglages(); },
+  "r-ajout":()=>{ const n=($("nvCh").value||"").trim(); if(!n) return; const max=Math.max(0,...tousChauffeurs().map(c=>c.ordre));
+    ecrire("chauffeurs/"+id("c"),{nom:n.toUpperCase(),ordre:max+1,actif:true}); fenReglages(); toast("Chauffeur ajouté ✓"); },
+  "r-code":()=>{ const c=($("nvCode").value||"").trim(); if(c.length<3){ toast("Le code doit avoir au moins 3 chiffres ou lettres"); return; }
+    ecrire("reglages/code",c); localStorage.setItem("compagnon_code",c); $("nvCode").value=""; toast("Code changé ✓ (PC et téléphone)"); },
+  "r-verrou":()=>{ localStorage.removeItem("compagnon_ok"); fermer(); montrerVerrou(); },
+  "r-installer":async()=>{ if(invitInstall){ invitInstall.prompt(); await invitInstall.userChoice.catch(()=>{}); invitInstall=null; }
+    else toast("Déjà installée, ou utilise le menu du navigateur : « Installer l'application »",4200); },
+  "r-export":()=>{ const blob=new Blob([JSON.stringify(state,null,1)],{type:"application/json"}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="compagnon-sauvegarde-"+aujourdhui()+".json"; document.body.appendChild(a); a.click(); a.remove(); },
+
+  "lock-ok":()=>verifierCode()
+};
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-act]"); if(!b||b.disabled) return; const f=actions[b.dataset.act]; if(f) f(b,e); });
+document.addEventListener("input",e=>{
+  if(e.target.id==="noteTxt") brouillonNote=e.target.value;
+  if(e.target.id==="tacheTxt") brouillonTache=e.target.value;
+  if(e.target.id==="rech"){ recherche=e.target.value; majRecherche(); }
+});
+document.addEventListener("change",e=>{
+  const cid=e.target.dataset&&e.target.dataset.nom;
+  if(cid){ const v=e.target.value.trim(); if(v) ecrire("chauffeurs/"+cid+"/nom",v.toUpperCase()); }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return;
+  if(e.target.id==="tacheTxt"){ e.preventDefault(); actions["tache-add"](); }
+  else if(e.target.id==="nvCh"){ e.preventDefault(); actions["r-ajout"](); }
+  else if(e.target.id==="lockCode"){ e.preventDefault(); verifierCode(); }
+  else if(e.target.id==="noteTxt" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); actions["note-add"](); }
+});
+
+/* ================================================================
+   CODE D'OUVERTURE
+   ================================================================ */
+function codeAttendu(){ return String(state.reglages.code || localStorage.getItem("compagnon_code") || CODE_DEFAUT).trim(); }
+function montrerVerrou(){ $("lock").hidden=false; $("lockMsg").textContent=""; $("lockCode").value=""; setTimeout(()=>$("lockCode").focus(),60); }
+async function verifierCode(){
+  const saisi=$("lockCode").value.trim();
+  if(!saisi) return;
+  if(saisi!==codeAttendu() && !dejaSynchro){ $("lockMsg").textContent="Vérification…"; await synchro(); }
+  if(saisi===codeAttendu()){
+    localStorage.setItem("compagnon_ok","1"); localStorage.setItem("compagnon_code",saisi);
+    $("lock").hidden=true; rendre();
+  } else { $("lockMsg").textContent="Code incorrect. Réessaie."; $("lockCode").value=""; $("lockCode").focus(); }
+}
+
+/* ================================================================
+   DÉMARRAGE
+   ================================================================ */
+let jourCourant=aujourdhui();
+function tic(){
+  const a=aujourdhui();
+  if(a!==jourCourant){ if(sel===jourCourant) sel=a; if(rAncre===jourCourant) rAncre=a; jourCourant=a; rendre(); }
+  synchro();
+}
+rendre();
+statut(outbox.length?"attente":"");
+if(localStorage.getItem("compagnon_ok")!=="1") montrerVerrou();
+synchro();
+setInterval(tic,5000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) tic(); });
+window.addEventListener("online",()=>synchro());
+
+/* Installation (réseau d'abord : jamais de vieille version) */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>{ navigator.serviceWorker.register("sw-compagnon.js",{scope:"./compagnon.html"}).catch(()=>{}); }); }
+</script>
+</body>
+</html>
