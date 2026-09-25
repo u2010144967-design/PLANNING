@@ -37,7 +37,7 @@ input,textarea{font:inherit;color:var(--encre)}
 .marque{font-family:var(--titre);font-weight:700;font-size:1.45rem;letter-spacing:.01em;flex:1}
 .statut{font-size:.85rem;opacity:.9;white-space:nowrap}
 .marque{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width:420px){ .marque{font-size:1.2rem} .statut{font-size:.78rem} }
+@media (max-width:420px){ .marque{font-size:1.2rem} .statut{font-size:.78rem} .m-long{display:none} .st-h{display:none} }
 .ic{background:transparent;border:0;font-size:1.35rem;padding:6px;border-radius:8px}
 .ic:hover{background:rgba(255,255,255,.12)}
 
@@ -184,6 +184,25 @@ textarea{min-height:76px;resize:vertical}
 .toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--encre);color:#fff;padding:10px 16px;border-radius:10px;z-index:70;font-size:.95rem;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.vu{opacity:1}
 .seul-impr{display:none}
+.pill{background:var(--jaune);color:var(--encre);border:0;border-radius:999px;padding:7px 12px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.pill[hidden]{display:none}
+.rappel-ligne{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.95rem;color:var(--gris)}
+.rappel-ligne input{width:auto;border:1px solid var(--trait);border-radius:10px;padding:8px 10px;background:#fff;font:inherit;color:var(--encre)}
+.cloche{display:inline-block;font-size:.82rem;font-weight:700;border-radius:6px;padding:0 6px;margin-left:6px;background:var(--bleu-f);color:var(--bleu)}
+.cloche.due{background:var(--rouge);color:#fff}
+.bloc.urgent{border:2px solid var(--rouge);background:var(--rouge-f)}
+.bloc.urgent h2{color:var(--rouge)}
+/* Saisie de la semaine */
+.grille-sem{border-collapse:separate;border-spacing:3px;width:100%}
+.grille-sem th{font-size:.8rem;color:var(--gris);font-weight:600;text-align:center;padding:2px}
+.grille-sem th.jr b{display:block;font-size:1rem;color:var(--encre)}
+.grille-sem td.n{font-family:var(--titre);font-weight:700;font-size:.98rem;padding-right:2px;white-space:nowrap}
+.cell{width:100%;min-width:30px;height:46px;border:1px solid var(--trait);border-radius:9px;background:#fff;font-weight:700;font-size:.85rem;padding:0;line-height:1.05}
+.cell.present{background:var(--vert-f);border-color:#9fd3b8;color:var(--vert)}
+.cell.retard{background:var(--ambre);border-color:var(--ambre);color:#fff}
+.cell.absent{background:var(--rouge);border-color:var(--rouge);color:#fff}
+.tous{border:1px dashed var(--vert);color:var(--vert);background:#fff;border-radius:8px;font-size:.75rem;font-weight:700;padding:3px 0;width:100%;margin-top:3px}
+.choix-rapide .btn{width:100%;padding:14px;font-size:1.05rem}
 
 /* Nom cliquable + alertes */
 .lien-nom{background:none;border:0;padding:0;text-align:left;font-family:var(--titre);font-weight:700;font-size:1.3rem;line-height:1.1;color:var(--encre);text-decoration:underline;text-decoration-color:var(--trait);text-underline-offset:4px}
@@ -203,7 +222,7 @@ textarea{min-height:76px;resize:vertical}
 .micro{border:2px solid var(--bleu);color:var(--bleu);background:#fff;border-radius:10px;padding:9px 14px;font-weight:700}
 .micro.ecoute{background:var(--rouge);border-color:var(--rouge);color:#fff}
 .micro.grand{width:100%;padding:16px;font-size:1.15rem;margin:4px 0 10px}
-.fab{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:64px;height:64px;border-radius:50%;border:0;background:var(--bleu);color:#fff;font-size:1.7rem;z-index:25;box-shadow:0 4px 14px rgba(23,36,59,.35)}
+.fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));height:58px;padding:0 22px;border-radius:29px;border:0;background:var(--bleu);color:#fff;font-size:1.15rem;font-weight:700;z-index:25;box-shadow:0 4px 14px rgba(23,36,59,.35)}
 @media (min-width:1180px){ .fab{right:calc(50% - 560px)} }
 .ranger{display:grid;grid-template-columns:1fr;gap:8px;margin:6px 0 4px}
 @media (min-width:480px){ .ranger{grid-template-columns:1fr 1fr 1fr} }
@@ -238,8 +257,9 @@ textarea{min-height:76px;resize:vertical}
 
 <header class="top">
   <div class="top-in">
-    <div class="marque">Mon Compagnon</div>
+    <div class="marque"><span class="m-long">Mon </span>Compagnon</div>
     <div class="statut" id="statut">Connexion…</div>
+    <button class="pill" id="btnInstall" data-act="installer" hidden>📲 Installer</button>
     <button class="ic" data-act="reglages" aria-label="Réglages" title="Réglages">⚙️</button>
   </div>
 </header>
@@ -250,6 +270,7 @@ textarea{min-height:76px;resize:vertical}
   <section id="v-chauffeurs" class="vue" hidden></section>
   <section id="v-recap" class="vue" hidden></section>
   <section id="v-fiche" class="vue" hidden></section>
+  <section id="v-semaine" class="vue" hidden></section>
 </main>
 
 <nav class="tabs" aria-label="Menu">
@@ -261,7 +282,7 @@ textarea{min-height:76px;resize:vertical}
   </div>
 </nav>
 
-<button class="fab" data-act="dictee" aria-label="Dicter une note ou une tâche" title="Dicter">🎤</button>
+<button class="fab" data-act="dictee" aria-label="Parler : dicter une note, une tâche ou un rappel">🎤 Parler</button>
 
 <div id="fond" class="fond" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
@@ -350,7 +371,7 @@ function ecrire(path,val){
 /* ---------- synchro ---------- */
 function statut(etat){
   const s=$("statut");
-  if(etat==="ok") s.textContent="🟢 À jour "+heureNow();
+  if(etat==="ok") s.innerHTML="🟢<span class=\"st-h\"> "+heureNow()+"</span>";
   else if(etat==="attente") s.textContent = outbox.length ? "🟡 "+outbox.length+" en attente" : "🟡 Hors ligne";
   else s.textContent="…";
 }
@@ -429,7 +450,7 @@ function noteHTML(n,avecSuppr){
 }
 function texteStatut(p){
   if(!p) return "Pas encore pointé";
-  if(p.statut==="present") return "Présent, pointé à "+(p.heure||"?");
+  if(p.statut==="present") return p.heure?"Présent, pointé à "+p.heure:"Présent";
   if(p.statut==="retard") return "En retard de "+fmtMin(p.minutes)+(p.commentaire?" : "+p.commentaire:"");
   if(p.statut==="absent") return "Absent"+(p.motif?" ("+p.motif.toLowerCase()+")":"")+(p.commentaire?" : "+p.commentaire:"");
   return "";
@@ -457,13 +478,15 @@ function stats(du,au){
 let vue="jour", sel=aujourdhui(), jMois=sel.slice(0,7), jJour=sel, cMois=sel.slice(0,7);
 let rMode="semaine", rAncre=sel, recherche="", ouverts=new Set();
 let brouillonNote="", brouillonTache="", brouillonFiche="";
-let ficheCid=null, fPeriode="3m";
+let ficheCid=null, fPeriode="3m", wLundi=lundiDe(aujourdhui()), brouillonHeure="";
 
 function rendre(){
   if(vue==="fiche" && !state.chauffeurs[ficheCid]) vue="chauffeurs";
-  for(const v of ["jour","journal","chauffeurs","recap","fiche"]) $("v-"+v).hidden = (v!==vue);
-  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.v===(vue==="fiche"?"chauffeurs":vue)));
+  for(const v of ["jour","journal","chauffeurs","recap","fiche","semaine"]) $("v-"+v).hidden = (v!==vue);
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.v===((vue==="fiche"||vue==="semaine")?"chauffeurs":vue)));
+  $("btnInstall").hidden = estInstallee();
   if(vue==="fiche") rendreFiche();
+  else if(vue==="semaine") rendreSemaine();
   else if(vue==="jour") rendreJour();
   else if(vue==="journal") rendreJournal();
   else if(vue==="chauffeurs") rendreChauffeurs();
@@ -488,6 +511,14 @@ function rendreJour(){
     h += `<div class="banniere no-print"><div><b>📲 Installe Mon Compagnon</b><br>Une icône sur ce ${estMobile()?"téléphone":"PC"}, comme une vraie appli.</div>
       <button class="btn plein" data-act="installer">Installer</button><button class="mini" data-act="install-plus-tard" aria-label="Plus tard">✕</button></div>`;
   const mD=D.slice(0,7), MS=stats(mD+"-01",dernierJourMois(mD));
+  if(D===auj){
+    const dus=rappelsDus();
+    if(dus.length){
+      h += `<div class="bloc urgent" style="margin-bottom:16px"><h2>🔔 C'est l'heure</h2>`;
+      dus.forEach(t=>{ h+=`<div class="tache"><button class="case" data-act="tache-ok" data-id="${t.id}" aria-label="Marquer comme faite"></button><div class="tache-t"><b>${esc(t.texte)}</b><span class="depuis" style="color:var(--rouge)">Prévu ${t.date<auj?"le "+dateCourte(t.date)+" ":""}à ${t.heure}</span></div></div>`; });
+      h += `</div>`;
+    }
+  }
 
   h += `<div class="grille"><div><div class="bloc"><h2>Chauffeurs</h2>`;
   h += `<p class="compte">${nP} présent${nP>1?"s":""}, ${nR} retard${nR>1?"s":""}, ${nA} absent${nA>1?"s":""}${nNon?", "+nNon+" pas encore pointé"+(nNon>1?"s":""):""}</p>`;
@@ -502,6 +533,7 @@ function rendreJour(){
         <button class="bp absent ${s==="absent"?"on":""}" data-act="pt-absent" data-c="${c.id}"><i>❌</i>Absent</button>
       </div></div>`;
   }
+  h += `<button class="lien" style="margin:10px 0 0" data-act="semaine">📝 Recopier toute la semaine (fiche papier) ›</button>`;
   if(nNon>0 && ch.length) h += `<button class="btn large" style="margin-top:8px" data-act="pt-tous">✅ Marquer les ${nNon} autre${nNon>1?"s":""} présent${nNon>1?"s":""}</button>`;
   h += `</div></div><div>`;
 
@@ -519,16 +551,19 @@ function rendreJour(){
   const T=tachesPour(D);
   h += `<div class="bloc"><h2>Tâches</h2>
     <div class="saisie"><input type="text" id="tacheTxt" placeholder="${D>auj?"Tâche prévue ce jour-là…":"Nouvelle tâche…"}" value="${esc(brouillonTache)}">
-    <button class="micro" data-act="micro" data-cible="tacheTxt" aria-label="Dicter la tâche">🎤</button><button class="btn plein" data-act="tache-add">Ajouter</button></div><div class="liste">`;
+    <button class="micro" data-act="micro" data-cible="tacheTxt" aria-label="Dicter la tâche">🎤</button><button class="btn plein" data-act="tache-add">Ajouter</button></div>
+    <div class="rappel-ligne"><label for="tacheHeure">🔔 Me le rappeler à</label><input type="time" id="tacheHeure" value="${esc(brouillonHeure)}"><span class="aide">(facultatif)</span></div>
+    <div class="liste">`;
   if(!T.length) h += `<p class="vide">Rien à faire. Ajoute une tâche au-dessus.</p>`;
   for(const t of T){
     const reportee = !t.fait && t.date<D;
     h += `<div class="tache ${t.fait?"fait":""}">
       <button class="case ${t.fait?"fait":""}" data-act="tache-ok" data-id="${t.id}" aria-label="${t.fait?"Remettre à faire":"Marquer comme faite"}">${t.fait?"✓":""}</button>
-      <div class="tache-t">${esc(t.texte)}${reportee?`<span class="depuis">Reportée, notée le ${dateCourte(t.date)}</span>`:""}</div>
+      <div class="tache-t">${esc(t.texte)}${t.heure&&!t.fait?`<span class="cloche ${estDu(t)?"due":""}">🔔 ${t.heure}</span>`:""}${reportee?`<span class="depuis">Reportée, notée le ${dateCourte(t.date)}</span>`:""}</div>
+      ${t.heure&&!t.fait?`<button class="mini" data-act="agenda" data-id="${t.id}" aria-label="Ajouter à mon agenda" title="Ajouter à mon agenda Google">📅</button>`:""}
       <button class="mini" data-act="tache-del" data-id="${t.id}" aria-label="Supprimer">🗑️</button></div>`;
   }
-  h += `</div><p class="aide" style="margin:10px 0 0">Une tâche pas faite passe toute seule au lendemain.</p></div></div></div>`;
+  h += `</div><p class="aide" style="margin:10px 0 0">Une tâche pas faite passe toute seule au lendemain. Le 📅 la met dans ton agenda Google, qui te prévient même appli fermée.</p></div></div></div>`;
   $("v-jour").innerHTML = h;
 }
 
@@ -596,7 +631,8 @@ function majRecherche(){
 function rendreChauffeurs(){
   const du=cMois+"-01", au=dernierJourMois(cMois), S=stats(du,au);
   const liste=tousChauffeurs().filter(c=>c.actif || S.par[c.id]);
-  let h = `<div class="bloc"><div class="entete-mois no-print">
+  let h = `<button class="btn plein large no-print" style="margin-bottom:14px;padding:14px" data-act="semaine">📝 Recopier la fiche d'émargement de la semaine</button>
+  <div class="bloc"><div class="entete-mois no-print">
       <button class="nav" data-act="cm-prev" aria-label="Mois précédent">‹</button>
       <div class="titre">${moisTexte(cMois)}</div>
       <button class="nav" data-act="cm-next" aria-label="Mois suivant">›</button></div>
@@ -744,6 +780,87 @@ function rendreFiche(){
   $("v-fiche").innerHTML=h;
 }
 
+/* ----- Saisie de la semaine (depuis la fiche papier) ----- */
+function celluleTxt(p){
+  if(!p) return "";
+  if(p.statut==="present") return "✅";
+  if(p.statut==="retard") return "⏰<br>"+(Number(p.minutes)>=60?"1h+":(p.minutes||"")+"'");
+  if(p.statut==="absent") return "❌";
+  return "";
+}
+function titreSemaine(a,b){
+  const A=parse(a),B=parse(b);
+  return A.getMonth()===B.getMonth() ? `Du ${A.getDate()} au ${B.getDate()} ${MOIS[B.getMonth()]}` : `Du ${A.getDate()} ${MOIS[A.getMonth()]} au ${B.getDate()} ${MOIS[B.getMonth()]}`;
+}
+function rendreSemaine(){
+  const jours=[...Array(7)].map((_,i)=>plusJours(wLundi,i)), auj=aujourdhui(), ch=chauffeursActifs();
+  const S=stats(jours[0],jours[6]);
+  let h=`<button class="lien" style="margin:0 0 8px" data-act="onglet" data-v="chauffeurs">‹ Retour aux chauffeurs</button>
+  <div class="bloc"><div class="entete-mois"><button class="nav" data-act="w-prev" aria-label="Semaine précédente">‹</button>
+    <div class="titre" style="font-size:1.25rem">${titreSemaine(jours[0],jours[6])}</div>
+    <button class="nav" data-act="w-next" aria-label="Semaine suivante">›</button></div>
+  <p class="compte" style="margin:10px 0 8px">Recopie ta fiche : touche une case, puis choisis. Le petit ✅ sous un jour met présents tous ceux qui ne sont pas encore pointés ce jour-là.</p>
+  <div style="overflow-x:auto"><table class="grille-sem"><thead><tr><th></th>`;
+  jours.forEach(D=>{ const d=parse(D); h+=`<th class="jr"${D===auj?' style="color:var(--encre)"':""}>${cap(JOURS[d.getDay()]).slice(0,3)}<b${D===auj?' style="text-decoration:underline"':""}>${d.getDate()}</b><button class="tous" data-act="w-tous" data-d="${D}" aria-label="Tous présents ce jour" title="Tous présents ce jour">✅</button></th>`; });
+  h+=`</tr></thead><tbody>`;
+  ch.forEach(c=>{
+    h+=`<tr><td class="n">${esc(c.nom)}</td>`;
+    jours.forEach(D=>{ const p=(state.pointage[D]||{})[c.id]; h+=`<td><button class="cell ${p?p.statut:""}" data-act="w-case" data-c="${c.id}" data-d="${D}" aria-label="${esc(c.nom)}, ${dateLongue(D)} : ${esc(texteStatut(p))}">${celluleTxt(p)}</button></td>`; });
+    h+=`</tr>`;
+  });
+  h+=`</tbody></table></div>
+  <p class="compte" style="margin:12px 0 0">Cette semaine : <span class="nb-r">${S.nbR} retard${S.nbR>1?"s":""}</span>, <span class="nb-a">${S.nbA} absence${S.nbA>1?"s":""}</span>, ${S.nbP} présence${S.nbP>1?"s":""}.</p></div>`;
+  $("v-semaine").innerHTML=h;
+}
+function fenCase(cid,D){
+  const p=(state.pointage[D]||{})[cid];
+  fen={type:"case",cid,D};
+  ouvrir(`<h3>${esc(nomDe(cid))}</h3><p class="sous">${dateLongue(D)} : ${esc(texteStatut(p))}</p>
+    <div class="choix-rapide"><button class="btn" style="border:2px solid var(--vert);color:var(--vert)" data-act="c-present">✅ Présent</button></div>
+    <span class="lab">⏰ En retard de :</span>
+    <div class="puces">${MINUTES.map(m=>`<button class="puce" data-act="c-retard" data-m="${m}">${m>=60?"1 h et +":m+" min"}</button>`).join("")}</div>
+    <span class="lab">❌ Absent :</span>
+    <div class="puces">${MOTIFS.map(m=>`<button class="puce" data-act="c-absent" data-m="${m}">${m}</button>`).join("")}</div>
+    <div class="ligne-btn">${p?`<button class="btn danger" data-act="c-effacer">Effacer</button>`:""}<button class="btn" data-act="f-fermer">Annuler</button></div>`);
+}
+function poserCase(val){ const {cid,D}=fen; ecrire(`pointage/${D}/${cid}`,val); fermer(); }
+
+/* ----- Rappels et notifications ----- */
+function hNow(){ return heureNow(); }
+function estDu(t){ const auj=aujourdhui(); return !!(t&&!t.fait&&t.heure&&(t.date<auj||(t.date===auj&&t.heure<=hNow()))); }
+function rappelsDus(){ return toutesTaches().filter(estDu).sort((a,b)=>(a.date+a.heure).localeCompare(b.date+b.heure)); }
+function lienAgenda(t){
+  const d0=parse(t.date); const [h,m]=t.heure.split(":").map(Number); d0.setHours(h,m,0,0);
+  const d1=new Date(d0.getTime()+15*60000);
+  const f=d=>d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+"T"+p2(d.getHours())+p2(d.getMinutes())+"00";
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("🔔 "+t.texte)+"&dates="+f(d0)+"/"+f(d1)+"&ctz=Europe/Paris&details="+encodeURIComponent("Rappel de Mon Compagnon");
+}
+function notifEtat(){ return ("Notification" in window) ? Notification.permission : "absent"; }
+async function demanderNotif(){
+  if(!("Notification" in window)){ toast("Ce navigateur ne gère pas les notifications. Utilise le 📅 agenda.",4500); return; }
+  const r=await Notification.requestPermission().catch(()=>"denied");
+  if(r==="granted") toast("Notifications activées ✓"); else toast("Notifications refusées. Tu peux les autoriser dans les réglages du navigateur.",4500);
+  if(fen.type==="reglages") fenReglages();
+}
+async function notifier(titre,corps,tag){
+  try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+  toast("🔔 "+corps,6000);
+  if(notifEtat()!=="granted") return;
+  try{
+    const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration("./compagnon.html") : null;
+    if(reg){ await reg.showNotification(titre,{body:corps,icon:"icon-compagnon.png",badge:"icon-compagnon.png",tag,renotify:true}); return; }
+  }catch(e){}
+  try{ new Notification(titre,{body:corps,icon:"icon-compagnon.png",tag}); }catch(e){}
+}
+function verifierRappels(){
+  const dus=rappelsDus();
+  const vus=new Set(lireJSON("compagnon_notifies",[]));
+  let nouveau=false;
+  dus.forEach(t=>{ const k=t.id+"|"+t.date+"|"+t.heure; if(!vus.has(k)){ vus.add(k); nouveau=true; notifier("🔔 Rappel",t.texte,t.id); } });
+  if(nouveau){ ecrireJSON("compagnon_notifies",[...vus].slice(-300)); if(vue==="jour") rendreSiPossible(); }
+  try{ if(navigator.setAppBadge){ dus.length?navigator.setAppBadge(dus.length):navigator.clearAppBadge(); } }catch(e){}
+}
+
 /* ----- Installation ----- */
 function estInstallee(){ return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true; }
 function estMobile(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
@@ -810,6 +927,7 @@ function fenDictee(){
   ouvrir(`<h3>🎤 Dicter</h3><p class="sous">Parle, corrige si besoin, puis choisis où le ranger.</p>
     <button class="micro grand" data-act="micro" data-cible="dicTxt">🎤 Parler</button>
     <textarea id="dicTxt" placeholder="Le texte s'écrit ici pendant que tu parles."></textarea>
+    <div class="rappel-ligne"><label for="dicHeure">🔔 Rappel à</label><input type="time" id="dicHeure"><span class="aide">(pour une tâche, facultatif)</span></div>
     <span class="lab">Ranger comme :</span>
     <div class="ranger">
       <button class="btn" data-act="d-note">📝 Note du jour</button>
@@ -882,9 +1000,14 @@ function fenReglages(){
     <div class="ligne-btn"><button class="btn" data-act="r-verrou">🔒 Verrouiller maintenant</button></div>
     <span class="lab" style="margin-top:18px">Installer l'appli</span>
     <div class="ligne-btn" style="margin-top:0"><button class="btn" data-act="r-installer">📲 Installer sur cet appareil</button></div>
+    <span class="lab" style="margin-top:18px">Rappels et notifications</span>
+    <p class="aide" style="margin:0 0 6px">${notifEtat()==="granted"?"✅ Notifications activées sur cet appareil.":notifEtat()==="denied"?"⛔ Notifications bloquées : autorise-les dans les réglages du navigateur (cadenas à côté de l'adresse).":notifEtat()==="absent"?"Ce navigateur ne gère pas les notifications : utilise le 📅 agenda sur tes tâches.":"Les notifications ne sont pas encore activées."}</p>
+    <div class="ligne-btn" style="margin-top:0">${notifEtat()==="default"?`<button class="btn plein" data-act="r-notif">🔔 Activer les notifications</button>`:""}${notifEtat()==="granted"?`<button class="btn" data-act="r-test-notif">Tester une notification</button>`:""}</div>
+    <p class="aide">Les notifications arrivent quand l'appli est ouverte ou en arrière-plan. Pour être prévenu même téléphone verrouillé et appli fermée, touche le 📅 d'une tâche : elle part dans ton agenda Google.</p>
     <span class="lab" style="margin-top:18px">Sauvegarde</span>
     <div class="ligne-btn" style="margin-top:0"><button class="btn" data-act="r-export">💾 Télécharger une copie de secours</button></div>
-    <div class="ligne-btn" style="margin-top:22px"><button class="btn plein large" data-act="f-fermer">Fermer</button></div>`;
+    <div class="ligne-btn" style="margin-top:22px"><button class="btn plein large" data-act="f-fermer">Fermer</button></div>
+    <p class="aide" style="text-align:center;margin-top:12px">Version 3 du 25/09/2026</p>`;
   ouvrir(h);
 }
 function echangerOrdre(cid,dir){
@@ -931,7 +1054,9 @@ const actions={
   "note-del":b=>{ if(confirm("Supprimer cette note ?")) ecrire("notes/"+b.dataset.id,null); },
 
   "tache-add":()=>{ if(dic&&dic.cible==="tacheTxt") arreterDictee(); const t=($("tacheTxt").value||"").trim(); if(!t){ $("tacheTxt").focus(); return; }
-    brouillonTache=""; ecrire("taches/"+id("t"),{texte:t,date:sel,fait:false,faitLe:"",ts:Date.now()}); },
+    const hr=($("tacheHeure").value||"").trim(); const o={texte:t,date:sel,fait:false,faitLe:"",ts:Date.now()}; if(hr) o.heure=hr;
+    brouillonTache=""; brouillonHeure=""; ecrire("taches/"+id("t"),o);
+    if(hr){ toast("Rappel prévu à "+hr+" ✓"); if(notifEtat()==="default") demanderNotif(); } },
   "tache-ok":b=>{ const t=state.taches[b.dataset.id]; if(!t) return; const auj=aujourdhui();
     if(t.fait) ecrire("taches/"+b.dataset.id,{...t,fait:false,faitLe:""});
     else { ecrire("taches/"+b.dataset.id,{...t,fait:true,faitLe:(sel>auj?auj:sel)}); toast("Bien joué ✓"); } },
@@ -977,10 +1102,24 @@ const actions={
   "micro":b=>demarrerDictee(b.dataset.cible),
   "dictee":()=>fenDictee(),
   "d-note":()=>{ const t=texteDictee(); if(!t) return; ecrire("notes/"+id("n"),{date:aujourdhui(),texte:t,ts:Date.now()}); fermer(); toast("Note du jour enregistrée ✓"); },
-  "d-tache":b=>{ const t=texteDictee(); if(!t) return; const d=plusJours(aujourdhui(),Number(b.dataset.j)||0);
-    ecrire("taches/"+id("t"),{texte:t,date:d,fait:false,faitLe:"",ts:Date.now()}); fermer(); toast(b.dataset.j==="1"?"Tâche prévue pour demain ✓":"Tâche ajoutée ✓"); },
+  "d-tache":b=>{ const t=texteDictee(); if(!t) return; const d=plusJours(aujourdhui(),Number(b.dataset.j)||0); const hr=($("dicHeure").value||"").trim();
+    const o={texte:t,date:d,fait:false,faitLe:"",ts:Date.now()}; if(hr) o.heure=hr;
+    ecrire("taches/"+id("t"),o); fermer(); if(hr && notifEtat()==="default") demanderNotif();
+    toast((b.dataset.j==="1"?"Tâche prévue pour demain":"Tâche ajoutée")+(hr?", rappel à "+hr:"")+" ✓"); },
   "d-ch":b=>{ const t=texteDictee(); if(!t) return; ecrire("notes/"+id("n"),{date:aujourdhui(),texte:t,ts:Date.now(),cid:b.dataset.c}); fermer(); toast("Noté sur la fiche de "+nomDe(b.dataset.c)+" ✓"); },
 
+  "semaine":()=>{ vue="semaine"; rendre(); window.scrollTo(0,0); },
+  "w-prev":()=>{ wLundi=plusJours(wLundi,-7); rendre(); },
+  "w-next":()=>{ wLundi=plusJours(wLundi,7); rendre(); },
+  "w-case":b=>fenCase(b.dataset.c,b.dataset.d),
+  "w-tous":b=>{ const D=b.dataset.d, pj=state.pointage[D]||{}; let n=0; chauffeursActifs().forEach(c=>{ if(!pj[c.id]){ ecrire(`pointage/${D}/${c.id}`,{statut:"present",heure:"",ts:Date.now()}); n++; } }); toast(n?n+" mis présent"+(n>1?"s":"")+" ✓":"Tout le monde est déjà pointé ce jour-là"); },
+  "c-present":()=>poserCase({statut:"present",heure:"",ts:Date.now()}),
+  "c-retard":b=>poserCase({statut:"retard",minutes:Number(b.dataset.m),commentaire:"",heure:"",ts:Date.now()}),
+  "c-absent":b=>poserCase({statut:"absent",motif:b.dataset.m,commentaire:"",heure:"",ts:Date.now()}),
+  "c-effacer":()=>poserCase(null),
+  "agenda":b=>{ const t=state.taches[b.dataset.id]; if(!t||!t.heure) return; window.open(lienAgenda(t),"_blank"); },
+  "r-notif":()=>demanderNotif(),
+  "r-test-notif":()=>notifier("🔔 Test","Les rappels marchent sur cet appareil ✓","test"),
   "fiche":b=>{ ficheCid=b.dataset.c; brouillonFiche=""; vue="fiche"; rendre(); window.scrollTo(0,0); },
   "fiche-retour":()=>{ vue="chauffeurs"; rendre(); window.scrollTo(0,0); },
   "f-periode":b=>{ fPeriode=b.dataset.p; rendre(); },
@@ -998,6 +1137,7 @@ document.addEventListener("input",e=>{
   if(e.target.id==="noteTxt") brouillonNote=e.target.value;
   if(e.target.id==="tacheTxt") brouillonTache=e.target.value;
   if(e.target.id==="fnTxt") brouillonFiche=e.target.value;
+  if(e.target.id==="tacheHeure") brouillonHeure=e.target.value;
   if(e.target.id==="rech"){ recherche=e.target.value; majRecherche(); }
 });
 document.addEventListener("change",e=>{
@@ -1035,6 +1175,7 @@ function tic(){
   const a=aujourdhui();
   if(a!==jourCourant){ if(sel===jourCourant) sel=a; if(rAncre===jourCourant) rAncre=a; jourCourant=a; rendre(); }
   synchro();
+  verifierRappels();
 }
 rendre();
 statut(outbox.length?"attente":"");
