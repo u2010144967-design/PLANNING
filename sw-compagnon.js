@@ -1,9 +1,9 @@
-/* Service worker — Mon Compagnon
-   Rend l'appli installable (PC + téléphone) SANS jamais afficher une vieille
+/* Service worker â€” Mon Compagnon
+   Rend l'appli installable (PC + tÃ©lÃ©phone) SANS jamais afficher une vieille
    version : on prend toujours la version en ligne, le cache ne sert qu'en
    secours sans connexion. Ne touche qu'aux fichiers du Compagnon. */
-const CACHE = "compagnon-v2";
-const FICHIERS = ["compagnon.html", "manifest-compagnon.json", "icon-compagnon.png"];
+const CACHE = "compagnon-v3";
+const FICHIERS = ["compagnon.html", "manifest-compagnon.json", "icon-compagnon-192.png", "icon-compagnon-512.png"];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -20,7 +20,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (!/(compagnon\.html|manifest-compagnon\.json|icon-compagnon\.png)$/.test(url.pathname)) return;
+  if (!/(compagnon\.html|manifest-compagnon\.json|icon-compagnon[\w-]*\.png)$/.test(url.pathname)) return;
   e.respondWith((async () => {
     try {
       const reseau = await fetch(e.request, { cache: "no-store" });
