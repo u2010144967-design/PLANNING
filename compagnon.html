@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest-compagnon.json">
 <link rel="icon" href="icon-compagnon.png">
-<link rel="apple-touch-icon" href="icon-compagnon.png">
+<link rel="apple-touch-icon" href="icon-compagnon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Compagnon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -870,7 +870,9 @@ async function installer(){
   if(estInstallee()){ toast("L'appli est déjà installée sur cet appareil ✓"); return; }
   let etapes;
   if(estIOS()) etapes=["Ouvre ce lien dans <b>Safari</b> (pas dans une autre appli).","Touche le bouton <b>Partager</b> (le carré avec la flèche vers le haut).","Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>."];
-  else if(/Android/i.test(navigator.userAgent)) etapes=["Ouvre ce lien dans <b>Chrome</b>.","Touche les <b>3 points ⋮</b> en haut à droite.","Choisis <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>."];
+  else if(/SamsungBrowser/i.test(navigator.userAgent)) etapes=["Tu es dans <b>Samsung Internet</b>.","Touche le menu <b>☰</b> en bas à droite.","Choisis <b>« Ajouter page à »</b>, puis <b>« Écran d'accueil »</b>.","Si ça ne marche pas : ouvre plutôt le lien dans <b>Chrome</b> (bouton « Copier le lien » ci-dessous)."];
+  else if(/Android/i.test(navigator.userAgent) && /; wv\)|FBAN|FBAV|Instagram|Line\//i.test(navigator.userAgent)) etapes=["Tu es dans le navigateur d'une autre appli : l'installation y est impossible.","Touche <b>⋮</b> en haut à droite, puis <b>« Ouvrir dans Chrome »</b>.","Dans Chrome, touche le bouton jaune <b>📲 Installer</b>."];
+  else if(/Android/i.test(navigator.userAgent)) etapes=["Touche les <b>3 points ⋮</b> en haut à droite de Chrome.","Choisis <b>« Installer l'application »</b>. Si tu ne le vois pas, choisis <b>« Ajouter à l'écran d'accueil »</b>, puis <b>Installer</b> ou <b>Ajouter</b>.","L'icône <b>Compagnon</b> arrive sur ton écran d'accueil (parfois après quelques secondes)."];
   else etapes=["Ouvre ce lien dans <b>Chrome</b> ou <b>Edge</b>.","Clique sur la petite icône <b>écran avec une flèche</b> tout à droite de la barre d'adresse, ou sur le menu <b>⋮ / …</b>.","Choisis <b>« Installer Mon Compagnon »</b> (dans Edge : Applications ▸ Installer ce site en tant qu'application)."];
   ouvrir(`<h3>📲 Installer Mon Compagnon</h3><p class="sous">Sur cet appareil, fais comme ça :</p><ol class="etapes">${etapes.map(e=>`<li>${e}</li>`).join("")}</ol>
     <p class="aide" style="margin-top:14px">Le lien de l'appli : <b>u2010144967-design.github.io/PLANNING/compagnon.html</b></p>
@@ -1007,7 +1009,7 @@ function fenReglages(){
     <span class="lab" style="margin-top:18px">Sauvegarde</span>
     <div class="ligne-btn" style="margin-top:0"><button class="btn" data-act="r-export">💾 Télécharger une copie de secours</button></div>
     <div class="ligne-btn" style="margin-top:22px"><button class="btn plein large" data-act="f-fermer">Fermer</button></div>
-    <p class="aide" style="text-align:center;margin-top:12px">Version 3 du 25/09/2026</p>`;
+    <p class="aide" style="text-align:center;margin-top:12px">Version 4 du 25/09/2026</p>`;
   ouvrir(h);
 }
 function echangerOrdre(cid,dir){
