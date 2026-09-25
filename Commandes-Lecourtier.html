@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commandes Lecourtier - La Table de Cana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+:root{
+  --paper:#F3F4F0; --sheet:#FFFFFF; --ink:#23272B; --muted:#5E666D; --line:#D8DCD6;
+  --inox:#8D979E; --stabilo:#F2E530; --stabilo-soft:rgba(242,229,48,.6);
+  --btn:#23272B; --btn-ink:#FFFFFF; --ok:#2F6B4F; --warn:#A04A12; --field:#FAFBF8;
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#16191B; --sheet:#1F2326; --ink:#E9ECE8; --muted:#A2AAB0; --line:#353B40;
+    --inox:#7C868D; --stabilo-soft:rgba(242,229,48,.3); --btn:#E9ECE8; --btn-ink:#16191B;
+    --ok:#7FC3A0; --warn:#E6A06B; --field:#191C1F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16191B; --sheet:#1F2326; --ink:#E9ECE8; --muted:#A2AAB0; --line:#353B40;
+  --inox:#7C868D; --stabilo-soft:rgba(242,229,48,.3); --btn:#E9ECE8; --btn-ink:#16191B;
+  --ok:#7FC3A0; --warn:#E6A06B; --field:#191C1F;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+h1,h2,h3{font-family:var(--cond);font-weight:600;line-height:1.1;margin:0}
+h1{font-size:2.1rem;letter-spacing:.01em}
+h2{font-size:1.5rem;margin-bottom:10px}
+h3{font-size:1.25rem}
+p{margin:.3em 0}
+.sub{color:var(--muted);margin-top:4px}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+nav.tabs{display:flex;gap:4px;margin:14px 0 20px;flex-wrap:wrap}
+nav.tabs button{font-family:var(--cond);font-size:1.1rem;font-weight:600;background:transparent;color:var(--muted);border:0;border-bottom:3px solid transparent;padding:6px 10px;cursor:pointer;border-radius:0}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--stabilo)}
+button{font-family:var(--sans);font-size:.95rem;font-weight:600;border-radius:6px;border:1.5px solid var(--btn);background:var(--btn);color:var(--btn-ink);padding:8px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.small{padding:4px 9px;font-size:.85rem;font-weight:500}
+button.big{font-size:1.05rem;padding:11px 18px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,.drop:focus-visible{outline:3px solid var(--stabilo);outline-offset:2px}
+input,select,textarea{font-family:var(--sans);font-size:.95rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:6px 8px;max-width:100%}
+textarea{width:100%;min-height:70px}
+label.f{display:block;font-weight:600;margin:12px 0 4px}
+.hint{color:var(--muted);font-size:.88rem}
+.drop{border:2px dashed var(--inox);border-radius:10px;background:var(--sheet);padding:30px 18px;text-align:center;cursor:pointer}
+.drop.over{border-color:var(--ink);background:var(--stabilo-soft)}
+.drop strong{font-family:var(--cond);font-size:1.4rem;display:block;margin-bottom:4px}
+.progress{margin:14px 0;padding:10px 12px;border-left:4px solid var(--stabilo);background:var(--sheet)}
+.meter{height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.meter span{display:block;height:100%;background:var(--ink);width:0;transition:width .2s}
+.err{color:var(--warn);font-weight:600}
+.okmsg{color:var(--ok);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.order{background:var(--sheet);border:1px solid var(--line);border-radius:8px;margin:16px 0;padding:14px 16px}
+.order.off{opacity:.55}
+.order .head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.num{font-family:var(--cond);font-weight:700;font-size:1rem;color:var(--muted)}
+.titlein{font-family:var(--cond);font-weight:600;font-size:1.3rem;width:min(600px,100%);border-color:transparent;background:transparent;padding:2px 4px;margin-left:-4px}
+.titlein:hover{border-color:var(--line)}
+.meta{color:var(--muted);font-size:.92rem}
+.enl{margin:12px 0 6px;padding:10px;border-radius:6px;background:var(--paper);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.enl b{font-family:var(--cond);font-size:1.1rem}
+.enl.missing{outline:2px solid var(--warn)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+td,th{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:.82rem;color:var(--muted);font-weight:600}
+td.q input{width:72px;text-align:right;font-variant-numeric:tabular-nums}
+.orig{color:var(--muted);font-size:.85rem}
+tr.on .art{background:linear-gradient(100deg,transparent 0 2%,var(--stabilo-soft) 3% 96%,transparent 97%);padding:1px 4px;border-radius:2px;display:inline-block}
+tr.offl td{opacity:.5}
+details.autres{margin-top:10px}
+details.autres summary{cursor:pointer;color:var(--muted);font-weight:600}
+.tag{display:inline-block;font-size:.78rem;padding:1px 6px;border-radius:10px;border:1px solid var(--line);color:var(--muted);margin-left:6px}
+.actions{position:sticky;bottom:0;background:var(--paper);padding:12px 0;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+.sheetprev{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:22px;margin:16px 0}
+.sheetprev h2{border-bottom:2px solid var(--ink);padding-bottom:6px}
+.day{margin-top:18px}
+.day>h3{background:var(--stabilo-soft);display:inline-block;padding:2px 8px}
+.client{margin:10px 0 0 4px;padding-left:10px;border-left:3px solid var(--line)}
+.client ul,.tot ul{margin:4px 0 0;padding-left:20px}
+.tot{margin-top:8px;font-size:.93rem}
+.numcell{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:10px;background:var(--stabilo);border-radius:2px;min-width:2px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:14px 0}
+.summary{font-size:1.15rem}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:130px;margin-top:10px}
+.months div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.75rem;color:var(--muted)}
+.months span.b{width:100%;background:var(--inox);border-radius:2px 2px 0 0}
+.logoprev{max-height:60px;max-width:200px;display:block;margin-top:6px}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--btn);color:var(--btn-ink);padding:10px 16px;border-radius:6px;font-weight:600;z-index:9;max-width:90vw}
+@media (max-width:640px){ h1{font-size:1.7rem} .order{padding:12px} .orig-col{display:none} .grid2{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .meter span{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Commandes Lecourtier</h1>
+      <p class="sub">Du bon de fabrication FTBE au bon de commande, sans rien réécrire.</p>
+    </div>
+    <span class="hint">Données gardées sur ce PC</span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="nouvelle" aria-selected="true">Nouvelle commande</button>
+    <button role="tab" data-tab="suivi" aria-selected="false">Suivi</button>
+    <button role="tab" data-tab="liste" aria-selected="false">Ma liste Lecourtier</button>
+    <button role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
+  </nav>
+
+  <!-- NOUVELLE COMMANDE -->
+  <section id="tab-nouvelle">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choisir le PDF FTBE">
+      <strong>Dépose ici le PDF FTBE</strong>
+      <span class="hint">ou clique pour le choisir. PDF direct de FTBE ou scan, toutes les commandes du fichier sont lues d'un coup.</span>
+      <input type="file" id="file" accept="application/pdf" class="hidden">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost small" id="addManual">Ajouter une commande à la main</button>
+      <button class="ghost small hidden" id="clearAll">Tout effacer</button>
+    </div>
+    <div id="progress" class="progress hidden"><div id="progTxt"></div><div class="meter"><span id="progBar"></span></div></div>
+    <div id="orders"></div>
+    <div id="actionsBar" class="actions hidden">
+      <label class="hint" style="flex:1 1 280px">Note pour Lecourtier (facultatif)
+        <input id="note" style="width:100%;margin-top:3px" placeholder="Ex. : merci de confirmer la disponibilité avant jeudi">
+      </label>
+      <button id="genBtn" class="big">Préparer le bon</button>
+    </div>
+    <div id="checkErr" class="err"></div>
+    <div id="preview"></div>
+  </section>
+
+  <!-- SUIVI -->
+  <section id="tab-suivi" class="hidden">
+    <div class="row">
+      <h2 style="margin:0">Suivi des enlèvements</h2>
+      <select id="yearSel" aria-label="Année"></select>
+      <button class="ghost small" id="csvBtn">Exporter pour Excel</button>
+    </div>
+    <div id="suivi"></div>
+  </section>
+
+  <!-- LISTE -->
+  <section id="tab-liste" class="hidden">
+    <h2>Ma liste Lecourtier</h2>
+    <p class="hint">Chaque article a des « mots à reconnaître ». Une ligne du bon FTBE est reconnue si elle contient tous ces mots. Plusieurs façons de l'écrire ? Sépare-les par « / ». Exemple : <em>menagere / sel poivre</em>.</p>
+    <div class="card">
+      <label class="f" for="testIn" style="margin-top:0">Tester un libellé</label>
+      <div class="row"><input id="testIn" style="flex:1" placeholder="Ex. : 24 - Verre à Vin"><span id="testOut" class="hint"></span></div>
+    </div>
+    <div class="tablewrap"><table id="catTable"></table></div>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost" id="addArt">Ajouter un article</button>
+      <button id="saveCat">Enregistrer la liste</button>
+      <span id="catMsg"></span>
+    </div>
+    <label class="f" for="exclIn">Mots qui veulent dire « jetable » (jamais Lecourtier)</label>
+    <input id="exclIn" style="width:100%">
+    <p class="hint">Les lignes « prévu sur place » ne sont jamais proposées.</p>
+    <h3 style="margin-top:22px">Ce que le logiciel a appris</h3>
+    <p class="hint">Quand tu corriges un article ou que tu ajoutes une ligne, il s'en souvient ici.</p>
+    <div id="learned"></div>
+  </section>
+
+  <!-- REGLAGES -->
+  <section id="tab-reglages" class="hidden">
+    <h2>Réglages</h2>
+    <div class="grid2">
+      <div>
+        <h3 style="margin-top:8px">Ton entreprise (en-tête du bon)</h3>
+        <label class="f" for="rSoc">Nom</label><input id="rSoc" style="width:100%">
+        <label class="f" for="rAdr">Adresse</label><textarea id="rAdr" rows="2"></textarea>
+        <label class="f" for="rContact">Contact (nom, téléphone)</label><input id="rContact" style="width:100%" placeholder="Farid - 06 …">
+        <label class="f" for="rMailMe">Ton email pro</label><input id="rMailMe" style="width:100%" placeholder="prenom@...">
+        <label class="f" for="rLogo">Logo (facultatif)</label><input type="file" id="rLogo" accept="image/png,image/jpeg">
+        <img id="logoPrev" class="logoprev hidden" alt="Logo">
+        <button class="ghost small hidden" id="logoDel" style="margin-top:6px">Retirer le logo</button>
+      </div>
+      <div>
+        <h3 style="margin-top:8px">Fournisseur</h3>
+        <label class="f" for="rFour">Nom</label><input id="rFour" style="width:100%">
+        <label class="f" for="rFourAdr">Adresse (facultatif)</label><textarea id="rFourAdr" rows="2"></textarea>
+        <label class="f" for="rMailF">Email(s) de Lecourtier</label><input id="rMailF" style="width:100%" placeholder="plusieurs : séparés par une virgule">
+        <label class="f" for="rMailC">Email(s) en copie (collègues commerciales)</label><input id="rMailC" style="width:100%" placeholder="collegue1@..., collegue2@...">
+        <label class="f" for="rSign">Signature</label><textarea id="rSign"></textarea>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px"><button id="saveReg">Enregistrer</button><span id="regMsg"></span></div>
+    <div class="card" style="margin-top:26px">
+      <h3>Sauvegarde</h3>
+      <p class="hint">Tout est gardé dans ce navigateur, sur ce PC. Fais une sauvegarde de temps en temps (liste, réglages et suivi), par exemple une fois par mois.</p>
+      <div class="row" style="margin-top:8px"><button class="ghost" id="backupBtn">Télécharger une sauvegarde</button>
+        <button class="ghost" id="restoreBtn">Restaurer une sauvegarde</button><input type="file" id="restoreIn" accept="application/json" class="hidden"></div>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+(() => {
+"use strict";
+/* ---------- utilitaires ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+const JOURS_L = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const d0 = iso => new Date(iso + "T12:00:00");
+const pad = n => String(n).padStart(2, "0");
+const isoOf = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const addDays = (iso, n) => { const d = d0(iso); d.setDate(d.getDate() + n); return isoOf(d); };
+const fmtShort = iso => { if (!iso) return ""; const d = d0(iso); return JOURS[d.getDay()] + " " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1); };
+const fmtLong = iso => { const d = d0(iso); return JOURS_L[d.getDay()] + " " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear(); };
+const fmtN = n => (Math.round(n * 100) / 100).toLocaleString("fr-FR");
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add("hidden"), 3000); }
+function dlBlob(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+function lev1(a, b) { // distance d'édition <= 1 ?
+  if (a === b) return true; if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, diff = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++diff > 1) return false;
+    if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+  }
+  return diff + (a.length - i) + (b.length - j) <= 1;
+}
+
+/* ---------- valeurs de départ ---------- */
+const DEFAULT_ARTICLES = [
+  ["Mange-debout", "mange debout"], ["Housse grise", "housse gris"], ["Housse noire", "housse noir"], ["Housse (couleur à préciser)", "housse"],
+  ["Top gris", "top gris"], ["Top noir", "top noir"], ["Top (couleur à préciser)", "top"],
+  ["Verre à apéritif", "verre aperitif"], ["Verre à vin", "verre vin"], ["Flûte à champagne", "flute"], ["Verre à bière", "verre biere"],
+  ["Couteau entremet", "couteau entremet"], ["Couteau de table", "couteau table"], ["Fourchette entremet", "fourchette entremet"], ["Fourchette de table", "fourchette table"],
+  ["Cuillère entremet", "cuiller entremet"], ["Cuillère à moka", "cuiller moka"], ["Cuillère à thé", "cuiller the"], ["Cuillère à glaçons", "cuiller glacon"],
+  ["Sous-tasse à café", "sous tasse cafe"], ["Sous-tasse à thé", "sous tasse the"], ["Tasse à café", "tasse cafe"], ["Tasse à thé", "tasse the"],
+  ["Grande corbeille en osier", "corbeille osier grand"], ["Corbeille à pain en osier", "corbeille pain"], ["Ménagère sel et poivre", "menagere / sel poivre"],
+  ["Seau à champagne", "seau champagne"], ["Plateau de service inox", "plateau inox"], ["Vasque inox", "vasque"], ["Chaise Trocadéro", "trocadero"],
+  ["Table de buffet", "table buffet"], ["Table ronde", "table ronde"]
+];
+const DEFAULT_EXCL = "bambou carton compostable fibre tisse ecologique biodegradable jetable";
+const defaultCatalogue = () => ({ articles: DEFAULT_ARTICLES.map(([nom, mots]) => ({ id: uid(), nom, mots })), exclusions: DEFAULT_EXCL, appris: {} });
+const DEFAULT_REG = { societe: "La Table de Cana", adresse: "Marseille", contact: "", emailMoi: "", logo: "", fournisseur: "LECOURTIER", fournAdr: "", emailsF: "", emailsC: "", signature: "" };
+
+/* ---------- stockage sur le PC ---------- */
+const LS = {
+  get(k) { try { const v = localStorage.getItem("lecourtier:" + k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v) { try { localStorage.setItem("lecourtier:" + k, JSON.stringify(v)); return true; } catch { toast("Impossible d'enregistrer sur ce PC (espace plein ?)."); return false; } }
+};
+const S = {
+  cat: LS.get("cat") || defaultCatalogue(),
+  reg: { ...DEFAULT_REG, ...(LS.get("reg") || {}) },
+  hist: LS.get("hist") || {},
+  orders: [], bon: null, savedBonId: null
+};
+const saveCat = () => LS.set("cat", S.cat);
+const saveReg = () => LS.set("reg", S.reg);
+const saveHist = () => LS.set("hist", S.hist);
+
+/* ---------- reconnaissance des articles ---------- */
+function classify(label) {
+  const n = norm(label);
+  const learned = S.cat.appris[n];
+  if (learned === "_ignore") return { statut: "autre", why: "retiré" };
+  if (learned && S.cat.articles.some(a => a.id === learned)) return { statut: "lec", articleId: learned };
+  if (n.includes("prevu sur place")) return { statut: "exclu", why: "prévu sur place" };
+  const words = n.split(" ").filter(Boolean);
+  const wordHit = (w, k) => k.length < 4 ? w === k : (w.startsWith(k) || (k.length >= 5 && w.length >= k.length && lev1(w.slice(0, k.length), k)));
+  const posOf = k => words.findIndex(w => wordHit(w, k));
+  const hasWord = k => posOf(k) >= 0;
+  const hit = norm(S.cat.exclusions).split(" ").filter(Boolean).find(hasWord);
+  if (hit) return { statut: "autre", why: "jetable" };
+  let best = null, bestScore = 0, bestPos = 1e9;
+  for (const a of S.cat.articles) {
+    for (const alt of String(a.mots || "").split("/")) {
+      const ks = norm(alt).split(" ").filter(Boolean);
+      if (!ks.length || !ks.every(hasWord)) continue;
+      const pos = Math.min(...ks.map(posOf));
+      if (ks.length > bestScore || (ks.length === bestScore && pos < bestPos)) { best = a; bestScore = ks.length; bestPos = pos; }
+    }
+  }
+  return best ? { statut: "lec", articleId: best.id } : { statut: "autre" };
+}
+const artName = id => (S.cat.articles.find(a => a.id === id) || {}).nom || "";
+function makeLine(q, l) {
+  const c = classify(l);
+  return { id: uid(), q: (typeof q === "number" && isFinite(q)) ? q : null, l, statut: c.statut, why: c.why || "", articleId: c.articleId || "", coche: c.statut === "lec" };
+}
+
+/* ---------- lecture du bon FTBE (règles fixes, sans internet pour le texte) ---------- */
+function parsePage(lines) {
+  const d = { numero: null, titre: "", client: "", date: "", heure: "", lignes: [] };
+  let inAddr = false, addrNext = false;
+  for (const raw of lines) {
+    const s = String(raw).replace(/\s+/g, " ").trim();
+    if (!s) continue;
+    const mNum = s.match(/\bN\s*[°ºo]\s*[^\d\s]{0,3}\s*(\d{8})\s*[-–—~]?\s*(.*)$/);
+    if (mNum && !d.numero) { d.numero = "C" + mNum[1]; d.titre = mNum[2].replace(/\s*[-–—]\s*$/, "").trim(); continue; }
+    const mPour = s.match(/Pour\s+(\d{1,2})\s*[:hH.]\s*(\d{2})\s+le\s+\S+\s+(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})/i);
+    if (mPour && !d.date) { d.heure = pad(mPour[1]) + ":" + mPour[2]; d.date = mPour[5] + "-" + pad(mPour[4]) + "-" + pad(mPour[3]); }
+    if (/^Livraison\s*:/i.test(s)) { inAddr = true; addrNext = true; const rest = s.replace(/^Livraison\s*:\s*/i, ""); if (rest && !/^Pour\s/i.test(rest)) { d.client = cleanClient(rest); addrNext = false; } continue; }
+    if (addrNext) { if (!/^Pour\s/i.test(s)) { d.client = cleanClient(s); addrNext = false; } continue; }
+    if (inAddr) { if (/Dress|FORMULE|convives|Mat[ée]riel et/i.test(s)) inAddr = false; else continue; }
+    const m = s.match(/^(\d{1,4}(?:[.,]\d{1,2})?)\s*[-–—~]+\s*(\S.*)$/);
+    if (m) {
+      const label = m[2].replace(/\s+[|_\\\/~—–-]+\s*$/, "").trim();
+      if (label.length >= 3 && /[a-zA-ZÀ-ÿ]{3}/.test(label)) d.lignes.push({ q: parseFloat(m[1].replace(",", ".")), l: label });
+    }
+  }
+  return d;
+}
+function cleanClient(s) { return s.split(/\s+Pour\s+\d|\s+\/(\s|$)/)[0].replace(/[\/\s]+$/, "").trim(); }
+
+async function textLines(page) {
+  const tc = await page.getTextContent();
+  const rows = new Map();
+  for (const it of tc.items) {
+    if (!it.str || !it.str.trim()) continue;
+    const y = Math.round(it.transform[5] / 2.5);
+    if (!rows.has(y)) rows.set(y, []);
+    rows.get(y).push(it);
+  }
+  const out = [];
+  for (const [, its] of [...rows.entries()].sort((a, b) => b[0] - a[0])) {
+    its.sort((a, b) => a.transform[4] - b.transform[4]);
+    let seg = [], lastEnd = null;
+    for (const it of its) {
+      const x = it.transform[4];
+      if (lastEnd !== null && x - lastEnd > 40) { out.push(seg.join(" ")); seg = []; }
+      seg.push(it.str); lastEnd = x + (it.width || 0);
+    }
+    if (seg.length) out.push(seg.join(" "));
+  }
+  return out;
+}
+
+let ocrWorker = null;
+async function getOcr(onProg) {
+  if (!window.Tesseract) throw new Error("ocr");
+  if (!ocrWorker) {
+    ocrWorker = await Tesseract.createWorker("fra", 1, { logger: m => { if (m.status === "recognizing text") onProg(m.progress); } });
+    await ocrWorker.setParameters({ tessedit_pageseg_mode: "4", preserve_interword_spaces: "1" });
+  }
+  return ocrWorker;
+}
+async function ocrLines(page, onProg) {
+  const v1 = page.getViewport({ scale: 1 });
+  const scale = Math.min(4, 2200 / Math.min(v1.width, v1.height));
+  const vp = page.getViewport({ scale });
+  const c = document.createElement("canvas");
+  c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  // Efface le surlignage : on garde le canal le plus clair, le jaune devient blanc, l'encre reste noire
+  const img = ctx.getImageData(0, 0, c.width, c.height), px = img.data;
+  for (let i = 0; i < px.length; i += 4) { const v = Math.max(px[i], px[i + 1], px[i + 2]) < 150 ? 0 : 255; px[i] = px[i + 1] = px[i + 2] = v; }
+  ctx.putImageData(img, 0, 0);
+  const w = await getOcr(onProg);
+  const { data } = await w.recognize(c);
+  const gap = c.width * 0.05, out = [];
+  const lines = data.lines && data.lines.length ? data.lines : null;
+  if (!lines) return String(data.text || "").split("\n");
+  for (const ln of lines) {
+    const ws = (ln.words || []).slice().sort((a, b) => a.bbox.x0 - b.bbox.x0);
+    if (!ws.length) { out.push(ln.text); continue; }
+    let seg = [ws[0].text];
+    for (let i = 1; i < ws.length; i++) {
+      if (ws[i].bbox.x0 - ws[i - 1].bbox.x1 > gap) { out.push(seg.join(" ")); seg = []; }
+      seg.push(ws[i].text);
+    }
+    out.push(seg.join(" "));
+  }
+  return out;
+}
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+function progress(html, frac, isErr) {
+  $("#progress").classList.remove("hidden");
+  $("#progTxt").innerHTML = isErr ? `<span class="err">${html}</span>` : html;
+  $("#progBar").style.width = frac == null ? "0" : Math.round(frac * 100) + "%";
+  $("#progBar").parentElement.classList.toggle("hidden", frac == null);
+}
+
+async function readPdf(file) {
+  if (!window.pdfjsLib) return progress("Le lecteur de PDF ne s'est pas chargé. Vérifie ta connexion internet, puis recharge la page (F5).", null, true);
+  let pdf;
+  try { pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise; }
+  catch { return progress("Ce fichier ne s'ouvre pas comme un PDF. Vérifie que c'est bien le bon FTBE.", null, true); }
+  const N = pdf.numPages, pages = [];
+  let scanned = 0;
+  for (let i = 1; i <= N; i++) {
+    const page = await pdf.getPage(i);
+    progress(`Lecture de la page ${i} sur ${N}…`, (i - 1) / N);
+    let lines = [];
+    try { lines = await textLines(page); } catch {}
+    let d = parsePage(lines);
+    if (lines.join("").replace(/\s/g, "").length < 200 || (!d.numero && !d.lignes.length)) {
+      scanned++;
+      try {
+        progress(`Page ${i} sur ${N} : c'est un scan, je la lis comme une photo… <span class="hint">(10 à 30 secondes par page${!ocrWorker ? ", un peu plus la première fois" : ""})</span>`, (i - 1) / N);
+        lines = await ocrLines(page, p => { $("#progBar").style.width = Math.round(((i - 1 + p) / N) * 100) + "%"; });
+        d = parsePage(lines);
+      } catch {
+        return progress("La lecture des scans a besoin d'internet la première fois. Vérifie ta connexion, puis redépose le PDF. Le mieux reste d'enregistrer le bon en PDF directement depuis FTBE.", null, true);
+      }
+    }
+    pages.push(d);
+  }
+  if (ocrWorker) { try { await ocrWorker.terminate(); } catch {} ocrWorker = null; }
+  mergePages(pages);
+  const nb = S.orders.length;
+  progress(nb ? `<span class="okmsg">${N} page(s) lue(s), ${nb} commande(s) trouvée(s).</span> ${scanned ? "Comme c'est un scan, vérifie bien les quantités. " : ""}Contrôle les lignes surlignées, puis choisis le jour d'enlèvement.`
+    : `Aucune commande trouvée dans ce fichier. Est-ce bien un bon de fabrication FTBE ?`, 1, !nb);
+}
+
+function mergePages(pages) {
+  let cur = null;
+  for (const p of pages) {
+    let o = p.numero ? S.orders.find(x => x.numero === p.numero) : cur;
+    if (!o) {
+      if (!p.numero && !p.lignes.length) continue;
+      o = { key: uid(), numero: p.numero || "", titre: p.titre || "", client: p.client || "", dateLiv: p.date || "", heureLiv: p.heure || "", dateEnl: "", inclus: true, lignes: [] };
+      S.orders.push(o);
+    }
+    if (!o.titre && p.titre) o.titre = p.titre;
+    if (!o.client && p.client) o.client = p.client;
+    if (!o.dateLiv && p.date) o.dateLiv = p.date;
+    if (!o.heureLiv && p.heure) o.heureLiv = p.heure;
+    for (const ln of p.lignes) o.lignes.push(makeLine(ln.q, ln.l));
+    cur = o;
+  }
+  for (const o of S.orders) if (!o.lignes.some(l => l.statut === "lec")) o.inclus = false;
+  renderOrders();
+}
+
+/* ---------- affichage des commandes ---------- */
+function artOptions(sel) {
+  const opts = [...S.cat.articles].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  return `<option value="">Choisir l'article…</option>` + opts.map(a => `<option value="${a.id}" ${a.id === sel ? "selected" : ""}>${esc(a.nom)}</option>`).join("") + `<option value="_new">+ Nouvel article…</option>`;
+}
+function renderOrders() {
+  const has = S.orders.length > 0;
+  $("#actionsBar").classList.toggle("hidden", !has);
+  $("#clearAll").classList.toggle("hidden", !has);
+  $("#orders").innerHTML = S.orders.map(o => {
+    const lec = o.lignes.filter(l => l.statut === "lec");
+    const aut = o.lignes.filter(l => l.statut !== "lec");
+    return `<section class="order ${o.inclus ? "" : "off"}" data-k="${o.key}">
+      <div class="head">
+        <div style="flex:1 1 320px">
+          <div class="num">N° <input data-f="numero" value="${esc(o.numero)}" style="width:130px" aria-label="Numéro de commande"></div>
+          <input class="titlein" data-f="titre" value="${esc(o.titre)}" placeholder="Nom exact du client / de l'événement" aria-label="Nom exact">
+          <div class="meta">Livraison : <input data-f="client" value="${esc(o.client)}" placeholder="Lieu" style="width:200px" aria-label="Lieu de livraison">
+            le <input type="date" data-f="dateLiv" value="${esc(o.dateLiv)}" aria-label="Date de livraison"> à <input type="time" data-f="heureLiv" value="${esc(o.heureLiv)}" aria-label="Heure de livraison"></div>
+        </div>
+        <label class="row"><input type="checkbox" data-f="inclus" ${o.inclus ? "checked" : ""}> Envoyer à ${esc(S.reg.fournisseur || "Lecourtier")}</label>
+      </div>
+      <div class="enl ${o.inclus && !o.dateEnl ? "missing" : ""}">
+        <b>Enlèvement</b>
+        <input type="date" data-f="dateEnl" value="${esc(o.dateEnl)}" aria-label="Date d'enlèvement">
+        ${o.dateLiv ? `<button class="ghost small" data-act="veille">La veille (${fmtShort(addDays(o.dateLiv, -1))})</button>
+        <button class="ghost small" data-act="jour">Le jour même (${fmtShort(o.dateLiv)})</button>` : ""}
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th style="width:34px"></th><th class="numcell">Qté</th><th>Article Lecourtier</th><th class="orig-col">Sur le bon FTBE</th><th></th></tr></thead>
+        <tbody>${lec.length ? lec.map(l => `<tr class="${l.coche ? "on" : "offl"}" data-l="${l.id}">
+          <td><input type="checkbox" data-lf="coche" ${l.coche ? "checked" : ""} aria-label="Commander"></td>
+          <td class="q"><input type="number" min="0" step="1" data-lf="q" value="${l.q ?? ""}" aria-label="Quantité"></td>
+          <td><span class="art"><select data-lf="articleId" aria-label="Article">${artOptions(l.articleId)}</select></span></td>
+          <td class="orig orig-col">${esc(l.l)}</td>
+          <td><button class="ghost small" data-act="notlec" title="Ne plus jamais proposer ce libellé">Pas Lecourtier</button></td>
+        </tr>`).join("") : `<tr><td colspan="5" class="hint">Aucun article Lecourtier reconnu sur cette commande.</td></tr>`}</tbody>
+      </table></div>
+      <button class="ghost small" data-act="addline" style="margin-top:8px">+ Ajouter un article</button>
+      ${aut.length ? `<details class="autres"><summary>Autres lignes du bon, non envoyées (${aut.length})</summary>
+        <div class="tablewrap"><table><tbody>${aut.map(l => `<tr data-l="${l.id}">
+          <td class="numcell">${l.q ?? ""}</td><td>${esc(l.l)}${l.why ? `<span class="tag">${esc(l.why)}</span>` : ""}</td>
+          <td style="text-align:right"><button class="ghost small" data-act="tolec">C'est Lecourtier</button></td></tr>`).join("")}</tbody></table></div>
+      </details>` : ""}
+    </section>`;
+  }).join("");
+}
+const findOrder = el => { const s = el.closest(".order"); return s && S.orders.find(o => o.key === s.dataset.k); };
+const findLine = (o, el) => { const r = el.closest("tr[data-l]"); return r && o.lignes.find(l => l.id === r.dataset.l); };
+function learn(label, articleId) { if (label && label !== "(ajout manuel)") { S.cat.appris[norm(label)] = articleId; saveCat(); } }
+function newArticleFlow(label) {
+  const nom = prompt("Nom du nouvel article Lecourtier :", label === "(ajout manuel)" ? "" : label.replace(/\(.*?\)/g, "").trim());
+  if (!nom || !nom.trim()) return "";
+  const mots = norm(nom).split(" ").filter(w => w.length > 2 && !["pour", "avec", "des", "les", "une"].includes(w)).join(" ");
+  const a = { id: uid(), nom: nom.trim(), mots };
+  S.cat.articles.push(a); saveCat(); renderCat();
+  return a.id;
+}
+
+$("#orders").addEventListener("input", e => {
+  const o = findOrder(e.target); if (!o) return;
+  const f = e.target.dataset.f, lf = e.target.dataset.lf;
+  if (f && !["checkbox", "date"].includes(e.target.type)) o[f] = e.target.value;
+  if (lf === "q") { const l = findLine(o, e.target); if (l) l.q = e.target.value === "" ? null : Number(e.target.value); }
+});
+$("#orders").addEventListener("change", e => {
+  const o = findOrder(e.target); if (!o) return;
+  const f = e.target.dataset.f, lf = e.target.dataset.lf;
+  if (f === "inclus") { o.inclus = e.target.checked; renderOrders(); }
+  else if (f === "dateEnl" || f === "dateLiv") { o[f] = e.target.value; renderOrders(); }
+  else if (lf === "coche") { const l = findLine(o, e.target); l.coche = e.target.checked; e.target.closest("tr").className = l.coche ? "on" : "offl"; }
+  else if (lf === "articleId") {
+    const l = findLine(o, e.target); let v = e.target.value;
+    if (v === "_new") v = newArticleFlow(l.l);
+    l.articleId = v; if (v) learn(l.l, v);
+    renderOrders();
+  }
+});
+$("#orders").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const o = findOrder(b), act = b.dataset.act;
+  if (act === "veille") o.dateEnl = addDays(o.dateLiv, -1);
+  if (act === "jour") o.dateEnl = o.dateLiv;
+  if (act === "notlec") { const l = findLine(o, b); l.statut = "autre"; l.why = "retiré"; l.coche = false; learn(l.l, "_ignore"); toast("C'est noté : ce libellé ne sera plus proposé."); }
+  if (act === "tolec") { const l = findLine(o, b); l.statut = "lec"; l.why = ""; l.coche = true; o.inclus = true; toast("Choisis l'article dans la liste : le logiciel s'en souviendra."); }
+  if (act === "addline") { o.lignes.push({ id: uid(), q: null, l: "(ajout manuel)", statut: "lec", articleId: "", coche: true }); o.inclus = true; }
+  renderOrders();
+});
+$("#addManual").onclick = () => {
+  S.orders.push({ key: uid(), numero: "", titre: "", client: "", dateLiv: "", heureLiv: "", dateEnl: "", inclus: true, lignes: [{ id: uid(), q: null, l: "(ajout manuel)", statut: "lec", articleId: "", coche: true }] });
+  renderOrders();
+};
+$("#clearAll").onclick = () => { if (!confirm("Effacer les commandes affichées ? (le suivi n'est pas touché)")) return; S.orders = []; S.bon = null; $("#preview").innerHTML = ""; $("#checkErr").innerHTML = ""; $("#progress").classList.add("hidden"); renderOrders(); };
+
+const drop = $("#drop"), fileIn = $("#file");
+drop.onclick = () => fileIn.click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); const f = e.dataTransfer.files[0]; if (f) startRead(f); };
+fileIn.onchange = () => { const f = fileIn.files[0]; fileIn.value = ""; if (f) startRead(f); };
+let reading = false;
+async function startRead(f) {
+  if (reading) return; reading = true; drop.style.pointerEvents = "none";
+  S.bon = null; $("#preview").innerHTML = "";
+  try { await readPdf(f); } catch { progress("Un problème est survenu pendant la lecture. Recharge la page (F5) et réessaie.", null, true); }
+  finally { reading = false; drop.style.pointerEvents = ""; }
+}
+
+/* ---------- bon de commande ---------- */
+const livTxt = c => [c.client, c.dateLiv ? fmtShort(c.dateLiv) + (c.heureLiv ? " à " + c.heureLiv : "") : ""].filter(Boolean).join(", ");
+const clientName = c => (c.numero ? c.numero + " - " : "") + c.titre;
+function buildBon() {
+  const errs = [], blocks = [];
+  for (const o of S.orders) {
+    if (!o.inclus) continue;
+    const lignes = o.lignes.filter(l => l.statut === "lec" && l.coche);
+    if (!lignes.length) continue;
+    const name = clientName(o) || "Une commande";
+    if (!o.dateEnl) errs.push(`${name} : choisis le jour d'enlèvement.`);
+    if (!o.titre) errs.push(`${o.numero || "Une commande"} : indique le nom du client.`);
+    const agg = new Map();
+    for (const l of lignes) {
+      if (!l.articleId) { errs.push(`${name} : une ligne n'a pas d'article choisi.`); continue; }
+      if (!(l.q > 0)) { errs.push(`${name} : quantité manquante pour « ${artName(l.articleId)} ».`); continue; }
+      agg.set(l.articleId, (agg.get(l.articleId) || 0) + l.q);
+    }
+    blocks.push({ numero: o.numero, titre: o.titre, client: o.client, dateLiv: o.dateLiv, heureLiv: o.heureLiv, dateEnl: o.dateEnl, lignes: [...agg.entries()].map(([id, q]) => ({ nom: artName(id), q })) });
+  }
+  if (!blocks.length && !errs.length) errs.push("Aucune ligne cochée à envoyer.");
+  if (errs.length) return { errs };
+  blocks.sort((a, b) => a.dateEnl.localeCompare(b.dateEnl) || (a.dateLiv || "").localeCompare(b.dateLiv || "") || (a.heureLiv || "").localeCompare(b.heureLiv || ""));
+  const days = [];
+  for (const b of blocks) { let d = days.find(x => x.date === b.dateEnl); if (!d) days.push(d = { date: b.dateEnl, clients: [] }); d.clients.push(b); }
+  const sum = list => { const m = new Map(); for (const l of list) m.set(l.nom, (m.get(l.nom) || 0) + l.q); return [...m.entries()].map(([nom, q]) => ({ nom, q })).sort((a, b) => a.nom.localeCompare(b.nom, "fr")); };
+  for (const d of days) d.total = sum(d.clients.flatMap(c => c.lignes));
+  const now = new Date();
+  return { id: "LC-" + isoOf(now).replace(/-/g, "") + "-" + pad(now.getHours()) + pad(now.getMinutes()), edite: now.toLocaleDateString("fr-FR"), days, total: sum(blocks.flatMap(c => c.lignes)), note: $("#note").value.trim() };
+}
+function bonText(b) {
+  const L = [`BON DE COMMANDE - LOCATION DE MATÉRIEL`, `${S.reg.societe} -> ${S.reg.fournisseur}`, `Bon n° ${b.id} du ${b.edite}`, ""];
+  for (const d of b.days) {
+    L.push(`ENLÈVEMENT ${fmtLong(d.date).toUpperCase()}`);
+    for (const c of d.clients) {
+      L.push(`  ${clientName(c)}`);
+      if (livTxt(c)) L.push(`  (livraison : ${livTxt(c)})`);
+      for (const l of c.lignes) L.push(`    - ${fmtN(l.q)} x ${l.nom}`);
+    }
+    L.push("");
+  }
+  L.push("RÉCAPITULATIF"); for (const t of b.total) L.push(`  ${fmtN(t.q)} x ${t.nom}`);
+  if (b.note) L.push("", "Note : " + b.note);
+  return L.join("\n");
+}
+function renderPreview() {
+  const b = S.bon; if (!b) { $("#preview").innerHTML = ""; return; }
+  const list = arr => `<ul>${arr.map(l => `<li><b>${fmtN(l.q)}</b> ${esc(l.nom)}</li>`).join("")}</ul>`;
+  const mailOk = !!S.reg.emailsF.trim();
+  $("#preview").innerHTML = `<div class="sheetprev">
+    <h2>Bon de commande ${esc(S.reg.fournisseur)}</h2>
+    <p class="hint">${esc(S.reg.societe)} - Bon n° ${esc(b.id)} du ${esc(b.edite)}</p>
+    ${b.days.map(d => `<div class="day"><h3>Enlèvement ${esc(fmtLong(d.date))}</h3>
+      ${d.clients.map(c => `<div class="client"><strong>${esc(clientName(c))}</strong>${livTxt(c) ? `<div class="hint">Livraison : ${esc(livTxt(c))}</div>` : ""}${list(c.lignes)}</div>`).join("")}
+      ${d.clients.length > 1 ? `<div class="tot"><strong>Total du jour</strong>${list(d.total)}</div>` : ""}</div>`).join("")}
+    <div class="day"><h3>Récapitulatif</h3>${list(b.total)}</div>
+    ${b.note ? `<p style="margin-top:14px"><strong>Note :</strong> ${esc(b.note)}</p>` : ""}
+  </div>
+  <div class="row">
+    <button id="sendBtn" class="big">Enregistrer le PDF et préparer l'email</button>
+    <button class="ghost" id="pdfBtn">PDF seulement</button>
+    <button class="ghost" id="copyBtn">Copier le texte</button>
+  </div>
+  <p class="hint" id="saveState">${S.savedBonId === b.id ? '<span class="okmsg">Enregistré dans le suivi.</span>' : ""}</p>
+  ${mailOk ? `<p class="hint">Le PDF arrive dans ton dossier Téléchargements, puis Outlook s'ouvre avec ${esc(S.reg.fournisseur)} et tes collègues déjà remplis. Glisse le PDF dans l'email et clique sur Envoyer.</p>`
+    : `<p class="err">Ajoute l'email de ${esc(S.reg.fournisseur)} dans l'onglet Réglages pour préparer l'email.</p>`}`;
+  $("#sendBtn").onclick = () => { makePdf(); openMail(); };
+  $("#pdfBtn").onclick = makePdf;
+  $("#copyBtn").onclick = async () => { try { await navigator.clipboard.writeText(bonText(b)); toast("Texte copié."); } catch { toast("Copie impossible ici."); } };
+  $("#preview").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+$("#genBtn").onclick = () => {
+  const r = buildBon();
+  if (r.errs) { $("#checkErr").innerHTML = "<p>Avant de préparer le bon :</p><ul>" + [...new Set(r.errs)].map(x => `<li>${esc(x)}</li>`).join("") + "</ul>"; S.bon = null; renderPreview(); renderOrders(); return; }
+  $("#checkErr").innerHTML = ""; S.bon = r; renderPreview();
+};
+function saveToHist() {
+  const b = S.bon; if (!b || S.savedBonId === b.id) return;
+  for (const d of b.days) for (const c of d.clients) {
+    const id = (c.numero || "manuel-" + uid()) + "_" + c.dateEnl;
+    S.hist[id] = { id, numero: c.numero || "", titre: c.titre, client: c.client || "", dateLiv: c.dateLiv || "", heureLiv: c.heureLiv || "", dateEnl: c.dateEnl, lignes: c.lignes, bonId: b.id, savedAt: new Date().toISOString() };
+  }
+  saveHist(); S.savedBonId = b.id;
+  const s = $("#saveState"); if (s) s.innerHTML = '<span class="okmsg">Enregistré dans le suivi.</span>';
+}
+
+function makePdf() {
+  const b = S.bon; if (!b) return;
+  if (!window.jspdf) return toast("Le module PDF ne s'est pas chargé. Vérifie internet et recharge (F5).");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const W = 210, M = 15, R = S.reg;
+  const clean = s => String(s || "").replace(/[–—]/g, "-").replace(/[’]/g, "'").replace(/[“”]/g, '"');
+  let y = 16, xText = M;
+  if (R.logo) { try { const p = doc.getImageProperties(R.logo); const h = 18, w = Math.min(45, h * p.width / p.height); doc.addImage(R.logo, M, y - 4, w, h); xText = M + w + 5; } catch {} }
+  doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(35, 39, 43);
+  doc.text(clean(R.societe), xText, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(90, 98, 105);
+  const me = [...String(R.adresse || "").split("\n"), R.contact, R.emailMoi].filter(Boolean).map(clean);
+  doc.text(me, xText, y + 5);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(35, 39, 43);
+  doc.text("BON DE COMMANDE", W - M, y, { align: "right" });
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.text("Location de matériel", W - M, y + 5.5, { align: "right" });
+  doc.text("N° " + b.id, W - M, y + 11, { align: "right" });
+  doc.text("Date : " + b.edite, W - M, y + 16, { align: "right" });
+  y = Math.max(y + 22, y + 5 + me.length * 4.2 + 4);
+  doc.setDrawColor(35, 39, 43); doc.setLineWidth(0.6); doc.line(M, y, W - M, y); y += 7;
+  doc.setFontSize(9); doc.setTextColor(90, 98, 105); doc.text("FOURNISSEUR", M, y);
+  doc.setFontSize(11); doc.setTextColor(35, 39, 43); doc.setFont("helvetica", "bold"); doc.text(clean(R.fournisseur), M, y + 5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+  const four = [...String(R.fournAdr || "").split("\n")].filter(Boolean).map(clean);
+  if (four.length) doc.text(four, M, y + 9.5);
+  const days = b.days.map(d => fmtShort(d.date)).join(", ");
+  doc.setFontSize(9); doc.setTextColor(90, 98, 105); doc.text("ENLÈVEMENTS", W / 2 + 10, y);
+  doc.setFontSize(11); doc.setTextColor(35, 39, 43); doc.text(doc.splitTextToSize(days, W / 2 - M - 10), W / 2 + 10, y + 5);
+  y += 12 + four.length * 4;
+  for (const d of b.days) {
+    const body = [];
+    for (const c of d.clients) {
+      body.push([{ content: clean(clientName(c)) + (livTxt(c) ? "\nLivraison : " + clean(livTxt(c)) : ""), colSpan: 2, styles: { fontStyle: "bold", fillColor: [243, 244, 240], textColor: [35, 39, 43] } }]);
+      for (const l of c.lignes) body.push([clean(l.nom), { content: fmtN(l.q), styles: { halign: "right", fontStyle: "bold" } }]);
+    }
+    if (d.clients.length > 1) {
+      body.push([{ content: "Total du jour", colSpan: 2, styles: { fontStyle: "bold", textColor: [90, 98, 105] } }]);
+      for (const t of d.total) body.push([{ content: clean(t.nom), styles: { fontStyle: "italic" } }, { content: fmtN(t.q), styles: { halign: "right", fontStyle: "bold" } }]);
+    }
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M }, theme: "grid",
+      head: [[{ content: "Enlèvement " + fmtLong(d.date), colSpan: 2, styles: { fillColor: [242, 229, 48], textColor: [35, 39, 43], fontSize: 11 } }], ["Article", { content: "Quantité", styles: { halign: "right" } }]],
+      headStyles: { fillColor: [35, 39, 43], textColor: 255, fontStyle: "bold" },
+      body, styles: { fontSize: 10, cellPadding: 2.3, lineColor: [216, 220, 214], lineWidth: 0.2, textColor: [35, 39, 43] },
+      columnStyles: { 1: { cellWidth: 30 } }
+    });
+    y = doc.lastAutoTable.finalY + 7;
+  }
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M }, theme: "grid",
+    head: [[{ content: "Récapitulatif de la commande", colSpan: 2 }], ["Article", { content: "Quantité totale", styles: { halign: "right" } }]],
+    headStyles: { fillColor: [35, 39, 43], textColor: 255 },
+    body: b.total.map(t => [clean(t.nom), { content: fmtN(t.q), styles: { halign: "right", fontStyle: "bold" } }]),
+    styles: { fontSize: 10, cellPadding: 2.3, lineColor: [216, 220, 214], lineWidth: 0.2, textColor: [35, 39, 43] }, columnStyles: { 1: { cellWidth: 34 } }
+  });
+  y = doc.lastAutoTable.finalY + 9;
+  const tail = [];
+  if (b.note) tail.push("Note : " + clean(b.note), "");
+  tail.push("Merci de nous confirmer la disponibilité du matériel.");
+  if (R.signature) tail.push("", ...clean(R.signature).split("\n"));
+  const tailLines = doc.splitTextToSize(tail.join("\n"), W - 2 * M);
+  if (y + tailLines.length * 4.6 > 280) { doc.addPage(); y = 20; }
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(tailLines, M, y);
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(120, 128, 135); doc.text(clean(`${R.societe} - Bon n° ${b.id}`), M, 290); doc.text(`Page ${i}/${n}`, W - M, 290, { align: "right" }); }
+  const name = `Bon-${clean(R.fournisseur).replace(/[^\w-]+/g, "-")}-${b.days.map(d => d.date.slice(8, 10) + "-" + d.date.slice(5, 7)).join("_")}-${b.id.slice(-4)}.pdf`;
+  doc.save(name);
+  saveToHist();
+  toast("PDF enregistré dans Téléchargements.");
+}
+function openMail() {
+  const b = S.bon; if (!b) return;
+  const split = s => String(s || "").split(/[,;\s]+/).filter(Boolean).join(",");
+  const to = split(S.reg.emailsF), cc = split(S.reg.emailsC);
+  if (!to) { toast("Ajoute l'email de Lecourtier dans Réglages."); return; }
+  const dates = b.days.map(d => fmtShort(d.date));
+  const subject = `Commande location ${S.reg.societe} - enlèvement${dates.length > 1 ? "s" : ""} ${dates.join(", ")}`;
+  const clients = b.days.flatMap(d => d.clients.map(c => `- ${fmtShort(d.date)} : ${clientName(c)}`));
+  let body = `Bonjour,\n\nVeuillez trouver ci-joint notre bon de commande n° ${b.id}.\n\nEnlèvements prévus :\n${clients.join("\n")}\n\nMerci de nous confirmer la disponibilité du matériel.\n\nCordialement,\n${S.reg.signature || S.reg.contact || ""}`;
+  const q = encodeURIComponent;
+  let href = `mailto:${to}?${cc ? "cc=" + q(cc) + "&" : ""}subject=${q(subject)}&body=${q(body)}`;
+  if (href.length > 1900) { body = `Bonjour,\n\nVeuillez trouver ci-joint notre bon de commande n° ${b.id} (enlèvements : ${dates.join(", ")}).\n\nMerci de nous confirmer la disponibilité du matériel.\n\nCordialement,\n${S.reg.signature || ""}`; href = `mailto:${to}?${cc ? "cc=" + q(cc) + "&" : ""}subject=${q(subject)}&body=${q(body)}`; }
+  setTimeout(() => { window.location.href = href; }, 600);
+  saveToHist();
+}
+
+/* ---------- suivi ---------- */
+function histList() { return Object.values(S.hist); }
+function renderSuivi() {
+  const all = histList();
+  const years = [...new Set(all.map(h => (h.dateEnl || "").slice(0, 4)).filter(Boolean))].sort().reverse();
+  const cur = String(new Date().getFullYear()); if (!years.includes(cur)) years.unshift(cur);
+  const sel = $("#yearSel"); const keep = sel.value || cur;
+  sel.innerHTML = years.map(y => `<option ${y === keep ? "selected" : ""}>${y}</option>`).join("");
+  const year = sel.value, rows = all.filter(h => (h.dateEnl || "").startsWith(year)), box = $("#suivi");
+  if (!rows.length) { box.innerHTML = `<div class="card"><p>Aucun enlèvement enregistré en ${year}.</p><p class="hint">Chaque bon enregistré en PDF ou envoyé par email s'ajoute ici tout seul.</p></div>`; return; }
+  const byArt = new Map(), byClient = new Map(), byMonth = Array(12).fill(0); let totalQ = 0;
+  for (const h of rows) {
+    byMonth[Number(h.dateEnl.slice(5, 7)) - 1]++;
+    const cq = (h.lignes || []).reduce((s, l) => s + (Number(l.q) || 0), 0);
+    const k = h.titre || h.numero; const c = byClient.get(k) || { n: 0, q: 0 }; c.n++; c.q += cq; byClient.set(k, c);
+    for (const l of (h.lignes || [])) { byArt.set(l.nom, (byArt.get(l.nom) || 0) + (Number(l.q) || 0)); totalQ += Number(l.q) || 0; }
+  }
+  const arts = [...byArt.entries()].sort((a, b) => b[1] - a[1]), maxA = arts[0] ? arts[0][1] : 1;
+  const clients = [...byClient.entries()].sort((a, b) => b[1].n - a[1].n), maxM = Math.max(1, ...byMonth);
+  box.innerHTML = `
+    <div class="card summary">En ${year} : <b>${rows.length}</b> enlèvement(s), <b>${byClient.size}</b> client(s), <b>${fmtN(totalQ)}</b> articles loués chez ${esc(S.reg.fournisseur)}.</div>
+    <div class="card"><h3>Enlèvements par mois</h3>
+      <div class="months">${byMonth.map((n, i) => `<div title="${n} enlèvement(s)"><span>${n || ""}</span><span class="b" style="height:${(n / maxM) * 95}px"></span>${MOIS[i]}</div>`).join("")}</div></div>
+    <div class="card"><h3>Quantités louées par article</h3><div class="tablewrap"><table><tbody>
+      ${arts.map(([nom, q]) => `<tr><td>${esc(nom)}</td><td class="numcell"><b>${fmtN(q)}</b></td><td style="width:45%"><div class="bar" style="width:${(q / maxA) * 100}%"></div></td></tr>`).join("")}
+    </tbody></table></div></div>
+    <div class="card"><h3>Par client</h3><div class="tablewrap"><table><thead><tr><th>Client</th><th class="numcell">Enlèvements</th><th class="numcell">Articles</th></tr></thead><tbody>
+      ${clients.map(([k, c]) => `<tr><td>${esc(k)}</td><td class="numcell">${c.n}</td><td class="numcell">${fmtN(c.q)}</td></tr>`).join("")}
+    </tbody></table></div></div>
+    <div class="card"><h3>Retrouver une commande</h3>
+      <input id="histSearch" style="width:100%" placeholder="Nom du client ou numéro (ex. ORANGE, C26082502)">
+      <div id="histList" class="tablewrap" style="margin-top:8px"></div></div>`;
+  const draw = () => {
+    const q = norm($("#histSearch").value);
+    const list = rows.filter(h => !q || norm(h.titre + " " + h.numero + " " + h.client).includes(q)).sort((a, b) => b.dateEnl.localeCompare(a.dateEnl));
+    $("#histList").innerHTML = list.length ? `<table><tbody>${list.map(h => `<tr><td style="white-space:nowrap">${fmtShort(h.dateEnl)}</td>
+      <td><strong>${esc(clientName(h))}</strong><div class="hint">${(h.lignes || []).map(l => fmtN(l.q) + " " + esc(l.nom)).join(", ")}</div></td>
+      <td style="text-align:right"><button class="ghost small" data-del="${esc(h.id)}">Supprimer</button></td></tr>`).join("")}</tbody></table>` : `<p class="hint">Aucune commande trouvée.</p>`;
+  };
+  $("#histSearch").oninput = draw; draw();
+  $("#histList").onclick = e => { const b = e.target.closest("[data-del]"); if (!b || !confirm("Supprimer cet enlèvement du suivi ?")) return; delete S.hist[b.dataset.del]; saveHist(); renderSuivi(); };
+}
+$("#yearSel").onchange = renderSuivi;
+$("#csvBtn").onclick = () => {
+  const year = $("#yearSel").value;
+  const rows = histList().filter(h => (h.dateEnl || "").startsWith(year)).sort((a, b) => a.dateEnl.localeCompare(b.dateEnl));
+  if (!rows.length) return toast("Rien à exporter pour " + year + ".");
+  const c = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["Date enlèvement", "N° commande", "Client", "Lieu de livraison", "Date livraison", "Article", "Quantité"].map(c).join(";")];
+  for (const h of rows) for (const l of (h.lignes || [])) lines.push([h.dateEnl, h.numero, h.titre, h.client, h.dateLiv, l.nom, String(l.q).replace(".", ",")].map(c).join(";"));
+  dlBlob(new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }), `Suivi-Lecourtier-${year}.csv`);
+};
+
+/* ---------- liste Lecourtier ---------- */
+function renderCat() {
+  $("#catTable").innerHTML = `<thead><tr><th>Article</th><th>Mots à reconnaître</th><th></th></tr></thead><tbody>` +
+    S.cat.articles.map(a => `<tr data-a="${a.id}"><td><input data-c="nom" value="${esc(a.nom)}" style="width:100%"></td>
+      <td><input data-c="mots" value="${esc(a.mots)}" style="width:100%"></td>
+      <td><button class="ghost small" data-c="del">Supprimer</button></td></tr>`).join("") + `</tbody>`;
+  $("#exclIn").value = S.cat.exclusions;
+  const ap = Object.entries(S.cat.appris);
+  $("#learned").innerHTML = ap.length ? `<div class="tablewrap"><table><tbody>${ap.map(([k, v]) => `<tr><td>« ${esc(k)} »</td><td>${v === "_ignore" ? "jamais Lecourtier" : "→ " + esc(artName(v) || "article supprimé")}</td>
+    <td style="text-align:right"><button class="ghost small" data-forget="${esc(k)}">Oublier</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="hint">Rien pour l'instant.</p>`;
+}
+$("#catTable").addEventListener("input", e => { const r = e.target.closest("tr[data-a]"); const a = r && S.cat.articles.find(x => x.id === r.dataset.a); if (a && e.target.dataset.c) a[e.target.dataset.c] = e.target.value; });
+$("#catTable").addEventListener("click", e => { const b = e.target.closest('[data-c="del"]'); if (!b) return; const id = b.closest("tr").dataset.a; S.cat.articles = S.cat.articles.filter(a => a.id !== id); renderCat(); });
+$("#addArt").onclick = () => { S.cat.articles.push({ id: uid(), nom: "", mots: "" }); renderCat(); const ins = $("#catTable").querySelectorAll("input[data-c='nom']"); ins[ins.length - 1].focus(); };
+$("#saveCat").onclick = () => { S.cat.exclusions = $("#exclIn").value; S.cat.articles = S.cat.articles.filter(a => a.nom.trim()); saveCat(); renderCat(); $("#catMsg").innerHTML = '<span class="okmsg">Liste enregistrée.</span>'; setTimeout(() => $("#catMsg").innerHTML = "", 2500); };
+$("#learned").onclick = e => { const b = e.target.closest("[data-forget]"); if (!b) return; delete S.cat.appris[b.dataset.forget]; saveCat(); renderCat(); };
+$("#testIn").oninput = () => {
+  const v = $("#testIn").value.replace(/^\s*[\d.,]+\s*-\s*/, "");
+  if (!v.trim()) { $("#testOut").textContent = ""; return; }
+  S.cat.exclusions = $("#exclIn").value;
+  const c = classify(v);
+  $("#testOut").innerHTML = c.statut === "lec" ? `<span class="okmsg">Lecourtier : ${esc(artName(c.articleId))}</span>` : c.statut === "exclu" ? `Non : ${esc(c.why)}` : `Non reconnu${c.why ? " (" + esc(c.why) + ")" : ""}`;
+};
+
+/* ---------- réglages ---------- */
+const REG_FIELDS = { rSoc: "societe", rAdr: "adresse", rContact: "contact", rMailMe: "emailMoi", rFour: "fournisseur", rFourAdr: "fournAdr", rMailF: "emailsF", rMailC: "emailsC", rSign: "signature" };
+function renderReg() {
+  for (const [id, k] of Object.entries(REG_FIELDS)) $("#" + id).value = S.reg[k] || "";
+  $("#logoPrev").classList.toggle("hidden", !S.reg.logo); $("#logoDel").classList.toggle("hidden", !S.reg.logo);
+  if (S.reg.logo) $("#logoPrev").src = S.reg.logo;
+}
+$("#saveReg").onclick = () => {
+  for (const [id, k] of Object.entries(REG_FIELDS)) S.reg[k] = $("#" + id).value.trim();
+  if (!S.reg.fournisseur) S.reg.fournisseur = "LECOURTIER";
+  if (!S.reg.societe) S.reg.societe = "La Table de Cana";
+  saveReg(); $("#regMsg").innerHTML = '<span class="okmsg">Enregistré.</span>'; setTimeout(() => $("#regMsg").innerHTML = "", 2500); renderOrders();
+};
+$("#rLogo").onchange = () => {
+  const f = $("#rLogo").files[0]; if (!f) return;
+  const img = new Image(), rd = new FileReader();
+  rd.onload = () => { img.onload = () => { const c = document.createElement("canvas"), k = Math.min(1, 500 / img.width); c.width = img.width * k; c.height = img.height * k; const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height); S.reg.logo = c.toDataURL("image/jpeg", 0.9); saveReg(); renderReg(); }; img.src = rd.result; };
+  rd.readAsDataURL(f);
+};
+$("#logoDel").onclick = () => { S.reg.logo = ""; saveReg(); renderReg(); };
+$("#backupBtn").onclick = () => dlBlob(new Blob([JSON.stringify({ app: "commandes-lecourtier", date: new Date().toISOString(), cat: S.cat, reg: S.reg, hist: S.hist }, null, 1)], { type: "application/json" }), `Sauvegarde-Lecourtier-${isoOf(new Date())}.json`);
+$("#restoreBtn").onclick = () => $("#restoreIn").click();
+$("#restoreIn").onchange = async () => {
+  const f = $("#restoreIn").files[0]; $("#restoreIn").value = ""; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.app !== "commandes-lecourtier") throw 0;
+    if (!confirm("Remplacer la liste, les réglages et le suivi par cette sauvegarde ?")) return;
+    S.cat = d.cat; S.reg = { ...DEFAULT_REG, ...d.reg }; S.hist = d.hist || {};
+    saveCat(); saveReg(); saveHist(); renderCat(); renderReg(); toast("Sauvegarde restaurée.");
+  } catch { toast("Ce fichier n'est pas une sauvegarde de ce logiciel."); }
+};
+
+/* ---------- onglets ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+  for (const t of ["nouvelle", "suivi", "liste", "reglages"]) $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab);
+  if (b.dataset.tab === "suivi") renderSuivi();
+  if (b.dataset.tab === "liste") renderCat();
+  if (b.dataset.tab === "reglages") renderReg();
+});
+if (!LS.get("cat")) saveCat();
+renderCat(); renderReg(); renderOrders();
+})();
+</script>
+</body>
+</html>
