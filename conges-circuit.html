@@ -147,6 +147,7 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
         <button class="btn ok" id="btnValider">Valider &amp; signer</button>
         <button class="btn no" id="btnRefuser">Refuser</button>
         <button class="btn sec" id="btnPdf">Télécharger le PDF</button>
+        <button class="btn primary" id="btnDir">PDF + Email direction</button>
         <button class="btn ghost" id="btnRetour">Retour</button>
       </div>
       <div id="detailMsg"></div>
@@ -163,6 +164,7 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
   var LOGO=window.__LOGO__||'';
   var SB_URL='https://smpqgcinndgwxlmdvzbr.supabase.co';
   var SB_KEY='sb_publishable_cEh1OTxSX9nYi118KyR-1g_UYg23Oni';
+  var DIR_EMAIL='tomlouis.teboul@latabledecana-marseille.com';
   var RESPS=[
     {name:'Direction', code:'1290'},
     {name:'Responsable Insertion', code:'3471'},
@@ -226,6 +228,7 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
     $('btnValider').addEventListener('click', function(){ decide('Validée'); });
     $('btnRefuser').addEventListener('click', function(){ decide('Refusée'); });
     $('btnPdf').addEventListener('click', function(){ if(curDemande) genPDF(curDemande); });
+    $('btnDir').addEventListener('click', function(){ if(curDemande){ genPDF(curDemande); openDirMail(curDemande); } });
     $('r_code').addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
     document.addEventListener('input', function(e){ if(e.target && (e.target.classList.contains('du')||e.target.classList.contains('au')||e.target.classList.contains('nb'))) salTotals(); });
   }
@@ -368,8 +371,19 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
       var d=(res.data&&res.data[0])?res.data[0]:Object.assign({},curDemande,upd);
       curDemande=d;
       msg('detailMsg', statut==='Validée'?'✅ Demande validée. Vous pouvez télécharger le PDF.':'Demande refusée.', statut==='Validée');
-      if(statut==='Validée') genPDF(d);
+      if(statut==='Validée'){ genPDF(d); openDirMail(d); }
     }).catch(function(e){ btn.textContent=old; btn.disabled=false; msg('detailMsg','Erreur : '+(e&&e.message?e.message:e),false); });
+  }
+
+  function openDirMail(d){
+    var s=sumRows(d.lignes||[]);
+    var sum=[]; if(s.cp)sum.push('CP '+fmtn(s.cp)+' j'); if(s.rtt)sum.push('RTT '+fmtn(s.rtt)+' j'); if(s.rec)sum.push('Récup '+fmtn(s.rec)+' h');
+    var who=((d.salarie_nom||'')+' '+(d.salarie_prenom||'')).trim();
+    var fn='Demande_conges_'+(((d.salarie_nom||'')+'_'+(d.salarie_prenom||'')).replace(/[^a-zA-Z0-9_-]/g,'_')||'salarie')+'.pdf';
+    var subj='Congés validés — '+who;
+    var body='Bonjour,\n\nDemande de congés validée.\n\nSalarié : '+who+'\nService : '+(d.service||'-')+'\n'+(sum.length?('Détail : '+sum.join(' · ')+'\n'):'')+'Validé par : '+(d.valide_par||'')+(d.valide_le?(' le '+fmtDate(String(d.valide_le).slice(0,10))):'')+'\n\nPièce jointe à ajouter : '+fn+'\n\nCordialement,\n'+(d.valide_par||'');
+    var href='mailto:'+encodeURIComponent(DIR_EMAIL)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+    setTimeout(function(){ try{ window.location.href=href; }catch(e){} }, 1000);
   }
 
   /* ---------- PDF ---------- */
