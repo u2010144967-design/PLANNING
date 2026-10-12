@@ -179,6 +179,8 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
   function val(id){var e=$(id);return e?String(e.value||'').trim():'';}
   function fmtn(n){return n?String(Math.round(n*100)/100).replace('.',','):'0';}
   function fmtDate(iso){if(!iso)return '';var p=String(iso).split('-');if(p.length!==3)return iso;return p[2]+'/'+p[1]+'/'+p[0];}
+  var JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  function fmtDateJ(iso){if(!iso)return '';var p=String(iso).split('-');if(p.length!==3)return iso;var d=new Date(+p[0],(+p[1])-1,+p[2]);var j=isNaN(d.getTime())?'':JOURS[d.getDay()];return (j?j+' ':'')+p[2]+'/'+p[1]+'/'+p[0];}
   function pad2(n){return(n<10?'0':'')+n;}
   function todayISO(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
   function parseLocal(s){var p=String(s).split('-');return new Date(+p[0],(+p[1])-1,+p[2]);}
@@ -342,10 +344,10 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
     var lignes=(d.lignes||[]).map(function(r){
       var u=r.type==='Récupération'?' h':' j';
       var mom=r.type==='Récupération'?((r.mat&&r.apm)?' (journée)':(r.mat?' (matin)':(r.apm?' (après-midi)':''))):'';
-      return '• '+r.type+mom+' : '+fmtDate(r.du)+' → '+fmtDate(r.au)+' — '+(r.nb||'')+u;
+      return '• '+r.type+mom+' : '+fmtDateJ(r.du)+' → '+fmtDateJ(r.au)+' — '+(r.nb||'')+u;
     }).join('<br>');
     $('detailInfo').innerHTML='<div class="dcard"><div class="who">'+esc(d.salarie_nom)+' '+esc(d.salarie_prenom||'')+'</div>'+
-      '<div class="meta">'+esc(d.service||'')+' · remise le '+fmtDate(d.date_remise)+' · '+badge(d.statut||'En attente')+'</div>'+
+      '<div class="meta">'+esc(d.service||'')+' · remise le '+fmtDateJ(d.date_remise)+' · '+badge(d.statut||'En attente')+'</div>'+
       '<div style="margin-top:8px;font-size:14px">'+lignes+'</div>'+
       '<div class="meta" style="margin-top:8px">Total : CP '+fmtn(s.cp)+' j · RTT '+fmtn(s.rtt)+' j · Récup '+fmtn(s.rec)+' h</div></div>';
     $('detailSalSig').innerHTML = d.signature_salarie ? ('<label class="f">Signature du salarié</label><img src="'+d.signature_salarie+'" style="max-height:80px;background:#fff;border:1px solid var(--field-b);border-radius:8px;padding:4px">') : '<p class="hint">Le salarié n\'a pas signé.</p>';
@@ -381,7 +383,7 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
     var who=((d.salarie_nom||'')+' '+(d.salarie_prenom||'')).trim();
     var fn='Demande_conges_'+(((d.salarie_nom||'')+'_'+(d.salarie_prenom||'')).replace(/[^a-zA-Z0-9_-]/g,'_')||'salarie')+'.pdf';
     var subj='Congés validés — '+who;
-    var body='Bonjour,\n\nDemande de congés validée.\n\nSalarié : '+who+'\nService : '+(d.service||'-')+'\n'+(sum.length?('Détail : '+sum.join(' · ')+'\n'):'')+'Validé par : '+(d.valide_par||'')+(d.valide_le?(' le '+fmtDate(String(d.valide_le).slice(0,10))):'')+'\n\nPièce jointe à ajouter : '+fn+'\n\nCordialement,\n'+(d.valide_par||'');
+    var body='Bonjour,\n\nDemande de congés validée.\n\nSalarié : '+who+'\nService : '+(d.service||'-')+'\n'+(sum.length?('Détail : '+sum.join(' · ')+'\n'):'')+'Validé par : '+(d.valide_par||'')+(d.valide_le?(' le '+fmtDateJ(String(d.valide_le).slice(0,10))):'')+'\n\nPièce jointe à ajouter : '+fn+'\n\nCordialement,\n'+(d.valide_par||'');
     var href='mailto:'+encodeURIComponent(DIR_EMAIL)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
     setTimeout(function(){ try{ window.location.href=href; }catch(e){} }, 1000);
   }
@@ -428,8 +430,8 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
       var pf=tt==='RTT'?CRT:(tt==='Récupération'?RECT:GS), pg=tt==='RTT'?CRD:(tt==='Récupération'?RECD:G);
       var lbl=tt; if(tt==='Récupération'){ lbl=(r.mat&&r.apm)?'Récup (journée)':(r.mat?'Récup (matin)':(r.apm?'Récup (a-m)':'Récup')); }
       pill(m+4,y+(rh-8)/2,cT-8,8,lbl,pf,pg);
-      T(m+oD+cD/2,y+8,fmtDate(r.du),11,'normal',IK,'center');
-      T(m+oA+cA/2,y+8,fmtDate(r.au),11,'normal',IK,'center');
+      T(m+oD+cD/2,y+8,fmtDateJ(r.du),9.5,'normal',IK,'center');
+      T(m+oA+cA/2,y+8,fmtDateJ(r.au),9.5,'normal',IK,'center');
       T(m+oN+cN/2,y+8,(r.nb?(r.nb+(tt==='Récupération'?' h':' j')):''),11,'bold',IK,'center');
       var v=parseFloat(String(r.nb||'').replace(',','.')); if(!isNaN(v)){ if(tt==='RTT')rtt+=v; else if(tt==='Récupération')rec+=v; else cp+=v; }
       y+=rh;
@@ -440,9 +442,9 @@ canvas.sig{width:100%;height:150px;background:#fff;border:1px solid var(--field-
     // Statut
     var stt=d.statut||'En attente';
     var scol=stt==='Validée'?G:(stt==='Refusée'?CRD:MU);
-    T(m,y+3,'Statut : '+stt+(d.valide_par?('  —  par '+d.valide_par):'')+(d.valide_le?('  le '+fmtDate(d.valide_le.slice(0,10))):''),10.5,'bold',scol,'left');
+    T(m,y+3,'Statut : '+stt+(d.valide_par?('  —  par '+d.valide_par):'')+(d.valide_le?('  le '+fmtDateJ(d.valide_le.slice(0,10))):''),10.5,'bold',scol,'left');
     y+=6;
-    T(m,y+3,'Remise le : '+(fmtDate(d.date_remise)||'..................'),11,'normal',IK,'left');
+    T(m,y+3,'Remise le : '+(fmtDateJ(d.date_remise)||'..................'),11,'normal',IK,'left');
     y+=8;
     // Signatures
     var bw=(cw-6)/2,bh=30;
