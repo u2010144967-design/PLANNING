@@ -680,18 +680,19 @@ function clDay(d){
       var o=day.cells[r+'_'+c];var t=clClean(o&&o.t);
       if(!t){block=null;continue;}
       if(clIsAbs(t)){if(!col.absent)col.absent=t.toUpperCase();block=null;continue;}
-      var isClient=!!(o.att||o.bon)||CL_CLIENT_COLORS.indexOf((o.c||'').toUpperCase())>=0||clKnownClient(t);
+      var livr=norm(t).match(/^(?:\d{1,2}\s*H\s*\d{0,2}\s*)?(?:LIVRAISON|LIVRER|LIVRE|LIV\.?)\s+(.+)$/);
+      var isClient=!!(o.att||o.bon)||!!livr||CL_CLIENT_COLORS.indexOf((o.c||'').toUpperCase())>=0||clKnownClient(t);
       if(/^(TOURNEE|CAMION|CHARGER|DECHARGER|REPRISE|RETOUR|CHERCHER|DEPOSER|PARTIR|FAIRE|VIDER|METTRE|PRENDRE|NETTOYER|LAVAGE|RANGEMENT|PREPARATION)\b/.test(norm(t))&&!o.att)isClient=false;
       if(isClient){
-        var nom=(o.bon&&o.bon.client)||clClientName(t);
+        var nom=(o.bon&&o.bon.client)||clClientName(livr?livr[1]:t);
         var f=clFiche(nom)||{};
         col.items.push({type:'client',r:r,heure:(o.bon&&o.bon.heure)||clHeureIn(t)||TIMES[r],texte:t,client:nom,
           adresse:(f.adresse||(o.bon&&o.bon.adresse)||''),tel:(f.tel||(o.bon&&o.bon.tel)||''),code:(f.code||(o.bon&&o.bon.code)||''),
           bonNo:(o.bon&&o.bon.no)||'',cid:(o.bon&&o.bon.cid)||'',bonTexte:(o.bon&&o.bon.texte)||'',aBon:!!o.att});
         block=null;
       }else{
-        if(block)block.texte+=' '+t;
-        else{block={type:'note',r:r,heure:TIMES[r],texte:t};col.items.push(block);}
+        // chaque case = une mission à son heure (on ne colle plus les cases entre elles)
+        col.items.push({type:'note',r:r,heure:clHeureIn(t)||TIMES[r],texte:t});
       }
     }
     cols.push(col);
@@ -726,7 +727,10 @@ function clPayload(d){
   return {donnees:{drivers:drivers,tasks:tasks,cur:d,source:'CANA_LIVRAISONS',envoye:new Date().toISOString()},resume:resume,sans:sans};
 }
 // ---------- envoi ----------
-function clH(){return {'apikey':CL_KEY,'Authorization':'Bearer '+CL_KEY,'Content-Type':'application/json'};}
+function clH(){return {'apikey':CL_KEY,'Authorization':'Bearer '+CL_KEY};}
+function clHW(){return {'apikey':CL_KEY,'Authorization':'Bearer '+CL_KEY,'Content-Type':'application/json'};}
+// écrire un jour comme le fait l'app chauffeur : un seul envoi « créer ou remplacer » (pas de PATCH)
+async function clUpsert(date,donnees){return fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:date,donnees:donnees,updated_at:new Date().toISOString()})});}
 async function clTestLien(){
   var el=document.getElementById('clLien');el.textContent='⏳ Vérification…';
   try{var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.CONFIG_PRINCIPALE&select=date&limit=1',{headers:clH(),cache:'no-store'});
@@ -758,11 +762,8 @@ async function clEnvoyer(){
   if(d<fmtD(new Date())&&!confirm('⚠️ Ce jour est déjà passé : les chauffeurs ne le verront pas (l’appli affiche aujourd’hui et les jours suivants).\nEnvoyer quand même ?'))return;
   if(!confirm('Envoyer le '+dayLabel(d)+' sur le téléphone des chauffeurs ?\n\nLes chauffeurs verront ce planning à jour (il remplace ce qui avait été envoyé pour ce jour).'))return;
   try{
-    var ex=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+d+'&select=date,donnees',{headers:clH(),cache:'no-store'});
-    var rows=ex.ok?await ex.json():[];
-    if(rows&&rows.length){try{localStorage.setItem('cana_liv_avant_'+d,JSON.stringify(rows[0].donnees));}catch(e){}}
-    var url=rows&&rows.length?CL_SUPA+'/rest/v1/planning?date=eq.'+d:CL_SUPA+'/rest/v1/planning';
-    var r=await fetch(url,{method:rows&&rows.length?'PATCH':'POST',headers:Object.assign({'Prefer':'return=minimal'},clH()),body:JSON.stringify({date:d,donnees:P.donnees,updated_at:new Date().toISOString()})});
+    try{var ex=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+d+'&select=donnees',{headers:clH(),cache:'no-store'});var rows=ex.ok?await ex.json():[];if(rows&&rows.length){localStorage.setItem('cana_liv_avant_'+d,JSON.stringify(rows[0].donnees));}}catch(e){}
+    var r=await clUpsert(d,P.donnees);
     if(!r.ok)throw new Error('code '+r.status);
     var hist=JSON.parse(localStorage.getItem('cana_liv_envois')||'{}');hist[d]=new Date().toLocaleString('fr-FR');localStorage.setItem('cana_liv_envois',JSON.stringify(hist));
     var A=null;try{A=await clLireApp(d);}catch(e){}
@@ -960,7 +961,7 @@ async function clMsgEnvoyer(){
   var i=document.getElementById('clmsgtxt');var t=(i&&i.value||'').trim();if(!t)return;
   if(clCfg.test){alert('Mode test activé : le message n’est pas envoyé.');return;}
   try{var list=await clMsgCharger();list.push({id:Date.now(),from:'resp',fromName:'Responsable',text:'📢 '+t,time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),date:fmtD(new Date()),broadcast:true});list=list.slice(-500);
-    var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:'MESSAGES',donnees:JSON.stringify(list),updated_at:new Date().toISOString()})});
+    var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:'MESSAGES',donnees:JSON.stringify(list),updated_at:new Date().toISOString()})});
     if(!r.ok)throw new Error('code '+r.status);clMsgOuvrir();
   }catch(e){alert('❌ Message non envoyé ('+e.message+').');}
 }
@@ -970,10 +971,9 @@ async function clEnvoiSilencieux(d){
   if(clCfg.test||!clCfg.auto||d<fmtD(new Date()))return;
   var P=clPayload(d);
   try{
-    var ex=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+d+'&select=date',{headers:clH(),cache:'no-store'});var rows=ex.ok?await ex.json():[];
-    var r=await fetch(rows&&rows.length?CL_SUPA+'/rest/v1/planning?date=eq.'+d:CL_SUPA+'/rest/v1/planning',{method:rows&&rows.length?'PATCH':'POST',headers:Object.assign({'Prefer':'return=minimal'},clH()),body:JSON.stringify({date:d,donnees:P.donnees,updated_at:new Date().toISOString()})});
+    var r=await clUpsert(d,P.donnees);
     if(!r.ok)throw 0;var hst=clEnvoyes();hst[d]=new Date().toLocaleString('fr-FR')+' (auto)';localStorage.setItem('cana_liv_envois',JSON.stringify(hst));clBadge('🔄 Chauffeurs à jour '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),'#1b5e20');
-  }catch(e){clBadge('⚠️ Mise à jour chauffeurs en attente (internet ?)','#b71c1c');}
+  }catch(e){clBadge('⚠️ Envoi aux chauffeurs en échec — nouvel essai dans 1 min','#b71c1c');clearTimeout(clAutoT);clAutoT=setTimeout(function(){clEnvoiSilencieux(d);},60000);}
 }
 function clBadge(t,c){var b=document.getElementById('clAutoBadge');if(!b)return;b.textContent=t;b.style.background=c;b.style.display='inline-block';}
 var _clLsSave=lsSave;lsSave=function(){_clLsSave.apply(this,arguments);if(!clCfg.test&&clCfg.auto&&cur>=fmtD(new Date())){var d=cur;clearTimeout(clAutoT);clBadge('⏳ Envoi aux chauffeurs…','#0d47a1');clAutoT=setTimeout(function(){clEnvoiSilencieux(d);},8000);}};
@@ -1032,15 +1032,15 @@ async function bnEnvoyerBase(meta,blob){
   if(bytes.length>6*1048576)throw new Error('fichier trop gros ('+bnTaille(bytes.length)+')');
   var id=meta.id||bnId();var key='BON_'+meta.jour+'_'+id;
   var d=Object.assign({},meta,{id:id,pdf:bnB64(bytes),taille:bytes.length,ajouteLe:new Date().toISOString()});
-  var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:key,donnees:d,updated_at:new Date().toISOString()})});
+  var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:key,donnees:d,updated_at:new Date().toISOString()})});
   if(!r.ok)throw new Error('code '+r.status);
   return key;
 }
 async function bnSupprimer(key,nom){
   if(!confirm('Retirer le bon « '+nom+' » du stockage ?\nLes chauffeurs ne le verront plus.'))return;
-  var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(key),{method:'DELETE',headers:Object.assign({'Prefer':'return=minimal'},clH())});
+  var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(key),{method:'DELETE',headers:Object.assign({'Prefer':'return=minimal'},clHW())});
   if(!r.ok){// suppression refusée par la base : on le marque « retiré »
-    r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(key),{method:'PATCH',headers:Object.assign({'Prefer':'return=minimal'},clH()),body:JSON.stringify({donnees:{supprime:true,client:nom},updated_at:new Date().toISOString()})});
+    r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(key),{method:'PATCH',headers:Object.assign({'Prefer':'return=minimal'},clHW()),body:JSON.stringify({donnees:{supprime:true,client:nom},updated_at:new Date().toISOString()})});
   }
   if(!r.ok)alert('❌ Suppression impossible (code '+r.status+').');
   bnPanel();
@@ -1057,7 +1057,7 @@ async function bnFichesEnvoi(){
     Object.keys(clFiches).forEach(function(k){var f=clFiches[k];if(!f||!(f.adresse||f.tel||f.email||f.code))return;var n=String(f.nom||k).trim().toUpperCase();
       var e=F[n]||{};var m=Object.assign({},e);['adresse','tel','email'].forEach(function(x){if(f[x]&&f[x]!==e[x]){m[x]=f[x];change=true;}});if(f.code&&f.code!==e.codeAcces){m.codeAcces=f.code;change=true;}F[n]=m;});
     if(!change)return;d.fiches=F;d.majPlanning=new Date().toISOString();
-    await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:'FICHES_CLIENTS',donnees:d,updated_at:new Date().toISOString()})});
+    await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:'FICHES_CLIENTS',donnees:d,updated_at:new Date().toISOString()})});
   }catch(e){}
 }
 var _bnSaveF=clSaveFiches;clSaveFiches=function(){_bnSaveF();bnFichesPartager();};
@@ -1269,8 +1269,7 @@ async function clActiverLiaison(){
 }
 async function clEnvoiSilencieuxRes(d){
   var P=clPayload(d);
-  try{var ex=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.'+d+'&select=date',{headers:clH(),cache:'no-store'});if(!ex.ok)return false;var rows=await ex.json();
-    var r=await fetch(rows.length?CL_SUPA+'/rest/v1/planning?date=eq.'+d:CL_SUPA+'/rest/v1/planning',{method:rows.length?'PATCH':'POST',headers:Object.assign({'Prefer':'return=minimal'},clH()),body:JSON.stringify({date:d,donnees:P.donnees,updated_at:new Date().toISOString()})});
+  try{var r=await clUpsert(d,P.donnees);
     if(!r.ok)return false;var h=clEnvoyes();h[d]=new Date().toLocaleString('fr-FR');localStorage.setItem('cana_liv_envois',JSON.stringify(h));return true;}catch(e){return false;}
 }
 // ---------- DIAGNOSTIC : est-ce que le logiciel parle bien à l'application ? ----------
@@ -1284,7 +1283,7 @@ async function clDiagnostic(){
   aff();
   try{var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.CONFIG_PRINCIPALE&select=date&limit=1',{headers:clH(),cache:'no-store'});ligne(r.ok,'Lecture de la base en ligne'+(r.ok?'':' (code '+r.status+')'),r.ok?'':'Vérifie internet.');}catch(e){ligne(false,'Pas de connexion à la base','Vérifie internet (ou un pare-feu au travail).');}
   aff();
-  try{var t=new Date().toISOString();var w=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:'TEST_LIAISON_PC',donnees:{test:t},updated_at:t})});
+  try{var t=new Date().toISOString();var w=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:'TEST_LIAISON_PC',donnees:{test:t},updated_at:t})});
     ligne(w.ok,'Écriture dans la base'+(w.ok?'':' refusée (code '+w.status+')'),w.ok?'':'La base refuse les écritures : il faudra voir les droits Supabase avec ton développeur.');}catch(e){ligne(false,'Écriture impossible');}
   aff();
   var on=!clCfg.test&&clCfg.auto;
@@ -1306,7 +1305,7 @@ var pqData={};try{pqData=JSON.parse(localStorage.getItem('cana_plaques')||'{}')|
 function pqK(n){return norm(n||'').replace(/[^A-Z0-9]/g,'');}
 function pqDe(nom){var k=pqK(nom);if(!k)return '';if(pqData[k])return pqData[k].plaque||'';var best='';Object.keys(pqData).forEach(function(x){if(x.length>=3&&k.indexOf(x)>=0&&x.length>best.length)best=x;});return best?pqData[best].plaque||'':'';}
 function pqSave(){try{localStorage.setItem('cana_plaques',JSON.stringify(pqData));}catch(e){}
-  fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:'CAMIONS_PLAQUES',donnees:{camions:pqData,maj:new Date().toISOString()},updated_at:new Date().toISOString()})}).catch(function(){});
+  fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:'CAMIONS_PLAQUES',donnees:{camions:pqData,maj:new Date().toISOString()},updated_at:new Date().toISOString()})}).catch(function(){});
   try{render();}catch(e){}}
 async function pqCharger(){try{var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.CAMIONS_PLAQUES&select=donnees&limit=1',{headers:clH(),cache:'no-store'});if(!r.ok)return;var rows=await r.json();if(rows.length&&rows[0].donnees&&rows[0].donnees.camions){var c=rows[0].donnees.camions;Object.keys(c).forEach(function(k){if(!pqData[k]||!pqData[k].plaque)pqData[k]=c[k];});localStorage.setItem('cana_plaques',JSON.stringify(pqData));try{render();}catch(e){}}}catch(e){}}
 function pqPanel(){
@@ -1328,7 +1327,7 @@ var HC_CH=['Otmane','Nicolas','Mickael','Karim',"Maître d'H.",'Anthony'];
 var HC_ST={atraiter:'🔴 À traiter',encours:'🟡 En cours',traite:'✅ Traité'};
 var hcItems=[];
 async function hcLire(){var r=await fetch(CL_SUPA+'/rest/v1/planning?date=eq.HORS_CARTE_SYNC&select=donnees&limit=1',{headers:clH(),cache:'no-store'});if(!r.ok)throw new Error('code '+r.status);var rows=await r.json();var d=rows.length?rows[0].donnees:null;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}return (d&&d.horsCarte)||[];}
-async function hcModifier(fn){var l=await hcLire();fn(l);var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify({date:'HORS_CARTE_SYNC',donnees:{horsCarte:l,updated_at:new Date().toISOString()},updated_at:new Date().toISOString()})});if(!r.ok)throw new Error('code '+r.status);hcItems=l;hcCompteur();}
+async function hcModifier(fn){var l=await hcLire();fn(l);var r=await fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify({date:'HORS_CARTE_SYNC',donnees:{horsCarte:l,updated_at:new Date().toISOString()},updated_at:new Date().toISOString()})});if(!r.ok)throw new Error('code '+r.status);hcItems=l;hcCompteur();}
 function hcCompteur(){var b=document.getElementById('hcBtn');if(!b)return;var n=hcItems.filter(function(h){return h.statut==='atraiter';}).length;b.textContent='🛒 Hors carte'+(n?' ('+n+')':'');b.style.background=n?'#e65100':'';b.style.color=n?'#fff':'';}
 async function hcPanel(){
   var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';
@@ -1408,7 +1407,7 @@ async function clFetch(url,opt,essais){
   throw last;
 }
 async function bnPost(row){
-  var r=await clFetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clH()),body:JSON.stringify(row)});
+  var r=await clFetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify(row)});
   if(!r.ok){var t='';try{t=(await r.text()).slice(0,140);}catch(e){}throw new Error('refusé '+r.status+' '+t);}
 }
 async function bnStockerPdf(pid,bytes){
