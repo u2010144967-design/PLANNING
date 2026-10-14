@@ -1172,7 +1172,7 @@ function bnRevue(){
       '<td><input type="date" value="'+esc(b.jour)+'" style="'+(b.dateLue?'':'background:#fff3cd')+'" onchange="bnSet('+i+',\'jour\',this.value)">'+(b.dateLue?'':'<div class="bnsm">date non lue : jour choisi</div>')+'</td>'+
       '<td>'+inp('client','client ?',200)+(b.service?'<div class="bnsm">'+esc(b.service)+'</div>':'')+'</td>'+
       '<td>'+(b.type==='FTBE'?inp('heure','heure',70):inp('tournee','tournée',80))+'</td>'+
-      '<td>'+inp('adresse','adresse ?',200)+'</td><td>'+inp('tel','tél ?',120)+'</td><td>'+inp('email','email ?',170)+'</td></tr>';
+      '<td>'+inp('adresse','adresse ?',200)+'</td><td>'+inp('tel','tél ?',120)+(b.code?'<div class="bnsm">🔑 '+esc(b.code)+'</div>':'')+'</td><td>'+inp('email','email ?',170)+'</td></tr>';
   });
   h+='</table></div>'+dl;
   h+='<div class="clbar"><button class="clsend" onclick="bnRanger()">☁️ Ranger ces bons (visibles dans l’app chauffeur)</button><button onclick="bnPanel(false)">Annuler</button><span class="cllien" id="bnInfo"></span></div>';
@@ -1186,8 +1186,8 @@ async function bnRanger(){
   for(var i=0;i<a.length;i++){var b=a[i];if(info)info.textContent='☁️ Envoi '+(i+1)+'/'+a.length+' — '+b.client;
     try{
       var blob=b.scan&&b.canvas?await bnPdfDepuisImage(b.canvas,b.w,b.h):await makeBonPdf(b.src,b.pages);
-      await bnEnvoyerBase({id:(b.no||'').replace(/[^A-Za-z0-9]/g,'')||undefined,type:b.type,jour:b.jour,client:b.client.trim(),no:b.no||'',heure:b.heure||'',tournee:b.tournee||'',service:b.service||'',liaison:b.liaison||'',chauffeur:b.chauffeur||'',adresse:b.adresse||'',tel:b.tel||'',email:b.email||'',fichier:b.fichier,scan:!!b.scan},blob);
-      clFicheFromBon({client:b.client.trim(),adresse:b.adresse,tel:b.tel,email:b.email});ok++;
+      await bnEnvoyerBase({id:(b.no||'').replace(/[^A-Za-z0-9]/g,'')||undefined,type:b.type,jour:b.jour,client:b.client.trim(),no:b.no||'',heure:b.heure||'',tournee:b.tournee||'',service:b.service||'',liaison:b.liaison||'',chauffeur:b.chauffeur||'',adresse:b.adresse||'',tel:b.tel||'',email:b.email||'',codeAcces:b.code||'',fichier:b.fichier,scan:!!b.scan},blob);
+      clFicheFromBon({client:b.client.trim(),adresse:b.adresse,tel:b.tel,email:b.email,code:b.code});ok++;
     }catch(e){err.push(b.client+' : '+e.message);}
   }
   bnBusy=false;
@@ -1213,7 +1213,7 @@ async function bnPanel(recharger){
       h+='<tr class="bnrow" data-k="'+esc(bnNorm(b.client))+'"><td><span class="bntag '+(b.type==='FTBE'?'ft':'rc')+'">'+(b.type==='FTBE'?'FTBE':'RESTO-CO')+'</span>'+(b.no&&b.type==='FTBE'?'<div class="bnsm">N° '+esc(b.no)+'</div>':'')+'</td>'+
         '<td><b>'+esc(b.client)+'</b>'+(b.chauffeur?'<div class="bnsm">🚚 '+esc(b.chauffeur)+'</div>':'')+'</td>'+
         '<td>'+esc(b.tournee||'')+(b.heure?' '+esc(b.heure):'')+'</td>'+
-        '<td class="bnsm">'+(b.adresse?'📍 '+esc(b.adresse)+'<br>':'')+(b.tel?'📞 '+esc(b.tel)+'<br>':'')+((b.email||(clFiche(b.client)||{}).email)?'✉️ '+esc(b.email||clFiche(b.client).email):'<span style="color:#b45309">✉️ email manquant</span>')+'</td>'+
+        '<td class="bnsm">'+(b.adresse?'📍 '+esc(b.adresse)+'<br>':'')+(b.tel?'📞 '+esc(b.tel)+'<br>':'')+(b.codeAcces?'🔑 '+esc(b.codeAcces)+'<br>':'')+((b.email||(clFiche(b.client)||{}).email)?'✉️ '+esc(b.email||clFiche(b.client).email):'<span style="color:#b45309">✉️ email manquant</span>')+'</td>'+
         '<td>'+(b.signe?((b.signe.signataire?'✅ '+esc(b.signe.signataire):'⏳ pas signé')+(+b.signe.nbPhotos?' · 📷 '+(+b.signe.nbPhotos):'')+'<div class="bnsm">'+esc(b.signe.signeA||'')+'</div><div class="bnsm">🚚 '+esc(b.signe.chauffeur||'')+(b.signe.vehicule?' · '+esc(b.signe.vehicule):'')+'</div>'):'⏳')+'</td>'+
         '<td style="white-space:nowrap"><button onclick="bnOuvrir(\''+b.date+'\')">👁 Bon</button> <button title="Envoyer au client" onclick="bnEnvoyerClient(\''+(b.signe?b.signe.date:b.date)+'\')">✉️ Envoyer</button>'+(b.signe?' <button title="Bon signé + photos, dans un seul PDF" onclick="bnOuvrir(\''+b.signe.date+'\')">📄 Signé'+(+b.signe.nbPhotos?' + 📷':'')+'</button>':'')+' <button title="Retirer" onclick="bnSupprimer(\''+b.date+'\',\''+esc(b.client).replace(/'/g,"\\'")+'\')">🗑</button></td></tr>';
     });
@@ -1533,14 +1533,17 @@ async function bnCacheJour(d){var c=bnCache[d];if(c&&Date.now()-c.t<120000)retur
   var a=await bnLire('BON_'+d+'_');var l=a.filter(function(x){return !x.supprime||String(x.supprime)==='false';});bnCache[d]={t:Date.now(),l:l};return l;}
 function bnMots(s){return bnNorm(s).split(' ').filter(function(w){return w.length>=4&&!/^(SOIR|MIDI|CHRS|LHSS|UNITE|LES|DES|AVEC)$/.test(w);});}
 function bnPourCase(d,texte,heure){
-  var c=bnCache[d];if(!c)return null;var ws=bnMots(clClientName(texte));if(!ws.length)return null;
-  var ok=c.l.filter(function(b){var cl=bnNorm(b.client);return ws.every(function(w){return cl.indexOf(w)>=0;});});
+  var c=bnCache[d];if(!c)return null;var ws=bnMots(clClientName(texte));
+  var tous=bnNorm(clClientName(texte)).split(' ').filter(function(w){return w&&!/^(SOIR|MIDI)$/.test(w);});
+  if(!ws.length&&tous.length<2)return null;
+  var ok=c.l.filter(function(b){var cl=bnNorm(b.client);var mots=cl.split(' ');
+    return ws.length?ws.every(function(w){return cl.indexOf(w)>=0;})&&tous.every(function(w){return w.length>=4||mots.indexOf(w)>=0;}):tous.every(function(w){return mots.indexOf(w)>=0;});});
   if(ok.length>1&&heure){var soir=heure>='15:00';var s2=ok.filter(function(b){return (b.service||'')===(soir?'SOIR':'MIDI')||new RegExp(soir?'SOIR':'MIDI').test(norm(b.client));});if(s2.length)ok=s2;}
   return ok.length===1?ok[0]:(ok.length?ok:null);
 }
 // les livraisons envoyées aux chauffeurs portent la clé de leur bon
 var _bnClDay=clDay;
-clDay=function(d){var cols=_bnClDay(d);cols.forEach(function(col){col.items.forEach(function(it){if(it.type==='client'&&!it.cid){var b=bnPourCase(d,it.texte,it.heure);if(b&&!Array.isArray(b))it.cid=b.date;}});});return cols;};
+clDay=function(d){var cols=_bnClDay(d);cols.forEach(function(col){col.items.forEach(function(it){if(it.type==='client'){var b=it.cid?null:bnPourCase(d,it.texte,it.heure);if(b){var b1=Array.isArray(b)?b[0]:b;if(!Array.isArray(b))it.cid=b.date;if(!it.adresse)it.adresse=b1.adresse||'';if(!it.tel)it.tel=b1.tel||'';if(!it.code)it.code=b1.codeAcces||'';}}});});return cols;};
 var _bnEnvRes=clEnvoiSilencieuxRes;clEnvoiSilencieuxRes=async function(d){try{await bnCacheJour(d);}catch(e){}return _bnEnvRes(d);};
 var _bnEnvSil=clEnvoiSilencieux;clEnvoiSilencieux=async function(d){try{await bnCacheJour(d);}catch(e){}return _bnEnvSil(d);};
 var _bnEnvoyer=clEnvoyer;clEnvoyer=async function(){try{await bnCacheJour(cur);}catch(e){}return _bnEnvoyer();};
