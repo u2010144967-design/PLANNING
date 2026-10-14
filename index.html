@@ -150,6 +150,7 @@ var clDerniereErreur='';
 </script>
 <script type="text/babel">
 /* Date du jour en heure de Marseille (avant : heure anglaise -> mauvais jour entre minuit et 2h) */
+function isoLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function jourLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const {useState,useEffect,useRef,useCallback}=React;
 
@@ -876,9 +877,10 @@ function TodayScreen({ch,planning,onNavigate,onBack}){
   /* Chercher les missions sur les 14 prochains jours + aujourd'hui */
   const msAll=planning?(() => {
     const res=[];
-    for(let offset=0;offset<15;offset++){
+    /* « Mes livraisons » = la journée d'AUJOURD'HUI uniquement (les autres jours sont dans 📅 Mon planning) */
+    for(let offset=0;offset<1;offset++){
       const d=new Date();d.setDate(d.getDate()+offset);
-      const ds=d.toISOString().slice(0,10);
+      const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
       getMissions(planning,ch.id,ds).forEach(m=>res.push({...m,_date:ds}));
     }
     return res.sort((a,b)=>a._date===b._date?a.heure.localeCompare(b.heure):a._date.localeCompare(b._date));
@@ -1712,7 +1714,7 @@ function CalendarScreen({ch,planning,onBack,onNavigate}){
     for(let i=1;i<dow;i++) days.push(null);
     for(let d=1;d<=last.getDate();d++){
       const dt=new Date(month.year,month.month,d);
-      days.push(dt.toISOString().slice(0,10));
+      days.push(isoLocal(dt));
     }
     return days;
   }
@@ -1725,7 +1727,7 @@ function CalendarScreen({ch,planning,onBack,onNavigate}){
   const semaine=[];
   for(let i=0;i<7;i++){
     const d=new Date();d.setDate(d.getDate()+i);
-    const ds=d.toISOString().slice(0,10);
+    const ds=isoLocal(d);
     semaine.push({
       date:ds,
       jour:JN[d.getDay()],
@@ -2014,7 +2016,7 @@ function ChecklistFinScreen({ch,onBack}){
 /* ═══════════════════ HISTORIQUE ═══════════════════ */
 function HistoriqueScreen({ch,onBack}){
   const[data,setData]=useState([]);const[loading,setLoading]=useState(true);const[weekOff,setWeekOff]=useState(0);
-  function getWeekDays(off){const now=new Date();const d=now.getDay();const mon=new Date(now);mon.setDate(now.getDate()-(d===0?6:d-1)+off*7);mon.setHours(0,0,0,0);return Array.from({length:7},(_,i)=>{const dd=new Date(mon);dd.setDate(mon.getDate()+i);return dd.toISOString().slice(0,10);});}
+  function getWeekDays(off){const now=new Date();const d=now.getDay();const mon=new Date(now);mon.setDate(now.getDate()-(d===0?6:d-1)+off*7);mon.setHours(0,0,0,0);return Array.from({length:7},(_,i)=>{const dd=new Date(mon);dd.setDate(mon.getDate()+i);return isoLocal(dd);});}
   const days=getWeekDays(weekOff);const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   useEffect(()=>{setLoading(true);Promise.all([sGet('planning?date=like.STATUT_*&select=donnees,updated_at&order=updated_at.desc&limit=200'),sGet('planning?date=like.INC_*&select=donnees,updated_at&order=updated_at.desc&limit=200'),sGet('planning?date=like.BILAN_*&select=donnees,date,updated_at&order=updated_at.desc&limit=200')]).then(([d1,d2,d3])=>{const all=[...(Array.isArray(d1)?d1:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),...(Array.isArray(d2)?d2:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id)),...(Array.isArray(d3)?d3:[]).map(r=>r.donnees).filter(d=>d&&d._isEvent&&String(d.chauffeurId)===String(ch.id))];setData(all);setLoading(false);}).catch(()=>setLoading(false));},[weekOff,ch.id]);
   const weekLabel=`${new Date(days[0]).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → ${new Date(days[6]).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}`;
@@ -2717,16 +2719,29 @@ async function bnArchive(bytes,type,sig,photos,legende){
   return await doc.save();
 }
 function BnPdfView({bytes}){
-  const ref=useRef();const[err,setErr]=useState('');
+  const ref=useRef();const boite=useRef();const[err,setErr]=useState('');const[zoom,setZoom]=useState(1);
   useEffect(()=>{let stop=false;(async()=>{
     try{await bnLibsA();const el=ref.current;if(!el)return;el.innerHTML='';
       const pdf=await window.pdfjsLib.getDocument({data:bytes.slice(0)}).promise;
-      for(let i=1;i<=pdf.numPages&&!stop;i++){const pg=await pdf.getPage(i);const w=el.clientWidth||360;const v0=pg.getViewport({scale:1});const sc=(w/v0.width)*Math.min(2,window.devicePixelRatio||1);const vp=pg.getViewport({scale:sc});
-        const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;c.style.width='100%';c.style.display='block';c.style.marginBottom='8px';c.style.borderRadius='6px';c.style.background='#fff';
+      const largeur=((boite.current&&boite.current.clientWidth)||360)*zoom;
+      for(let i=1;i<=pdf.numPages&&!stop;i++){const pg=await pdf.getPage(i);const v0=pg.getViewport({scale:1});
+        const sc=(largeur/v0.width)*Math.min(2.5,(window.devicePixelRatio||1)*1.2);const vp=pg.getViewport({scale:sc});
+        const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;c.style.width=largeur+'px';c.style.display='block';c.style.marginBottom='8px';c.style.borderRadius='6px';c.style.background='#fff';
         el.appendChild(c);await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;}
     }catch(e){setErr('Impossible d’afficher le bon ('+e.message+'). Vérifie internet.');}
-  })();return()=>{stop=true;};},[bytes]);
-  return <div>{err&&<div style={{color:'#fca5a5',fontSize:13,padding:10}}>{err}</div>}<div ref={ref} style={{width:'100%'}}/></div>;
+  })();return()=>{stop=true;};},[bytes,zoom]);
+  const Z=[1,1.5,2,2.5,3];const zi=Z.indexOf(zoom);
+  const bz={width:52,height:44,borderRadius:12,border:'1px solid var(--border)',background:'#0f1e35',color:'#fff',fontSize:22,fontWeight:900,cursor:'pointer'};
+  return <div>
+    <div style={{display:'flex',gap:8,alignItems:'center',justifyContent:'center',marginBottom:8,position:'sticky',top:0,zIndex:2,background:'var(--bg,#071526)',padding:'6px 0'}}>
+      <button style={bz} onClick={()=>setZoom(Z[Math.max(0,zi-1)])}>➖</button>
+      <div style={{minWidth:70,textAlign:'center',color:'#fff',fontWeight:900}}>🔍 {Math.round(zoom*100)} %</div>
+      <button style={bz} onClick={()=>setZoom(Z[Math.min(Z.length-1,zi+1)])}>➕</button>
+    </div>
+    {err&&<div style={{color:'#fca5a5',fontSize:13,padding:10}}>{err}</div>}
+    <div ref={boite} onDoubleClick={()=>setZoom(zoom===1?2:1)} style={{width:'100%',overflow:'auto',WebkitOverflowScrolling:'touch',touchAction:'pan-x pan-y'}}><div ref={ref}/></div>
+    <div style={{fontSize:11,color:'var(--muted)',textAlign:'center',marginTop:4}}>➕ pour grossir · fais glisser pour te déplacer · double-tape pour zoomer</div>
+  </div>;
 }
 function BnSignPad({onValide,onAnnule,envoi}){
   const ref=useRef();const[trace,setTrace]=useState(false);const[nom,setNom]=useState('');const[prenom,setPrenom]=useState('');
@@ -2759,14 +2774,15 @@ function BonsScreen({ch,init,onBack}){
   const[bon,setBon]=useState(null);const[octets,setOctets]=useState(null);const[archive,setArchive]=useState(null);
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
-  const[mail,setMail]=useState('');const photoRef=useRef();
+  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');
   async function charger(d){setListe(null);setErr('');setAutres(null);try{setListe(await bnBonsDuJour(d));}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
   useEffect(()=>{if(dejaOuvert.current||!liste||!init||!init.bonCle)return;dejaOuvert.current=true;
     const b=liste.find(x=>x.date===init.bonCle);ouvrir(b||{date:init.bonCle,client:init.client||'',type:'FTBE',jour:init.date});},[liste]);
   function decale(n){const d=new Date(jour+'T12:00');d.setDate(d.getDate()+n);setJour(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));}
-  const vus=(liste||[]).map(b=>({b,s:bnScore(q,b.client)})).filter(x=>!q.trim()||x.s>=0.5).sort((a,b)=>b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
+  const nFt=(liste||[]).filter(b=>b.type==='FTBE').length,nRc=(liste||[]).length-nFt;
+  const vus=(liste||[]).filter(b=>!onglet||(onglet==='FTBE'?b.type==='FTBE':b.type!=='FTBE')).map(b=>({b,s:bnScore(q,b.client)})).filter(x=>!q.trim()||x.s>=0.5).sort((a,b)=>((a.b.type==='FTBE'?0:1)-(b.b.type==='FTBE'?0:1))||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
   async function chercherPartout(){setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
   function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);}
   async function ouvrir(b){
@@ -2861,9 +2877,13 @@ function BonsScreen({ch,init,onBack}){
       </div>
       <div style={{fontSize:12,color:'#4ade80',fontWeight:800,textTransform:'capitalize',marginBottom:8,textAlign:'center'}}>{bnJourFR(jour)}{jour===jourLocal()?' (aujourd’hui)':''}</div>
       <input value={q} onChange={e=>{setQ(e.target.value);setAutres(null);}} placeholder="🔎 Tape le nom du client…" style={{width:'100%',boxSizing:'border-box',padding:'13px 12px',borderRadius:12,border:'2px solid rgba(34,197,94,.45)',background:'#071526',color:'#fff',fontSize:16,fontFamily:'inherit',marginBottom:12}}/>
+      <div style={{display:'flex',gap:6,marginBottom:12}}>
+        {[['','Tous',(liste||[]).length,'#334155'],['FTBE','🍽️ Traiteur',nFt,'#1d4ed8'],['RESTOCO','🥗 Resto-Co',nRc,'#15803d']].map(([k,l,n,c])=>(
+          <button key={k} onClick={()=>setOnglet(k)} style={{flex:k?1.4:1,padding:'12px 4px',borderRadius:12,border:'2px solid '+(onglet===k?c:'var(--border)'),background:onglet===k?c:'#0f1e35',color:'#fff',fontWeight:900,fontSize:14,fontFamily:'inherit',cursor:'pointer'}}>{l}<div style={{fontSize:11,opacity:.85}}>{n} bon{n>1?'s':''}</div></button>))}
+      </div>
       {err&&<div style={{color:'#fca5a5',fontSize:13,marginBottom:8}}>{err}</div>}
       {liste===null?<div style={{textAlign:'center',color:'var(--muted)',padding:24}}>⏳ Chargement…</div>:
-        vus.length?vus.map(b=><Carte key={b.date} b={b}/>):
+        vus.length?vus.map((b,i)=>{const sec=!onglet&&(i===0||(vus[i-1].type==='FTBE')!==(b.type==='FTBE'));return <div key={b.date}>{sec&&<div style={{fontSize:12,fontWeight:900,color:'#fff',background:b.type==='FTBE'?'#1d4ed8':'#15803d',borderRadius:8,padding:'6px 10px',margin:'4px 0 8px'}}>{b.type==='FTBE'?'🍽️ TRAITEUR — bons FTBE':'🥗 RESTO-CO'}</div>}<Carte b={b}/></div>;}):
         <div style={{textAlign:'center',color:'var(--muted)',padding:'18px 8px',fontSize:13}}>{liste.length?'Aucun bon pour « '+q+' » ce jour-là.':'Aucun bon rangé pour ce jour.'}</div>}
       {q.trim().length>=3&&autres===null&&<button className="btn-s" style={{width:'100%'}} onClick={chercherPartout}>🔎 Chercher « {q} » sur tous les jours</button>}
       {autres==='…'&&<div style={{textAlign:'center',color:'var(--muted)',padding:12}}>⏳ Recherche…</div>}
@@ -2885,10 +2905,12 @@ function App(){
         const today=jourLocal();
         /* Charger les lignes de jours ET CONFIG_PRINCIPALE (qui contient les drivers) */
         const [rowsJours, rowsConfig] = await Promise.all([
-          sGet(`planning?date=gte.${today}&select=date,donnees&order=date.asc&limit=100`),
+          sGet(`planning?date=gte.${(()=>{const x=new Date();x.setDate(x.getDate()-31);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');})()}&date=lte.2099-12-31&select=date,donnees&order=date.asc&limit=200`),
           sGet(`planning?date=eq.CONFIG_PRINCIPALE&select=date,donnees&limit=1`)
         ]);
-        const rows=[...(rowsJours||[]),...(rowsConfig||[])];
+        /* l'ancienne config d'abord, puis les journées : une journée envoyée par CANA LIVRAISONS remplace tout l'ancien contenu de ce jour */
+        const rows=[...(rowsConfig||[]),...(rowsJours||[])];
+        const _joursCana={};(rowsJours||[]).forEach(r=>{let d=r.donnees;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}if(d&&d.source==='CANA_LIVRAISONS')_joursCana[r.date]=1;});
         const tasks={};
         let drivers=null;
         let binomes=null;
@@ -2898,7 +2920,8 @@ function App(){
         (rows||[]).forEach(r=>{
           let d=r.donnees;
           if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}
-          if(d&&d.tasks){Object.assign(tasks,d.tasks);}
+          if(d&&d.tasks){if(r.date==='CONFIG_PRINCIPALE'){Object.keys(d.tasks).forEach(k=>{if(!_joursCana[k.split('|')[0]])tasks[k]=d.tasks[k];});}
+            else{if(_joursCana[r.date])Object.keys(tasks).forEach(k=>{if(k.split('|')[0]===r.date)delete tasks[k];});Object.assign(tasks,d.tasks);}}
           /* On récolte TOUS les clients connus : bibliothèque, tournées, missions */
           try{
             if(d&&d.library){Object.keys(d.library).forEach(cat=>{(d.library[cat]||[]).forEach(nm=>{if(nm)_cliSet[String(nm)]=1;});});}
