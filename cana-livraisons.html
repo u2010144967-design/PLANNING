@@ -1191,7 +1191,7 @@ async function bnRanger(){
     }catch(e){err.push(b.client+' : '+e.message);}
   }
   bnBusy=false;
-  alert('✅ '+ok+' bon(s) rangé(s).'+(err.length?'\n\n❌ Non envoyés :\n'+err.join('\n'):'')+'\n\nLes chauffeurs les trouvent dans leur app : « 📄 Mes bons » → date → nom du client.');
+  alert('✅ '+ok+' bon(s) rangé(s).'+(err.length?'\n\n❌ Non envoyés :\n'+err.slice(0,6).join('\n')+(err.length>6?'\n…':'')+'\n\n👉 Clique « 🩺 Vérifier » : il te dira ce qui bloque la connexion.':'')+'\n\nLes chauffeurs les trouvent dans leur app : « 📄 Mes bons » → date → nom du client.');
   var j=a[0].jour;if(j)bnDay=j;bnDepot=[];bnPanel();
 }
 // ---------- écran « Bons du jour » ----------
@@ -1591,6 +1591,25 @@ clActiverLiaison=async function(){
   clBadge(err?'⚠️ '+err+' jour(s) non envoyés':'✅ '+n+' jour(s) envoyés aux chauffeurs',err?'#b71c1c':'#1b5e20');
   alert(err?'⚠️ '+n+' jour(s) envoyé(s), '+err+' en échec.\nClique « 🩺 Vérifier » pour voir ce qui bloque.':'✅ Liaison active : '+n+' jour(s) envoyé(s) aux chauffeurs (jusqu’à 5 semaines).\nÀ partir de maintenant, tout part tout seul.');
 };
+// ---------- DIAGNOSTIC RÉSEAU précis : on trouve QUI bloque ----------
+var _clDiagBase=clDiagnostic;
+clDiagnostic=async function(){
+  await _clDiagBase();
+  var box=document.querySelector('#clBox .dgw');if(!box)return;
+  var div=document.createElement('div');div.className='dgl wa';div.innerHTML='<b>⏳ Test détaillé de la connexion…</b>';box.insertBefore(div,box.firstChild);
+  var r1='',r2='',r3='';
+  try{await fetch('https://u2010144967-design.github.io/PLANNING/manifest-chauffeur.json?t='+Date.now(),{cache:'no-store',mode:'no-cors'});r1='ok';}catch(e){r1='ko';}
+  try{await fetch(CL_SUPA+'/rest/v1/?t='+Date.now(),{cache:'no-store',mode:'no-cors'});r2='ok';}catch(e){r2='ko';}
+  try{var x=await fetch(CL_SUPA+'/rest/v1/planning?select=date&limit=1&apikey='+encodeURIComponent(CL_KEY),{cache:'no-store'});r3=x.ok?'ok':'code '+x.status;}catch(e){r3='ko';}
+  var verdict,cls;
+  if(r1==='ko'&&r2==='ko'){verdict='❌ Ce PC n’a pas internet (ou tout est bloqué).';cls='ko';}
+  else if(r2==='ko'){verdict='❌ Le réseau ou l’antivirus de ce PC BLOQUE la base de données (supabase.co). Les téléphones en 4G, eux, passent. Solution : demander au service informatique d’autoriser « supabase.co », ou essayer en partage de connexion avec ton téléphone.';cls='ko';}
+  else if(r3!=='ok'){verdict='❌ La base répond mais refuse la lecture ('+r3+'). '+(location.protocol==='file:'?'Ouvre le planning par le lien GitHub au lieu du fichier : https://u2010144967-design.github.io/PLANNING/cana-livraisons.html':'Il faudra vérifier les droits de la base avec ton développeur.');cls='ko';}
+  else{verdict='✅ La connexion à la base fonctionne depuis ce PC.';cls='ok';}
+  div.className='dgl '+cls;div.innerHTML='<b>'+verdict+'</b><div>Internet : '+(r1==='ok'?'✅':'❌')+' · Base supabase.co : '+(r2==='ok'?'✅':'❌')+' · Lecture : '+(r3==='ok'?'✅':'❌ '+r3)+' · Ouvert depuis : '+(location.protocol==='file:'?'fichier du PC':'lien en ligne')+'</div>';
+};
+// message clair quand l'envoi échoue
+var _clEnvoyer2=clEnvoyer;clEnvoyer=async function(){try{await fetch(CL_SUPA+'/rest/v1/?t='+Date.now(),{cache:'no-store',mode:'no-cors'});}catch(e){alert('❌ Ce PC n’arrive pas à joindre la base en ligne (supabase.co).\n\nClique « 🩺 Vérifier » : il te dira si c’est internet, l’antivirus ou le réseau du travail qui bloque.');return;}return _clEnvoyer2();};
 
 </script>
 </body></html>
