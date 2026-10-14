@@ -1669,5 +1669,74 @@ clUpsert=async function(date,donnees){
 };
 var _clDiag2=clDiagnostic;clDiagnostic=async function(){await _clDiag2();var w=document.querySelector('#clBox .dgw');if(w){var d=document.createElement('div');d.className='dgl wa';d.innerHTML='<b>🧪 Test d’envoi pas à pas</b><div>Si les tournées ne partent pas : <button onclick="clTestEnvoi()">Lancer le test</button> puis envoie-moi une capture. ('+CL_VERSION+')</div>';w.appendChild(d);}};
 
+// ================= CANA LIVRAISONS 6 : RATTRAPAGE (après la pause de la base) =================
+// 1) esc() plus solide (un nombre faisait planter le hors carte)
+esc=function(s){return (s===undefined||s===null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+// 2) FILE D'ATTENTE des journées à envoyer : rien ne se perd si internet ou la base coupe
+function clAttente(){try{return JSON.parse(localStorage.getItem('cana_liv_attente')||'[]');}catch(e){return [];}}
+function clAttenteSet(l){try{localStorage.setItem('cana_liv_attente',JSON.stringify(l));}catch(e){}}
+function clQueue(d){if(!d||d<clAuj())return;var l=clAttente();if(l.indexOf(d)<0){l.push(d);l.sort();clAttenteSet(l);}}
+var clFlushEnCours=false,clFlushT=null;
+async function clFlush(){
+  if(clFlushEnCours||clCfg.test||!clCfg.auto)return;clFlushEnCours=true;
+  try{
+    var l=clAttente().filter(function(d){return d>=clAuj();});clAttenteSet(l);
+    var echec=0,ok=0;
+    for(var i=0;i<l.length;i++){var d=l[i];clBadge('⏳ Envoi aux chauffeurs : '+dayLabel(d)+' ('+(i+1)+'/'+l.length+')','#0d47a1');
+      if(await clEnvoiSilencieuxRes(d)){ok++;clAttenteSet(clAttente().filter(function(x){return x!==d;}));}else{echec++;break;}}
+    var reste=clAttente().length;
+    if(echec)clBadge('⚠️ '+reste+' jour(s) en attente ('+(clDerniereErreur||'connexion').slice(0,50)+') — nouvel essai dans 1 min','#b71c1c');
+    else if(ok)clBadge('🔄 Chauffeurs à jour '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),'#1b5e20');
+  }finally{clFlushEnCours=false;}
+}
+setInterval(function(){if(clAttente().length&&!document.hidden)clFlush();},60000);
+// chaque modification d'un jour (aujourd'hui ou à venir) → file d'attente → envoi 8 s après
+clEnvoiSilencieux=async function(d){clQueue(d);clearTimeout(clFlushT);clFlushT=setTimeout(clFlush,500);};
+// tout renvoyer : aujourd'hui + 35 jours
+function clToutRenvoyer(silencieux){
+  var d=new Date(),n=0;
+  for(var i=0;i<36;i++){var k=fmtD(d);if(store[k]&&Object.keys(store[k].cells||{}).some(function(x){return store[k].cells[x]&&store[k].cells[x].t;})){clQueue(k);n++;}d.setDate(d.getDate()+1);}
+  if(!silencieux)clBadge('⏳ '+n+' jour(s) à renvoyer…','#0d47a1');
+  return clFlush().then(function(){return n;});
+}
+// 3) BONS FTBE déjà posés dans la grille mais jamais partis (base endormie) → rangés pour l'app
+async function bnRattraperFTBE(depuis,afficher){
+  if(bnRattraperFTBE.enCours)return 0;bnRattraperFTBE.enCours=true;var n=0,err=0,vus=0;
+  try{
+    var jours=Object.keys(store).filter(function(d){return /^\d{4}-\d{2}-\d{2}$/.test(d)&&d>=depuis;}).sort();
+    for(var j=0;j<jours.length;j++){var d=jours[j],day=store[d];if(!day||!day.cells)continue;
+      for(var k in day.cells){var o=day.cells[k];if(!o||!o.att||(o.bon&&o.bon.cid))continue;vus++;
+        try{var blob=await idbGet(o.att.id);if(!blob){continue;}
+          var ri=+k.split('_')[0];var b=o.bon||{};var cli=b.client||clClientName(o.t);var f=clFiche(cli)||{};
+          if(afficher)clBadge('☁️ Rangement des bons FTBE : '+cli,'#0d47a1');
+          var key=await bnEnvoyerBase({id:(b.no||'').replace(/[^A-Za-z0-9]/g,'')||o.att.id,type:'FTBE',jour:d,client:cli,no:b.no||'',heure:b.heure||TIMES[ri]||'',adresse:f.adresse||b.adresse||'',tel:f.tel||b.tel||'',email:f.email||'',codeAcces:f.code||b.code||'',fichier:o.att.name||''},blob);
+          o.bon=Object.assign({},b,{cid:key,client:cli});n++;clQueue(d);
+        }catch(e){err++;}
+      }}
+    if(n){try{_clLsSaveSeul();}catch(e){}}
+    if(afficher)clBadge(err?'⚠️ '+n+' bon(s) FTBE rangés, '+err+' en échec':'☁️ '+n+' bon(s) FTBE rangés pour les chauffeurs',err?'#b71c1c':'#1b5e20');
+  }finally{bnRattraperFTBE.enCours=false;}
+  if(n)clFlush();
+  return n;
+}
+// sauvegarde du planning sans relancer d'envoi (évite les boucles)
+function _clLsSaveSeul(){var a=clCfg.auto;clCfg.auto=false;try{lsSave();}finally{clCfg.auto=a;}}
+// 4) AU DÉMARRAGE : si la base répond, on rattrape tout une fois par jour
+async function clRattrapageDemarrage(){
+  if(clCfg.test||!clCfg.auto)return;
+  try{var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.CONFIG_PRINCIPALE&select=date&limit=1',{headers:clH()},1);if(!r.ok)return;}catch(e){clBadge('⚠️ Base injoignable — les envois partiront dès qu’elle répond','#b71c1c');return;}
+  var auj=clAuj();
+  var dep=new Date();dep.setDate(dep.getDate()-7);
+  await bnRattraperFTBE(fmtD(dep),true);
+  if(localStorage.getItem('cana_liv_resync')!==auj){await clToutRenvoyer(true);localStorage.setItem('cana_liv_resync',auj);}
+  else if(clAttente().length)await clFlush();
+}
+setTimeout(clRattrapageDemarrage,2500);
+// 5) BOUTONS
+var _clOuvrirR=clOuvrir;clOuvrir=function(){_clOuvrirR();var bar=document.querySelector('#clBox .clbar');if(bar){var b=document.createElement('button');b.textContent='🔄 Tout renvoyer (35 jours)';b.onclick=function(){if(clCfg.test||!clCfg.auto){clActiverLiaison();return;}clToutRenvoyer().then(function(n){alert('✅ '+n+' jour(s) renvoyé(s) aux chauffeurs.'+(clAttente().length?'\n⚠️ '+clAttente().length+' en attente (connexion).':''));});};bar.appendChild(b);}};
+var _bnPanelR=bnPanel;bnPanel=async function(r){await _bnPanelR(r);var bar=document.querySelector('#clBox .clbar');if(bar&&!document.getElementById('bnRattr')){var b=document.createElement('button');b.id='bnRattr';b.textContent='☁️ Ranger les bons FTBE du planning';b.title='Les bons FTBE posés dans la grille (📎) partent dans le stockage pour l’app chauffeur';b.onclick=async function(){var n=await bnRattraperFTBE('2000-01-01',true);alert(n?'✅ '+n+' bon(s) FTBE rangés pour les chauffeurs.':'Tous les bons FTBE de la grille sont déjà rangés (ou leurs PDF ne sont pas sur ce PC).');bnPanel();};bar.appendChild(b);}};
+// 6) HORS CARTE : jamais d'écran blanc, on dit ce qui ne va pas
+var _hcPanelR=hcPanel;hcPanel=async function(){try{await _hcPanelR();}catch(e){document.getElementById('clBox').innerHTML='<div class="clhead"><h2>🛒 Hors carte</h2><button class="clx" onclick="clClose()">✕</button></div><div class="clwarn">❌ Erreur d’affichage : '+esc(e.message)+'</div>';document.getElementById('clPanel').style.display='flex';}};
+
 </script>
 </body></html>
