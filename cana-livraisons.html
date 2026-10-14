@@ -593,6 +593,9 @@ td[data-plaque]::after{content:attr(data-plaque);display:block;font-size:11px;fo
 .dgw{padding:12px 18px 18px;display:flex;flex-direction:column;gap:8px}.dgl{background:#fff;border-radius:10px;padding:10px 12px;border-left:5px solid #94a3b8;font-size:14px}.dgl div{font-size:13px;color:#334155;margin-top:4px}.dgl.ok{border-color:#2e7d32}.dgl.ko{border-color:#c62828;background:#fff5f5}.dgl.wa{border-color:#f59e0b}
 .dgl button{background:#1b5e20;color:#fff;margin-top:6px}.hcform input{min-width:110px}.hcatraiter td{background:#fff5f5}.hctraite td{opacity:.6}
 #clModeBadge{cursor:pointer}
+td[data-fin]::after{content:attr(data-fin);font-size:11px;font-weight:800;margin-left:4px;opacity:.8}
+.bnong{display:flex;gap:8px;padding:0 18px 10px;flex-wrap:wrap}.bnong button{background:#eef1f6;color:#0f172a;font-size:14px;padding:8px 14px}.bnong button.on{background:#0f172a;color:#fff}.bnong button.ft.on{background:#1565c0}.bnong button.rc.on{background:#2e7d32}
+tr.bnsec td{font-weight:900;font-size:14px;color:#fff!important;padding:7px 10px!important}tr.bnsec.ft td{background:#1565c0}tr.bnsec.rc td{background:#2e7d32}
 td.bnok{position:relative;box-shadow:inset -4px 0 0 #1565c0}td.bnok::after{content:'📄';position:absolute;right:5px;bottom:0;font-size:11px}
 @media print{td.bnok::after{display:none}td.bnok{box-shadow:none}}
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
@@ -695,7 +698,7 @@ function clNames(lbl){
   var heure=clHeureIn(s);
   var parts=s.replace(/\b\d{1,2}\s*H\s*\d{0,2}\b/g,' ').split(/[\/+&,;]+/).map(function(x){return x.replace(/[^A-Z ]/g,' ').trim();}).filter(Boolean);
   var ids=[],noms=[];
-  parts.forEach(function(pn){CL_APP.forEach(function(a){var an=a.nom==='M/H'?'MH':a.nom;if(pn===an||pn.split(' ').indexOf(an)>=0||(an==='MH'&&/MAITRE/.test(pn))){if(ids.indexOf(a.id)<0){ids.push(a.id);noms.push(a.nom);}}});});
+  parts.forEach(function(pn){CL_APP.forEach(function(a){if(!a.nom)return;var an=a.nom==='M/H'?'MH':a.nom;if(pn===an||pn.split(' ').indexOf(an)>=0||(an==='MH'&&/MAITRE/.test(pn))){if(ids.indexOf(a.id)<0){ids.push(a.id);noms.push(a.nom);}}});});
   return {ids:ids,noms:noms,heure:heure};
 }
 function clDay(d){
@@ -703,7 +706,7 @@ function clDay(d){
   var cols=[];
   for(var c=0;c<6;c++){
     var nm=clNames(day.ch[c].t);
-    var col={c:c,label:clClean(day.ch[c].t),ids:nm.ids,noms:nm.noms,camion:clClean(day.cam[c].t),debut:clHeureIn(day.deb[c].t)||nm.heure,items:[],absent:''};
+    var col={c:c,label:clClean(day.ch[c].t),ids:nm.ids,noms:nm.noms,camion:clClean(day.cam[c].t),debut:clHeureIn(day.deb[c].t)||nm.heure,fin:clHeureIn((day.fin||[])[c]||''),items:[],absent:''};
     var block=null;
     for(var r=0;r<TIMES.length;r++){
       var o=day.cells[r+'_'+c];var t=clClean(o&&o.t);
@@ -731,7 +734,7 @@ function clDay(d){
 // ---------- format attendu par l'appli chauffeur ----------
 function clPayload(d){
   var cols=clDay(d);
-  var drivers=CL_APP.map(function(a){return {name:a.nom==='M/H'?'MAITRE_HOTEL':a.nom,truck:'',start:'',end:'',actif:true};});
+  var drivers=CL_APP.map(function(a){return a.nom?{name:a.nomBase||(a.nom==='M/H'?'MAITRE_HOTEL':a.nom),truck:'',start:a.start||'',end:a.end||'',actif:true}:{name:'',actif:false};});
   var tasks={},resume={},sans=[];
   cols.forEach(function(col){
     if(!col.items.length&&!col.absent)return;
@@ -739,6 +742,7 @@ function clPayload(d){
     col.ids.forEach(function(id){
       if(col.camion)drivers[id].truck=col.camion+((typeof pqDe==='function'&&pqDe(col.camion))?' · '+pqDe(col.camion):'');
       if(col.debut)drivers[id].start=col.debut;
+      if(col.fin)drivers[id].end=col.fin;
       var avec=col.noms.filter(function(n){return n!==CL_APP[id].nom;}).join(' + ');
       resume[id]=resume[id]||{absent:col.absent,camion:col.camion,debut:col.debut,avec:avec,items:[]};
       col.items.forEach(function(it){
@@ -1731,12 +1735,126 @@ async function clRattrapageDemarrage(){
   if(localStorage.getItem('cana_liv_resync')!==auj){await clToutRenvoyer(true);localStorage.setItem('cana_liv_resync',auj);}
   else if(clAttente().length)await clFlush();
 }
-setTimeout(clRattrapageDemarrage,2500);
+setTimeout(function(){clRattrapageDemarrage();},2500);
 // 5) BOUTONS
 var _clOuvrirR=clOuvrir;clOuvrir=function(){_clOuvrirR();var bar=document.querySelector('#clBox .clbar');if(bar){var b=document.createElement('button');b.textContent='🔄 Tout renvoyer (35 jours)';b.onclick=function(){if(clCfg.test||!clCfg.auto){clActiverLiaison();return;}clToutRenvoyer().then(function(n){alert('✅ '+n+' jour(s) renvoyé(s) aux chauffeurs.'+(clAttente().length?'\n⚠️ '+clAttente().length+' en attente (connexion).':''));});};bar.appendChild(b);}};
 var _bnPanelR=bnPanel;bnPanel=async function(r){await _bnPanelR(r);var bar=document.querySelector('#clBox .clbar');if(bar&&!document.getElementById('bnRattr')){var b=document.createElement('button');b.id='bnRattr';b.textContent='☁️ Ranger les bons FTBE du planning';b.title='Les bons FTBE posés dans la grille (📎) partent dans le stockage pour l’app chauffeur';b.onclick=async function(){var n=await bnRattraperFTBE('2000-01-01',true);alert(n?'✅ '+n+' bon(s) FTBE rangés pour les chauffeurs.':'Tous les bons FTBE de la grille sont déjà rangés (ou leurs PDF ne sont pas sur ce PC).');bnPanel();};bar.appendChild(b);}};
 // 6) HORS CARTE : jamais d'écran blanc, on dit ce qui ne va pas
 var _hcPanelR=hcPanel;hcPanel=async function(){try{await _hcPanelR();}catch(e){document.getElementById('clBox').innerHTML='<div class="clhead"><h2>🛒 Hors carte</h2><button class="clx" onclick="clClose()">✕</button></div><div class="clwarn">❌ Erreur d’affichage : '+esc(e.message)+'</div>';document.getElementById('clPanel').style.display='flex';}};
+
+// ================= CANA LIVRAISONS 7 : équipe réelle, horaires, Traiteur / Resto-Co, photos, mois complet =================
+// 1) ÉQUIPE : on lit la vraie liste des chauffeurs de l'app (ligne EQUIPE) → chaque colonne va au BON téléphone
+async function clChargerEquipe(){
+  try{var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.EQUIPE&select=donnees&limit=1',{headers:clH()},2);if(!r.ok)return;var rows=await r.json();if(!rows.length)return;
+    var d=rows[0].donnees;if(typeof d==='string')d=JSON.parse(d);if(!d||!d.drivers||!d.drivers.length)return;
+    var L=[];var n=Math.max(d.drivers.length,CL_APP.length);
+    for(var i=0;i<n;i++){var e=d.drivers[i]||{};var anc=CL_APP[i]||{};
+      if(e.actif===false||!(e.name||anc.nom)){L[i]={id:i,nom:'',code:''};continue;}
+      var base=e.name||anc.nomBase||anc.nom;var nn=norm(base).replace(/[^A-Z\/ ]/g,' ').trim();
+      if(/MAITRE|^M\s*\/?\s*H$/.test(nn))nn='M/H';
+      L[i]={id:i,nom:nn,nomBase:base,code:String(e.code||anc.code||''),start:e.start||'',end:e.end||''};}
+    CL_APP.length=0;L.forEach(function(x){CL_APP.push(x);});
+    try{localStorage.setItem('cana_equipe',JSON.stringify(L));}catch(e){}
+  }catch(e){}
+}
+(function(){try{var L=JSON.parse(localStorage.getItem('cana_equipe')||'null');if(L&&L.length){CL_APP.length=0;L.forEach(function(x){CL_APP.push(x);});}}catch(e){}})();
+// 2) UN MOIS AVANT + 5 SEMAINES APRÈS dans l'agenda des chauffeurs
+function clDebutFenetre(){var d=new Date();d.setDate(d.getDate()-31);return fmtD(d);}
+clQueue=function(d){if(!d||d<clDebutFenetre())return;var l=clAttente();if(l.indexOf(d)<0){l.push(d);l.sort();clAttenteSet(l);}};
+var _clFlushV10=clFlush;
+clFlush=async function(){var l=clAttente().filter(function(d){return d>=clDebutFenetre();});clAttenteSet(l);
+  // clFlush d'origine retire les jours passés : on envoie d'abord les jours passés ici
+  var passes=l.filter(function(d){return d<clAuj();});
+  for(var i=0;i<passes.length;i++){if(clCfg.test||!clCfg.auto)break;clBadge('⏳ Agenda passé : '+dayLabel(passes[i]),'#0d47a1');if(await clEnvoiSilencieuxRes(passes[i]))clAttenteSet(clAttente().filter(function(x){return x!==passes[i];}));else break;}
+  return _clFlushV10();};
+clToutRenvoyer=function(silencieux){
+  var d=new Date();d.setDate(d.getDate()-31);var n=0;
+  for(var i=0;i<31+36;i++){var k=fmtD(d);if(store[k]&&Object.keys(store[k].cells||{}).some(function(x){return store[k].cells[x]&&store[k].cells[x].t;})){clQueue(k);n++;}d.setDate(d.getDate()+1);}
+  if(!silencieux)clBadge('⏳ '+n+' jour(s) à renvoyer…','#0d47a1');
+  return clFlush().then(function(){return n;});
+};
+// lsSave d'un jour passé (dans le mois) part aussi
+var _lsSaveV10=lsSave;lsSave=function(){_lsSaveV10.apply(this,arguments);if(!clCfg.test&&clCfg.auto&&cur<clAuj()&&cur>=clDebutFenetre()){clQueue(cur);clearTimeout(clFlushT);clFlushT=setTimeout(clFlush,8000);}};
+// nouvelle version = on renvoie tout une fois (équipe réelle + horaires + mois passé)
+(function(){if(localStorage.getItem('cana_liv_v10')!=='1'){localStorage.removeItem('cana_liv_resync');localStorage.setItem('cana_liv_v10','1');}})();
+var _clRattrV10=clRattrapageDemarrage;
+clRattrapageDemarrage=async function(){await clChargerEquipe();return _clRattrV10();};
+// 3) HORAIRES : début ET fin par chauffeur, affichés dans leur app
+function hrPanel(){
+  ensure(cur);var day=store[cur];day.fin=day.fin||['','','','','',''];
+  var h='<div class="clhead"><h2>🕐 Horaires des chauffeurs — '+esc(dayLabel(cur))+'</h2><button class="clx" onclick="clClose()">✕</button></div>';
+  h+='<p class="clintro">L’heure de <b>début</b> et de <b>fin</b> s’affichent sur le téléphone de chaque chauffeur (« Ma journée »). Le début est aussi la ligne DÉBUT de la grille.</p>';
+  h+='<div class="cltwrap"><table class="clt"><tr><th>Colonne</th><th>Chauffeur(s)</th><th>Camion</th><th>Début</th><th>Fin</th></tr>';
+  for(var c=0;c<6;c++){var nom=clClean(day.ch[c].t);
+    h+='<tr><td>'+(c+1)+'</td><td><b>'+esc(nom||'—')+'</b></td><td>'+esc(clClean(day.cam[c].t))+(pqDe(day.cam[c].t)?' · '+esc(pqDe(day.cam[c].t)):'')+'</td>'+
+      '<td><input type="time" value="'+esc(clHeureIn(day.deb[c].t)||'')+'" onchange="hrSet('+c+',\'deb\',this.value)"></td>'+
+      '<td><input type="time" value="'+esc(clHeureIn(day.fin[c]||'')||'')+'" onchange="hrSet('+c+',\'fin\',this.value)"></td></tr>';}
+  h+='</table></div><div class="clbar"><button onclick="hrSemaine()">📅 Copier ces horaires sur toute la semaine (lun → sam)</button><button class="clsend" onclick="clClose()">✅ Terminé</button></div>';
+  document.getElementById('clBox').innerHTML=h;document.getElementById('clPanel').style.display='flex';
+}
+function hrSet(c,k,v){ensure(cur);var day=store[cur];day.fin=day.fin||['','','','','',''];if(k==='deb')day.deb[c].t=v||'';else day.fin[c]=v||'';lsSave();render();}
+function hrSemaine(){
+  var src=store[cur];var d=new Date(cur+'T12:00');var wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);var n=0;
+  for(var i=0;i<6;i++){var k=fmtD(d);if(k!==cur){ensure(k);var t=store[k];t.fin=t.fin||['','','','','',''];for(var c=0;c<6;c++){if(src.deb[c].t)t.deb[c].t=src.deb[c].t;if(src.fin&&src.fin[c])t.fin[c]=src.fin[c];}clQueue(k);n++;}d.setDate(d.getDate()+1);}
+  lsSave();render();clFlush();alert('✅ Horaires copiés sur '+n+' autre(s) jour(s) de la semaine.');
+}
+function hrAfficher(){try{if(!store[cur])return;var f=store[cur].fin||[];for(var c=0;c<6;c++){var td=document.getElementById(idFor(2,c));if(!td)continue;if(f[c])td.setAttribute('data-fin','→ '+f[c]);else td.removeAttribute('data-fin');}}catch(e){}}
+var _hrRender=render;render=function(){_hrRender.apply(this,arguments);hrAfficher();};
+// 4) BONS : deux cases séparées TRAITEUR (FTBE) / RESTO-CO
+var bnType2='';
+function bnOnglet(t){bnType2=t;bnPanel(false);}
+var _bnPanelV10=bnPanel;
+bnPanel=async function(r){
+  await _bnPanelV10(r);
+  var box=document.getElementById('clBox');var tab=box.querySelector('table.clt');var intro=box.querySelector('.clintro');
+  var nF=bnList.filter(function(b){return b.type==='FTBE';}).length,nR=bnList.length-nF;
+  var ong=document.createElement('div');ong.className='bnong';
+  ong.innerHTML='<button class="'+(bnType2===''?'on':'')+'" onclick="bnOnglet(\'\')">Tous ('+bnList.length+')</button>'+
+    '<button class="ft '+(bnType2==='FTBE'?'on':'')+'" onclick="bnOnglet(\'FTBE\')">🍽️ Traiteur — FTBE ('+nF+')</button>'+
+    '<button class="rc '+(bnType2==='RESTOCO'?'on':'')+'" onclick="bnOnglet(\'RESTOCO\')">🥗 Resto-Co ('+nR+')</button>';
+  if(intro)intro.parentNode.insertBefore(ong,intro.nextSibling);
+  if(tab){var rows=[].slice.call(tab.querySelectorAll('tr.bnrow'));var prev='';
+    rows.forEach(function(tr,i){var b=bnList[i];if(!b)return;var t=b.type==='FTBE'?'FTBE':'RESTOCO';
+      if(bnType2&&t!==bnType2){tr.style.display='none';tr.classList.add('bncache');return;}
+      if(!bnType2&&t!==prev){var hd=document.createElement('tr');hd.className='bnsec '+(t==='FTBE'?'ft':'rc');hd.innerHTML='<td colspan="6">'+(t==='FTBE'?'🍽️ TRAITEUR — bons FTBE':'🥗 RESTO-CO')+'</td>';tr.parentNode.insertBefore(hd,tr);prev=t;}});}
+};
+bnFiltre=function(q){q=bnNorm(q);document.querySelectorAll('tr.bnrow').forEach(function(tr){if(tr.classList.contains('bncache'))return;tr.style.display=!q||tr.getAttribute('data-k').indexOf(q)>=0?'':'none';});};
+// 5) PHOTOS des chauffeurs : liste par jour, ouverture une par une, ou tout en un PDF
+var phList=[],phDay='';
+async function phPanel(d){
+  phDay=d||phDay||cur;var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';
+  var tete='<div class="clhead"><h2>📷 Photos et signatures des chauffeurs</h2><button class="clx" onclick="clClose()">✕</button></div>'+
+    '<div class="clbar"><button onclick="phJour(-1)">◀</button><input type="date" value="'+phDay+'" onchange="phPanel(this.value)"><button onclick="phJour(1)">▶</button><button onclick="phPanel()">🔄</button><button class="clsend" onclick="phPdf()">📄 Toutes les photos du jour en PDF</button><span class="cllien" id="phN"></span></div>';
+  box.innerHTML=tete+'<p class="clintro">⏳ Chargement…</p>';
+  try{var R=clDayRange(phDay);
+    var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.PHOTO_*&updated_at=gte.'+encodeURIComponent(R[0])+'&updated_at=lt.'+encodeURIComponent(R[1])+'&select=date,donnees,updated_at&order=updated_at.asc&limit=400',{headers:clH()});
+    if(!r.ok)throw new Error('code '+r.status);
+    phList=(await r.json()).map(function(x){var o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}o=o||{};o._k=x.date;o._at=x.updated_at;return o;}).filter(function(o){return o.photo||o.dataUrl||o.signature;});
+  }catch(e){box.innerHTML=tete+'<div class="clwarn">❌ Impossible de lire les photos ('+esc(e.message)+').</div>';return;}
+  var h=tete+'<p class="clintro">Les photos prises par les chauffeurs (et les signatures) arrivent ici, rangées par jour. Rien ne s’affiche en grand : clique « 👁 » pour en ouvrir une, ou fais un PDF de toute la journée. Les photos prises depuis un bon sont aussi dans le PDF « 📄 Signé » de 🗂️ Bons.</p>';
+  if(!phList.length)h+='<div class="clvide big" style="margin:0 18px 18px">Aucune photo ce jour-là.</div>';
+  else{h+='<div class="cltwrap"><table class="clt"><tr><th>Heure</th><th>Chauffeur</th><th>Client</th><th>Type</th><th></th></tr>';
+    phList.forEach(function(p,i){h+='<tr><td>'+esc(p.heure||String(p._at||'').slice(11,16))+'</td><td>'+esc(p.chauffeur||'')+(p.vehicule?'<div class="bnsm">'+esc(p.vehicule)+'</div>':'')+'</td><td><b>'+esc(p.client||'')+'</b></td><td>'+(p.type==='signature'?'✍️ Signature'+(p.signataire?' — '+esc(p.signataire):''):'📷 Photo')+'</td><td style="white-space:nowrap"><button onclick="phVoir('+i+')">👁 Voir</button> <button onclick="phTelecharger('+i+')">💾</button></td></tr>';});
+    h+='</table></div>';}
+  box.innerHTML=h;var n=document.getElementById('phN');if(n)n.textContent=phList.length+' élément(s)';
+}
+function phJour(n){var d=new Date((phDay||cur)+'T12:00');d.setDate(d.getDate()+n);phPanel(fmtD(d));}
+function phSrc(p){return p.photo||p.dataUrl||p.signature||'';}
+function phVoir(i){var p=phList[i];var w=window.open('');if(w)w.document.write('<title>'+esc(p.client||'Photo')+'</title><body style="margin:0;background:#111;color:#fff;font-family:Arial"><div style="padding:8px">'+esc((p.chauffeur||'')+' · '+(p.client||'')+' · '+(p.heure||''))+'</div><img src="'+phSrc(p)+'" style="max-width:100%;background:#fff">');}
+function phTelecharger(i){var p=phList[i];var a=document.createElement('a');a.href=phSrc(p);a.download=('photo_'+(p.client||'')+'_'+phDay+'_'+(p.heure||i)).replace(/[^A-Za-z0-9_\-]+/g,'_')+(phSrc(p).indexOf('image/png')>0?'.png':'.jpg');document.body.appendChild(a);a.click();a.remove();}
+async function phPdf(){
+  if(!phList.length){alert('Aucune photo ce jour-là.');return;}
+  var L=PDFLib;var doc=await L.PDFDocument.create();var font=await doc.embedFont(L.StandardFonts.Helvetica);
+  for(var i=0;i<phList.length;i++){var p=phList[i];var s=phSrc(p);try{var b=bnFromB64(s.split(',')[1]);var img=s.indexOf('image/png')>0?await doc.embedPng(b):await doc.embedJpg(b);
+    var pg=doc.addPage([595,842]);var k=Math.min(555/img.width,740/img.height);var w=img.width*k,h=img.height*k;pg.drawImage(img,{x:(595-w)/2,y:70+(740-h)/2,width:w,height:h});
+    pg.drawText(String((p.type==='signature'?'Signature':'Photo')+' - '+(p.client||'')+' - '+(p.chauffeur||'')+' - '+phDay+' '+(p.heure||'')).replace(/[^\x20-\xFF]/g,''),{x:20,y:40,size:10,font:font});}catch(e){}}
+  var bl=new Blob([await doc.save()],{type:'application/pdf'});window.open(URL.createObjectURL(bl),'_blank');
+}
+// 6) Boutons dans la barre
+(function(){var after=document.querySelector('button[onclick="pqPanel()"]');if(!after)return;
+  var b1=document.createElement('button');b1.className='btn-cli';b1.textContent='🕐 Horaires';b1.onclick=hrPanel;after.parentNode.insertBefore(b1,after.nextSibling);
+  var b2=document.createElement('button');b2.className='btn-cli';b2.textContent='📷 Photos';b2.onclick=function(){phPanel(cur);};after.parentNode.insertBefore(b2,b1.nextSibling);})();
+CL_VERSION='v10 · 14/10 soir';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
