@@ -117,6 +117,37 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script>
+// ================= ÉCRITURE FIABLE DANS LA BASE =================
+// Écrire un jour qui EXISTE déjà était refusé (conflit) : on précise maintenant à la base que la ligne
+// est repérée par sa « date » (on_conflict=date) pour qu'elle la REMPLACE. Plans B automatiques si besoin.
+var clDerniereErreur='';
+(function(){
+  if(window.__clFetchFix)return;window.__clFetchFix=true;
+  var _f=window.fetch.bind(window);
+  window.fetch=async function(url,opt){
+    try{
+      var u=String(url||'');var m=((opt&&opt.method)||'GET').toUpperCase();
+      var pr=opt&&opt.headers&&(opt.headers.Prefer||opt.headers.prefer)||'';
+      if(m!=='POST'||u.indexOf('/rest/v1/planning')<0||u.indexOf('on_conflict')>=0||!/merge-duplicates/.test(pr))return _f(url,opt);
+      var u2=u+(u.indexOf('?')>=0?'&':'?')+'on_conflict=date';
+      var r=await _f(u2,opt);if(r.ok)return r;
+      var st=r.status,txt='';try{txt=await r.clone().text();}catch(e){}
+      clDerniereErreur='écriture '+st+' '+txt.slice(0,120);
+      if(st===400||st===409||st===404){var r0=await _f(url,opt);if(r0.ok)return r0;st=r0.status;try{txt=await r0.clone().text();}catch(e){}clDerniereErreur='écriture '+st+' '+txt.slice(0,120);r=r0;}
+      // plan C : modifier la ligne existante
+      var row=null;try{row=JSON.parse(opt.body);}catch(e){}
+      if(row&&!Array.isArray(row)&&row.date){
+        try{var h=Object.assign({},opt.headers);h.Prefer='return=minimal';
+          var r2=await _f(u.split('?')[0]+'?date=eq.'+encodeURIComponent(row.date),{method:'PATCH',headers:h,body:JSON.stringify({donnees:row.donnees,updated_at:row.updated_at||new Date().toISOString()})});
+          if(r2.ok)return r2;clDerniereErreur+=' | modif '+r2.status;}catch(e){clDerniereErreur+=' | modif bloquée';}
+      }
+      return r;
+    }catch(e){clDerniereErreur='connexion : '+(e&&e.message||e);throw e;}
+  };
+})();
+
+</script>
 <script type="text/babel">
 /* Date du jour en heure de Marseille (avant : heure anglaise -> mauvais jour entre minuit et 2h) */
 function jourLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
