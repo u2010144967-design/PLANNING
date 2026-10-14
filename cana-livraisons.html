@@ -1295,7 +1295,7 @@ function MissionDetailScreen({ch,mission,planning,onBack,onNavigate}){
                 </div>
               </div>
             </button>
-          <button onClick={()=>onNavigate('bons',{client:mission.client||mission.task||'',date:(mission.bonCle&&mission.bonCle.slice(4,14))||jourLocal(),bonCle:mission.bonCle||'',fromMission:true})}
+          <button onClick={()=>onNavigate('bons',{client:mission.client||mission.task||'',date:(mission.bonCle&&mission.bonCle.slice(4,14))||jourLocal(),bonCle:mission.bonCle||'',bonCles:mission.bonCles||null,fromMission:true})}
             style={{width:'100%',padding:'15px 14px',borderRadius:16,border:'2px solid rgba(34,197,94,.55)',background:'linear-gradient(135deg,rgba(34,197,94,.18),rgba(22,163,74,.06))',marginBottom:11,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
             <span style={{fontSize:30}}>📄</span>
             <div style={{flex:1,textAlign:'left'}}><div style={{fontSize:16,fontWeight:900,color:'#4ade80'}}>Bon de livraison</div><div style={{fontSize:12,color:'#86efac',fontWeight:700}}>Voir · faire signer · envoyer au client</div></div>
@@ -2774,15 +2774,20 @@ function BonsScreen({ch,init,onBack}){
   const[bon,setBon]=useState(null);const[octets,setOctets]=useState(null);const[archive,setArchive]=useState(null);
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
-  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');
+  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
   async function charger(d){setListe(null);setErr('');setAutres(null);try{setListe(await bnBonsDuJour(d));}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
   useEffect(()=>{if(dejaOuvert.current||!liste||!init||!init.bonCle)return;dejaOuvert.current=true;
-    const b=liste.find(x=>x.date===init.bonCle);ouvrir(b||{date:init.bonCle,client:init.client||'',type:'FTBE',jour:init.date});},[liste]);
+    if(init.bonCle){const b=liste.find(x=>x.date===init.bonCle);ouvrir(b||{date:init.bonCle,client:init.client||'',type:'FTBE',jour:init.date});}},[liste]);
   function decale(n){const d=new Date(jour+'T12:00');d.setDate(d.getDate()+n);setJour(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));}
-  const nFt=(liste||[]).filter(b=>b.type==='FTBE').length,nRc=(liste||[]).length-nFt;
-  const vus=(liste||[]).filter(b=>!onglet||(onglet==='FTBE'?b.type==='FTBE':b.type!=='FTBE')).map(b=>({b,s:bnScore(q,b.client)})).filter(x=>!q.trim()||x.s>=0.5).sort((a,b)=>((a.b.type==='FTBE'?0:1)-(b.b.type==='FTBE'?0:1))||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
+  const catDe=b=>b.type==='FTBE'?'FTBE':b.type==='CENTRE'?'CENTRE':'RESTOCO';
+  const nCat={FTBE:0,RESTOCO:0,CENTRE:0};(liste||[]).forEach(b=>{nCat[catDe(b)]++;});
+  /* taper « centre aéré », « restoco », « ftbe » ou « traiteur » = ouvrir ce dossier */
+  const qn=bnNormA(q);const motCat=/\bCENTRE\b|\bAERE\b/.test(qn)?'CENTRE':/RESTO/.test(qn)?'RESTOCO':/\bFTBE\b|TRAITEUR/.test(qn)?'FTBE':'';
+  const qCli=motCat?qn.replace(/\bCENTRES?\b|\bAERES?\b|RESTO\s*CO|RESTOCO|\bFTBE\b|TRAITEUR/g,'').trim():q;
+  const ong=motCat||onglet;
+  const vus=(liste||[]).filter(b=>!cles||cles.indexOf(b.date)>=0).filter(b=>!ong||catDe(b)===ong).map(b=>({b,s:bnScore(qCli,b.client)})).filter(x=>cles||!qCli.trim()||x.s>=0.5).sort((a,b)=>(({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(a.b)]-({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(b.b)])||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
   async function chercherPartout(){setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
   function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);}
   async function ouvrir(b){
@@ -2807,19 +2812,24 @@ function BonsScreen({ch,init,onBack}){
       if(nSig){try{await sPost('planning',{date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:bon.client,date:jourLocal(),heure:hh,signature:nSig.png,dataUrl:nSig.png,signataire:nSig.qui,bon:k},updated_at:now.toISOString()});}catch(e){}}
       setArchive({bytes:out,qui:meta.signataire,quand:meta.signeA,nbPhotos:nPhotos.length});
       setListe(l=>(l||[]).map(x=>x.date===bon.date?Object.assign({},x,{signe:Object.assign({date:k},meta)}):x));
-      showToast(nSig?'✅ Bon signé et rangé':'📷 Photo rangée avec le bon','var(--green)');
+      showToast('✅ Bon signé et rangé','var(--green)');
     }catch(e){showToast('❌ Pas enregistré (internet ?) — réessaie','var(--red)');}
     setEnvoi(false);
   }
   async function valider(png,nom,prenom){
     const qui=((prenom||'')+' '+(nom||'')).trim();
     const now=new Date();const ligne='Signe par '+(qui||'le client')+' le '+now.toLocaleDateString('fr-FR')+' a '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' - livre par '+ch.display+(ch.truck?' ('+ch.truck+')':'');
-    const nSig={png,qui,nom:nom||'',prenom:prenom||'',ligne};setSig(nSig);setSigner(false);await enregistrer(nSig,photos);
+    const nSig={png,qui,nom:nom||'',prenom:prenom||'',ligne};setSig(nSig);setSigner(false);await enregistrer(nSig,[]);
   }
   async function ajouterPhoto(e){
     const fs=Array.from(e.target.files||[]);e.target.value='';if(!fs.length)return;
-    try{const nv=[];for(const f of fs)nv.push(await bnPhotoCompresse(f));const all=photos.concat(nv);setPhotos(all);await enregistrer(sig,all);}
-    catch(x){showToast('Photo illisible','var(--red)');}
+    /* la photo est une PREUVE pour le responsable : elle part au logiciel (📷 Photos), pas au client */
+    setEnvoi(true);let ok=0;
+    try{for(const f of fs){const img=await bnPhotoCompresse(f);const hh=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+        await bnPostA({date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'photo',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck||'',client:bon.client,date:jourLocal(),heure:hh,photo:img,bon:bon.date,categorie:bon.type},updated_at:new Date().toISOString()});ok++;}
+      setPhotos(p=>p.concat(new Array(ok).fill(1)));showToast('📷 '+ok+' photo(s) envoyée(s) au responsable','var(--green)');}
+    catch(x){showToast(ok?'📷 '+ok+' envoyée(s), une a échoué':'❌ Photo non envoyée (internet ?)','var(--red)');}
+    setEnvoi(false);
   }
   async function envoyerClient(){
     const bytes=(archive&&archive.bytes)||octets;if(!bytes)return;
@@ -2834,7 +2844,7 @@ function BonsScreen({ch,init,onBack}){
     const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=nomF;document.body.appendChild(a);a.click();a.remove();
     if(email)setTimeout(()=>{window.location.href='mailto:'+email+'?subject='+encodeURIComponent('Bon de livraison — '+bon.client)+'&body='+encodeURIComponent(texte+'\n\n(Pièce jointe : '+nomF+')');},600);
   }
-  const tag=t=>t==='FTBE'?{l:'FTBE',c:'#60a5fa',b:'rgba(59,130,246,.15)'}:{l:'RESTO-CO',c:'#4ade80',b:'rgba(34,197,94,.15)'};
+  const tag=t=>t==='FTBE'?{l:'FTBE',c:'#60a5fa',b:'rgba(59,130,246,.15)'}:t==='CENTRE'?{l:'CENTRE AÉRÉ',c:'#fb923c',b:'rgba(249,115,22,.15)'}:{l:'RESTO-CO',c:'#4ade80',b:'rgba(34,197,94,.15)'};
   const Carte=({b,date})=>{const t=tag(b.type);return(
     <div onClick={()=>ouvrir(b)} style={{background:'#0f1e35',border:'1px solid '+(b.signe?'rgba(34,197,94,.55)':'var(--border)'),borderRadius:14,padding:'12px 13px',marginBottom:9,cursor:'pointer',display:'flex',alignItems:'center',gap:10}}>
       <div style={{flex:1,minWidth:0}}>
@@ -2854,13 +2864,13 @@ function BonsScreen({ch,init,onBack}){
         {!signer&&octets&&<div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:12}}>
           <div style={{display:'flex',gap:8}}>
             <button className="btn-p" style={{flex:1,opacity:envoi?.5:1}} disabled={envoi} onClick={()=>setSigner(true)}>{archive&&archive.qui?'✍️ Refaire':'✍️ Faire signer'}</button>
-            <button className="btn-p" style={{flex:1,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',opacity:envoi?.5:1}} disabled={envoi} onClick={()=>photoRef.current&&photoRef.current.click()}>📷 Photo{photos.length?' ('+photos.length+')':''}</button>
+            <button className="btn-p" style={{flex:1,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',opacity:envoi?.5:1}} disabled={envoi} onClick={()=>photoRef.current&&photoRef.current.click()}>📷 Photo → responsable{photos.length?' ('+photos.length+')':''}</button>
             <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple style={{display:'none'}} onChange={ajouterPhoto}/>
           </div>
           {envoi&&<div style={{textAlign:'center',color:'#fbbf24',fontSize:13,fontWeight:800}}>⏳ Enregistrement dans la base…</div>}
           <div className="field" style={{margin:0}}><label>Email du client</label><input type="email" value={mail} onChange={e=>setMail(e.target.value)} onBlur={()=>{if(mail&&mail.indexOf('@')>0&&mail!==(bon.email||''))bnEmailSauver(bon.client,mail.trim());}} placeholder="client@exemple.fr (enregistré pour la prochaine fois)"/></div>
           <button className="btn-p" style={{background:'linear-gradient(135deg,#2563eb,#1d4ed8)'}} onClick={envoyerClient}>📤 Envoyer le bon{fait?' signé':''} au client</button>
-          <div style={{fontSize:11,color:'var(--muted)',textAlign:'center'}}>Signature et photos sont rangées avec le bon, dans un seul PDF (le responsable le retrouve dans son logiciel).</div>
+          <div style={{fontSize:11,color:'var(--muted)',textAlign:'center'}}>Le bon signé part au client. Les photos sont des preuves : elles partent seulement au responsable.</div>
         </div>}
         {signer&&<BnSignPad envoi={envoi} onAnnule={()=>setSigner(false)} onValide={valider}/>}
         {!octets?<div style={{textAlign:'center',color:'var(--muted)',padding:30}}>⏳ Ouverture du bon…</div>:<BnPdfView bytes={(archive&&archive.bytes)||octets}/>}
@@ -2877,13 +2887,14 @@ function BonsScreen({ch,init,onBack}){
       </div>
       <div style={{fontSize:12,color:'#4ade80',fontWeight:800,textTransform:'capitalize',marginBottom:8,textAlign:'center'}}>{bnJourFR(jour)}{jour===jourLocal()?' (aujourd’hui)':''}</div>
       <input value={q} onChange={e=>{setQ(e.target.value);setAutres(null);}} placeholder="🔎 Tape le nom du client…" style={{width:'100%',boxSizing:'border-box',padding:'13px 12px',borderRadius:12,border:'2px solid rgba(34,197,94,.45)',background:'#071526',color:'#fff',fontSize:16,fontFamily:'inherit',marginBottom:12}}/>
-      <div style={{display:'flex',gap:6,marginBottom:12}}>
-        {[['','Tous',(liste||[]).length,'#334155'],['FTBE','🍽️ Traiteur',nFt,'#1d4ed8'],['RESTOCO','🥗 Resto-Co',nRc,'#15803d']].map(([k,l,n,c])=>(
-          <button key={k} onClick={()=>setOnglet(k)} style={{flex:k?1.4:1,padding:'12px 4px',borderRadius:12,border:'2px solid '+(onglet===k?c:'var(--border)'),background:onglet===k?c:'#0f1e35',color:'#fff',fontWeight:900,fontSize:14,fontFamily:'inherit',cursor:'pointer'}}>{l}<div style={{fontSize:11,opacity:.85}}>{n} bon{n>1?'s':''}</div></button>))}
+      {cles&&<div style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.5)',borderRadius:12,padding:'8px 10px',fontSize:12.5,color:'#86efac',fontWeight:800,marginBottom:10}}>📄 Bons de ta livraison « {(init&&init.client)||''} » — choisis le bon</div>}
+      <div style={{display:'flex',gap:5,marginBottom:12}}>
+        {[['','Tous',(liste||[]).length,'#334155'],['FTBE','🍽️ Traiteur',nCat.FTBE,'#1d4ed8'],['RESTOCO','🥗 Resto-Co',nCat.RESTOCO,'#15803d'],['CENTRE','🏕️ Centre aéré',nCat.CENTRE,'#c2410c']].map(([k,l,n,c])=>(
+          <button key={k} onClick={()=>{setOnglet(k);if(motCat)setQ('');}} style={{flex:1,minWidth:0,padding:'10px 2px',borderRadius:12,border:'2px solid '+(ong===k?c:'var(--border)'),background:ong===k?c:'#0f1e35',color:'#fff',fontWeight:900,fontSize:12.5,fontFamily:'inherit',cursor:'pointer',lineHeight:1.2}}>{l}<div style={{fontSize:10.5,opacity:.85}}>{n} bon{n>1?'s':''}</div></button>))}
       </div>
       {err&&<div style={{color:'#fca5a5',fontSize:13,marginBottom:8}}>{err}</div>}
       {liste===null?<div style={{textAlign:'center',color:'var(--muted)',padding:24}}>⏳ Chargement…</div>:
-        vus.length?vus.map((b,i)=>{const sec=!onglet&&(i===0||(vus[i-1].type==='FTBE')!==(b.type==='FTBE'));return <div key={b.date}>{sec&&<div style={{fontSize:12,fontWeight:900,color:'#fff',background:b.type==='FTBE'?'#1d4ed8':'#15803d',borderRadius:8,padding:'6px 10px',margin:'4px 0 8px'}}>{b.type==='FTBE'?'🍽️ TRAITEUR — bons FTBE':'🥗 RESTO-CO'}</div>}<Carte b={b}/></div>;}):
+        vus.length?vus.map((b,i)=>{const sec=!ong&&(i===0||catDe(vus[i-1])!==catDe(b));return <div key={b.date}>{sec&&<div style={{fontSize:12,fontWeight:900,color:'#fff',background:({FTBE:'#1d4ed8',RESTOCO:'#15803d',CENTRE:'#c2410c'})[catDe(b)],borderRadius:8,padding:'6px 10px',margin:'4px 0 8px'}}>{({FTBE:'🍽️ TRAITEUR — bons FTBE',RESTOCO:'🥗 RESTO-CO',CENTRE:'🏕️ CENTRE AÉRÉ'})[catDe(b)]}</div>}<Carte b={b}/></div>;}):
         <div style={{textAlign:'center',color:'var(--muted)',padding:'18px 8px',fontSize:13}}>{liste.length?'Aucun bon pour « '+q+' » ce jour-là.':'Aucun bon rangé pour ce jour.'}</div>}
       {q.trim().length>=3&&autres===null&&<button className="btn-s" style={{width:'100%'}} onClick={chercherPartout}>🔎 Chercher « {q} » sur tous les jours</button>}
       {autres==='…'&&<div style={{textAlign:'center',color:'var(--muted)',padding:12}}>⏳ Recherche…</div>}
@@ -2905,11 +2916,13 @@ function App(){
         const today=jourLocal();
         /* Charger les lignes de jours ET CONFIG_PRINCIPALE (qui contient les drivers) */
         const [rowsJours, rowsConfig] = await Promise.all([
-          sGet(`planning?date=gte.${(()=>{const x=new Date();x.setDate(x.getDate()-31);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');})()}&date=lte.2099-12-31&select=date,donnees&order=date.asc&limit=200`),
-          sGet(`planning?date=eq.CONFIG_PRINCIPALE&select=date,donnees&limit=1`)
+          sGet(`planning?date=gte.${(()=>{const x=new Date();x.setDate(x.getDate()-366);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');})()}&date=lte.2099-12-31&select=date,donnees&order=date.asc&limit=700`),
+          sGet(`planning?date=in.(CONFIG_PRINCIPALE,CANA_SOURCE)&select=date,donnees&limit=2`)
         ]);
         /* l'ancienne config d'abord, puis les journées : une journée envoyée par CANA LIVRAISONS remplace tout l'ancien contenu de ce jour */
         const rows=[...(rowsConfig||[]),...(rowsJours||[])];
+        /* CANA_SOURCE présent = le planning CANA LIVRAISONS est la SEULE source : on ignore les vieilles livraisons */
+        const _sourceUnique=(rowsConfig||[]).some(r=>r.date==='CANA_SOURCE');
         const _joursCana={};(rowsJours||[]).forEach(r=>{let d=r.donnees;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}if(d&&d.source==='CANA_LIVRAISONS')_joursCana[r.date]=1;});
         const tasks={};
         let drivers=null;
@@ -2920,7 +2933,8 @@ function App(){
         (rows||[]).forEach(r=>{
           let d=r.donnees;
           if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}
-          if(d&&d.tasks){if(r.date==='CONFIG_PRINCIPALE'){Object.keys(d.tasks).forEach(k=>{if(!_joursCana[k.split('|')[0]])tasks[k]=d.tasks[k];});}
+          if(_sourceUnique&&d&&d.tasks&&(r.date==='CONFIG_PRINCIPALE'||(/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&!_joursCana[r.date]))){/* ancien logiciel : ignoré */}
+          else if(d&&d.tasks){if(r.date==='CONFIG_PRINCIPALE'){Object.keys(d.tasks).forEach(k=>{if(!_joursCana[k.split('|')[0]])tasks[k]=d.tasks[k];});}
             else{if(_joursCana[r.date])Object.keys(tasks).forEach(k=>{if(k.split('|')[0]===r.date)delete tasks[k];});Object.assign(tasks,d.tasks);}}
           /* On récolte TOUS les clients connus : bibliothèque, tournées, missions */
           try{
