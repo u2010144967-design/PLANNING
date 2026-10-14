@@ -2437,6 +2437,24 @@ function jouerBip(){
   }catch(e){}
 }
 
+function alerterModifTournee(ajout,retire){
+  try{jouerBip();}catch(e){}
+  if(navigator.vibrate)navigator.vibrate([400,150,400,150,400]);
+  const txt=(ajout.length?'Ajouté : '+ajout.join(', '):'')+(ajout.length&&retire.length?' — ':'')+(retire.length?'Retiré : '+retire.join(', '):'');
+  try{if('Notification' in window&&Notification.permission==='granted'){new Notification('⚠️ Modification de tournée',{body:txt||'Ta journée a changé',tag:'modif-tournee',requireInteraction:true});}}catch(e){}
+  try{
+    let el=document.getElementById('modifTournee');if(el)el.remove();
+    el=document.createElement('div');el.id='modifTournee';
+    el.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:18px';
+    const li=(t,c,ic)=>t.map(x=>'<div style="padding:8px 10px;margin:5px 0;border-radius:10px;background:'+c+';font-weight:800">'+ic+' '+String(x).replace(/</g,'&lt;')+'</div>').join('');
+    el.innerHTML='<div style="background:#1e293b;border:3px solid #f59e0b;border-radius:18px;padding:18px;max-width:420px;width:100%;color:#fff;font-family:inherit">'+
+      '<div style="font-size:22px;font-weight:900;color:#fbbf24;margin-bottom:8px">⚠️ ATTENTION<br>Modification de tournée</div>'+
+      '<div style="font-size:14px;color:#cbd5e1;margin-bottom:8px">Le responsable vient de changer ta journée :</div>'+
+      li(ajout,'rgba(34,197,94,.25)','➕')+li(retire,'rgba(239,68,68,.25)','➖')+
+      '<button id="modifOk" style="margin-top:12px;width:100%;padding:15px;border:none;border-radius:12px;background:#f59e0b;color:#111;font-size:17px;font-weight:900">✅ J’ai vu</button></div>';
+    document.body.appendChild(el);document.getElementById('modifOk').onclick=()=>el.remove();
+  }catch(e){}
+}
 function alerterNouvelleMission(mission){
   /* 1. Bip sonore */
   jouerBip();
@@ -2704,18 +2722,43 @@ function bnPhotoCompresse(file){return new Promise((res,rej)=>{const u=URL.creat
 function bnScore(q,client){const ws=bnNormA(q).split(' ').filter(x=>x.length>=2&&!/^\d+H?\d*$/.test(x));if(!ws.length)return 1;const c=bnNormA(client);let n=0;ws.forEach(w=>{if(c.indexOf(w)>=0)n++;});return n/ws.length;}
 function bnJourFR(d){if(!d)return '';const x=new Date(d+'T12:00');return x.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
 function bnLatin(s){return String(s||'').normalize('NFC').replace(/[^\x20-\xFF]/g,'');}
-async function bnArchive(bytes,type,sig,photos,legende){
-  await bnLibsA();const L=window.PDFLib;
-  const doc=await L.PDFDocument.load(bytes);const font=await doc.embedFont(L.StandardFonts.Helvetica);
-  if(sig){const pages=doc.getPages();const pg=pages[pages.length-1];const {width:W,height:Hh}=pg.getSize();const img=await doc.embedPng(sig.png);
-    let b;if(type==='RESTOCO'){b={x:W*0.15,y:Hh*0.206,w:W*0.42,h:Hh*0.03};}
-    else{b={x:W*0.55,y:Hh*0.045,w:W*0.40,h:Hh*0.07};pg.drawRectangle({x:b.x-5,y:b.y-16,width:b.w+10,height:b.h+30,color:L.rgb(1,1,1),borderColor:L.rgb(.2,.2,.2),borderWidth:.8});pg.drawText('Signature du client',{x:b.x,y:b.y+b.h+3,size:7,font,color:L.rgb(.2,.2,.2)});}
-    const k=Math.min(b.w/img.width,b.h/img.height);const iw=img.width*k,ih=img.height*k;
-    pg.drawImage(img,{x:b.x+(b.w-iw)/2,y:b.y+(b.h-ih)/2,width:iw,height:ih});
-    pg.drawText(bnLatin(sig.ligne),{x:b.x,y:b.y-10,size:6.5,font,color:L.rgb(.05,.1,.45)});}
-  for(let i=0;i<photos.length;i++){const jpg=await doc.embedJpg(bnVersOctets(photos[i].split(',')[1]));const pg=doc.addPage([595,842]);
-    const k=Math.min(555/jpg.width,760/jpg.height);const w=jpg.width*k,h=jpg.height*k;pg.drawImage(jpg,{x:(595-w)/2,y:60+(760-h)/2,width:w,height:h});
-    pg.drawText(bnLatin('Photo '+(i+1)+'/'+photos.length+' - '+legende),{x:20,y:30,size:9,font,color:L.rgb(.1,.1,.1)});}
+async function bnReperes(bytes){
+  try{await bnLibsA();const pdf=await window.pdfjsLib.getDocument({data:bytes.slice(0)}).promise;const pg=await pdf.getPage(pdf.numPages);
+    const it=(await pg.getTextContent()).items;const f=re=>{const x=it.find(i=>re.test(i.str||''));return x?{x:x.transform[4],y:x.transform[5],w:x.width||0}:null;};
+    return {sig:f(/Signature du client/i),rem:f(/Remarques/i),arr:f(/ARRIV/i),froid:f(/^\s*FROID\s*$/i),chaud:f(/^\s*CHAUD\s*$/i)};
+  }catch(e){return {};}
+}
+function bnCouper(t,n){const mots=String(t||'').split(/\s+/);const L=[];let l='';mots.forEach(m=>{if((l+' '+m).trim().length>n){if(l)L.push(l);l=m;}else l=(l+' '+m).trim();});if(l)L.push(l);return L;}
+async function bnArchive(bytes,type,sig,photos,legende,extra){
+  await bnLibsA();const L=window.PDFLib;extra=extra||{};
+  const R=await bnReperes(bytes);
+  const doc=await L.PDFDocument.load(bytes);const font=await doc.embedFont(L.StandardFonts.Helvetica);const gras=await doc.embedFont(L.StandardFonts.HelveticaBold);
+  const pages=doc.getPages();const pg=pages[pages.length-1];const {width:W,height:Hh}=pg.getSize();const bleu=L.rgb(.05,.1,.45);
+  const tempTxt=(extra.temp!==undefined&&extra.temp!=='')?String(extra.temp)+' °C':'';
+  const remLignes=[];if(tempTxt)remLignes.push('Temperature a reception : '+tempTxt);bnCouper(bnLatin(extra.remarque||''),48).forEach(x=>remLignes.push(x));
+  let pose=false;
+  if(R.sig){
+    /* bon Resto-Co / centre aéré : on écrit DANS les cases prévues */
+    if(sig){const img=await doc.embedPng(sig.png);const b={x:R.sig.x+R.sig.w/2-130,y:R.sig.y-27,w:260,h:22};
+      const k=Math.min(b.w/img.width,b.h/img.height);const iw=img.width*k,ih=img.height*k;
+      pg.drawImage(img,{x:b.x+(b.w-iw)/2,y:b.y+(b.h-ih)/2,width:iw,height:ih});
+      pg.drawText(bnLatin(sig.ligne),{x:R.sig.x-100,y:R.sig.y-35,size:5.5,font,color:bleu});}
+    if(R.rem&&remLignes.length){remLignes.slice(0,3).forEach((t,n)=>pg.drawText(bnLatin(t),{x:R.rem.x-48,y:R.rem.y-10-n*7.5,size:6.5,font:n===0&&tempTxt?gras:font,color:bleu}));}
+    if(R.arr&&tempTxt){const row=(/CHAUD/i.test(extra.liaison||'')&&R.chaud)?R.chaud:(R.froid||R.chaud);if(row)pg.drawText(tempTxt,{x:R.arr.x,y:row.y,size:7.5,font:gras,color:bleu});}
+    pose=true;
+  }
+  if(!pose){
+    /* bon FTBE (ou scan) : petit cadre en bas à droite */
+    const lignes=remLignes.slice(0,4);const b={x:W*0.52,y:Hh*0.035,w:W*0.44,h:Hh*0.07};const hh=b.h+30+lignes.length*8;
+    pg.drawRectangle({x:b.x-5,y:b.y-16-lignes.length*8,width:b.w+10,height:hh,color:L.rgb(1,1,1),borderColor:L.rgb(.2,.2,.2),borderWidth:.8});
+    pg.drawText('Signature du client',{x:b.x,y:b.y+b.h+3,size:7,font,color:L.rgb(.2,.2,.2)});
+    if(sig){const img=await doc.embedPng(sig.png);const k=Math.min(b.w/img.width,b.h/img.height);const iw=img.width*k,ih=img.height*k;
+      pg.drawImage(img,{x:b.x+(b.w-iw)/2,y:b.y+(b.h-ih)/2,width:iw,height:ih});pg.drawText(bnLatin(sig.ligne),{x:b.x,y:b.y-10,size:6,font,color:bleu});}
+    lignes.forEach((t,n)=>pg.drawText(bnLatin(t),{x:b.x,y:b.y-19-n*8,size:6.5,font:n===0&&tempTxt?gras:font,color:bleu}));
+  }
+  for(let i=0;i<photos.length;i++){const jpg=await doc.embedJpg(bnVersOctets(photos[i].split(',')[1]));const p2=doc.addPage([595,842]);
+    const k=Math.min(555/jpg.width,760/jpg.height);const w=jpg.width*k,h=jpg.height*k;p2.drawImage(jpg,{x:(595-w)/2,y:60+(760-h)/2,width:w,height:h});
+    p2.drawText(bnLatin('Photo '+(i+1)+'/'+photos.length+' - '+legende),{x:20,y:30,size:9,font,color:L.rgb(.1,.1,.1)});}
   return await doc.save();
 }
 function BnPdfView({bytes}){
@@ -2774,7 +2817,7 @@ function BonsScreen({ch,init,onBack}){
   const[bon,setBon]=useState(null);const[octets,setOctets]=useState(null);const[archive,setArchive]=useState(null);
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
-  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
+  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[temp,setTemp]=useState('');const[remarque,setRemarque]=useState('');const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
   async function charger(d){setListe(null);setErr('');setAutres(null);try{setListe(await bnBonsDuJour(d));}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
@@ -2789,7 +2832,7 @@ function BonsScreen({ch,init,onBack}){
   const ong=motCat||onglet;
   const vus=(liste||[]).filter(b=>!cles||cles.indexOf(b.date)>=0).filter(b=>!ong||catDe(b)===ong).map(b=>({b,s:bnScore(qCli,b.client)})).filter(x=>cles||!qCli.trim()||x.s>=0.5).sort((a,b)=>(({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(a.b)]-({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(b.b)])||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
   async function chercherPartout(){setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
-  function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);}
+  function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);setTemp('');setRemarque('');}
   async function ouvrir(b){
     fermer();setBon(b);
     try{const m=await bnDonnees(b.date);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe}));setOctets(await bnPdfA(m));
@@ -2803,11 +2846,11 @@ function BonsScreen({ch,init,onBack}){
     try{
       const now=new Date();const hh=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});const dj=now.toLocaleDateString('fr-FR');
       const legende=bon.client+' - '+dj+' '+hh+' - '+ch.display;
-      const out=await bnArchive(octets,bon.type,nSig,nPhotos,legende);
+      const out=await bnArchive(octets,bon.type,nSig,nPhotos,legende,{temp,remarque,liaison:bon.liaison||''});
       const k=bon.date.replace('BON_','BONSIGNE_');const pid='S'+(bon.id||k.slice(-12))+'x'+Date.now().toString(36);
       const n=await bnStockerA(pid,out);
       const meta={type:bon.type,jour:bon.jour,client:bon.client,no:bon.no||'',tournee:bon.tournee||'',email:mail||bon.email||'',pid,parts:n,taille:out.length,
-        signe:!!nSig,signataire:nSig?nSig.qui:'',prenom:nSig?nSig.prenom:'',nom:nSig?nSig.nom:'',signeA:dj+' '+hh,nbPhotos:nPhotos.length,chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',original:bon.date};
+        signe:!!nSig,signataire:nSig?nSig.qui:'',prenom:nSig?nSig.prenom:'',nom:nSig?nSig.nom:'',signeA:dj+' '+hh,nbPhotos:nPhotos.length,temperature:temp,remarque:remarque||'',chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',original:bon.date};
       await bnPostA({date:k,donnees:meta,updated_at:now.toISOString()});
       if(nSig){try{await sPost('planning',{date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:bon.client,date:jourLocal(),heure:hh,signature:nSig.png,dataUrl:nSig.png,signataire:nSig.qui,bon:k},updated_at:now.toISOString()});}catch(e){}}
       setArchive({bytes:out,qui:meta.signataire,quand:meta.signeA,nbPhotos:nPhotos.length});
@@ -2861,9 +2904,19 @@ function BonsScreen({ch,init,onBack}){
       <div className="scroll"><div style={{padding:12}}>
         <div style={{fontSize:12,color:'var(--muted)',marginBottom:8}}>{tag(bon.type).l} · {bnJourFR(bon.jour||jour)}{bon.no&&bon.type==='FTBE'?' · N° '+bon.no:''}{bon.tournee?' · tournée '+bon.tournee:''}</div>
         {archive&&<div style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.5)',borderRadius:12,padding:10,fontSize:13,color:'#86efac',fontWeight:800,marginBottom:10}}>{archive.qui?'✅ Signé par '+archive.qui:'⏳ Pas encore signé'}{archive.quand?' · '+archive.quand:''}{archive.nbPhotos?' · 📷 '+archive.nbPhotos+' photo'+(archive.nbPhotos>1?'s':''):''}</div>}
+        {!signer&&octets&&<div style={{background:'#0f1e35',border:'2px solid '+(temp===''?'#f59e0b':'rgba(34,197,94,.6)'),borderRadius:14,padding:12,marginBottom:10}}>
+          <div style={{fontSize:13,fontWeight:900,color:temp===''?'#fbbf24':'#86efac',marginBottom:6}}>🌡️ Température des produits à la livraison {temp===''?'(obligatoire)':'✅'}</div>
+          <select value={temp} onChange={e=>setTemp(e.target.value)} style={{width:'100%',padding:'12px 10px',borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:17,fontWeight:900,fontFamily:'inherit'}}>
+            <option value="">— Choisis la température —</option>
+            {Array.from({length:111},(_,i)=>i-10).map(v=><option key={v} value={v}>{v} °C</option>)}
+          </select>
+          <div style={{fontSize:13,fontWeight:900,color:'#93c5fd',margin:'10px 0 6px'}}>📝 Remarques (client ou chauffeur)</div>
+          <textarea value={remarque} onChange={e=>setRemarque(e.target.value)} rows={3} maxLength={180} placeholder="Ex : 2 bacs manquants, client absent, produit abîmé, livré à l'accueil…" style={{width:'100%',boxSizing:'border-box',padding:10,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:15,fontFamily:'inherit',resize:'vertical'}}/>
+          <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>La température et les remarques sont écrites sur le bon signé.</div>
+        </div>}
         {!signer&&octets&&<div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:12}}>
           <div style={{display:'flex',gap:8}}>
-            <button className="btn-p" style={{flex:1,opacity:envoi?.5:1}} disabled={envoi} onClick={()=>setSigner(true)}>{archive&&archive.qui?'✍️ Refaire':'✍️ Faire signer'}</button>
+            <button className="btn-p" style={{flex:1,opacity:(envoi||temp==='')?.45:1}} disabled={envoi} onClick={()=>{if(temp===''){showToast('🌡️ Choisis d’abord la température','var(--red)');return;}setSigner(true);}}>{archive&&archive.qui?'✍️ Refaire':'✍️ Faire signer'}</button>
             <button className="btn-p" style={{flex:1,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',opacity:envoi?.5:1}} disabled={envoi} onClick={()=>photoRef.current&&photoRef.current.click()}>📷 Photo → responsable{photos.length?' ('+photos.length+')':''}</button>
             <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple style={{display:'none'}} onChange={ajouterPhoto}/>
           </div>
@@ -2915,10 +2968,22 @@ function App(){
       try{
         const today=jourLocal();
         /* Charger les lignes de jours ET CONFIG_PRINCIPALE (qui contient les drivers) */
-        const [rowsJours, rowsConfig] = await Promise.all([
-          sGet(`planning?date=gte.${(()=>{const x=new Date();x.setDate(x.getDate()-366);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');})()}&date=lte.2099-12-31&select=date,donnees&order=date.asc&limit=700`),
-          sGet(`planning?date=in.(CONFIG_PRINCIPALE,CANA_SOURCE)&select=date,donnees&limit=2`)
+        /* Économie de données : l'année complète toutes les 10 min, sinon seulement hier → après-demain */
+        const _iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+        const _d=n=>{const x=new Date();x.setDate(x.getDate()+n);return _iso(x);};
+        const _complet=!window.__rowsCache||Date.now()-(window.__dernierComplet||0)>10*60*1000;
+        const _de=_complet?_d(-366):_d(-1),_a=_complet?'2099-12-31':_d(2);
+        const [rowsJ, rowsC] = await Promise.all([
+          sGet(`planning?date=gte.${_de}&date=lte.${_a}&select=date,donnees&order=date.asc&limit=800`),
+          _complet?sGet(`planning?date=in.(CONFIG_PRINCIPALE,CANA_SOURCE)&select=date,donnees&limit=2`):Promise.resolve(window.__cfgCache||[])
         ]);
+        if(Array.isArray(rowsJ)){
+          if(_complet){window.__rowsCache={};window.__dernierComplet=Date.now();}
+          rowsJ.forEach(r=>{if(/^\d{4}-\d{2}-\d{2}$/.test(r.date))window.__rowsCache[r.date]=r;});
+        }
+        if(Array.isArray(rowsC)&&_complet)window.__cfgCache=rowsC;
+        const rowsJours=Object.values(window.__rowsCache||{}).sort((x,y)=>x.date<y.date?-1:1);
+        const rowsConfig=window.__cfgCache||[];
         /* l'ancienne config d'abord, puis les journées : une journée envoyée par CANA LIVRAISONS remplace tout l'ancien contenu de ce jour */
         const rows=[...(rowsConfig||[]),...(rowsJours||[])];
         /* CANA_SOURCE présent = le planning CANA LIVRAISONS est la SEULE source : on ignore les vieilles livraisons */
@@ -2994,12 +3059,24 @@ function App(){
         const mesMissionsAvant=window._dernierNbMissions;
         const mesMissionsMaintenant=getMissions(nouveauPlanning,ch.id,today);
         const nbMaintenant=mesMissionsMaintenant.length;
-        if(typeof mesMissionsAvant==='number' && nbMaintenant>mesMissionsAvant){
+        if(false&&typeof mesMissionsAvant==='number' && nbMaintenant>mesMissionsAvant){
           /* Une ou plusieurs nouvelles missions ! Alerter avec la dernière ajoutée */
           const nouvelle=mesMissionsMaintenant[mesMissionsMaintenant.length-1];
           alerterNouvelleMission(nouvelle||{});
         }
         window._dernierNbMissions=nbMaintenant;
+        /* ⚠️ MODIFICATION DE TOURNÉE : on compare avec ce que le chauffeur avait déjà vu */
+        try{
+          const sigK='cana_vu_'+ch.id+'_'+today;
+          const sigNow=JSON.stringify(mesMissionsMaintenant.map(m=>(m.heure||'')+' '+(m.client||m.task||'')));
+          const sigAvant=localStorage.getItem(sigK);
+          if(sigAvant!==null&&sigAvant!==sigNow){
+            const av=JSON.parse(sigAvant),ap=JSON.parse(sigNow);
+            const ajout=ap.filter(x=>av.indexOf(x)<0),retire=av.filter(x=>ap.indexOf(x)<0);
+            alerterModifTournee(ajout,retire);
+          }
+          localStorage.setItem(sigK,sigNow);
+        }catch(e){}
         if(Object.keys(tasks).length>0){setPlanning(nouveauPlanning);}
         else{
           const rows2=await sGet(`planning?date=eq.${today}&limit=1`);
@@ -3012,7 +3089,7 @@ function App(){
       }catch(e){}
     }
     loadAll();
-    const iv=setInterval(loadAll,3000);
+    const iv=setInterval(loadAll,10000);
     return()=>clearInterval(iv);
   },[ch]);
 
