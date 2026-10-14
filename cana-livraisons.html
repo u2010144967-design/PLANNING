@@ -600,6 +600,35 @@ td.bnok{position:relative;box-shadow:inset -4px 0 0 #1565c0}td.bnok::after{conte
 </style>
 <div id="clPanel" onclick="if(event.target===this)clClose()"><div id="clBox"></div></div>
 <script>
+// ================= ÉCRITURE FIABLE DANS LA BASE =================
+// Écrire un jour qui EXISTE déjà était refusé (conflit) : on précise maintenant à la base que la ligne
+// est repérée par sa « date » (on_conflict=date) pour qu'elle la REMPLACE. Plans B automatiques si besoin.
+var clDerniereErreur='';
+(function(){
+  if(window.__clFetchFix)return;window.__clFetchFix=true;
+  var _f=window.fetch.bind(window);
+  window.fetch=async function(url,opt){
+    try{
+      var u=String(url||'');var m=((opt&&opt.method)||'GET').toUpperCase();
+      var pr=opt&&opt.headers&&(opt.headers.Prefer||opt.headers.prefer)||'';
+      if(m!=='POST'||u.indexOf('/rest/v1/planning')<0||u.indexOf('on_conflict')>=0||!/merge-duplicates/.test(pr))return _f(url,opt);
+      var u2=u+(u.indexOf('?')>=0?'&':'?')+'on_conflict=date';
+      var r=await _f(u2,opt);if(r.ok)return r;
+      var st=r.status,txt='';try{txt=await r.clone().text();}catch(e){}
+      clDerniereErreur='écriture '+st+' '+txt.slice(0,120);
+      if(st===400||st===409||st===404){var r0=await _f(url,opt);if(r0.ok)return r0;st=r0.status;try{txt=await r0.clone().text();}catch(e){}clDerniereErreur='écriture '+st+' '+txt.slice(0,120);r=r0;}
+      // plan C : modifier la ligne existante
+      var row=null;try{row=JSON.parse(opt.body);}catch(e){}
+      if(row&&!Array.isArray(row)&&row.date){
+        try{var h=Object.assign({},opt.headers);h.Prefer='return=minimal';
+          var r2=await _f(u.split('?')[0]+'?date=eq.'+encodeURIComponent(row.date),{method:'PATCH',headers:h,body:JSON.stringify({donnees:row.donnees,updated_at:row.updated_at||new Date().toISOString()})});
+          if(r2.ok)return r2;clDerniereErreur+=' | modif '+r2.status;}catch(e){clDerniereErreur+=' | modif bloquée';}
+      }
+      return r;
+    }catch(e){clDerniereErreur='connexion : '+(e&&e.message||e);throw e;}
+  };
+})();
+
 // ================= CANA LIVRAISONS : lien planning -> appli chauffeur =================
 // Ajouté par-dessus le planning sans rien changer à la grille ni à la sauvegarde existante.
 var CL_SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co', CL_KEY='sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
@@ -973,7 +1002,7 @@ async function clEnvoiSilencieux(d){
   try{
     var r=await clUpsert(d,P.donnees);
     if(!r.ok)throw 0;var hst=clEnvoyes();hst[d]=new Date().toLocaleString('fr-FR')+' (auto)';localStorage.setItem('cana_liv_envois',JSON.stringify(hst));clBadge('🔄 Chauffeurs à jour '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),'#1b5e20');
-  }catch(e){clBadge('⚠️ Envoi aux chauffeurs en échec — nouvel essai dans 1 min','#b71c1c');clearTimeout(clAutoT);clAutoT=setTimeout(function(){clEnvoiSilencieux(d);},60000);}
+  }catch(e){clBadge('⚠️ Envoi en échec ('+(typeof clDerniereErreur!=='undefined'&&clDerniereErreur?clDerniereErreur.slice(0,60):'connexion')+') — nouvel essai dans 1 min','#b71c1c');clearTimeout(clAutoT);clAutoT=setTimeout(function(){clEnvoiSilencieux(d);},60000);}
 }
 function clBadge(t,c){var b=document.getElementById('clAutoBadge');if(!b)return;b.textContent=t;b.style.background=c;b.style.display='inline-block';}
 var _clLsSave=lsSave;lsSave=function(){_clLsSave.apply(this,arguments);if(!clCfg.test&&clCfg.auto&&cur>=fmtD(new Date())){var d=cur;clearTimeout(clAutoT);clBadge('⏳ Envoi aux chauffeurs…','#0d47a1');clAutoT=setTimeout(function(){clEnvoiSilencieux(d);},8000);}};
