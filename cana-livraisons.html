@@ -697,7 +697,7 @@ var CL_SUPA='https://lllzlidwtcjwsxbgkygn.supabase.co', CL_KEY='sb_publishable_3
 var CL_APP=[{id:0,nom:'OTMANE',code:'1111'},{id:1,nom:'NICOLAS',code:'2222'},{id:2,nom:'MICKAEL',code:'3333'},{id:3,nom:'KARIM',code:'4444'},{id:4,nom:'M/H',code:'5555'},{id:5,nom:'ANTHONY',code:'6666'}];
 var CL_ABS=['ARRET MALADIE','FIN DE CONTRAT','REPOS','REPOPS','CP','CC','CONGE','RECUP','RTT','ABSENT','MALADE','FERIE','FERIER','FORMATION','AM','A/M'];
 var CL_CLIENT_COLORS=['#FF71DA','#FF65B2','#F8BBD0','#EC407A','#92D050','#43A047','#C6EFCE'];
-var clCfg={test:true,ignore:''};
+var clCfg={test:false,auto:true,ignore:''};
 var clFiches={};
 function clLoad(){try{var a=localStorage.getItem('cana_liv_cfg');if(a)clCfg=Object.assign(clCfg,JSON.parse(a));}catch(e){}try{var b=localStorage.getItem('cana_liv_fiches');if(b)clFiches=JSON.parse(b)||{};}catch(e){}}
 function clSaveCfg(){try{localStorage.setItem('cana_liv_cfg',JSON.stringify(clCfg));}catch(e){}}
@@ -2202,7 +2202,7 @@ var eqData=null;
 var EQ_DEF=[{name:'OTMANE',code:'1111'},{name:'NICOLAS',code:'2222'},{name:'MICKAEL',code:'3333'},{name:'KARIM',code:'4444'},{name:'MAITRE_HOTEL',code:'5555'},{name:'ANTHONY',code:'6666'}];
 async function eqLire(){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.EQUIPE&select=donnees&limit=1',{headers:clH()});if(!r.ok)throw new Error('code '+r.status);var rows=await r.json();var d=rows.length?rows[0].donnees:null;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}d=d||{};if(!d.drivers||!d.drivers.length)d.drivers=EQ_DEF.map(function(x){return Object.assign({},x,{actif:true});});return d;}
 async function eqEcrire(d){d.maj=new Date().toISOString();var r=await clUpsert('EQUIPE',d);if(!r||!r.ok)throw new Error('enregistrement refusé');await clChargerEquipe();}
-function eqLien(i,e){return EQ_URL+'?chauffeur='+i+'&code='+encodeURIComponent(e.code);}
+function eqLien(i,e){return EQ_URL+'?chauffeur='+i;}
 function eqCodeLibre(){var pris={};(eqData.drivers||[]).forEach(function(e){pris[String(e.code)]=1;});var c;do{c=String(1000+Math.floor(Math.random()*9000));}while(pris[c]);return c;}
 async function eqPanel(){
   var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';
@@ -2212,7 +2212,7 @@ async function eqPanel(){
 }
 function eqDessiner(){
   var h='<div class="clhead"><h2>👥 Équipe des chauffeurs — une appli par chauffeur</h2><button class="clx" onclick="clClose()">✕</button></div>';
-  h+='<p class="clintro">Chaque chauffeur a <b>son propre lien</b> : il l’ouvre une fois sur son téléphone, il arrive directement sur <b>sa</b> journée (sans liste ni code), et il peut l’ajouter à l’écran d’accueil. Ton appli à toi reste celle avec tous les chauffeurs. Le nom du chauffeur doit être écrit pareil en haut de sa colonne dans le planning.</p>';
+  h+='<p class="clintro">Chaque chauffeur a <b>son propre lien</b> : quand il l’ouvre, il ne voit <b>que son nom</b>, il tape <b>son code</b> et il arrive sur <b>sa</b> journée. Il peut l’ajouter à l’écran d’accueil. Ton appli à toi reste celle avec tous les chauffeurs. Le nom du chauffeur doit être écrit pareil en haut de sa colonne dans le planning.</p>';
   h+='<div class="cltwrap"><table class="clt"><tr><th>N°</th><th>Chauffeur</th><th>Code</th><th>Son appli</th><th></th></tr>';
   eqData.drivers.forEach(function(e,i){if(e.actif===false)return;var nom=e.name||'';
     h+='<tr><td>'+i+'</td><td><input value="'+esc(nom).replace(/"/g,'&quot;')+'" onchange="eqRenommer('+i+',this.value)" style="font-weight:900;text-transform:uppercase;max-width:170px"></td><td><b>'+esc(e.code)+'</b></td>'+
@@ -2247,12 +2247,42 @@ async function eqRemplacer(i){
 async function eqArchiver(i){var e=eqData.drivers[i];if(!confirm('Retirer '+e.name+' de l’équipe ?\nSon lien ne marchera plus. Son historique est gardé.'))return;e.actif=false;try{await eqEcrire(eqData);}catch(x){e.actif=true;alert('❌ '+x.message);}eqDessiner();}
 async function eqReactiver(i){eqData.drivers[i].actif=true;try{await eqEcrire(eqData);}catch(x){alert('❌ '+x.message);}eqDessiner();}
 async function eqRenommer(i,v){v=(v||'').trim().toUpperCase();if(!v)return;eqData.drivers[i].name=v;try{await eqEcrire(eqData);}catch(x){alert('❌ '+x.message);}}
-function eqCopier(i){var l=eqLien(i,eqData.drivers[i]);try{navigator.clipboard.writeText(l);alert('📋 Lien de '+eqData.drivers[i].name+' copié :\n\n'+l+'\n\nColle-le dans un SMS ou WhatsApp pour lui.');}catch(e){prompt('Copie ce lien :',l);}}
-function eqSMS(i){var e=eqData.drivers[i];var t='Bonjour '+e.name+', voici ton application CANA LIVRAISONS. Ouvre ce lien sur ton téléphone puis « Ajouter à l’écran d’accueil » : '+eqLien(i,e);location.href='sms:?&body='+encodeURIComponent(t);}
+function eqCopier(i){var l=eqLien(i,eqData.drivers[i]);try{navigator.clipboard.writeText(l);alert('📋 Lien de '+eqData.drivers[i].name+' copié :\n\n'+l+'\n\nSon code : '+eqData.drivers[i].code+'\n\nColle le lien dans un SMS ou WhatsApp et donne-lui son code.');}catch(e){prompt('Copie ce lien :',l);}}
+function eqSMS(i){var e=eqData.drivers[i];var t='Bonjour '+e.name+', voici ton application CANA LIVRAISONS. Ouvre ce lien sur ton téléphone puis « Ajouter à l’écran d’accueil ». Ton code : '+e.code+' . Lien : '+eqLien(i,e);location.href='sms:?&body='+encodeURIComponent(t);}
 function eqQR(i){var e=eqData.drivers[i];var l=eqLien(i,e);var w=window.open('','_blank');if(!w){alert('Autorise les fenêtres pop-up.');return;}
-  w.document.write('<title>Appli de '+esc(e.name)+'</title><body style="font-family:Arial;text-align:center;padding:30px"><h1>📱 Appli de '+esc(e.name)+'</h1><p>Scanne ce QR code avec l’appareil photo du téléphone</p><div id="q" style="display:inline-block;padding:16px;background:#fff"></div><p style="font-size:12px;color:#555;word-break:break-all">'+esc(l)+'</p><p>Puis : menu du navigateur → « Ajouter à l’écran d’accueil »</p><button onclick="print()">🖨️ Imprimer</button>'+
+  w.document.write('<title>Appli de '+esc(e.name)+'</title><body style="font-family:Arial;text-align:center;padding:30px"><h1>📱 Appli de '+esc(e.name)+'</h1><p>Scanne ce QR code avec l’appareil photo du téléphone</p><div id="q" style="display:inline-block;padding:16px;background:#fff"></div><p style="font-size:22px;font-weight:bold">Ton code : '+esc(e.code)+'</p><p style="font-size:12px;color:#555;word-break:break-all">'+esc(l)+'</p><p>Puis : menu du navigateur → « Ajouter à l’écran d’accueil »</p><button onclick="print()">🖨️ Imprimer</button>'+
     '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>new QRCode(document.getElementById("q"),{text:'+JSON.stringify(l)+',width:260,height:260});<\/script>');w.document.close();}
-CL_VERSION='v15 · 18/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+// la liaison avec les téléphones est ACTIVE par défaut (sinon rien n'arrive aux chauffeurs)
+(function(){if(localStorage.getItem('cana_liv_v16')!=='1'){clCfg.test=false;clCfg.auto=true;clSaveCfg();localStorage.setItem('cana_liv_v16','1');localStorage.removeItem('cana_liv_resync');try{clModeBadge();}catch(e){}}})();
+CL_VERSION='v16 · 18/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 13 : PLUSIEURS PC — un PC « en retard » n'écrase plus les journées =================
+// Chaque journée modifiée sur CE PC garde l'heure de sa modification (_maj).
+// Le renvoi automatique au démarrage n'envoie QUE les jours modifiés ici plus récemment que dans la base.
+var _clQueueV17=clQueue;
+clQueue=function(d){try{if(store[d])store[d]._maj=Date.now();}catch(e){}return _clQueueV17(d);};
+function _clAjoutSansMarque(d){if(!d||d<clDebutFenetre())return;var l=clAttente();if(l.indexOf(d)<0){l.push(d);l.sort();clAttenteSet(l);}}
+clToutRenvoyer=async function(silencieux,force){
+  var deb=clDebutFenetre();var f=new Date();f.setDate(f.getDate()+62);var fin=fmtD(f);
+  var base={};
+  try{var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=gte.'+deb+'&date=lte.'+fin+'&select=date,updated_at&limit=1000',{headers:clH()},2);if(r.ok)(await r.json()).forEach(function(x){base[x.date]=Date.parse(x.updated_at)||0;});else return 0;}
+  catch(e){return 0;}
+  var n=0,proteges=0;
+  Object.keys(store).filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k)&&k>=deb&&k<=fin;}).sort().forEach(function(k){
+    var day=store[k];if(!day)return;var rempli=Object.keys(day.cells||{}).some(function(x){return day.cells[x]&&day.cells[x].t;});
+    var ici=day._maj||0;
+    if(force||(base[k]===undefined&&rempli)||(base[k]!==undefined&&ici>base[k])){_clAjoutSansMarque(k);n++;}
+    else if(base[k]!==undefined&&rempli)proteges++;});
+  if(!silencieux)clBadge('⏳ '+n+' jour(s) à envoyer…','#0d47a1');
+  window._clProteges=proteges;
+  await clFlush();return n;
+};
+// le bouton « Tout renvoyer » de l'écran Chauffeurs force l'envoi (choix volontaire)
+var _clOuvrirV17=clOuvrir;clOuvrir=function(){_clOuvrirV17();var b=[].slice.call(document.querySelectorAll('#clBox .clbar button')).find(function(x){return /Tout renvoyer/.test(x.textContent);});
+  if(b){b.textContent='🔄 Renvoyer tout CE planning aux chauffeurs';b.onclick=function(){if(!confirm('Envoyer TOUTES les journées de ce PC aux chauffeurs ?\n\n⚠️ À faire seulement depuis le PC qui a le planning à jour : les journées plus récentes faites sur un autre PC seraient remplacées.'))return;clToutRenvoyer(false,true).then(function(n){alert('✅ '+n+' jour(s) envoyé(s).');});};}};
+// le diagnostic dit si ce PC a des journées plus anciennes que la base (autre PC plus à jour)
+var _clDiagV17=clDiagnostic;clDiagnostic=async function(){await _clDiagV17();var w=document.querySelector('#clBox .dgw');if(w&&window._clProteges){var d=document.createElement('div');d.className='dgl wa';d.innerHTML='<b>🛡️ '+window._clProteges+' journée(s) protégée(s)</b><div>Elles ont été modifiées plus récemment sur un autre PC : ce PC ne les a pas écrasées. Pour travailler ici avec le planning à jour, ouvre la dernière sauvegarde (📁 Fichier → Ouvrir un fichier de planning).</div>';w.insertBefore(d,w.firstChild);}};
+CL_VERSION='v17 · 18/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 // ================= CANA LIVRAISONS : EN-TÊTE PROFESSIONNEL (menus rangés) — la grille ne change pas =================
 function uiEnTete(){
