@@ -651,6 +651,8 @@ function HomeScreen({ch,planning,onNavigate,unreadMsg,onLogout}){
 
   const tiles=[
     {ico:'📄',lbl:'Mes bons',sub:'FTBE · Resto-Co',col:'#4ade80',bg:'rgba(34,197,94,.14)',brd:'rgba(34,197,94,.5)',to:'bons'},
+    {ico:'📦',lbl:'Matériel',sub:'Laissé · repris',col:'#c4b5fd',bg:'rgba(167,139,250,.14)',brd:'rgba(167,139,250,.5)',to:'materiel'},
+    {ico:'🔄',lbl:'Actualiser',sub:'Synchroniser',col:'#7dd3fc',bg:'rgba(56,189,248,.12)',brd:'rgba(56,189,248,.45)',to:'refresh'},
     {ico:'🕐',lbl:'Mes horaires',sub:'Début & fin du mois',col:'#38bdf8',bg:'rgba(14,165,233,.12)',brd:'rgba(14,165,233,.4)',to:'horaires'},
     {ico:'📅',lbl:'Mon planning',sub:'Mes jours',col:'#c084fc',bg:'rgba(168,85,247,.12)',brd:'rgba(168,85,247,.35)',to:'calendar'},
     {ico:'💬',lbl:'Messages',sub:'Responsable',col:'#2dd4bf',bg:'rgba(20,184,166,.12)',brd:'rgba(20,184,166,.35)',to:'messages',badge:unreadMsg},
@@ -1295,12 +1297,23 @@ function MissionDetailScreen({ch,mission,planning,onBack,onNavigate}){
                 </div>
               </div>
             </button>
-          <button onClick={()=>onNavigate('bons',{client:mission.client||mission.task||'',date:(mission.bonCle&&mission.bonCle.slice(4,14))||jourLocal(),bonCle:mission.bonCle||'',bonCles:mission.bonCles||null,fromMission:true})}
+          {mission.tournee&&mission.tournee.clients&&<div style={{border:'2px solid '+(({BLEU:'#3b82f6',JAUNE:'#eab308',ROSE:'#ec4899',VIOLET:'#a855f7',VERT:'#22c55e'})[mission.tournee.couleur]||'#64748b'),borderRadius:16,padding:10,marginBottom:12,background:'#0f1e35'}}>
+            <div style={{fontSize:16,fontWeight:900,color:'#fff',marginBottom:4}}>🚚 Tournée {mission.tournee.couleur} — {mission.tournee.clients.length} client{mission.tournee.clients.length>1?'s':''}</div>
+            <div style={{fontSize:12,color:'var(--muted)',marginBottom:8}}>Touche un client pour ouvrir son bon (température, signature, envoi).</div>
+            {mission.tournee.clients.map((c,i)=>(
+              <button key={i} onClick={()=>onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||jourLocal(),bonCle:c.bonCle,fromMission:true})}
+                style={{width:'100%',textAlign:'left',display:'flex',alignItems:'center',gap:10,padding:'11px 10px',marginBottom:6,borderRadius:12,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontFamily:'inherit',cursor:'pointer'}}>
+                <span style={{minWidth:26,height:26,borderRadius:13,background:'#334155',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:13}}>{i+1}</span>
+                <span style={{flex:1}}><span style={{display:'block',fontWeight:900,fontSize:14}}>{c.client}</span>{c.adresse&&<span style={{display:'block',fontSize:11,color:'var(--muted)'}}>📍 {c.adresse}</span>}{c.codeAcces&&<span style={{display:'block',fontSize:11,color:'#fbbf24'}}>🔑 {c.codeAcces}</span>}</span>
+                <span style={{fontSize:20}}>📄</span>
+              </button>))}
+          </div>}
+          {!mission.tournee&&<button onClick={()=>onNavigate('bons',{client:mission.client||mission.task||'',date:(mission.bonCle&&mission.bonCle.slice(4,14))||jourLocal(),bonCle:mission.bonCle||'',bonCles:mission.bonCles||null,fromMission:true})}
             style={{width:'100%',padding:'15px 14px',borderRadius:16,border:'2px solid rgba(34,197,94,.55)',background:'linear-gradient(135deg,rgba(34,197,94,.18),rgba(22,163,74,.06))',marginBottom:11,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
             <span style={{fontSize:30}}>📄</span>
             <div style={{flex:1,textAlign:'left'}}><div style={{fontSize:16,fontWeight:900,color:'#4ade80'}}>Bon de livraison</div><div style={{fontSize:12,color:'#86efac',fontWeight:700}}>Voir · faire signer · envoyer au client</div></div>
             <span style={{color:'#4ade80',fontSize:18}}>›</span>
-          </button>
+          </button>}
           {/* ═══ LES 2 PREUVES : en gros, impossible à rater ═══ */}
           <div style={{display:'flex',gap:9,marginBottom:11}}>
             <button onClick={()=>setActiveSection('photo')}
@@ -2725,7 +2738,7 @@ function bnLatin(s){return String(s||'').normalize('NFC').replace(/[^\x20-\xFF]/
 async function bnReperes(bytes){
   try{await bnLibsA();const pdf=await window.pdfjsLib.getDocument({data:bytes.slice(0)}).promise;const pg=await pdf.getPage(pdf.numPages);
     const it=(await pg.getTextContent()).items;const f=re=>{const x=it.find(i=>re.test(i.str||''));return x?{x:x.transform[4],y:x.transform[5],w:x.width||0}:null;};
-    return {sig:f(/Signature du client/i),rem:f(/Remarques/i),arr:f(/ARRIV/i),froid:f(/^\s*FROID\s*$/i),chaud:f(/^\s*CHAUD\s*$/i)};
+    return {sig:f(/Signature du client/i),rem:f(/Remarques/i),arr:f(/ARRIV/i),froid:f(/^\s*FROID\s*$/i),chaud:f(/^\s*CHAUD\s*$/i),livr:f(/BACS LIVR/i),repr:f(/BACS REPRIS/i),gn12:f(/^\s*GN\s*1\s*\/\s*2\s*$/i),gn1:f(/^\s*GN\s*1\s*$/i)};
   }catch(e){return {};}
 }
 function bnCouper(t,n){const mots=String(t||'').split(/\s+/);const L=[];let l='';mots.forEach(m=>{if((l+' '+m).trim().length>n){if(l)L.push(l);l=m;}else l=(l+' '+m).trim();});if(l)L.push(l);return L;}
@@ -2734,8 +2747,9 @@ async function bnArchive(bytes,type,sig,photos,legende,extra){
   const R=await bnReperes(bytes);
   const doc=await L.PDFDocument.load(bytes);const font=await doc.embedFont(L.StandardFonts.Helvetica);const gras=await doc.embedFont(L.StandardFonts.HelveticaBold);
   const pages=doc.getPages();const pg=pages[pages.length-1];const {width:W,height:Hh}=pg.getSize();const bleu=L.rgb(.05,.1,.45);
-  const tempTxt=(extra.temp!==undefined&&extra.temp!=='')?String(extra.temp)+' °C':'';
-  const remLignes=[];if(tempTxt)remLignes.push('Temperature a reception : '+tempTxt);bnCouper(bnLatin(extra.remarque||''),48).forEach(x=>remLignes.push(x));
+  const tF=(extra.tempF!==undefined&&extra.tempF!=='')?String(extra.tempF)+' °C':'',tC=(extra.tempC!==undefined&&extra.tempC!=='')?String(extra.tempC)+' °C':'';
+  const tempTxt=[tF?'froid '+tF:'',tC?'chaud '+tC:''].filter(Boolean).join(' / ');
+  const remLignes=[];if(tempTxt)remLignes.push('Temp. reception : '+tempTxt);bnCouper(bnLatin(extra.remarque||''),48).forEach(x=>remLignes.push(x));
   let pose=false;
   if(R.sig){
     /* bon Resto-Co / centre aéré : on écrit DANS les cases prévues */
@@ -2744,7 +2758,15 @@ async function bnArchive(bytes,type,sig,photos,legende,extra){
       pg.drawImage(img,{x:b.x+(b.w-iw)/2,y:b.y+(b.h-ih)/2,width:iw,height:ih});
       pg.drawText(bnLatin(sig.ligne),{x:R.sig.x-100,y:R.sig.y-35,size:5.5,font,color:bleu});}
     if(R.rem&&remLignes.length){remLignes.slice(0,3).forEach((t,n)=>pg.drawText(bnLatin(t),{x:R.rem.x-48,y:R.rem.y-10-n*7.5,size:6.5,font:n===0&&tempTxt?gras:font,color:bleu}));}
-    if(R.arr&&tempTxt){const row=(/CHAUD/i.test(extra.liaison||'')&&R.chaud)?R.chaud:(R.froid||R.chaud);if(row)pg.drawText(tempTxt,{x:R.arr.x,y:row.y,size:7.5,font:gras,color:bleu});}
+    if(R.arr&&tF&&R.froid)pg.drawText(tF,{x:R.arr.x,y:R.froid.y,size:7.5,font:gras,color:bleu});
+    if(R.arr&&tC&&R.chaud)pg.drawText(tC,{x:R.arr.x,y:R.chaud.y,size:7.5,font:gras,color:bleu});
+    /* bacs gastro livrés / repris (bouton Matériel) */
+    const M=extra.mat||{};
+    /* « BACS LIVRÉS BACS REPRIS » peut être lu comme un seul texte : on le coupe en deux colonnes */
+    let cL=R.livr,cR=R.repr;if(cL&&cR&&Math.abs(cL.x-cR.x)<1){cL={x:cL.x,w:cL.w/2};cR={x:cR.x+cR.w/2,w:cR.w/2};}
+    const ecr=(lig,col,v)=>{if(lig&&col&&v)pg.drawText(String(v),{x:col.x+col.w/2-2,y:lig.y,size:8,font:gras,color:bleu});};
+    if(M.GN12){ecr(R.gn12,cL,M.GN12.laisse);ecr(R.gn12,cR,M.GN12.repris);}
+    if(M.GN1){ecr(R.gn1,cL,M.GN1.laisse);ecr(R.gn1,cR,M.GN1.repris);}
     pose=true;
   }
   if(!pose){
@@ -2809,6 +2831,53 @@ function BnSignPad({onValide,onAnnule,envoi}){
     <button className="btn-p" style={{marginTop:10,opacity:trace&&!envoi?1:.5}} disabled={!trace||envoi} onClick={()=>onValide(ref.current.toDataURL('image/png'),nom,prenom)}>{envoi?'⏳ Enregistrement…':'✅ Valider la signature'}</button>
   </div>);
 }
+/* ═══════════════════ MATÉRIEL LAISSÉ / REPRIS chez le client ═══════════════════ */
+const MAT_TYPES=[['GN12','Bacs gastro GN 1/2'],['GN1','Bacs gastro GN 1/1'],['CAISSE','Caisses'],['CONT','Conteneurs chauds / isothermes'],['AUTRE','Autre matériel']];
+function matSlug(c){return bnNormA(c).replace(/ /g,'-').slice(0,60);}
+async function matHistorique(client){const r=await sGet('planning?date=like.MAT_'+encodeURIComponent(matSlug(client))+'_*&select=donnees&order=date.asc&limit=500');return (Array.isArray(r)?r:[]).map(x=>{let o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}return o||{};});}
+function matSoldes(h){const S={};h.forEach(o=>Object.entries(o.items||{}).forEach(([k,v])=>{S[k]=(S[k]||0)+(+v.laisse||0)-(+v.repris||0);}));return S;}
+function MaterielPad({ch,client,bonCle,onFini}){
+  const[items,setItems]=useState({});const[solde,setSolde]=useState(null);const[note,setNote]=useState('');const[envoi,setEnvoi]=useState(false);
+  useEffect(()=>{matHistorique(client).then(h=>setSolde(matSoldes(h))).catch(()=>setSolde({}));},[client]);
+  const ch2=(k,f,d)=>setItems(it=>{const v=Object.assign({laisse:0,repris:0},it[k]||{});v[f]=Math.max(0,(+v[f]||0)+d);return Object.assign({},it,{[k]:v});});
+  const bt={width:40,height:40,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:20,fontWeight:900,cursor:'pointer'};
+  async function valider(){
+    const it={};Object.entries(items).forEach(([k,v])=>{if(v.laisse||v.repris)it[k]=v;});
+    if(!Object.keys(it).length&&!note){showToast('Rien à enregistrer','var(--red)');return;}
+    setEnvoi(true);
+    try{const now=new Date();await bnPostA({date:'MAT_'+matSlug(client)+'_'+Date.now()+'_'+ch.id,donnees:{type:'materiel',client,date:jourLocal(),heure:now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',items:it,note,bon:bonCle||''},updated_at:now.toISOString()});
+      showToast('📦 Matériel enregistré','var(--green)');onFini&&onFini(it);}
+    catch(e){showToast('❌ Non enregistré (internet ?)','var(--red)');}
+    setEnvoi(false);
+  }
+  return(<div style={{background:'#0f1e35',border:'2px solid #a78bfa',borderRadius:14,padding:12,marginTop:10}}>
+    <div style={{fontSize:15,fontWeight:900,color:'#ddd6fe'}}>📦 Matériel — {client}</div>
+    <div style={{fontSize:11.5,color:'var(--muted)',margin:'3px 0 8px'}}>Laissé = déposé chez le client aujourd'hui · Repris = récupéré aujourd'hui</div>
+    {MAT_TYPES.map(([k,l])=>{const v=items[k]||{laisse:0,repris:0};const sd=solde?(solde[k]||0):null;return(
+      <div key={k} style={{borderTop:'1px solid var(--border)',padding:'8px 0'}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:900,color:'#fff'}}><span>{l}</span>{sd!==null&&<span style={{color:sd>0?'#fbbf24':'var(--muted)',fontSize:11.5}}>chez le client : {sd}</span>}</div>
+        <div style={{display:'flex',gap:10,marginTop:6}}>
+          {[['laisse','Laissé','#86efac'],['repris','Repris','#93c5fd']].map(([f,t,c])=>(<div key={f} style={{flex:1,display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11.5,color:c,fontWeight:900,minWidth:44}}>{t}</span>
+            <button style={bt} onClick={()=>ch2(k,f,-1)}>−</button><span style={{minWidth:24,textAlign:'center',fontSize:18,fontWeight:900,color:'#fff'}}>{v[f]||0}</span><button style={bt} onClick={()=>ch2(k,f,1)}>+</button></div>))}
+        </div></div>);})}
+    <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2} placeholder="Précision (ex : conteneur rouge, 1 caisse cassée…)" style={{width:'100%',boxSizing:'border-box',marginTop:8,padding:8,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:14,fontFamily:'inherit'}}/>
+    <button className="btn-p" style={{marginTop:8,opacity:envoi?.5:1}} disabled={envoi} onClick={valider}>{envoi?'⏳ Enregistrement…':'✅ Enregistrer le matériel'}</button>
+  </div>);
+}
+function MaterielScreen({ch,planning,onBack}){
+  const ms=(typeof getMissions==='function'&&planning)?getMissions(planning,ch.id,jourLocal()):[];
+  const noms=[];ms.forEach(m=>{if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>noms.push(c.client));else if(m.client)noms.push(m.client);});
+  const[cli,setCli]=useState('');const[autre,setAutre]=useState('');
+  return(<div className="screen"><Header title="📦 Matériel" onBack={onBack}/><div className="scroll"><div style={{padding:12}}>
+    {!cli&&<div>
+      <div style={{fontSize:13,color:'var(--muted)',marginBottom:8}}>Choisis le client de ta journée :</div>
+      {noms.length?noms.map((n,i)=><button key={i} onClick={()=>setCli(n)} style={{width:'100%',textAlign:'left',padding:'13px 12px',marginBottom:7,borderRadius:12,border:'1px solid var(--border)',background:'#0f1e35',color:'#fff',fontWeight:900,fontSize:14,fontFamily:'inherit'}}>📦 {n}</button>):<div style={{color:'var(--muted)',fontSize:13,marginBottom:8}}>Aucun client aujourd'hui.</div>}
+      <div style={{display:'flex',gap:6,marginTop:10}}><input value={autre} onChange={e=>setAutre(e.target.value)} placeholder="Autre client…" style={{flex:1,padding:12,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:15,fontFamily:'inherit'}}/><button className="btn-s" onClick={()=>autre.trim()&&setCli(autre.trim().toUpperCase())}>OK</button></div>
+    </div>}
+    {cli&&<div><button className="btn-s" onClick={()=>setCli('')} style={{marginBottom:8}}>← Autre client</button><MaterielPad ch={ch} client={cli} onFini={()=>setCli('')}/></div>}
+  </div></div></div>);
+}
 function BonsScreen({ch,init,onBack}){
   const[jour,setJour]=useState((init&&init.date)||jourLocal());
   const[q,setQ]=useState(((init&&init.client)||'').replace(/\b\d{1,2}\s*[Hh:]\s*\d{0,2}\b.*$/,'').trim());
@@ -2817,7 +2886,7 @@ function BonsScreen({ch,init,onBack}){
   const[bon,setBon]=useState(null);const[octets,setOctets]=useState(null);const[archive,setArchive]=useState(null);
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
-  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[temp,setTemp]=useState('');const[remarque,setRemarque]=useState('');const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
+  const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[tempF,setTempF]=useState('');const[tempC,setTempC]=useState('');const temp=(tempF!==''||tempC!=='')?'ok':'';const[remarque,setRemarque]=useState('');const[mat,setMat]=useState(null);const[voirMat,setVoirMat]=useState(false);const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
   async function charger(d){setListe(null);setErr('');setAutres(null);try{setListe(await bnBonsDuJour(d));}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
@@ -2832,7 +2901,7 @@ function BonsScreen({ch,init,onBack}){
   const ong=motCat||onglet;
   const vus=(liste||[]).filter(b=>!cles||cles.indexOf(b.date)>=0).filter(b=>!ong||catDe(b)===ong).map(b=>({b,s:bnScore(qCli,b.client)})).filter(x=>cles||!qCli.trim()||x.s>=0.5).sort((a,b)=>(({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(a.b)]-({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(b.b)])||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
   async function chercherPartout(){setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
-  function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);setTemp('');setRemarque('');}
+  function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);setTempF('');setTempC('');setRemarque('');setMat(null);setVoirMat(false);}
   async function ouvrir(b){
     fermer();setBon(b);
     try{const m=await bnDonnees(b.date);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe}));setOctets(await bnPdfA(m));
@@ -2846,11 +2915,11 @@ function BonsScreen({ch,init,onBack}){
     try{
       const now=new Date();const hh=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});const dj=now.toLocaleDateString('fr-FR');
       const legende=bon.client+' - '+dj+' '+hh+' - '+ch.display;
-      const out=await bnArchive(octets,bon.type,nSig,nPhotos,legende,{temp,remarque,liaison:bon.liaison||''});
+      const out=await bnArchive(octets,bon.type,nSig,nPhotos,legende,{tempF,tempC,remarque,mat,liaison:bon.liaison||''});
       const k=bon.date.replace('BON_','BONSIGNE_');const pid='S'+(bon.id||k.slice(-12))+'x'+Date.now().toString(36);
       const n=await bnStockerA(pid,out);
       const meta={type:bon.type,jour:bon.jour,client:bon.client,no:bon.no||'',tournee:bon.tournee||'',email:mail||bon.email||'',pid,parts:n,taille:out.length,
-        signe:!!nSig,signataire:nSig?nSig.qui:'',prenom:nSig?nSig.prenom:'',nom:nSig?nSig.nom:'',signeA:dj+' '+hh,nbPhotos:nPhotos.length,temperature:temp,remarque:remarque||'',chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',original:bon.date};
+        signe:!!nSig,signataire:nSig?nSig.qui:'',prenom:nSig?nSig.prenom:'',nom:nSig?nSig.nom:'',signeA:dj+' '+hh,nbPhotos:nPhotos.length,temperature:[tempF!==''?'froid '+tempF+' °C':'',tempC!==''?'chaud '+tempC+' °C':''].filter(Boolean).join(' / '),tempFroid:tempF,tempChaud:tempC,materiel:mat||null,remarque:remarque||'',chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',original:bon.date};
       await bnPostA({date:k,donnees:meta,updated_at:now.toISOString()});
       if(nSig){try{await sPost('planning',{date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:bon.client,date:jourLocal(),heure:hh,signature:nSig.png,dataUrl:nSig.png,signataire:nSig.qui,bon:k},updated_at:now.toISOString()});}catch(e){}}
       setArchive({bytes:out,qui:meta.signataire,quand:meta.signeA,nbPhotos:nPhotos.length});
@@ -2905,14 +2974,21 @@ function BonsScreen({ch,init,onBack}){
         <div style={{fontSize:12,color:'var(--muted)',marginBottom:8}}>{tag(bon.type).l} · {bnJourFR(bon.jour||jour)}{bon.no&&bon.type==='FTBE'?' · N° '+bon.no:''}{bon.tournee?' · tournée '+bon.tournee:''}</div>
         {archive&&<div style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.5)',borderRadius:12,padding:10,fontSize:13,color:'#86efac',fontWeight:800,marginBottom:10}}>{archive.qui?'✅ Signé par '+archive.qui:'⏳ Pas encore signé'}{archive.quand?' · '+archive.quand:''}{archive.nbPhotos?' · 📷 '+archive.nbPhotos+' photo'+(archive.nbPhotos>1?'s':''):''}</div>}
         {!signer&&octets&&<div style={{background:'#0f1e35',border:'2px solid '+(temp===''?'#f59e0b':'rgba(34,197,94,.6)'),borderRadius:14,padding:12,marginBottom:10}}>
-          <div style={{fontSize:13,fontWeight:900,color:temp===''?'#fbbf24':'#86efac',marginBottom:6}}>🌡️ Température des produits à la livraison {temp===''?'(obligatoire)':'✅'}</div>
-          <select value={temp} onChange={e=>setTemp(e.target.value)} style={{width:'100%',padding:'12px 10px',borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:17,fontWeight:900,fontFamily:'inherit'}}>
-            <option value="">— Choisis la température —</option>
-            {Array.from({length:111},(_,i)=>i-10).map(v=><option key={v} value={v}>{v} °C</option>)}
-          </select>
+          <div style={{fontSize:13,fontWeight:900,color:temp===''?'#fbbf24':'#86efac',marginBottom:6}}>🌡️ Températures à la livraison {temp===''?'(au moins une, obligatoire)':'✅'}</div>
+          <div style={{display:'flex',gap:8}}>
+            <div style={{flex:1}}><div style={{fontSize:12,fontWeight:900,color:'#7dd3fc',marginBottom:3}}>❄️ FROID</div>
+              <select value={tempF} onChange={e=>setTempF(e.target.value)} style={{width:'100%',padding:'12px 6px',borderRadius:10,border:'2px solid '+(tempF!==''?'#38bdf8':'var(--border)'),background:'#071526',color:'#fff',fontSize:16,fontWeight:900,fontFamily:'inherit'}}>
+                <option value="">—</option>{Array.from({length:21},(_,i)=>i-10).map(v=><option key={v} value={v}>{v} °C</option>)}</select></div>
+            <div style={{flex:1}}><div style={{fontSize:12,fontWeight:900,color:'#fca5a5',marginBottom:3}}>🔥 CHAUD</div>
+              <select value={tempC} onChange={e=>setTempC(e.target.value)} style={{width:'100%',padding:'12px 6px',borderRadius:10,border:'2px solid '+(tempC!==''?'#f87171':'var(--border)'),background:'#071526',color:'#fff',fontSize:16,fontWeight:900,fontFamily:'inherit'}}>
+                <option value="">—</option>{Array.from({length:38},(_,i)=>i+63).map(v=><option key={v} value={v}>{v} °C</option>)}</select></div>
+          </div>
+          <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>Froid : de -10 à 10 °C · Chaud : de 63 à 100 °C. Si tu livres les deux, remplis les deux.</div>
           <div style={{fontSize:13,fontWeight:900,color:'#93c5fd',margin:'10px 0 6px'}}>📝 Remarques (client ou chauffeur)</div>
           <textarea value={remarque} onChange={e=>setRemarque(e.target.value)} rows={3} maxLength={180} placeholder="Ex : 2 bacs manquants, client absent, produit abîmé, livré à l'accueil…" style={{width:'100%',boxSizing:'border-box',padding:10,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:15,fontFamily:'inherit',resize:'vertical'}}/>
-          <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>La température et les remarques sont écrites sur le bon signé.</div>
+          <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>Températures, remarques et bacs sont écrits sur le bon signé.</div>
+          <button onClick={()=>setVoirMat(v=>!v)} style={{marginTop:10,width:'100%',padding:'12px',borderRadius:12,border:'2px solid #a78bfa',background:mat?'rgba(167,139,250,.25)':'transparent',color:'#ddd6fe',fontWeight:900,fontSize:15,fontFamily:'inherit',cursor:'pointer'}}>📦 Matériel laissé / repris {mat?'✅':''}</button>
+          {voirMat&&<MaterielPad ch={ch} client={bon.client} bonCle={bon.date} onFini={m=>{setMat(m);setVoirMat(false);}}/>}
         </div>}
         {!signer&&octets&&<div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:12}}>
           <div style={{display:'flex',gap:8}}>
@@ -2959,6 +3035,17 @@ function BonsScreen({ch,init,onBack}){
 function App(){
   const[ch,setCh]=useState(null);
   const[screen,setScreen]=useState('home');
+  /* APPLI PERSONNELLE : lien « index.html?chauffeur=ID&code=CODE » → le chauffeur arrive directement sur SA journée */
+  const[auto,setAuto]=useState(()=>{try{const q=new URLSearchParams(location.search);if(q.get('chauffeur')!==null&&q.get('code')){localStorage.setItem('cana_moi',JSON.stringify({id:+q.get('chauffeur'),code:String(q.get('code'))}));try{history.replaceState(null,'',location.pathname);}catch(e){}}return !!localStorage.getItem('cana_moi');}catch(e){return false;}});
+  useEffect(()=>{if(!auto)return;let vivant=true;(async()=>{
+    let moi=null;try{moi=JSON.parse(localStorage.getItem('cana_moi')||'null');}catch(e){}
+    if(!moi){setAuto(false);return;}
+    try{await chargerEquipe();}catch(e){}
+    const d=(DRIVERS_LIVE||[]).find(x=>x.id===moi.id&&String(x.code)===String(moi.code));
+    if(!vivant)return;
+    if(d){setCh(d);setScreen('home');try{demanderPermissionNotif();debloquerAudio();}catch(e){}}
+    else if(DRIVERS_LIVE&&DRIVERS_LIVE.length){localStorage.removeItem('cana_moi');showToast('Ce lien n’est plus valable : demande ton nouveau lien au responsable','var(--red)');}
+    setAuto(false);})();return()=>{vivant=false;};},[]);
   const[screenData,setScreenData]=useState(null);
   const[planning,setPlanning]=useState(null);
 
@@ -2971,17 +3058,20 @@ function App(){
         /* Économie de données : l'année complète toutes les 10 min, sinon seulement hier → après-demain */
         const _iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
         const _d=n=>{const x=new Date();x.setDate(x.getDate()+n);return _iso(x);};
-        const _complet=!window.__rowsCache||Date.now()-(window.__dernierComplet||0)>10*60*1000;
+        /* 1er chargement = RAPIDE (hier → après-demain) ; l'année complète arrive juste après, en arrière-plan */
+        const _premier=!window.__rowsCache;
+        const _complet=!_premier&&(window.__forceComplet||Date.now()-(window.__dernierComplet||0)>10*60*1000);
         const _de=_complet?_d(-366):_d(-1),_a=_complet?'2099-12-31':_d(2);
         const [rowsJ, rowsC] = await Promise.all([
           sGet(`planning?date=gte.${_de}&date=lte.${_a}&select=date,donnees&order=date.asc&limit=800`),
-          _complet?sGet(`planning?date=in.(CONFIG_PRINCIPALE,CANA_SOURCE)&select=date,donnees&limit=2`):Promise.resolve(window.__cfgCache||[])
+          (_complet||_premier)?sGet(`planning?date=in.(CONFIG_PRINCIPALE,CANA_SOURCE)&select=date,donnees&limit=2`):Promise.resolve(window.__cfgCache||[])
         ]);
         if(Array.isArray(rowsJ)){
-          if(_complet){window.__rowsCache={};window.__dernierComplet=Date.now();}
+          if(_complet){window.__rowsCache={};window.__dernierComplet=Date.now();window.__forceComplet=false;}
+          if(_premier){window.__rowsCache={};window.__forceComplet=true;setTimeout(loadAll,800);}
           rowsJ.forEach(r=>{if(/^\d{4}-\d{2}-\d{2}$/.test(r.date))window.__rowsCache[r.date]=r;});
         }
-        if(Array.isArray(rowsC)&&_complet)window.__cfgCache=rowsC;
+        if(Array.isArray(rowsC)&&(_complet||_premier))window.__cfgCache=rowsC;
         const rowsJours=Object.values(window.__rowsCache||{}).sort((x,y)=>x.date<y.date?-1:1);
         const rowsConfig=window.__cfgCache||[];
         /* l'ancienne config d'abord, puis les journées : une journée envoyée par CANA LIVRAISONS remplace tout l'ancien contenu de ce jour */
@@ -3077,7 +3167,7 @@ function App(){
           }
           localStorage.setItem(sigK,sigNow);
         }catch(e){}
-        if(Object.keys(tasks).length>0){setPlanning(nouveauPlanning);}
+        if(Object.keys(tasks).length>0){setPlanning(nouveauPlanning);if(!_premier){try{localStorage.setItem('cana_plan_cache',JSON.stringify(nouveauPlanning));localStorage.setItem('cana_plan_cache_t',String(Date.now()));}catch(e){}}window.__derniereSync=Date.now();}
         else{
           const rows2=await sGet(`planning?date=eq.${today}&limit=1`);
           if(rows2?.length&&rows2[0].donnees){
@@ -3088,16 +3178,21 @@ function App(){
         }
       }catch(e){}
     }
+    /* affichage IMMÉDIAT de la dernière journée connue (même sans internet) */
+    try{const c=JSON.parse(localStorage.getItem('cana_plan_cache')||'null');if(c&&c.tasks)setPlanning(c);}catch(e){}
+    window.__rafraichir=()=>{window.__forceComplet=true;loadAll();};
     loadAll();
     const iv=setInterval(loadAll,10000);
+    const _vis=()=>{if(!document.hidden)loadAll();};document.addEventListener('visibilitychange',_vis);window.addEventListener('online',_vis);
     return()=>clearInterval(iv);
   },[ch]);
 
+  if(!ch&&auto) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:18,fontWeight:900,background:'#071526'}}>⏳ Ouverture de ta journée…</div>;
   if(!ch) return <Login onLogin={d=>{setCh(d);setScreen('home');demanderPermissionNotif();debloquerAudio();}}/>;
-  const nav=(s,data=null)=>{setScreen(s);setScreenData(data);};
+  const nav=(s,data=null)=>{if(s==='refresh'){if(window.__rafraichir)window.__rafraichir();showToast('🔄 Synchronisation…','var(--green)');return;}setScreen(s);setScreenData(data);};
   const back=()=>{setScreen('home');setScreenData(null);};
 
-  if(screen==='home') return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
+  if(screen==='home') return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{try{localStorage.removeItem('cana_moi');}catch(e){}setCh(null);setScreen('home');setPlanning(null);}}/>;
   if(screen==='today') return <TodayScreen ch={ch} planning={planning} onNavigate={nav} onBack={back}/>;
   if(screen==='photo_libre') return <PhotoScreen ch={ch} mission={screenData||{client:'',task:'Photo de preuve',heure:''}} onBack={()=>setScreen('today')} ia={false}/>;
   if(screen==='mission_detail'&&screenData) return <MissionDetailScreen ch={ch} mission={screenData} planning={planning} onBack={()=>setScreen('today')} onNavigate={nav}/>;
@@ -3114,10 +3209,11 @@ function App(){
   if(screen==='help') return <HelpScreen ch={ch} onBack={back}/>;
   if(screen==='conges') return <CongesScreen ch={ch} onBack={back}/>;
   if(screen==='bon') return <BonScreen ch={ch} mission={screenData} onBack={back}/>;
+  if(screen==='materiel') return <MaterielScreen ch={ch} planning={planning} onBack={back}/>;
   if(screen==='bons') return <BonsScreen ch={ch} init={screenData} onBack={()=>{if(screenData&&screenData.fromMission){setScreen('today');setScreenData(null);}else back();}}/>;
   if(screen==='horaires') return <HorairesScreen ch={ch} planning={planning} onBack={back}/>;
-  if(screen==='plus') return <PlusScreen ch={ch} onNavigate={nav} onBack={back} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
-  return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
+  if(screen==='plus') return <PlusScreen ch={ch} onNavigate={nav} onBack={back} onLogout={()=>{try{localStorage.removeItem('cana_moi');}catch(e){}setCh(null);setScreen('home');setPlanning(null);}}/>;
+  return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{try{localStorage.removeItem('cana_moi');}catch(e){}setCh(null);setScreen('home');setPlanning(null);}}/>;
 }
 
 ReactDOM.render(<App/>,document.getElementById('root'));
@@ -3181,7 +3277,7 @@ ReactDOM.render(<App/>,document.getElementById('root'));
 /* ══ SERVICE WORKER — obligatoire pour que Chrome propose l'installation ══ */
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('sw.js').catch(function(){});
+    navigator.serviceWorker.register('sw-chauffeur.js').catch(function(){});
   });
 }
 
