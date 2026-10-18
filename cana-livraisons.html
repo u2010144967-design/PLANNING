@@ -2313,7 +2313,7 @@ function uiEnTete(){
     items.forEach(function(it){if(it==='-'){var s=document.createElement('div');s.className='px-sep';dd.appendChild(s);return;}if(!it||!it[0])return;var b=it[2]?clone(it[0],it[1]):nettoie(it[0],it[1]);if(b){dd.appendChild(b);b.addEventListener('click',function(){m.classList.remove('open');});}});
     mb.onclick=function(e){e.stopPropagation();var o=m.classList.contains('open');document.querySelectorAll('.px-m.open').forEach(function(x){x.classList.remove('open');});if(!o)m.classList.add('open');};
     m.appendChild(mb);m.appendChild(dd);bar.appendChild(m);}
-  menu('📁 Fichier',[[el.file,'💾 Sauvegarde automatique sur le PC'],[el.open,'📂 Ouvrir un fichier de planning'],[el.auto,'🗂️ Dossier des sauvegardes auto'],'-',[el.save,'⬇️ Télécharger une copie'],[el.rest,'⬆️ Restaurer une copie'],[el.csv,'📊 Exporter l’historique (Excel)']]);
+  menu('📁 Fichier',[[{click:function(){syPanel();}},'☁️ Planning partagé (toute l’équipe)',true],[{click:function(){syJournal();document.getElementById('clPanel').style.display='flex';}},'📝 Journal : qui a modifié quoi',true],'-',[el.file,'💾 Sauvegarde automatique sur le PC'],[el.open,'📂 Ouvrir un fichier de planning'],[el.auto,'🗂️ Dossier des sauvegardes auto'],'-',[el.save,'⬇️ Télécharger une copie'],[el.rest,'⬆️ Restaurer une copie'],[el.csv,'📊 Exporter l’historique (Excel)']]);
   menu('✏️ Édition',[[el.undo,'↶ Annuler (Ctrl+Z)'],'-',[el.sel,'🖱️ Sélection multiple'],[el.clr,'🧽 Effacer la sélection'],[el.cp,'📋 Copier'],[el.cut,'✂️ Couper'],[el.paste,'📌 Coller'],'-',[el.dup,'📑 Dupliquer la journée → lendemain'],[el.vider,'🧹 Vider la journée']]);
   menu('🖨️ Imprimer',[[el.print,'🖨️ La journée'],[el.drv,'👤 La journée par chauffeur'],[el.wk,'🗓️ La semaine par chauffeur'],[el.a3,'🗓️ La semaine (A3)']]);
   menu('📄 Bons',[[el.importer,'📥 Importer des bons FTBE (dans la grille)'],[el.bons,'🗂️ Bons du jour (FTBE · Resto-Co · Centre aéré)',true],[el.rep,'🧭 Répartition des tournées',true],[el.sg,'✍️ Archive des bons signés',true]]);
@@ -2334,6 +2334,201 @@ function uiEnTete(){
   try{fit();}catch(e){}try{render();}catch(e){}
 }
 setTimeout(uiEnTete,50);
+
+// ================= CANA LIVRAISONS 14 : PLANNING PARTAGÉ — toute l'équipe sur le MÊME planning =================
+// Chaque journée de la grille est rangée en ligne (ligne « GRILLE_AAAA-MM-JJ »).
+// Quand quelqu'un modifie une case, seules SES modifications partent et sont fusionnées avec celles des autres.
+var SY={actif:false,pret:false,base:{},baseS:{},majVu:{},par:{},quand:{},nom:'',t:null,pull:null,enCours:false,erreur:false,aRendre:false,dernierPull:''};
+try{SY.nom=localStorage.getItem('cana_nom')||'';}catch(e){}
+function syDateOk(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}
+function syCopie(o){var c=JSON.parse(JSON.stringify(o||{}));delete c._maj;return c;}
+function syS(o){return JSON.stringify(syCopie(o));}
+function syVierge(){try{var b=blank();return syCopie(b);}catch(e){return {cells:{},ch:[],cam:[],deb:[],fin:[]};}}
+var SY_ARR=['ch','cam','deb','fin'];
+function syDiff(base,loc){
+  base=base||{cells:{}};loc=loc||{cells:{}};var d={cells:{},arr:{},top:{}};var bc=base.cells||{},lc=loc.cells||{};
+  Object.keys(Object.assign({},bc,lc)).forEach(function(k){if(JSON.stringify(bc[k])!==JSON.stringify(lc[k]))d.cells[k]=lc[k]===undefined?null:lc[k];});
+  SY_ARR.forEach(function(a){for(var i=0;i<6;i++){var x=(base[a]||[])[i],y=(loc[a]||[])[i];if(JSON.stringify(x)!==JSON.stringify(y))d.arr[a+'|'+i]=y===undefined?null:y;}});
+  Object.keys(Object.assign({},base,loc)).forEach(function(k){if(k==='cells'||k==='_maj'||SY_ARR.indexOf(k)>=0)return;if(JSON.stringify(base[k])!==JSON.stringify(loc[k]))d.top[k]=loc[k]===undefined?null:loc[k];});
+  return d;
+}
+function syContient(o,d){o=o||{};var c=o.cells||{};
+  if(Object.keys(d.cells).some(function(k){return JSON.stringify(c[k]===undefined?null:c[k])!==JSON.stringify(d.cells[k]);}))return false;
+  if(Object.keys(d.arr).some(function(k){var p=k.split('|');var v=(o[p[0]]||[])[+p[1]];return JSON.stringify(v===undefined?null:v)!==JSON.stringify(d.arr[k]);}))return false;
+  return true;}
+function syVide(d){return !Object.keys(d.cells).length&&!Object.keys(d.arr).length&&!Object.keys(d.top).length;}
+function syAppliquer(rem,d){
+  var o=syCopie(rem||syVierge());o.cells=o.cells||{};
+  Object.keys(d.cells).forEach(function(k){if(d.cells[k]===null)delete o.cells[k];else o.cells[k]=d.cells[k];});
+  Object.keys(d.arr).forEach(function(k){var p=k.split('|');o[p[0]]=o[p[0]]||[];o[p[0]][+p[1]]=d.arr[k];});
+  Object.keys(d.top).forEach(function(k){if(d.top[k]===null)delete o[k];else o[k]=d.top[k];});
+  return o;
+}
+function syColNom(d,c){try{return clClean(store[d].ch[c].t)||('colonne '+(c+1));}catch(e){return 'colonne '+(c+1);}}
+function syResume(d,diff){var L=[];
+  Object.keys(diff.cells).forEach(function(k){var p=k.split('_');var v=diff.cells[k];L.push((TIMES[+p[0]]||'')+' · '+syColNom(d,+p[1])+' : '+(v&&v.t?v.t:'(case vidée)'));});
+  Object.keys(diff.arr).forEach(function(k){var p=k.split('|');var v=diff.arr[k];var t=v&&typeof v==='object'?v.t:v;L.push(({ch:'Chauffeur',cam:'Camion',deb:'Début',fin:'Fin'})[p[0]]+' colonne '+(+p[1]+1)+' → '+(t||'(vide)'));});
+  return L.slice(0,15);}
+function syEnregistrerLocal(){try{localStorage.setItem('planning_final',JSON.stringify(store));}catch(e){}}
+function syEdition(){var a=document.activeElement;return !!(a&&a.closest&&a.closest('table')&&a.isContentEditable);}
+function syRendre(){if(syEdition()){SY.aRendre=true;return;}try{render();}catch(e){}}
+document.addEventListener('focusout',function(){setTimeout(function(){if(SY.aRendre&&!syEdition()){SY.aRendre=false;try{render();}catch(e){}}},150);});
+// ---------- voyant ----------
+function syBadge(txt,coul,titre){var b=document.getElementById('syBadge');if(!b){b=document.createElement('span');b.id='syBadge';b.style.cssText='cursor:pointer;color:#fff;font-weight:800;font-size:12px;padding:5px 12px;border-radius:20px;white-space:nowrap';b.onclick=syPanel;
+    var st=document.querySelector('.px-st')||document.querySelector('header');if(st)st.insertBefore(b,st.firstChild);}
+  b.textContent=txt;b.style.background=coul;b.title=titre||'';}
+function syQui(){var q=document.getElementById('syQui');if(!q){q=document.createElement('div');q.id='syQui';q.style.cssText='font-size:11px;color:#94a3b8;text-align:center;margin-top:2px;white-space:nowrap';var dl=document.querySelector('.px-date');if(dl&&dl.parentNode){var w=document.createElement('div');dl.parentNode.insertBefore(w,dl);w.appendChild(dl);w.appendChild(q);}}
+  q.textContent=SY.par[cur]?('modifié par '+SY.par[cur]+(SY.quand[cur]?' à '+SY.quand[cur]:'')):'';}
+// ---------- lecture / écriture en ligne ----------
+async function syLireJour(d){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.GRILLE_'+d+'&select=donnees&limit=1',{headers:clH()},2);if(!r.ok)throw new Error('lecture '+r.status);var rows=await r.json();if(!rows.length)return null;var o=rows[0].donnees;if(typeof o==='string')o=JSON.parse(o);return o;}
+async function syEcrireLot(rows){var r=await clFetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates,return=minimal'},clHW()),body:JSON.stringify(rows)},3);if(!r.ok)throw new Error('écriture '+r.status);}
+async function syMarqueur(){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.GRILLE_ACTIF&select=donnees&limit=1',{headers:clH()},2);if(!r.ok)throw new Error('lecture '+r.status);var rows=await r.json();if(!rows.length)return null;var o=rows[0].donnees;if(typeof o==='string')o=JSON.parse(o);return o;}
+// ---------- envoi de MES modifications (fusionnées avec celles des autres) ----------
+async function syPousser(d){
+  var loc=syCopie(store[d]);var diff=syDiff(SY.base[d],loc);if(syVide(diff)){SY.baseS[d]=syS(store[d]);return;}
+  var rem=null;try{rem=await syLireJour(d);}catch(e){throw e;}
+  var fusion=rem&&rem.jour?syAppliquer(rem.jour,diff):loc;var maj=new Date().toISOString();var hh=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  await syEcrireLot([{date:'GRILLE_'+d,donnees:{jour:fusion,maj:maj,par:SY.nom||'?',heure:hh},updated_at:maj}]);
+  // deux personnes ont pu écrire en même temps : on vérifie que nos modifications sont bien en ligne, sinon on les remet
+  for(var essai=0;essai<4;essai++){
+    await new Promise(function(r){setTimeout(r,350+Math.random()*450);});
+    var verif=null;try{verif=await syLireJour(d);}catch(e){break;}
+    if(!verif||!verif.jour||syContient(verif.jour,diff)){if(verif&&verif.jour&&verif.maj!==maj){fusion=syCopie(verif.jour);maj=verif.maj;}break;}
+    fusion=syAppliquer(verif.jour,diff);maj=new Date().toISOString();
+    await syEcrireLot([{date:'GRILLE_'+d,donnees:{jour:fusion,maj:maj,par:SY.nom||'?',heure:hh},updated_at:maj}]);
+  }
+  SY.base[d]=syCopie(fusion);SY.majVu[d]=maj;SY.par[d]=SY.nom||'?';SY.quand[d]=hh;
+  var avant=syS(store[d]);var garde=store[d]._maj;store[d]=fusion;if(garde)store[d]._maj=garde;SY.baseS[d]=syS(store[d]);
+  if(avant!==SY.baseS[d]){syEnregistrerLocal();if(d===cur)syRendre();}
+  // journal : qui a fait quoi
+  try{var res=syResume(d,diff);if(res.length)fetch(CL_SUPA+'/rest/v1/planning',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},clHW()),body:JSON.stringify({date:'JOURNAL_'+Date.now()+'_'+Math.floor(Math.random()*1e6),donnees:{jour:d,par:SY.nom||'?',quand:maj,lignes:res},updated_at:maj})}).catch(function(){});}catch(e){}
+}
+async function syFlush(){
+  if(!SY.actif||!SY.pret||SY.enCours)return;SY.enCours=true;var n=0;
+  try{var jours=Object.keys(store).filter(syDateOk).filter(function(d){return syS(store[d])!==(SY.baseS[d]||'');});
+    if(jours.length)syBadge('⏳ Synchronisation…','#1d4ed8');
+    var sale=syListeSale();jours.forEach(function(d){if(sale.indexOf(d)<0)sale.push(d);});syListeSaleSet(sale);
+    for(var i=0;i<jours.length;i++){await syPousser(jours[i]);n++;syListeSaleSet(syListeSale().filter(function(x){return x!==jours[i];}));}
+    SY.erreur=false;syOk();
+  }catch(e){SY.erreur=true;syBadge('⚠️ Hors ligne — tes modifications partiront dès le retour','#b91c1c',String(e.message||e));clearTimeout(SY.t);SY.t=setTimeout(syFlush,15000);}
+  finally{SY.enCours=false;}
+}
+function syListeSale(){try{return JSON.parse(localStorage.getItem('cana_sync_sale')||'[]');}catch(e){return [];}}
+function syListeSaleSet(l){try{localStorage.setItem('cana_sync_sale',JSON.stringify(l));}catch(e){}}
+function syOk(){syBadge('☁️ Synchronisé · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),'#15803d','Toute l’équipe voit le même planning. Clique pour les détails.');syQui();}
+// ---------- réception des modifications des autres ----------
+async function syTirer(){
+  if(!SY.actif||!SY.pret)return;
+  SY.nbPull=(SY.nbPull||0)+1;
+  // petit chevauchement (10 s) ; toutes les minutes, on revérifie les 10 dernières minutes (horloges des PC un peu différentes)
+  var marge=(SY.nbPull%12===0)?600000:10000;
+  var depuis=SY.dernierPull?new Date(Date.parse(SY.dernierPull)-marge).toISOString():'2000-01-01T00:00:00Z';
+  try{var rows=[],tour=0;
+    while(tour<10){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.GRILLE_*&updated_at=gt.'+encodeURIComponent(depuis)+'&select=date,donnees,updated_at&order=updated_at.asc&limit=500',{headers:clH()},1);if(!r.ok)throw new Error('lecture '+r.status);
+      var p=await r.json();rows=rows.concat(p);if(p.length<500)break;depuis=p[p.length-1].updated_at;tour++;}
+    var change=false,curChange=false;
+    rows.forEach(function(x){var d=x.date.slice(7);if(!syDateOk(d))return;var o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){return;}}if(!o||!o.jour)return;
+      if(x.updated_at>SY.dernierPull)SY.dernierPull=x.updated_at;
+      if(SY.majVu[d]===o.maj)return;SY.majVu[d]=o.maj;SY.par[d]=o.par||'';SY.quand[d]=o.heure||'';
+      var sale=store[d]&&syS(store[d])!==(SY.baseS[d]||'');
+      var nouveau=sale?syAppliquer(o.jour,syDiff(SY.base[d],syCopie(store[d]))):syCopie(o.jour);
+      var garde=store[d]&&store[d]._maj;store[d]=nouveau;if(garde)store[d]._maj=garde;SY.base[d]=syCopie(o.jour);SY.baseS[d]=sale?syS(o.jour):syS(store[d]);
+      change=true;if(d===cur)curChange=true;});
+    if(change){syEnregistrerLocal();if(curChange)syRendre();}
+    if(!SY.erreur&&!SY.enCours)syOk();
+  }catch(e){syBadge('⚠️ Hors ligne — nouvel essai…','#b91c1c');}
+}
+// ---------- premier branchement de ce PC sur le planning partagé ----------
+async function syToutTelecharger(info){
+  var rows=[],off=0;
+  while(true){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.GRILLE_*&select=date,donnees,updated_at&order=date.asc&limit=400&offset='+off,{headers:clH()},3);if(!r.ok)throw new Error('lecture '+r.status);var p=await r.json();rows=rows.concat(p);if(info)info(rows.length+' journées reçues…');if(p.length<400)break;off+=400;}
+  return rows;
+}
+async function syBrancher(m){
+  syBadge('⏳ Récupération du planning partagé…','#1d4ed8');
+  // copie de sécurité du planning de ce PC avant de le remplacer
+  try{await idbPut('sauvegarde_avant_partage',new Blob([JSON.stringify(store)],{type:'application/json'}));localStorage.setItem('cana_sauv_avant_partage',new Date().toLocaleString('fr-FR'));}catch(e){}
+  var rows=await syToutTelecharger(function(t){syBadge('⏳ '+t,'#1d4ed8');});
+  var neuf={};
+  rows.forEach(function(x){var d=x.date.slice(7);if(!syDateOk(d))return;var o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){return;}}if(!o||!o.jour)return;
+    neuf[d]=syCopie(o.jour);SY.base[d]=syCopie(o.jour);SY.majVu[d]=o.maj;SY.par[d]=o.par||'';SY.quand[d]=o.heure||'';if(x.updated_at>SY.dernierPull)SY.dernierPull=x.updated_at;});
+  Object.keys(store).forEach(function(k){if(!syDateOk(k))neuf[k]=store[k];});
+  store=neuf;Object.keys(store).filter(syDateOk).forEach(function(d){SY.baseS[d]=syS(store[d]);});
+  syEnregistrerLocal();localStorage.setItem('cana_sync_branche',m.depuis||'1');
+  try{ensure(cur);}catch(e){}syRendre();
+}
+async function syDemarrer(){
+  try{var m=await syMarqueur();}catch(e){syBadge('⚠️ Planning partagé : base injoignable','#b91c1c');setTimeout(syDemarrer,20000);return;}
+  if(!m){SY.actif=false;syBadge('☁️ Planning partagé : à activer','#a16207','Clique pour mettre le planning en ligne pour toute l’équipe');return;}
+  SY.actif=true;
+  if(!SY.nom){var n=prompt('Planning partagé 👋\nQuel est ton prénom ?\n(il s’affiche quand tu modifies le planning, pour que l’équipe sache qui a fait quoi)','');SY.nom=(n||'').trim()||'Utilisateur';try{localStorage.setItem('cana_nom',SY.nom);}catch(e){}}
+  try{
+    if(localStorage.getItem('cana_sync_branche')!==(m.depuis||'1'))await syBrancher(m);
+    else{ // déjà branché : on part de ce qu'on a, puis on rattrape les modifications des autres
+      var sale=syListeSale();
+      Object.keys(store).filter(syDateOk).forEach(function(d){if(SY.baseS[d]===undefined){if(sale.indexOf(d)>=0){SY.base[d]=null;SY.baseS[d]='';}else{SY.base[d]=syCopie(store[d]);SY.baseS[d]=syS(store[d]);}}});
+      SY.dernierPull='';}
+  }catch(e){syBadge('⚠️ Planning partagé : '+e.message,'#b91c1c');setTimeout(syDemarrer,20000);return;}
+  SY.pret=true;await syTirer();syOk();
+  clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},5000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)syTirer();});
+  window.addEventListener('online',function(){syFlush();syTirer();});
+}
+// chaque enregistrement du planning → mes modifications partent 1 seconde après
+var _lsSaveSync=lsSave;lsSave=function(){_lsSaveSync.apply(this,arguments);if(SY.actif&&SY.pret){clearTimeout(SY.t);SY.t=setTimeout(syFlush,1000);}};
+var _renderSync=render;render=function(){_renderSync.apply(this,arguments);try{syQui();}catch(e){}};
+// ---------- écran « Planning partagé » ----------
+async function syPanel(){
+  var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';
+  var h='<div class="clhead"><h2>☁️ Planning partagé — toute l’équipe</h2><button class="clx" onclick="clClose()">✕</button></div>';
+  if(!SY.actif){
+    h+='<div class="dgw"><div class="dgl wa"><b>Le planning partagé n’est pas encore activé.</b><div>Une fois activé, tout le monde (toi, les commerciaux, ton PC de la maison) travaille sur <b>le même planning</b>, mis à jour en quelques secondes.</div></div>'+
+      '<div class="dgl ko"><b>⚠️ À faire UNE seule fois, depuis le PC qui a le planning à jour</b><div>C’est le planning de CE PC qui sera mis en ligne pour toute l’équipe. Si ce PC n’est pas à jour (par exemple le PC de la maison), ouvre d’abord ta dernière sauvegarde : <button onclick="clClose();openExisting()">📂 Ouvrir mon fichier Planning_Cana.json</button></div></div>'+
+      '<div class="dgl ok"><b>Prêt ?</b><div><button class="clsend" onclick="syActiver()" style="margin-top:6px">📤 Mettre CE planning en ligne pour toute l’équipe</button></div></div></div>';
+  }else{
+    var sale=Object.keys(store).filter(syDateOk).filter(function(d){return syS(store[d])!==(SY.baseS[d]||'');}).length;
+    h+='<div class="dgw"><div class="dgl '+(SY.erreur?'ko':'ok')+'"><b>'+(SY.erreur?'⚠️ Connexion coupée : '+sale+' journée(s) en attente d’envoi':'✅ Synchronisé — tout le monde voit le même planning')+'</b><div>Tu es enregistré sous le nom <b>'+esc(SY.nom)+'</b> <button onclick="syChangerNom()">modifier</button></div></div>'+
+      '<div class="dgl wa"><b>Lien à donner à l’équipe</b><div>https://u2010144967-design.github.io/PLANNING/cana-livraisons.html <button onclick="navigator.clipboard&&navigator.clipboard.writeText(\'https://u2010144967-design.github.io/PLANNING/cana-livraisons.html\');alert(\'Lien copié\')">📋 Copier</button><br>Chaque personne ouvre ce lien, tape son prénom une fois, et c’est tout.</div></div>'+
+      (localStorage.getItem('cana_sauv_avant_partage')?'<div class="dgl"><b>Copie de sécurité de ce PC</b><div>Ton ancien planning de ce PC (avant le partage) est gardé du '+esc(localStorage.getItem('cana_sauv_avant_partage'))+'. <button onclick="syTelechargerSauv()">⬇️ Le télécharger</button></div></div>':'')+
+      '<div class="dgl"><b>📝 Journal des modifications</b><div><button onclick="syJournal()">Voir qui a modifié quoi</button></div></div></div>';
+  }
+  box.innerHTML=h;
+}
+async function syActiver(){
+  if(!confirm('Mettre le planning de CE PC en ligne pour toute l’équipe ?\n\nFais-le seulement si ce PC a le planning à jour.'))return;
+  if(!SY.nom){var n=prompt('Ton prénom ?','');SY.nom=(n||'').trim()||'Responsable';localStorage.setItem('cana_nom',SY.nom);}
+  var jours=Object.keys(store).filter(syDateOk).sort();var maj=new Date().toISOString();var box=document.getElementById('clBox');
+  try{
+    var t0=Date.now()-jours.length;
+    for(var i=0;i<jours.length;i+=40){var lot=jours.slice(i,i+40).map(function(d,j){var u=new Date(t0+i+j).toISOString();return {date:'GRILLE_'+d,donnees:{jour:syCopie(store[d]),maj:maj,par:SY.nom,heure:'mise en ligne'},updated_at:u};});
+      box.innerHTML='<div class="clhead"><h2>📤 Mise en ligne…</h2></div><p class="clintro">⏳ '+Math.min(i+40,jours.length)+' / '+jours.length+' journées envoyées…</p>';
+      await syEcrireLot(lot);}
+    var dep=new Date().toISOString();
+    await syEcrireLot([{date:'GRILLE_ACTIF',donnees:{actif:true,depuis:dep,par:SY.nom},updated_at:dep}]);
+    localStorage.setItem('cana_sync_branche',dep);
+    jours.forEach(function(d){SY.base[d]=syCopie(store[d]);SY.baseS[d]=syS(store[d]);SY.majVu[d]=maj;});
+    SY.actif=true;SY.pret=true;SY.dernierPull=maj;syOk();
+    clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},5000);
+    alert('✅ Le planning est en ligne ('+jours.length+' journées).\n\nDonne ce lien à l’équipe :\nhttps://u2010144967-design.github.io/PLANNING/cana-livraisons.html\n\nLes autres PC récupèrent ce planning tout seuls à leur prochaine ouverture.');
+    syPanel();
+  }catch(e){alert('❌ Mise en ligne interrompue ('+e.message+'). Rien n’est perdu : réessaie.');syPanel();}
+}
+function syChangerNom(){var n=prompt('Ton prénom :',SY.nom);if(n&&n.trim()){SY.nom=n.trim();localStorage.setItem('cana_nom',SY.nom);syPanel();}}
+async function syTelechargerSauv(){try{var b=await idbGet('sauvegarde_avant_partage');if(!b){alert('Copie introuvable.');return;}var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='planning_avant_partage.json';document.body.appendChild(a);a.click();a.remove();}catch(e){alert('❌ '+e.message);}}
+async function syJournal(){
+  var box=document.getElementById('clBox');box.innerHTML='<div class="clhead"><h2>📝 Journal des modifications</h2><button class="clx" onclick="clClose()">✕</button></div><p class="clintro">⏳ Chargement…</p>';
+  try{var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.JOURNAL_*&select=donnees&order=updated_at.desc&limit=200',{headers:clH()});var L=(await r.json()).map(function(x){var o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}return o||{};});
+    var h='<div class="clhead"><h2>📝 Journal des modifications (200 dernières)</h2><button class="clx" onclick="clClose()">✕</button></div><div class="cltwrap" style="max-height:70vh"><table class="clt"><tr><th>Quand</th><th>Qui</th><th>Journée</th><th>Modifications</th></tr>';
+    L.forEach(function(o){h+='<tr><td class="bnsm">'+esc(o.quand?new Date(o.quand).toLocaleString('fr-FR'):'')+'</td><td><b>'+esc(o.par||'')+'</b></td><td>'+esc(o.jour?dayLabel(o.jour):'')+'</td><td class="bnsm">'+(o.lignes||[]).map(esc).join('<br>')+'</td></tr>';});
+    if(!L.length)h+='<tr><td colspan="4" style="text-align:center;color:#64748b;padding:16px">Aucune modification enregistrée pour le moment.</td></tr>';
+    box.innerHTML=h+'</table></div>';
+  }catch(e){box.innerHTML+='<div class="clwarn">❌ '+esc(e.message)+'</div>';}
+}
+setTimeout(syDemarrer,600);
+CL_VERSION='v18 · 18/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+var _openExistingSync=openExisting;openExisting=function(){if(SY.actif&&!confirm('⚠️ Planning partagé actif.\n\nOuvrir un fichier va REMPLACER le planning de TOUTE l’équipe par ce fichier.\nÀ faire seulement si ce fichier est plus à jour que le planning en ligne.\n\nContinuer ?'))return;return _openExistingSync.apply(this,arguments);};
+var _loadFileSync=loadFile;loadFile=function(f){if(SY.actif&&f&&!confirm('⚠️ Planning partagé actif.\n\nRestaurer cette copie va REMPLACER le planning de TOUTE l’équipe.\n\nContinuer ?'))return;return _loadFileSync.apply(this,arguments);};
 
 </script>
 </body></html>
