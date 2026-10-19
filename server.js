@@ -56,6 +56,8 @@ const COLS = { date: 'date', updated_at: 'updated_at' };
 function filtre(col, expr, vals) {
   const c = COLS[col];
   if (!c) return null;
+  if (/^not\./.test(expr)) { const f = filtre(col, expr.slice(4), vals); return f ? `NOT (${f})` : null; }
+  if (/^is\.null$/.test(expr)) return `${c} IS NULL`;
   const m = /^(eq|neq|like|ilike|gte|gt|lte|lt|in)\.(.*)$/.exec(expr);
   if (!m) return null;
   const op = m[1], v = m[2];
