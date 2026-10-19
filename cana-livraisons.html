@@ -853,6 +853,7 @@ body.px2 .pxGrille{background:#f1f5f9}
 body.v25-double .pxPane{flex:0 0 50%!important;width:50%!important;border-right:2px solid #e2e8f0}
 body.v25-double #grid{font-size:90%}
 .cli-av{--c:#dc2626}
+.tc-ou{margin-top:6px;background:rgba(255,255,255,.22);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:800}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -2838,7 +2839,7 @@ async function tbPanel(d){
 }
 // ---------- 4) ACCÈS PAR RÔLE : un lien par groupe ----------
 var ROLE=(function(){try{var q=new URLSearchParams(location.search);var r=q.get('role');if(r){localStorage.setItem('cana_role',r);}return localStorage.getItem('cana_role')||'responsable';}catch(e){return 'responsable';}})();
-var ROLES={responsable:'Responsable (tout)',commercial:'Commercial',lecture:'Lecture seule'};
+var ROLES={responsable:'Responsable (tout)',commercial:'Commerciale',lecture:'Lecture seule'};
 function roleAppliquer(){
   if(ROLE==='responsable')return;
   var cacher=ROLE==='lecture'?['Fichier','Édition','Chauffeurs','Gestion','Répartition']:['Équipe','Ouvrir un fichier','Restaurer','Vider la journée','Dossier des sauvegardes','Sauvegarde automatique','Camions','Bilan des samedis','Ce que voient les chauffeurs'];
@@ -2854,7 +2855,7 @@ setTimeout(roleAppliquer,300);
 // liens par groupe dans « Planning partagé »
 var _syPanelV19=syPanel;syPanel=async function(){await _syPanelV19();var w=document.querySelector('#clBox .dgw');if(!w||ROLE!=='responsable')return;
   var base=''+CANA_BASE+'cana-livraisons.html';var d=document.createElement('div');d.className='dgl';
-  d.innerHTML='<b>🔑 Un lien par groupe</b><div>'+[['commercial','Commerciaux : planning, bons, répartition, hors carte, clients (pas l’équipe ni les réglages)'],['lecture','Lecture seule : voir le planning sans rien modifier (direction, cuisine…)']].map(function(x){var l=base+'?role='+x[0];return '<div style="margin:6px 0"><b>'+ROLES[x[0]]+'</b> — '+x[1]+'<br><code style="font-size:12px">'+l+'</code> <button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+l+'\');alert(\'Lien copié\')">📋 Copier</button></div>';}).join('')+'<div class="bnsm">Ton lien à toi (sans « ?role ») garde tous les droits.</div></div>';w.appendChild(d);};
+  d.innerHTML='<b>🔑 Un lien par groupe</b><div>'+[['commercial','Commerciales : planning, bons, répartition, hors carte, clients (pas l’équipe ni les réglages)'],['lecture','Lecture seule : voir le planning sans rien modifier (direction, cuisine…)']].map(function(x){var l=base+'?role='+x[0];return '<div style="margin:6px 0"><b>'+ROLES[x[0]]+'</b> — '+x[1]+'<br><code style="font-size:12px">'+l+'</code> <button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+l+'\');alert(\'Lien copié\')">📋 Copier</button></div>';}).join('')+'<div class="bnsm">Ton lien à toi (sans « ?role ») garde tous les droits.</div></div>';w.appendChild(d);};
 // bouton Tableau de bord
 setTimeout(function(){var qk=document.querySelector('.px-qk');var b=document.createElement('button');b.className='px-q q6';b.textContent='📊 Tableau de bord';b.onclick=function(){tbPanel(cur);};if(qk)qk.insertBefore(b,qk.firstChild);},250);
 CL_VERSION='v19 · 18/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
@@ -3009,17 +3010,19 @@ async function px2Tournees(force){
   I.cols.forEach(function(col){if(!col.items.length){if(col.label)vides.push(col.label);return;}nbT++;var c=PX2.coul[col.c%6];
     var id=col.ids[0];var items=col.items.slice().sort(function(a,b){return a.heure.localeCompare(b.heure);});
     var clients=items.filter(function(i){return i.type==='client';});var tot=0,faits=0;
+    var dernier=null,prochain=null;
     var lignes=items.map(function(it,n){var st='À venir',cls='av';
-      if(it.type==='client'&&id!=null){var E=clEtat(id,it);if(E.liv){st='Livré';cls='ok';faits++;}else if(E.photo||E.sig){st='En cours';cls='ec';}}
+      if(it.type==='client'&&id!=null){var E=clEtat(id,it);if(E.liv){st='Livré';cls='ok';faits++;dernier={nom:it.client,h:(E.liv.heure||'')};}else if(E.photo||E.sig){st='En cours';cls='ec';}if(!E.liv&&!prochain)prochain={nom:it.client,h:it.heure};}
       if(it.type==='client')tot++;
       if(it.tournee){var cls2=it.tournee.clients||[];tot+=cls2.length;
         return '<div class="tc-l trn" onclick="openBon('+(it.r+3)+','+col.c+')"><span class="tc-n" style="background:'+c+'">'+(n+1)+'</span><span class="tc-h">'+esc(it.heure)+'</span><span class="tc-c"><b>'+esc(it.texte)+'</b></span><span class="tc-st av">📋 '+cls2.length+'</span></div>'+
           cls2.map(function(x,j){var st2='À venir',c2='av';if(id!=null){var E2=clEtat(id,{client:x.client,texte:x.client,heure:it.heure});if(E2.liv){st2='Livré';c2='ok';faits++;}else if(E2.sig||E2.photo){st2='En cours';c2='ec';}}
+            if(st2==='Livré')dernier={nom:x.client,h:''};else if(!prochain)prochain={nom:x.client,h:it.heure};
             return '<div class="tc-l sub" onclick="bnOuvrir(\''+x.bonCle+'\')" title="Ouvrir le bon"><span class="tc-n2">'+(j+1)+'</span><span class="tc-c"><b>'+esc(x.client)+'</b>'+(x.adresse?'<small>'+esc(x.adresse)+'</small>':'')+'</span><span class="tc-st '+c2+'">'+st2+'</span></div>';}).join('');}
       return '<div class="tc-l'+(it.type==='client'?'':' note')+'"><span class="tc-n" style="background:'+(it.type==='client'?c:'#94a3b8')+'">'+(n+1)+'</span><span class="tc-h">'+esc(it.heure)+'</span><span class="tc-c"><b>'+esc(it.type==='client'?it.client:it.texte)+'</b>'+(it.adresse?'<small>'+esc(it.adresse)+'</small>':'')+'</span>'+(it.type==='client'?'<span class="tc-st '+cls+'">'+st+'</span>':'')+'</div>';}).join('');
     // « en cours » = le premier arrêt après les livrés
     var pct=tot?Math.round(faits*100/tot):0;var plaque=(typeof pqDe==='function')?pqDe(col.camion):'';
-    h+='<div class="tc"><div class="tc-hd" style="background:'+c+'"><div class="tc-t">📍 '+esc(col.label||('Colonne '+(col.c+1)))+'</div><div class="tc-s">Véhicule : '+esc(col.camion||'—')+(plaque?' · '+esc(plaque):'')+'</div><div class="tc-s">'+tot+' client'+(tot>1?'s':'')+' · Départ '+esc(col.debut||'—')+(col.fin?' → '+esc(col.fin):'')+'</div>'+(col.absent?'<div class="tc-abs">'+esc(col.absent)+'</div>':'')+'</div>'+
+    h+='<div class="tc"><div class="tc-hd" style="background:'+c+'"><div class="tc-t">📍 '+esc(col.label||('Colonne '+(col.c+1)))+'</div><div class="tc-s">Véhicule : '+esc(col.camion||'—')+(plaque?' · '+esc(plaque):'')+'</div><div class="tc-s">'+tot+' client'+(tot>1?'s':'')+' · Départ '+esc(col.debut||'—')+(col.fin?' → '+esc(col.fin):'')+'</div>'+'<div class="tc-ou">'+(tot&&faits===tot?'🏁 Tournée terminée':(dernier?'✅ '+esc(dernier.nom)+(dernier.h?' à '+esc(dernier.h):''):'⏳ Pas encore commencé')+(prochain?' · ➡️ '+esc(prochain.nom):''))+'</div>'+(col.absent?'<div class="tc-abs">'+esc(col.absent)+'</div>':'')+'</div>'+
       '<div class="tc-body">'+(lignes||'<div class="tc-vide">Aucun arrêt</div>')+'</div><div class="tc-ft"><span>'+faits+' / '+tot+' livrées</span><span>'+pct+' %</span></div><div class="tc-pg"><i style="width:'+pct+'%;background:'+c+'"></i></div></div>';});
   if(vides.length&&h)h+='<div class="tc tc-off"><div class="tc-vide">Sans tournée ce jour :<br><b>'+vides.map(esc).join(' · ')+'</b></div></div>';
   box.innerHTML=h||'<div class="tc-vide big">Aucune tournée ce jour. Écris les chauffeurs en haut des colonnes du planning.</div>';
@@ -3182,7 +3185,7 @@ CL_VERSION='v21 · 18/10';try{document.getElementById('clVer').textContent=CL_VE
 // ================= CANA LIVRAISONS 17 : accès par personne, M/H par prénom, « signé = livré », en-tête épuré =================
 // ---------- 1) UTILISATEURS DU LOGICIEL : un lien + un code par personne ----------
 var US={liste:null};
-var US_SERV=['Logistique','Commercial','Cuisine','Direction','Magasin','Autre'];
+var US_SERV=['Logistique','Commerciale','Direction','Cuisine','Comptabilité','RH','Insertion','Resto-Co','Magasin','Autre'];
 async function usLire(){var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.UTILISATEURS&select=donnees&limit=1',{headers:clH()},2);if(!r.ok)throw new Error('code '+r.status);var rows=await r.json();var d=rows.length?rows[0].donnees:null;if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){d=null;}}return (d&&d.users)||[];}
 async function usEcrire(L){var r=await clUpsert('UTILISATEURS',{users:L,maj:new Date().toISOString()});if(!r||!r.ok)throw new Error('enregistrement refusé');}
 function usLien(u){return CANA_BASE+'cana-livraisons.html?u='+u.id;}
