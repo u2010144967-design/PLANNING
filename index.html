@@ -1508,23 +1508,9 @@ function PhotoIABacsScreen({ch,mission,onBack}){
     setResult(null);
     try{
       const base64=img.split(',')[1];
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-6',
-          max_tokens:300,
-          messages:[{role:'user',content:[
-            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
-            {type:'text',text:'Tu es un assistant pour une société de traiteur. Compte précisément le nombre de bacs gastronormes (bacs GN) visibles sur cette photo. Réponds UNIQUEMENT avec ce format JSON: {"nb_bacs": <nombre>, "details": "<description courte>"} . Si tu ne vois pas de bacs, mets 0.'}
-          ]}]
-        })
-      });
-      const data=await resp.json();
-      const text=(data.content||[]).map(c=>c.text||'').join('');
-      const clean=text.replace(/```json|```/g,'').trim();
-      const parsed=JSON.parse(clean);
-      setResult(parsed);
+      const resp=await fetch(SUPA+'/api/compter-bacs',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({image:img})});
+      const j=await resp.json();if(!j.ok)throw new Error(j.erreur||'erreur');
+      setResult({nb_bacs:j.total,details:(+j.gn1?j.gn1+' GN 1/1 ':'')+(+j.gn12?j.gn12+' GN 1/2 ':'')+(+j.autres?j.autres+' autres ':'')+'· fiabilité '+(j.confiance||'—')});
     }catch(e){
       setResult({nb_bacs:'?',details:'Analyse impossible — vérifiez la qualité de la photo'});
     }
@@ -2850,37 +2836,74 @@ async function matHistorique(client){const r=await sGet('planning?date=like.MAT_
 function matSoldes(h){const S={};h.forEach(o=>Object.entries(o.items||{}).forEach(([k,v])=>{S[k]=(S[k]||0)+(+v.laisse||0)-(+v.repris||0);}));return S;}
 function MaterielPad({ch,client,bonCle,onFini}){
   const[items,setItems]=useState({});const[solde,setSolde]=useState(null);const[note,setNote]=useState('');const[envoi,setEnvoi]=useState(false);
-  useEffect(()=>{matHistorique(client).then(h=>setSolde(matSoldes(h))).catch(()=>setSolde({}));},[client]);
+  const[photo,setPhoto]=useState(null);const[ia,setIa]=useState(null);const[iaEnCours,setIaEnCours]=useState(false);const[sens,setSens]=useState(null);const[calc,setCalc]=useState(null);
+  const fileRef=useRef();
+  useEffect(()=>{matHistorique(client).then(h=>{const S=matSoldes(h);setSolde(S);setSens(x=>x||(Object.values(S).some(v=>v>0)?'repris':'laisse'));}).catch(()=>{setSolde({});setSens(x=>x||'laisse');});},[client]);
+  const fixer=(k,f,v)=>setItems(it=>{const o=Object.assign({laisse:0,repris:0},it[k]||{});o[f]=Math.max(0,+v||0);return Object.assign({},it,{[k]:o});});
   const ch2=(k,f,d)=>setItems(it=>{const v=Object.assign({laisse:0,repris:0},it[k]||{});v[f]=Math.max(0,(+v[f]||0)+d);return Object.assign({},it,{[k]:v});});
-  const bt={width:40,height:40,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:20,fontWeight:900,cursor:'pointer'};
+  async function prendrePhoto(e){const f=e.target.files&&e.target.files[0];if(!f)return;try{const img=await bnPhotoCompresse(f);setPhoto(img);setIa(null);compter(img);}catch(x){showToast('Photo illisible','var(--red)');}e.target.value='';}
+  async function compter(img){
+    if(!navigator.onLine){showToast('📴 Pas de réseau : compte à la main, la photo partira quand même','#ea580c');return;}
+    setIaEnCours(true);
+    try{const r=await fetch(SUPA+'/api/compter-bacs',{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({image:img})});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&j.ok){setIa(j);const f=sens||'laisse';if(+j.gn1)fixer('GN1',f,j.gn1);if(+j.gn12)fixer('GN12',f,j.gn12);showToast('🤖 '+j.total+' bac(s) comptés — vérifie et corrige si besoin','var(--green)');}
+      else setIa({erreur:r.status===404?'Le comptage automatique n’est pas encore activé : compte à la main (la photo est quand même envoyée).':'L’IA n’a pas pu compter : reprends la photo de plus près, ou compte à la main.'});
+    }catch(x){setIa({erreur:'Pas de connexion : compte à la main, la photo partira quand même.'});}
+    setIaEnCours(false);
+  }
+  function toutRepris(){if(!solde)return;Object.entries(solde).forEach(([k,v])=>{if(v>0)fixer(k,'repris',v);});setSens('repris');showToast('↩️ Tout ce qui était chez le client est noté « repris »','var(--green)');}
   async function valider(){
     const it={};Object.entries(items).forEach(([k,v])=>{if(v.laisse||v.repris)it[k]=v;});
-    if(!Object.keys(it).length&&!note){showToast('Rien à enregistrer','var(--red)');return;}
-    setEnvoi(true);
-    try{const now=new Date();await bnPostA({date:'MAT_'+matSlug(client)+'_'+Date.now()+'_'+ch.id,donnees:{type:'materiel',client,date:jourLocal(),heure:now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',items:it,note,bon:bonCle||''},updated_at:now.toISOString()});
-      showToast('📦 Matériel enregistré','var(--green)');onFini&&onFini(it);}
-    catch(e){const now=new Date();await boiteAjouter({type:'post',row:{date:'MAT_'+matSlug(client)+'_'+Date.now()+'_'+ch.id,donnees:{type:'materiel',client,date:jourLocal(),heure:now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',items:Object.fromEntries(Object.entries(items).filter(([k,v])=>v.laisse||v.repris)),note,bon:bonCle||''},updated_at:now.toISOString()}});showToast('📴 Pas de réseau : matériel gardé, il partira tout seul','#ea580c');onFini&&onFini(items);}
+    if(!Object.keys(it).length&&!note&&!photo){showToast('Rien à enregistrer','var(--red)');return;}
+    setEnvoi(true);const now=new Date();const hh=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const row={date:'MAT_'+matSlug(client)+'_'+Date.now()+'_'+ch.id,donnees:{type:'materiel',client,date:jourLocal(),heure:hh,chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',items:it,note,bon:bonCle||'',photo:photo||null,ia:ia&&!ia.erreur?{total:ia.total,gn1:ia.gn1,gn12:ia.gn12,confiance:ia.confiance}:null},updated_at:now.toISOString()};
+    const ev=photo?{date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'photo',_isEvent:true,categorie:'materiel',chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client,date:jourLocal(),heure:hh,photo,dataUrl:photo,nb_bacs:ia&&ia.total,details_bacs:Object.entries(it).map(([k,v])=>k.replace('GN12','GN 1/2').replace('GN1','GN 1/1')+' : '+(v.laisse||0)+' laissé(s), '+(v.repris||0)+' repris').join(' · '),ts:now.toISOString()},updated_at:now.toISOString()}:null;
+    try{await bnPostA(row);if(ev){try{await bnPostA(ev);}catch(e){}}showToast('📦 Matériel enregistré — le responsable le voit tout de suite','var(--green)');onFini&&onFini(it);}
+    catch(e){await boiteAjouter({type:'post',row});if(ev)await boiteAjouter({type:'post',row:ev});showToast('📴 Pas de réseau : matériel gardé, il partira tout seul','#ea580c');onFini&&onFini(it);}
     setEnvoi(false);
   }
+  const bt={width:44,height:44,borderRadius:12,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:22,fontWeight:900,cursor:'pointer'};
+  const pill=(on)=>({flex:1,border:'none',borderRadius:10,padding:'10px 4px',fontWeight:900,fontSize:13.5,fontFamily:'inherit',background:on?'#a78bfa':'#071526',color:on?'#1e1b4b':'#c4b5fd'});
+  const totalSolde=solde?Object.values(solde).reduce((a,v)=>a+Math.max(0,v),0):0;
   return(<div style={{background:'#0f1e35',border:'2px solid #a78bfa',borderRadius:14,padding:12,marginTop:10}}>
-    <div style={{fontSize:15,fontWeight:900,color:'#ddd6fe'}}>📦 Matériel — {client}</div>
-    <div style={{fontSize:11.5,color:'var(--muted)',margin:'3px 0 8px'}}>Laissé = déposé chez le client aujourd'hui · Repris = récupéré aujourd'hui</div>
+    <div style={{fontSize:16,fontWeight:900,color:'#ddd6fe'}}>📦 Bacs gastro & matériel — {client}</div>
+    {solde&&totalSolde>0&&<div style={{background:'rgba(251,191,36,.12)',border:'1px solid rgba(251,191,36,.5)',borderRadius:10,padding:'8px 10px',marginTop:8,color:'#fde68a',fontSize:13,fontWeight:800}}>Chez ce client en ce moment : {Object.entries(solde).filter(([k,v])=>v>0).map(([k,v])=>v+' '+((MAT_TYPES.find(x=>x[0]===k)||[k,k])[1])).join(' · ')}
+      <button onClick={toutRepris} style={{display:'block',width:'100%',marginTop:8,background:'#16a34a',color:'#fff',border:'none',borderRadius:10,padding:11,fontWeight:900,fontSize:14,fontFamily:'inherit'}}>↩️ J’ai TOUT repris ({totalSolde})</button></div>}
+    <div style={{fontSize:12,color:'var(--muted)',margin:'10px 0 6px'}}>1. Qu’est-ce que tu fais ?</div>
+    <div style={{display:'flex',gap:6}}><button style={pill(sens==='laisse')} onClick={()=>setSens('laisse')}>⬇️ Je LAISSE des bacs</button><button style={pill(sens==='repris')} onClick={()=>setSens('repris')}>⬆️ Je REPRENDS des bacs</button></div>
+    <div style={{fontSize:12,color:'var(--muted)',margin:'10px 0 6px'}}>2. Prends les bacs en photo (de côté, piles bien visibles) — l’ordinateur les compte</div>
+    <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={prendrePhoto}/>
+    <button onClick={()=>fileRef.current&&fileRef.current.click()} style={{width:'100%',background:'#7c3aed',color:'#fff',border:'none',borderRadius:12,padding:14,fontWeight:900,fontSize:15.5,fontFamily:'inherit'}}>📸 {photo?'Reprendre la photo':'Photo des bacs'}</button>
+    {photo&&<img src={photo} alt="" style={{width:'100%',borderRadius:10,marginTop:8,maxHeight:220,objectFit:'cover'}}/>}
+    {iaEnCours&&<div style={{marginTop:8,color:'#c4b5fd',fontWeight:800}}>🤖 Comptage en cours…</div>}
+    {ia&&!ia.erreur&&<div style={{marginTop:8,background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.5)',borderRadius:10,padding:10,color:'#bbf7d0',fontSize:13.5}}>
+      <b>🤖 Compté : {ia.total} bac(s)</b>{+ia.gn1?' · '+ia.gn1+' GN 1/1':''}{+ia.gn12?' · '+ia.gn12+' GN 1/2':''}{+ia.autres?' · '+ia.autres+' autres':''}
+      <div style={{fontSize:12,color:'#86efac',marginTop:2}}>Fiabilité : {ia.confiance||'—'}. Vérifie d’un coup d’œil et corrige avec − / + si besoin.{ia.conseil?' '+ia.conseil:''}</div></div>}
+    {ia&&ia.erreur&&<div style={{marginTop:8,background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.5)',borderRadius:10,padding:10,color:'#fed7aa',fontSize:13}}>{ia.erreur}</div>}
+    <div style={{fontSize:12,color:'var(--muted)',margin:'12px 0 2px'}}>3. Vérifie les quantités</div>
     {MAT_TYPES.map(([k,l])=>{const v=items[k]||{laisse:0,repris:0};const sd=solde?(solde[k]||0):null;return(
-      <div key={k} style={{borderTop:'1px solid var(--border)',padding:'8px 0'}}>
-        <div style={{display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:900,color:'#fff'}}><span>{l}</span>{sd!==null&&<span style={{color:sd>0?'#fbbf24':'var(--muted)',fontSize:11.5}}>chez le client : {sd}</span>}</div>
-        <div style={{display:'flex',gap:10,marginTop:6}}>
-          {[['laisse','Laissé','#86efac'],['repris','Repris','#93c5fd']].map(([f,t,c])=>(<div key={f} style={{flex:1,display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11.5,color:c,fontWeight:900,minWidth:44}}>{t}</span>
-            <button style={bt} onClick={()=>ch2(k,f,-1)}>−</button><span style={{minWidth:24,textAlign:'center',fontSize:18,fontWeight:900,color:'#fff'}}>{v[f]||0}</span><button style={bt} onClick={()=>ch2(k,f,1)}>+</button></div>))}
-        </div></div>);})}
-    <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2} placeholder="Précision (ex : conteneur rouge, 1 caisse cassée…)" style={{width:'100%',boxSizing:'border-box',marginTop:8,padding:8,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:14,fontFamily:'inherit'}}/>
-    <button className="btn-p" style={{marginTop:8,opacity:envoi?.5:1}} disabled={envoi} onClick={valider}>{envoi?'⏳ Enregistrement…':'✅ Enregistrer le matériel'}</button>
+      <div key={k} style={{borderTop:'1px solid var(--border)',padding:'9px 0'}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:13.5,fontWeight:900,color:'#fff'}}><span>{l}</span>{sd!==null&&sd>0&&<span style={{color:'#fbbf24',fontSize:11.5}}>chez le client : {sd}</span>}</div>
+        {[['laisse','Laissé','#86efac'],['repris','Repris','#93c5fd']].filter(([f])=>!sens||f===sens||v[f]).map(([f,t,c])=>(<div key={f} style={{display:'flex',alignItems:'center',gap:6,marginTop:6}}>
+          <span style={{fontSize:12,color:c,fontWeight:900,minWidth:50}}>{t}</span>
+          <button style={bt} onClick={()=>ch2(k,f,-1)}>−</button><span style={{minWidth:34,textAlign:'center',fontSize:22,fontWeight:900,color:'#fff'}}>{v[f]||0}</span><button style={bt} onClick={()=>ch2(k,f,1)}>+</button>
+          <button style={{...bt,width:52,fontSize:14}} onClick={()=>ch2(k,f,5)}>+5</button>
+          {/GN/.test(k)&&<button style={{...bt,width:44,fontSize:17}} title="Piles × bacs par pile" onClick={()=>setCalc({k,f,p:1,n:5})}>🧮</button>}
+        </div>))}
+        {calc&&calc.k===k&&<div style={{marginTop:8,background:'#071526',borderRadius:10,padding:10,color:'#fff',fontSize:13}}>
+          <div style={{fontWeight:900,marginBottom:6}}>🧮 Compter par piles</div>
+          {[['p','Nombre de piles'],['n','Bacs par pile']].map(([z,lab])=><div key={z} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}><span style={{flex:1}}>{lab}</span><button style={bt} onClick={()=>setCalc(c=>({...c,[z]:Math.max(1,c[z]-1)}))}>−</button><b style={{minWidth:28,textAlign:'center',fontSize:20}}>{calc[z]}</b><button style={bt} onClick={()=>setCalc(c=>({...c,[z]:c[z]+1}))}>+</button></div>)}
+          <button onClick={()=>{fixer(calc.k,calc.f,calc.p*calc.n);setCalc(null);}} style={{width:'100%',background:'#16a34a',color:'#fff',border:'none',borderRadius:10,padding:10,fontWeight:900,fontFamily:'inherit'}}>= {calc.p*calc.n} bacs — valider</button></div>}
+      </div>);})}
+    <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2} placeholder="Précision (ex : 2 bacs abîmés, caisse rouge…)" style={{width:'100%',boxSizing:'border-box',marginTop:8,padding:8,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:14,fontFamily:'inherit'}}/>
+    <button className="btn-p" style={{marginTop:8,opacity:envoi?.5:1}} disabled={envoi} onClick={valider}>{envoi?'⏳ Enregistrement…':'✅ Enregistrer (avec la photo)'}</button>
   </div>);
 }
-function MaterielScreen({ch,planning,onBack}){
+function MaterielScreen({ch,planning,onBack,init}){
   const ms=(typeof getMissions==='function'&&planning)?getMissions(planning,ch.id,jourLocal()):[];
   const noms=[];ms.forEach(m=>{if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>noms.push(c.client));else if(m.client)noms.push(m.client);});
-  const[cli,setCli]=useState('');const[autre,setAutre]=useState('');
+  const[cli,setCli]=useState((init&&init.client)||'');const[autre,setAutre]=useState('');
   return(<div className="screen"><Header title="📦 Matériel" onBack={onBack}/><div className="scroll"><div style={{padding:12}}>
     {!cli&&<div>
       <div style={{fontSize:13,color:'var(--muted)',marginBottom:8}}>Choisis le client de ta journée :</div>
@@ -3240,7 +3263,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
             {ouvert[i]!==false&&t.map((c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
               <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/><button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:c.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button></div>
               <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;})}
           </div>;}
         const fait=m._st==='ok';
@@ -3253,6 +3276,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             {m.adresse&&<div style={{fontSize:12.5,color:PRO.gris,marginTop:2}}>📍 {m.adresse}</div>}{m.codeAcces&&<div style={{fontSize:12,color:'#b45309'}}>🔑 {m.codeAcces}</div>}
             {m.avec&&<div style={{fontSize:12,color:PRO.gris}}>👥 avec {m.avec}</div>}
             {m.client&&<ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/>}
+            {m.client&&<button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:m.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button>}
           </div></div>;})}
     </div>:<div style={{flex:1,margin:'10px 14px 150px',borderRadius:16,overflow:'hidden',border:'1px solid '+PRO.bord,background:'#fff'}}><ProCarte L={L} ch={ch}/></div>}
     <div style={{position:'fixed',left:14,right:14,bottom:66,zIndex:40}}>
@@ -3604,7 +3628,7 @@ function App(){
   if(screen==='help') return <HelpScreen ch={ch} onBack={back}/>;
   if(screen==='conges') return <CongesScreen ch={ch} onBack={back}/>;
   if(screen==='bon') return <BonScreen ch={ch} mission={screenData} onBack={back}/>;
-  if(screen==='materiel') return <MaterielScreen ch={ch} planning={planning} onBack={back}/>;
+  if(screen==='materiel') return <MaterielScreen ch={ch} planning={planning} onBack={back} init={screenData}/>;
   if(screen==='bons') return <BonsScreen ch={ch} init={screenData} onNavigate={nav} onBack={()=>{if(screenData&&screenData.fromMission){const r=window.__retour||'tournee';window.__retour=null;setScreen(r);setScreenData(null);}else back();}}/>;
   if(screen==='horaires') return <HorairesScreen ch={ch} planning={planning} onBack={back}/>;
   if(screen==='plus') return <PlusScreen ch={ch} onNavigate={nav} onBack={back} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
