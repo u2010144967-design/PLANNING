@@ -195,6 +195,33 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
 });
 
+// ---- COMPTAGE DES BACS GASTRO SUR PHOTO (IA) ----
+//  Variable Scalingo : ANTHROPIC_API_KEY (et, facultatif, ANTHROPIC_MODEL)
+app.post('/api/compter-bacs', verifCle, async (req, res) => {
+  try {
+    const KEYIA = process.env.ANTHROPIC_API_KEY;
+    if (!KEYIA) return res.status(404).json({ ok: false, erreur: 'comptage par photo pas encore activé (ANTHROPIC_API_KEY)' });
+    let { image, media } = req.body || {};
+    if (!image) return res.status(400).json({ ok: false, erreur: 'photo manquante' });
+    if (KEYIA === 'test') return res.json({ ok: true, gn1: 12, gn12: 8, autres: 0, total: 20, confiance: 'moyenne', conseil: '' });
+    const m = String(image).match(/^data:(image\/[a-z]+);base64,(.*)$/); if (m) { media = m[1]; image = m[2]; }
+    const consigne = "Tu es le contrôleur matériel d'un traiteur. La photo montre des bacs gastronormes (inox ou plastique) : " +
+      "GN 1/1 = grand rectangle (environ 53 x 32 cm), GN 1/2 = moitié (environ 32 x 26 cm). Ils sont souvent EMPILÉS les uns dans les autres, parfois dans des caisses. " +
+      "Méthode : repère chaque pile ; pour chaque pile, compte les rebords visibles sur le côté (chaque rebord = 1 bac) ; si une pile est trop haute, estime avec sa hauteur (un bac emboîté ajoute environ 1,5 à 2 cm). Additionne toutes les piles. " +
+      "Réponds UNIQUEMENT avec ce JSON, sans texte autour : {\"gn1\":0,\"gn12\":0,\"autres\":0,\"total\":0,\"piles\":[{\"type\":\"GN 1/1\",\"nb\":0}],\"confiance\":\"haute|moyenne|faible\",\"conseil\":\"une phrase courte pour mieux prendre la photo si besoin\"}";
+    const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST',
+      headers: { 'x-api-key': KEYIA, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6', max_tokens: 600,
+        messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: media || 'image/jpeg', data: image } }, { type: 'text', text: consigne }] }] }) });
+    if (!r.ok) return res.status(502).json({ ok: false, erreur: 'IA : ' + (await r.text()).slice(0, 200) });
+    const d = await r.json();
+    const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+    const j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+    j.total = j.total || ((+j.gn1 || 0) + (+j.gn12 || 0) + (+j.autres || 0));
+    res.json(Object.assign({ ok: true }, j));
+  } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
+});
+
 async function ecrireSiPlusRecent(row) {
   await pool.query(
     `INSERT INTO planning (date, donnees, updated_at) VALUES ($1, $2, COALESCE($3::timestamptz, now()))
