@@ -2432,11 +2432,14 @@ function matDessiner(){
     if(!H.length)h+='<div class="clvide big" style="margin:0 18px 18px">Rien pour le moment.</div>';
     else{h+='<div class="cltwrap" style="max-height:60vh"><table class="clt"><tr><th>Date</th><th>Chauffeur</th><th>Client</th><th>Matériel</th><th>Note</th></tr>';var prev='';
       H.forEach(function(o){if(o.date!==prev){h+='<tr class="bnsec rc"><td colspan="5">📅 '+esc(o.date?dayLabel(o.date):'')+'</td></tr>';prev=o.date;}
-        h+='<tr><td>'+esc(o.heure||'')+'</td><td>'+esc(o.chauffeur||'')+'<div class="bnsm">'+esc(o.vehicule||'')+'</div></td><td><b>'+esc(o.client||'')+'</b></td><td>'+Object.keys(o.items||{}).map(function(t){var v=o.items[t];return esc(MAT_NOMS[t]||t)+' : '+(v.laisse?'<b style="color:#2e7d32">'+v.laisse+'↓</b> ':'')+(v.repris?'<b style="color:#1565c0">'+v.repris+'↑</b>':'');}).join('<br>')+'</td><td class="bnsm">'+esc(o.note||'')+'</td></tr>';});
+        h+='<tr><td>'+esc(o.heure||'')+'</td><td>'+esc(o.chauffeur||'')+'<div class="bnsm">'+esc(o.vehicule||'')+'</div></td><td><b>'+esc(o.client||'')+'</b></td><td>'+Object.keys(o.items||{}).map(function(t){var v=o.items[t];return esc(MAT_NOMS[t]||t)+' : '+(v.laisse?'<b style="color:#2e7d32">'+v.laisse+'↓</b> ':'')+(v.repris?'<b style="color:#1565c0">'+v.repris+'↑</b>':'');}).join('<br>')+(o.ia&&o.ia.total!=null?'<div class="bnsm" style="color:#6d28d9;font-weight:800">🤖 photo : '+o.ia.total+' bac(s) comptés</div>':'')+'</td><td class="bnsm">'+esc(o.note||'')+(o.photo?'<div><img src="'+o.photo+'" style="height:56px;border-radius:8px;cursor:zoom-in;margin-top:4px" onclick="matPhoto(this.src)"></div>':'')+'</td></tr>';});
       h+='</table></div>';}
   }
   document.getElementById('clBox').innerHTML=h;
 }
+function matPhoto(src){var w=window.open('','_blank');if(w){w.document.write('<title>Photo des bacs</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center"><img src="'+src+'" style="max-width:100%;max-height:100vh">');w.document.close();}}
+// la page Matériel se met à jour toute seule quand elle est affichée
+setInterval(function(){try{if(!document.hidden&&typeof PX3!=='undefined'&&PX3.live==='materiel'&&document.querySelector('.pxPane[data-k="materiel"] #clBox'))matPanel();}catch(e){}},30000);
 // boutons dans la barre
 (function(){var ref=document.querySelector('button[onclick="bnPanel()"]');if(!ref)return;
   var b=document.createElement('button');b.className='btn-chauf';b.id='sgBtn';b.style.cssText='background:#00695c!important';b.textContent='✍️ Bons signés';b.onclick=function(){sgPanel();};ref.parentNode.insertBefore(b,ref.nextSibling);
