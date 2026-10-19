@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="icon-chauffeur.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-chauffeur.png">
 <link rel="icon" type="image/png" href="icon-chauffeur.png">
-<meta name="theme-color" content="#0a1628">
+<meta name="theme-color" content="#0b1b33">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -3066,6 +3066,18 @@ function BonsScreen({ch,init,onBack,onNavigate}){
 const PRO={nav:'#0b1b33',bleu:'#2563eb',vert:'#16a34a',fond:'#f1f5f9',txt:'#0f172a',gris:'#64748b',bord:'#e2e8f0'};
 function proSignes(){return window.__signes||{cles:{},clients:{}};}
 function proNoterSignes(liste){const S=window.__signes||{cles:{},clients:{}};(liste||[]).forEach(b=>{if(b&&b.signe&&(b.signe.signataire||b.signe.signe)){S.cles[b.date]=1;S.clients[bnNormA(b.client)]=1;}});window.__signes=S;}
+const TRN_COUL={JAUNE:['#facc15','#fef9c3','#713f12'],ROSE:['#ec4899','#fce7f3','#831843'],VIOLET:['#a855f7','#f3e8ff','#581c87'],VERT:['#16a34a','#dcfce7','#14532d'],BLEU:['#3b82f6','#dbeafe','#1e3a8a']};
+function livCle(ch,ds,client,heure){return 'LIV_'+ch.id+'_'+ds+'_'+(client||'')+'_'+(heure||'');}
+function livEstFait(ch,ds,client,heure,bonCle){try{if(localStorage.getItem(livCle(ch,ds,client,heure))==='done')return true;}catch(e){}const S=proSignes();return !!((bonCle&&S.cles[bonCle])||(client&&S.clients[bnNormA(client)]));}
+async function livPouce(ch,ds,client,heure,extra){
+  try{localStorage.setItem(livCle(ch,ds,client,heure),'done');}catch(e){}
+  if(navigator.vibrate)navigator.vibrate(40);
+  const ev={date:'EV_LIV_'+Date.now()+'_'+ch.id,donnees:Object.assign({type:'livraison_confirmee',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:client||'',heure:heure||'',libelle:'Livré',date:ds,ts:new Date().toISOString()},extra||{}),updated_at:new Date().toISOString()};
+  try{await sPostEvent(ev);}catch(e){await boiteAjouter({type:'post',row:ev});}
+  window.dispatchEvent(new Event('cana-boite'));showToast('👍 '+(client||'Livraison')+' : livré','var(--green)');
+}
+function livAnnuler(ch,ds,client,heure){try{localStorage.removeItem(livCle(ch,ds,client,heure));}catch(e){}window.dispatchEvent(new Event('cana-boite'));}
+function Pouce({fait,onClick}){return <button onClick={e=>{e.stopPropagation();onClick();}} title={fait?'Livré':'Toucher quand c’est livré'} style={{width:46,height:46,borderRadius:23,border:'none',flexShrink:0,background:fait?'#16a34a':'#dc2626',color:'#fff',fontSize:22,boxShadow:'0 3px 8px rgba(0,0,0,.2)',transform:fait?'none':'rotate(180deg)'}}>👍</button>;}
 function proMissionsJour(planning,ch){
   if(!planning||!ch)return [];const ds=jourLocal();
   let L=[];try{L=getMissions(planning,ch.id,ds).map(m=>({...m,_date:ds}));}catch(e){}
@@ -3074,7 +3086,7 @@ function proMissionsJour(planning,ch){
   return L.map(m=>{const k='LIV_'+ch.id+'_'+ds+'_'+(m.client||m.task||'')+'_'+(m.heure||'');let st='av';
     try{if(localStorage.getItem(k)==='done')st='ok';}catch(e){}
     const S=proSignes();
-    if(st!=='ok'){if(m.tournee&&m.tournee.clients&&m.tournee.clients.length){if(m.tournee.clients.every(c=>(c.bonCle&&S.cles[c.bonCle])||S.clients[bnNormA(c.client)]))st='ok';}
+    if(st!=='ok'){if(m.tournee&&m.tournee.clients&&m.tournee.clients.length){if(m.tournee.clients.every(c=>livEstFait(ch,ds,c.client,m.heure,c.bonCle)))st='ok';}
       else if((m.bonCle&&S.cles[m.bonCle])||(m.client&&S.clients[bnNormA(m.client)]))st='ok';}
     if(st!=='ok'&&!enCoursPose&&(m.client||m.tournee)){st='ec';enCoursPose=true;}
     return {...m,_st:st};});
@@ -3084,6 +3096,7 @@ function proAlertes(ch){try{return JSON.parse(localStorage.getItem('cana_alertes
 function proChip(st){const S={ok:['Livré','#dcfce7','#166534'],ec:['En cours',PRO.bleu,'#fff'],av:['À venir','#f1f5f9','#475569']}[st]||['','#fff','#000'];
   return <span style={{fontSize:11,fontWeight:800,borderRadius:7,padding:'3px 8px',background:S[1],color:S[2],whiteSpace:'nowrap'}}>{S[0]}</span>;}
 /* ═══ position du camion : envoyée seulement quand l'appli est ouverte, et seulement si le chauffeur l'a accepté ═══ */
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__installer=e;});
 let _gpsWatch=null,_gpsDernier={t:0,lat:0,lng:0};
 function gpsDistance(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180;const dl=r(c-a),dg=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
 function gpsDemarrer(ch){
@@ -3123,36 +3136,58 @@ function AccueilPro({ch,planning,onNavigate}){
   useEffect(()=>{const f=()=>setNAtt(+localStorage.getItem('cana_attente_n')||0);window.addEventListener('cana-boite',f);boiteCompter();prechargerBons(planning,ch);return()=>window.removeEventListener('cana-boite',f);},[planning]);
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const tuiles=[['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['✍️','Mes bons signés','signes_tel'],['💬','Messages','messages'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un problème','incident'],['🔄','Actualiser','refresh']];
+  const tournees=L.filter(m=>m.tournee&&m.tournee.clients);const nbFaits=L.filter(m=>m._st==='ok').length;
+  const tel='0601247308';
+  const T=[['📋','Missions','tournee',L.length?nbFaits+'/'+L.length:''],['🧭','Navigation','carte'],['📄','Bons','bons'],['📞','Téléphone','tel'],['💬','Messages','messages'],['✍️','Bons signés','signes_tel'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Problème','incident'],['🔄','Actualiser','refresh']];
   return <div className="screen" style={{background:PRO.fond}}>
-    <ProEntete ch={ch} titre="La Table de Cana" sous={'Bonjour '+ch.display+' 👋 · '+date}
-      droite={<button onClick={()=>onNavigate('alertes')} style={{position:'relative',background:'rgba(255,255,255,.12)',border:'none',color:'#fff',borderRadius:10,width:40,height:40,fontSize:19}}>🔔{nAl>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',borderRadius:10,fontSize:11,fontWeight:900,padding:'1px 6px'}}>{nAl}</span>}</button>}/>
-    <div className="scroll" style={{padding:'0 14px 90px',marginTop:-6}}>
-      <div style={{background:'#fff',borderRadius:18,padding:14,boxShadow:'0 6px 20px rgba(15,23,42,.12)',marginTop:12}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,fontWeight:900,fontSize:16,color:PRO.txt}}>Ma tournée du jour</div><span style={{background:etat[1],color:etat[2],fontWeight:800,fontSize:12,borderRadius:8,padding:'3px 9px'}}>{etat[0]}</span></div>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,color:PRO.txt}}><span style={{fontSize:26}}>🚚</span><div><div style={{fontWeight:800}}>{d.truck||ch.truck||'Camion'}</div><div style={{fontSize:12,color:PRO.gris}}>{tot} client{tot>1?'s':''} · {d.start||'—'}{d.end?' → '+d.end:''}</div></div></div>
-        <div style={{display:'flex',marginTop:12,borderTop:'1px solid '+PRO.bord,paddingTop:10}}>
-          {[[faits+' / '+L.length,'Livrées',PRO.vert],[ec,'En cours',PRO.bleu],[av,'À venir',PRO.gris]].map(([v,l,c],i)=><div key={i} style={{flex:1,textAlign:'center'}}><div style={{fontSize:20,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:11.5,color:PRO.gris,fontWeight:700}}>{l}</div></div>)}
-        </div>
-        <button onClick={()=>onNavigate('tournee')} style={{width:'100%',marginTop:12,background:PRO.bleu,color:'#fff',border:'none',borderRadius:12,padding:'14px',fontWeight:900,fontSize:16,fontFamily:'inherit'}}>Voir ma tournée</button>
+    <div style={{background:'linear-gradient(160deg,#0b1b33 0%,#1e3a8a 100%)',color:'#fff',padding:'16px 16px 54px',paddingTop:'calc(16px + env(safe-area-inset-top))'}}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:42,height:42,borderRadius:21,background:'#fff',color:PRO.nav,display:'flex',alignItems:'center',justifyContent:'center',fontSize:21}}>🍴</div>
+        <div style={{flex:1}}><div style={{fontWeight:900,fontSize:16}}>La Table de Cana</div><div style={{fontSize:11.5,color:'#c7d2fe'}}>Traiteur & Événements · Insertion</div></div>
+        <button onClick={()=>onNavigate('alertes')} style={{position:'relative',background:'rgba(255,255,255,.14)',border:'none',color:'#fff',borderRadius:12,width:42,height:42,fontSize:19}}>🔔{nAl>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',borderRadius:10,fontSize:11,fontWeight:900,padding:'1px 6px'}}>{nAl}</span>}</button>
       </div>
-      {gps===null&&navigator.geolocation&&<div style={{background:'#eff6ff',border:'1px solid #93c5fd',borderRadius:14,padding:12,marginTop:12}}>
+      <div style={{marginTop:16,fontSize:14,color:'#c7d2fe'}}>Bienvenue</div>
+      <div style={{fontSize:28,fontWeight:900,letterSpacing:.5,textTransform:'uppercase'}}>{ch.display} 👋</div>
+      <div style={{fontSize:13,color:'#c7d2fe',textTransform:'capitalize'}}>{date} · 🚚 {d.truck||ch.truck||'—'} · {d.start||'—'}{d.end?' → '+d.end:''}</div>
+    </div>
+    <div className="scroll" style={{padding:'0 14px 90px',marginTop:-40}}>
+      <div onClick={()=>onNavigate('tournee')} style={{background:'#fff',borderRadius:18,display:'flex',alignItems:'center',gap:14,padding:'14px 16px',boxShadow:'0 8px 24px rgba(15,23,42,.15)',cursor:'pointer'}}>
+        <div style={{width:58,height:58,borderRadius:14,background:PRO.bleu,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>📋</div>
+        <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5}}>MES MISSIONS DU JOUR</div><div style={{fontSize:34,fontWeight:900,color:PRO.txt,lineHeight:1}}>{tot}<span style={{fontSize:15,color:PRO.gris,fontWeight:800}}> client{tot>1?'s':''}</span></div>
+          <div style={{fontSize:12.5,fontWeight:800,color:faits===L.length&&L.length?PRO.vert:PRO.gris}}>{faits} / {L.length} livré{faits>1?'s':''} · <span style={{color:etat[2]}}>{etat[0]}</span></div></div>
+        <span style={{fontSize:28,color:'#94a3b8'}}>›</span></div>
+      <div onClick={()=>onNavigate('messages')} style={{background:'#fff',borderRadius:18,display:'flex',alignItems:'center',gap:14,padding:'12px 16px',marginTop:10,boxShadow:'0 2px 10px rgba(15,23,42,.08)',cursor:'pointer'}}>
+        <div style={{width:58,height:58,borderRadius:14,background:'#0ea5e9',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26}}>✉️</div>
+        <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5}}>MESSAGES</div><div style={{fontSize:15,fontWeight:800,color:PRO.txt}}>Écrire au responsable</div></div><span style={{fontSize:28,color:'#94a3b8'}}>›</span></div>
+      {tournees.length>0&&<div style={{background:'#fff',borderRadius:18,padding:'12px 14px',marginTop:10,boxShadow:'0 2px 10px rgba(15,23,42,.08)'}}>
+        <div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5,marginBottom:6}}>MES TOURNÉES</div>
+        {tournees.map((m,i)=>{const C=TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#64748b'];const n=m.tournee.clients.filter(c=>livEstFait(ch,jourLocal(),c.client,m.heure,c.bonCle)).length;const N=m.tournee.clients.length;
+          return <div key={i} onClick={()=>onNavigate('tournee')} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderTop:i?'1px solid '+PRO.bord:'none',cursor:'pointer'}}>
+            <div style={{width:10,alignSelf:'stretch',borderRadius:5,background:C[0]}}/>
+            <div style={{flex:1}}><div style={{fontWeight:900,color:PRO.txt}}>Tournée {(m.tournee.couleur||'').toLowerCase()} <span style={{color:PRO.gris,fontWeight:700,fontSize:12.5}}>· départ {m.heure}</span></div>
+              <div style={{height:7,background:'#e2e8f0',borderRadius:4,marginTop:5,overflow:'hidden'}}><div style={{height:'100%',width:Math.round(n*100/N)+'%',background:n===N?PRO.vert:C[0]}}/></div></div>
+            <div style={{fontWeight:900,color:n===N?PRO.vert:PRO.txt,minWidth:42,textAlign:'right'}}>{n}/{N}</div></div>;})}
+      </div>}
+      {gps===null&&navigator.geolocation&&<div style={{background:'#eff6ff',border:'1px solid #93c5fd',borderRadius:14,padding:12,marginTop:10}}>
         <div style={{fontWeight:900,color:PRO.txt}}>📍 Partager ma position pendant ma tournée ?</div>
-        <div style={{fontSize:12.5,color:PRO.gris,marginTop:3}}>Le responsable voit ton camion sur la carte (seulement quand l’appli est ouverte). Utile pour t’aider en cas de souci ou prévenir un client.</div>
+        <div style={{fontSize:12.5,color:PRO.gris,marginTop:3}}>Le responsable voit ton camion sur la carte (seulement quand l’appli est ouverte).</div>
         <div style={{display:'flex',gap:8,marginTop:8}}><button onClick={()=>{localStorage.setItem('cana_gps_'+ch.id,'oui');setGps('oui');}} style={{flex:1,background:PRO.bleu,color:'#fff',border:'none',borderRadius:10,padding:10,fontWeight:900,fontFamily:'inherit'}}>✅ Oui, activer</button><button onClick={()=>{localStorage.setItem('cana_gps_'+ch.id,'non');setGps('non');}} style={{flex:1,background:'#fff',color:PRO.gris,border:'1px solid '+PRO.bord,borderRadius:10,padding:10,fontWeight:800,fontFamily:'inherit'}}>Plus tard</button></div></div>}
-      {nAtt>0&&<div onClick={()=>onNavigate('signes_tel')} style={{background:'#fff7ed',border:'1px solid #fdba74',borderRadius:14,padding:12,marginTop:12,color:'#9a3412',fontWeight:800,cursor:'pointer'}}>📤 {nAtt} envoi(s) en attente de réseau — ils partiront tout seuls ›</div>}
-      {prochain&&<div onClick={()=>{window.__retour='home';onNavigate('mission_detail',prochain);}} style={{background:'#fff',borderRadius:16,padding:12,marginTop:12,border:'2px solid '+PRO.bleu,cursor:'pointer'}}>
+      {nAtt>0&&<div onClick={()=>onNavigate('signes_tel')} style={{background:'#fff7ed',border:'1px solid #fdba74',borderRadius:14,padding:12,marginTop:10,color:'#9a3412',fontWeight:800,cursor:'pointer'}}>📤 {nAtt} envoi(s) en attente de réseau — ils partiront tout seuls ›</div>}
+      {prochain&&<div onClick={()=>{window.__retour='home';onNavigate('tournee');}} style={{background:'#fff',borderRadius:16,padding:12,marginTop:10,border:'2px solid '+PRO.bleu,cursor:'pointer'}}>
         <div style={{fontSize:11.5,fontWeight:900,color:PRO.bleu,textTransform:'uppercase'}}>Prochain arrêt</div>
         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:6}}><div style={{background:PRO.bleu,color:'#fff',borderRadius:10,padding:'6px 9px',fontWeight:900}}>{prochain.heure}</div>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,color:PRO.txt}}>{prochain.client||prochain.task}</div>{prochain.adresse&&<div style={{fontSize:12,color:PRO.gris}}>📍 {prochain.adresse}</div>}</div><span style={{fontSize:20,color:PRO.gris}}>›</span></div>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,color:PRO.txt}}>{prochain.tournee?'Tournée '+(prochain.tournee.couleur||'').toLowerCase():(prochain.client||prochain.task)}</div>{prochain.adresse&&<div style={{fontSize:12,color:PRO.gris}}>📍 {prochain.adresse}</div>}</div><span style={{fontSize:20,color:PRO.gris}}>›</span></div>
       </div>}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginTop:12}}>
-        {tuiles.map(([i,l,k])=><button key={k} onClick={()=>onNavigate(k)} style={{background:'#fff',border:'1px solid '+PRO.bord,borderRadius:14,padding:'14px 6px',display:'flex',flexDirection:'column',alignItems:'center',gap:6,color:PRO.txt,fontWeight:800,fontSize:12,fontFamily:'inherit'}}><span style={{fontSize:24}}>{i}</span>{l}</button>)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:12}}>
+        {T.map(([ic,l,k,badge])=>k==='tel'?<a key={k} href={'tel:'+tel} style={{textDecoration:'none',background:'#1e293b',borderRadius:14,padding:'16px 6px',display:'flex',flexDirection:'column',alignItems:'center',gap:6,color:'#fff',fontWeight:900,fontSize:11.5,letterSpacing:.3,textTransform:'uppercase'}}><span style={{fontSize:28}}>{ic}</span>{l}</a>:
+          <button key={k} onClick={()=>onNavigate(k)} style={{position:'relative',background:'#1e293b',border:'none',borderRadius:14,padding:'16px 6px',display:'flex',flexDirection:'column',alignItems:'center',gap:6,color:'#fff',fontWeight:900,fontSize:11.5,letterSpacing:.3,textTransform:'uppercase',fontFamily:'inherit'}}><span style={{fontSize:28}}>{ic}</span>{l}{badge&&<span style={{position:'absolute',top:6,right:6,background:'#0ea5e9',borderRadius:10,fontSize:10.5,padding:'1px 6px'}}>{badge}</span>}</button>)}
       </div>
-      <div style={{marginTop:12,borderRadius:16,padding:16,background:'linear-gradient(135deg,#0b1b33,#1e3a8a)',color:'#fff'}}><div style={{fontWeight:900,fontSize:15}}>Ensemble pour une restauration solidaire</div><div style={{fontSize:12,color:'#c7d2fe',marginTop:4}}>Une logistique bien organisée, c’est des repas qui arrivent à temps !</div></div>
+      <div style={{marginTop:12,borderRadius:16,padding:16,background:'linear-gradient(135deg,#0b1b33,#1e3a8a)',color:'#fff',textAlign:'center'}}><div style={{fontWeight:900,fontSize:14}}>Ensemble pour une restauration solidaire</div><div style={{fontSize:12,color:'#c7d2fe',marginTop:4,fontStyle:'italic'}}>Une logistique bien organisée, c’est des repas qui arrivent à temps !</div></div>
     </div>
     <ProTabBar actif="home" onNavigate={onNavigate}/>
   </div>;
 }
+
 const _proGeo=(()=>{try{return JSON.parse(localStorage.getItem('cana_geo_app')||'{}');}catch(e){return {};}})();
 async function proGeocoder(adr){const k=String(adr||'').toUpperCase().trim();if(!k)return null;if(_proGeo[k]!==undefined)return _proGeo[k];
   try{const r=await fetch('https://api-adresse.data.gouv.fr/search/?limit=1&q='+encodeURIComponent(adr));const j=await r.json();const f=j.features&&j.features[0];_proGeo[k]=f&&f.properties.score>0.35?[f.geometry.coordinates[1],f.geometry.coordinates[0]]:null;}catch(e){return null;}
@@ -3176,7 +3211,8 @@ function ProCarte({L,ch}){
   return <div style={{position:'relative',height:'100%',minHeight:300}}><div ref={ref} style={{position:'absolute',inset:0}}/>{info&&<div style={{position:'absolute',top:8,left:8,right:8,zIndex:500,background:'#fff',borderRadius:10,padding:'6px 10px',fontSize:12,color:PRO.gris,boxShadow:'0 2px 8px rgba(0,0,0,.15)'}}>{info}</div>}</div>;
 }
 function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
-  const[onglet,setOnglet]=useState(mode||'liste');const[ouvert,setOuvert]=useState({});
+  const[onglet,setOnglet]=useState(mode||'liste');const[ouvert,setOuvert]=useState({});const[,maj]=useState(0);
+  useEffect(()=>{const f=()=>maj(x=>x+1);window.addEventListener('cana-boite',f);return()=>window.removeEventListener('cana-boite',f);},[]);
   const L=proMissionsJour(planning,ch);const tot=proNbClients(L);const d=planning&&planning.drivers&&planning.drivers[ch.id]||{};
   const prochain=L.find(m=>m._st==='ec');
   const ouvrir=m=>{window.__retour=onglet==='carte'?'carte':'tournee';const k=m.bonCle||(m.bonCles&&m.bonCles[0]);if(k&&!m.tournee){onNavigate('bons',{client:m.client||m.task||'',date:m._date||jourLocal(),bonCle:k,bonCles:m.bonCles||[],fromMission:true});return;}onNavigate('mission_detail',m);};
@@ -3187,20 +3223,32 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
       {[['liste','Liste'],['carte','Carte']].map(([k,l])=><button key={k} onClick={()=>setOnglet(k)} style={{flex:1,border:'none',borderRadius:9,padding:'9px',fontWeight:900,fontFamily:'inherit',background:onglet===k?PRO.nav:'transparent',color:onglet===k?'#fff':PRO.gris}}>{l}</button>)}
     </div>
     {onglet==='liste'?<div className="scroll" style={{padding:'10px 14px 150px'}}>
+      <div style={{fontSize:12,fontWeight:900,color:PRO.gris,textTransform:'uppercase',margin:'4px 2px 8px'}}>Aujourd’hui · touche 👍 quand c’est livré</div>
       {!L.length&&<div style={{textAlign:'center',color:PRO.gris,padding:30,background:'#fff',borderRadius:14}}>Aucune livraison aujourd’hui.</div>}
-      {L.map((m,i)=>{const t=m.tournee&&m.tournee.clients;return <div key={i} style={{background:'#fff',borderRadius:14,marginBottom:8,border:'1px solid '+(m._st==='ec'?PRO.bleu:PRO.bord),overflow:'hidden'}}>
-        <div onClick={()=>t?setOuvert(o=>({...o,[i]:!o[i]})):ouvrir(m)} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 12px',cursor:'pointer'}}>
-          <div style={{width:26,height:26,borderRadius:13,background:m._st==='ok'?PRO.vert:m._st==='ec'?PRO.bleu:'#cbd5e1',color:'#fff',fontWeight:900,fontSize:12,display:'flex',alignItems:'center',justifyContent:'center'}}>{i+1}</div>
-          <div style={{fontWeight:900,color:PRO.txt,minWidth:44}}>{m.heure}</div>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,color:PRO.txt,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t?'🚚 '+m.task:(m.client||m.task)}</div>
-            <div style={{fontSize:11.5,color:PRO.gris,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t?t.length+' clients — touche pour voir':(m.adresse||(m.client?'':'Consigne'))}{m.avec?' · avec '+m.avec:''}</div></div>
-          {t?<span style={{fontSize:16,color:PRO.gris}}>{ouvert[i]?'▲':'▼'}</span>:proChip(m._st)}
-        </div>
-        {!t&&m.client&&(m.adresse||m.tel)&&<div style={{padding:'0 12px 10px 48px'}}><ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/></div>}
-        {t&&ouvert[i]&&<div style={{borderTop:'1px solid '+PRO.bord,background:'#f8fafc'}}>{t.map((c,j)=><div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||jourLocal(),bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px 9px 48px',borderBottom:'1px solid '+PRO.bord,cursor:'pointer'}}>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?PRO.vert:PRO.txt}}>{((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?'✅ ':''}{j+1}. {c.client}</div>{c.adresse&&<div style={{fontSize:11,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div><span style={{fontSize:12,color:PRO.bleu,fontWeight:800}}>📄 Bon</span></div>)}
-          <div onClick={()=>ouvrir(m)} style={{padding:'9px 12px',textAlign:'center',fontSize:12.5,fontWeight:800,color:PRO.bleu,cursor:'pointer'}}>Ouvrir la tournée (confirmer, photo…)</div></div>}
-      </div>;})}
+      {L.map((m,i)=>{const t=m.tournee&&m.tournee.clients;const ds=m._date||jourLocal();
+        if(t){const C=TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#64748b','#f1f5f9','#0f172a'];const nb=t.filter(c=>livEstFait(ch,ds,c.client,m.heure,c.bonCle)).length;
+          return <div key={i} style={{background:'#fff',borderRadius:16,marginBottom:12,overflow:'hidden',border:'2px solid '+C[0],boxShadow:'0 2px 8px rgba(15,23,42,.08)'}}>
+            <div onClick={()=>setOuvert(o=>({...o,[i]:!o[i]}))} style={{background:C[0],color:'#fff',padding:'11px 12px',display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+              <div style={{fontWeight:900,fontSize:15,minWidth:46}}>{m.heure}</div>
+              <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15}}>🚚 TOURNÉE {(m.tournee.couleur||'').toUpperCase()}</div><div style={{fontSize:12,opacity:.95,fontWeight:700}}>{nb} / {t.length} livrés{m.avec?' · avec '+m.avec:''}</div></div>
+              <span style={{fontSize:16}}>{ouvert[i]===false?'▼':'▲'}</span></div>
+            <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
+            {ouvert[i]!==false&&t.map((c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
+              <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div>
+              <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;})}
+          </div>;}
+        const fait=m._st==='ok';
+        return <div key={i} onClick={()=>ouvrir(m)} style={{background:fait?'#f0fdf4':'#fff',borderRadius:16,marginBottom:10,border:'1px solid '+(fait?'#86efac':m._st==='ec'?PRO.bleu:PRO.bord),padding:'11px 12px',display:'flex',gap:12,cursor:'pointer',boxShadow:'0 1px 4px rgba(15,23,42,.06)'}}>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}><div style={{fontWeight:900,color:PRO.txt,fontSize:14}}>{m.heure}</div>
+            {m.client?<Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+m.client+' ?')&&livAnnuler(ch,ds,m.client,m.heure)):livPouce(ch,ds,m.client,m.heure,{bon:m.bonCle||''})}/>:<div style={{width:46,height:46,borderRadius:23,background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📝</div>}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:900,fontSize:16,color:fait?'#14532d':PRO.txt}}>{fait?'✅ ':''}{m.client||m.task}</div>
+            {m.client&&m.task&&m.task!==m.client&&<div style={{fontSize:12.5,color:PRO.bleu,fontWeight:700}}>{m.task}</div>}
+            {m.adresse&&<div style={{fontSize:12.5,color:PRO.gris,marginTop:2}}>📍 {m.adresse}</div>}{m.codeAcces&&<div style={{fontSize:12,color:'#b45309'}}>🔑 {m.codeAcces}</div>}
+            {m.avec&&<div style={{fontSize:12,color:PRO.gris}}>👥 avec {m.avec}</div>}
+            {m.client&&<ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/>}
+          </div></div>;})}
     </div>:<div style={{flex:1,margin:'10px 14px 150px',borderRadius:16,overflow:'hidden',border:'1px solid '+PRO.bord,background:'#fff'}}><ProCarte L={L} ch={ch}/></div>}
     <div style={{position:'fixed',left:14,right:14,bottom:66,zIndex:40}}>
       {onglet==='carte'&&prochain?<div style={{background:'#fff',borderRadius:14,padding:10,boxShadow:'0 6px 18px rgba(15,23,42,.18)'}}>
@@ -3227,7 +3275,7 @@ function AlertesScreen({ch,onNavigate,onBack}){
   </div>;
 }
 function MenuPro({ch,onNavigate,onLogout}){
-  const I=[['🚚','Ma tournée','tournee'],['✍️','Mes bons signés (sur ce téléphone)','signes_tel'],['💬','Messages','messages'],['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un incident','incident'],['🔔','Alertes','alertes'],['📸','Mes preuves','preuves'],['🏖️','Congés','conges'],['❓','Aide','help'],['🔄','Actualiser','refresh'],['📍','Position du camion (oui / non)','gps'],['🗂️','Ancien écran d’accueil','home_old']];
+  const I=[['📲','Installer l’application sur ce téléphone','installer'],['🚚','Ma tournée','tournee'],['✍️','Mes bons signés (sur ce téléphone)','signes_tel'],['💬','Messages','messages'],['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un incident','incident'],['🔔','Alertes','alertes'],['📸','Mes preuves','preuves'],['🏖️','Congés','conges'],['❓','Aide','help'],['🔄','Actualiser','refresh'],['📍','Position du camion (oui / non)','gps'],['🗂️','Ancien écran d’accueil','home_old']];
   return <div className="screen" style={{background:PRO.fond}}>
     <ProEntete ch={ch} titre="Menu"/>
     <div className="scroll" style={{padding:'12px 14px 90px'}}>
@@ -3491,7 +3539,8 @@ function App(){
 
   if(!ch&&auto) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:18,fontWeight:900,background:'#071526'}}>⏳ Ouverture de ta journée…</div>;
   if(!ch) return <Login seulId={seulId} onLogin={d=>{setCh(d);setScreen('home');demanderPermissionNotif();debloquerAudio();}}/>;
-  const nav=(s,data=null)=>{if(s==='gps'){const v=gpsChoix(ch)==='oui'?'non':'oui';localStorage.setItem('cana_gps_'+ch.id,v);if(v==='oui')gpsDemarrer(ch);showToast(v==='oui'?'📍 Position partagée pendant la tournée':'📍 Position plus partagée (au prochain démarrage)',v==='oui'?'var(--green)':'#ea580c');return;}
+  const nav=(s,data=null)=>{if(s==='installer'){if(window.__installer){window.__installer.prompt();window.__installer=null;}else if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches){showToast('✅ L’application est déjà installée','var(--green)');}else{alert('Pour installer CANA Chauffeur :\n\nAndroid (Chrome) : menu ⋮ → « Installer l’application » (ou « Ajouter à l’écran d’accueil »).\n\niPhone (Safari) : bouton Partager ⬆️ → « Sur l’écran d’accueil ».');}return;}
+    if(s==='gps'){const v=gpsChoix(ch)==='oui'?'non':'oui';localStorage.setItem('cana_gps_'+ch.id,v);if(v==='oui')gpsDemarrer(ch);showToast(v==='oui'?'📍 Position partagée pendant la tournée':'📍 Position plus partagée (au prochain démarrage)',v==='oui'?'var(--green)':'#ea580c');return;}
     try{window.__pile=window.__pile||[];window.__pile.push({s:screenRef.current,d:dataRef.current});history.pushState({cana:window.__pile.length},'');}catch(e){}
     if(s==='refresh'){if(window.__rafraichir)window.__rafraichir();showToast('🔄 Synchronisation…','var(--green)');return;}setScreen(s);setScreenData(data);};
   const back=()=>{setScreen('home');setScreenData(null);};
