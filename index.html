@@ -2893,7 +2893,7 @@ function BonsScreen({ch,init,onBack,onNavigate}){
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
   const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[tempF,setTempF]=useState('');const[tempC,setTempC]=useState('');const temp=(tempF!==''||tempC!=='')?'ok':'';const[remarque,setRemarque]=useState('');const[mat,setMat]=useState(null);const[voirMat,setVoirMat]=useState(false);const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
-  async function charger(d){setListe(null);setErr('');setAutres(null);try{setListe(await bnBonsDuJour(d));}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
+  async function charger(d){setListe(null);setErr('');setAutres(null);try{const l=await bnBonsDuJour(d);if(d===jourLocal())proNoterSignes(l);setListe(l);}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
   useEffect(()=>{if(dejaOuvert.current||!liste||!init||!init.bonCle)return;dejaOuvert.current=true;
@@ -2928,6 +2928,7 @@ function BonsScreen({ch,init,onBack,onNavigate}){
         signe:!!nSig,signataire:nSig?nSig.qui:'',prenom:nSig?nSig.prenom:'',nom:nSig?nSig.nom:'',signeA:dj+' '+hh,nbPhotos:nPhotos.length,temperature:[tempF!==''?'froid '+tempF+' °C':'',tempC!==''?'chaud '+tempC+' °C':''].filter(Boolean).join(' / '),tempFroid:tempF,tempChaud:tempC,materiel:mat||null,remarque:remarque||'',chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',original:bon.date};
       if(nSig)evt={date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:bon.client,date:jourLocal(),heure:hh,signature:nSig.png,dataUrl:nSig.png,signataire:nSig.qui,bon:k},updated_at:now.toISOString()};
       /* 1) TOUJOURS gardé sur le téléphone */
+      try{const S=window.__signes||{cles:{},clients:{}};S.cles[bon.date]=1;S.clients[bnNormA(bon.client)]=1;window.__signes=S;}catch(e){}
       await AIDB.set('signe:'+k,{cle:k,client:bon.client,jour:bon.jour,quand:dj+' '+hh,signataire:meta.signataire,pdf:bnVersB64(out),envoye:false});
       setArchive({bytes:out,qui:meta.signataire,quand:meta.signeA,nbPhotos:nPhotos.length});
       setListe(l=>(l||[]).map(x=>x.date===bon.date?Object.assign({},x,{signe:Object.assign({date:k},meta)}):x));
@@ -3058,6 +3059,8 @@ function BonsScreen({ch,init,onBack,onNavigate}){
 
 /* ═══════════════════ NOUVEAU LOOK (maquette) : accueil, tournée liste/carte, menu, alertes, barre d'onglets ═══════════════════ */
 const PRO={nav:'#0b1b33',bleu:'#2563eb',vert:'#16a34a',fond:'#f1f5f9',txt:'#0f172a',gris:'#64748b',bord:'#e2e8f0'};
+function proSignes(){return window.__signes||{cles:{},clients:{}};}
+function proNoterSignes(liste){const S=window.__signes||{cles:{},clients:{}};(liste||[]).forEach(b=>{if(b&&b.signe&&(b.signe.signataire||b.signe.signe)){S.cles[b.date]=1;S.clients[bnNormA(b.client)]=1;}});window.__signes=S;}
 function proMissionsJour(planning,ch){
   if(!planning||!ch)return [];const ds=jourLocal();
   let L=[];try{L=getMissions(planning,ch.id,ds).map(m=>({...m,_date:ds}));}catch(e){}
@@ -3065,6 +3068,9 @@ function proMissionsJour(planning,ch){
   let enCoursPose=false;
   return L.map(m=>{const k='LIV_'+ch.id+'_'+ds+'_'+(m.client||m.task||'')+'_'+(m.heure||'');let st='av';
     try{if(localStorage.getItem(k)==='done')st='ok';}catch(e){}
+    const S=proSignes();
+    if(st!=='ok'){if(m.tournee&&m.tournee.clients&&m.tournee.clients.length){if(m.tournee.clients.every(c=>(c.bonCle&&S.cles[c.bonCle])||S.clients[bnNormA(c.client)]))st='ok';}
+      else if((m.bonCle&&S.cles[m.bonCle])||(m.client&&S.clients[bnNormA(m.client)]))st='ok';}
     if(st!=='ok'&&!enCoursPose&&(m.client||m.tournee)){st='ec';enCoursPose=true;}
     return {...m,_st:st};});
 }
@@ -3094,7 +3100,8 @@ function AccueilPro({ch,planning,onNavigate}){
   const prochain=L.find(m=>m._st==='ec');const d=planning&&planning.drivers&&planning.drivers[ch.id]||{};
   const etat=!L.length?['Pas de tournée','#e2e8f0','#475569']:faits===L.length?['Terminée','#dcfce7','#166534']:faits?['En cours','#dcfce7','#166534']:['À démarrer','#fef3c7','#92400e'];
   const nAl=proAlertes(ch).filter(a=>!a.vu).length;
-  const[nAtt,setNAtt]=useState(+localStorage.getItem('cana_attente_n')||0);
+  const[nAtt,setNAtt]=useState(+localStorage.getItem('cana_attente_n')||0);const[,forcer]=useState(0);
+  useEffect(()=>{const f=()=>forcer(x=>x+1);window.addEventListener('cana-boite',f);return()=>window.removeEventListener('cana-boite',f);},[]);
   useEffect(()=>{const f=()=>setNAtt(+localStorage.getItem('cana_attente_n')||0);window.addEventListener('cana-boite',f);boiteCompter();prechargerBons(planning,ch);return()=>window.removeEventListener('cana-boite',f);},[planning]);
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const tuiles=[['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['✍️','Mes bons signés','signes_tel'],['💬','Messages','messages'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un problème','incident'],['🔄','Actualiser','refresh']];
@@ -3169,7 +3176,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
         </div>
         {!t&&m.client&&(m.adresse||m.tel)&&<div style={{padding:'0 12px 10px 48px'}}><ProGps adresse={m.adresse} tel={m.tel} clair/></div>}
         {t&&ouvert[i]&&<div style={{borderTop:'1px solid '+PRO.bord,background:'#f8fafc'}}>{t.map((c,j)=><div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||jourLocal(),bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px 9px 48px',borderBottom:'1px solid '+PRO.bord,cursor:'pointer'}}>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:PRO.txt}}>{j+1}. {c.client}</div>{c.adresse&&<div style={{fontSize:11,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} clair/></div><span style={{fontSize:12,color:PRO.bleu,fontWeight:800}}>📄 Bon</span></div>)}
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?PRO.vert:PRO.txt}}>{((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?'✅ ':''}{j+1}. {c.client}</div>{c.adresse&&<div style={{fontSize:11,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} clair/></div><span style={{fontSize:12,color:PRO.bleu,fontWeight:800}}>📄 Bon</span></div>)}
           <div onClick={()=>ouvrir(m)} style={{padding:'9px 12px',textAlign:'center',fontSize:12.5,fontWeight:800,color:PRO.bleu,cursor:'pointer'}}>Ouvrir la tournée (confirmer, photo…)</div></div>}
       </div>;})}
     </div>:<div style={{flex:1,margin:'10px 14px 150px',borderRadius:16,overflow:'hidden',border:'1px solid '+PRO.bord,background:'#fff'}}><ProCarte L={L} ch={ch}/></div>}
@@ -3232,7 +3239,7 @@ async function prechargerBons(planning,ch){
   let cles=[];try{getMissions(planning,ch.id,ds).forEach(m=>{if(m.bonCle)cles.push(m.bonCle);(m.bonCles||[]).forEach(x=>cles.push(x));if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>c.bonCle&&cles.push(c.bonCle));});}catch(e){}
   cles=[...new Set(cles)];const deja=JSON.parse(localStorage.getItem(fl)||'[]');
   for(const k of cles){if(deja.indexOf(k)>=0)continue;try{const m=await bnDonnees(k);await bnPdfA(m);deja.push(k);localStorage.setItem(fl,JSON.stringify(deja));}catch(e){break;}}
-  try{await bnBonsDuJour(ds);}catch(e){}
+  try{proNoterSignes(await bnBonsDuJour(ds));window.dispatchEvent(new Event('cana-boite'));}catch(e){}
 }
 /* ---------- boîte d'envoi ---------- */
 async function boiteAjouter(job){job.id=Date.now()+'_'+Math.floor(Math.random()*1e6);await AIDB.set('job:'+job.id,job);boiteCompter();}
