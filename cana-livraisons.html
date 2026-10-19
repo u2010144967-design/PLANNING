@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr"><head>
-<script>/* CANA LIVRAISONS : l'adresse officielle est désormais Scalingo — les anciens liens GitHub y renvoient tout seuls */
-(function(){try{if(/github\.io$/.test(location.hostname)){var f=location.pathname.split('/').pop()||'index.html';location.replace('https://h-logistique.osc-fr1.scalingo.io/'+f+location.search+location.hash);}}catch(e){}})();</script>
+<script>/* CANA LIVRAISONS : l'adresse officielle est désormais Scalingo — les anciens liens GitHub et les fichiers téléchargés y renvoient tout seuls */
+(function(){try{var vieux=/github\.io$/.test(location.hostname)||(location.protocol==='file:'&&!navigator.webdriver);if(vieux){var f=(location.pathname.split('/').pop()||'index.html');f=/^index/i.test(f)?'index.html':'cana-livraisons.html';location.replace('https://h-logistique.osc-fr1.scalingo.io/'+f+location.search+location.hash);}}catch(e){}})();</script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cana Livraisons — Planning PRO</title>
@@ -839,6 +839,20 @@ body.px2 .px-dt input[type=date]::-webkit-datetime-edit{display:none}
 body.px2 .px-dl #dateLabel{display:none!important}
 body.px2 .pxGrille{background:#f1f5f9}
 @media (max-width:1750px){.pa-s{font-size:0!important;padding:9px 11px!important}.pa-s::first-letter{font-size:16px}.pxGS{max-width:300px}}
+.mk-cam{display:flex;align-items:center;gap:4px;background:#0b1b33;color:#fff;border:2px solid #fff;border-radius:18px;padding:3px 9px 3px 5px;font-size:16px;box-shadow:0 4px 12px rgba(0,0,0,.35);white-space:nowrap}
+.mk-cam span{font-size:11.5px;font-weight:900}.mk-cam.vieux{background:#64748b;opacity:.85}
+#v25V{position:relative}
+#v25B{border-radius:12px!important;padding:9px 13px!important;font-weight:900!important;font-size:12.5px!important;border:1px solid transparent!important;white-space:nowrap}
+#v25B.ok{background:#dcfce7!important;color:#166534!important}#v25B.att{background:#dbeafe!important;color:#1e40af!important}#v25B.ko{background:#fee2e2!important;color:#b91c1c!important;animation:svPulse 1.6s infinite}
+#v25D{display:none;position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 40px rgba(15,23,42,.18);padding:10px;z-index:400;min-width:300px}
+#v25V.open #v25D{display:block}
+.v25-liste{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important}
+.v25-liste>*{display:block!important;text-align:left;font-size:12.5px!important;padding:7px 10px!important;border-radius:10px!important;white-space:normal!important}
+.v25-dbl{margin-left:10px;background:#f1f5f9!important;color:#0f172a!important;border-radius:20px!important;padding:5px 12px!important;font-weight:800!important;font-size:12.5px!important}
+.v25-dbl.on{background:#0b1b33!important;color:#fff!important}
+body.v25-double .pxPane{flex:0 0 50%!important;width:50%!important;border-right:2px solid #e2e8f0}
+body.v25-double #grid{font-size:90%}
+.cli-av{--c:#dc2626}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -993,7 +1007,7 @@ function clPayload(d){
       col.items.forEach(function(it){
         var key=d+'|'+id+'|'+it.heure;
         var tk=it.type==='client'
-          ?{client:it.client,task:it.texte,adresse:it.adresse,tel:it.tel,email:it.email||'',codeAcces:it.code,numero:it.bonNo,bonCle:it.cid||undefined,bonCles:it.cids||undefined,source:'planning'}
+          ?{client:it.client,task:it.texte,adresse:it.adresse,tel:it.tel,tel2:it.tel2||'',email:it.email||'',codeAcces:it.code,numero:it.bonNo,bonCle:it.cid||undefined,bonCles:it.cids||undefined,source:'planning'}
           :{client:'',task:it.texte,tournee:it.tournee||undefined,source:'planning'};
         if(avec)tk.avec=avec;
         (tasks[key]=tasks[key]||[]).push(tk);
@@ -2279,7 +2293,7 @@ clDay=function(d){
   cols.forEach(function(col){col.items.forEach(function(it){var o=it.r!=null&&day.cells[it.r+'_'+col.c];if(!o||!o.tournee)return;
     it.type='note';it.cid=null;it.cids=null;
     it.tournee={couleur:o.tournee.couleur,clients:(o.tournee.cles||[]).map(function(k,i){var b=cache.find(function(x){return x.date===k;})||{};var f=clFiche(b.client||o.tournee.clients[i])||{};
-      return {client:b.client||o.tournee.clients[i]||'',bonCle:k,type:b.type||'',adresse:f.adresse||b.adresse||'',tel:f.tel||b.tel||'',email:f.email||b.email||'',codeAcces:f.code||b.codeAcces||''};})};
+      return {client:b.client||o.tournee.clients[i]||'',bonCle:k,type:b.type||'',adresse:f.adresse||b.adresse||'',tel:b.tel||f.tel||'',tel2:(b.tel&&f.tel&&String(b.tel).replace(/\D/g,'')!==String(f.tel).replace(/\D/g,''))?f.tel:'',email:f.email||b.email||'',codeAcces:f.code||b.codeAcces||''};})};
   });});
   return cols;
 };
@@ -3319,6 +3333,78 @@ async function faDefinir(){var v=(document.getElementById('faNv').value||'').tri
   try{var c=await faConfLire();c.codeResp=await faHash(v);c.maj=new Date().toISOString();await faConfEcrire(c);localStorage.setItem('cana_resp_ok',c.codeResp);alert('✅ Code responsable enregistré.');usDessiner();}catch(e){alert('❌ '+e.message);}}
 async function faRetirer(){if(!confirm('Retirer le code ? Ton lien principal s’ouvrira à nouveau sans code.'))return;try{var c=await faConfLire();delete c.codeResp;await faConfEcrire(c);alert('Code retiré.');usDessiner();}catch(e){alert('❌ '+e.message);}}
 CL_VERSION='v24 · 19/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 19 : aujourd'hui à l'ouverture, numéros à vérifier, camions sur la carte, voyant unique, vue double =================
+// ---------- 1) le logiciel s'ouvre TOUJOURS sur aujourd'hui (et passe tout seul au lendemain à minuit) ----------
+var V25={jour:fmtD(new Date()),dernierClic:0};
+(function(){var auj=fmtD(new Date());cur=auj;try{ensure(cur);}catch(e){}try{render();}catch(e){}
+  ['click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){V25.dernierClic=Date.now();},true);});
+  setInterval(function(){var a=fmtD(new Date());if(a!==V25.jour){var etaitAuj=(cur===V25.jour);V25.jour=a;if(etaitAuj&&Date.now()-V25.dernierClic>5*60000){cur=a;try{ensure(cur);render();}catch(e){}}}},60000);})();
+setTimeout(function(){var auj=fmtD(new Date());if(cur!==auj&&Date.now()-V25.dernierClic>3000){cur=auj;try{ensure(cur);render();}catch(e){}}},2500);
+// ---------- 2) NUMÉROS À VÉRIFIER : quand un bon arrive avec un téléphone / email différent de la fiche ----------
+var _v25FromBon=clFicheFromBon;
+clFicheFromBon=function(b){
+  var k=b&&clKey(b.client);var avant=k&&clFiches[k]?JSON.parse(JSON.stringify(clFiches[k])):null;
+  _v25FromBon(b);if(!k||!avant||!clFiches[k])return;var f=clFiches[k];var dif={};
+  var chiffres=function(t){return String(t||'').replace(/\D/g,'');};
+  if(b.tel&&avant.tel&&chiffres(b.tel)!==chiffres(avant.tel))dif.tel=b.tel;
+  if(b.email&&avant.email&&String(b.email).toLowerCase()!==String(avant.email).toLowerCase())dif.email=b.email;
+  if(b.adresse&&avant.adresse&&norm(b.adresse).replace(/[^A-Z0-9]/g,'')!==norm(avant.adresse).replace(/[^A-Z0-9]/g,''))dif.adresse=b.adresse;
+  if(Object.keys(dif).length){dif.date=b.jour||b.date||fmtD(new Date());f.aVerifier=dif;clSaveFiches();}
+};
+function cliAccepter(k,champ){var f=clFiches[k];if(!f||!f.aVerifier)return;
+  if(champ==='tout'){['tel','email','adresse'].forEach(function(c){if(f.aVerifier[c]){f.historique=f.historique||[];f.historique.push({champ:c,ancien:f[c],date:fmtD(new Date())});f[c]=f.aVerifier[c];}});delete f.aVerifier;}
+  else delete f.aVerifier;
+  clSaveFiches();cliDessiner();}
+var _cliDessinerV25=cliDessiner;
+cliDessiner=function(focusKey){
+  _cliDessinerV25(focusKey);var box=document.getElementById('clBox');if(!box)return;
+  var av=Object.keys(clFiches).filter(function(k){return clFiches[k].aVerifier;});
+  var t=box.querySelector('.cliT');
+  if(t&&!t.querySelector('.cli-av')){var b=document.createElement('button');b.className='cli-av'+(cliOnglet==='AV'?' on':'');b.style.setProperty('--c','#dc2626');b.innerHTML='🔔 À vérifier<b>'+av.length+'</b>';b.onclick=function(){cliOnglet='AV';cliDessiner();};t.appendChild(b);t.style.gridTemplateColumns='repeat(6,1fr)';}
+  if(cliOnglet==='AV'){var tb=box.querySelector('table.clt');if(!tb)return;
+    var h='<tr><th>Client</th><th>Sur la fiche</th><th>Sur le dernier bon</th><th></th></tr>';
+    av.forEach(function(k){var f=clFiches[k],a=f.aVerifier,kk=k.replace(/'/g,"\\'");var l=[];
+      ['tel','email','adresse'].forEach(function(c){if(a[c])l.push('<div><b>'+({tel:'📞',email:'✉️',adresse:'📍'})[c]+'</b> '+esc(f[c]||'—')+'</div>');});
+      var n=[];['tel','email','adresse'].forEach(function(c){if(a[c])n.push('<div style="color:#b91c1c;font-weight:800"><b>'+({tel:'📞',email:'✉️',adresse:'📍'})[c]+'</b> '+esc(a[c])+'</div>');});
+      h+='<tr><td><b>'+esc(f.nom||k)+'</b><div class="bnsm">bon du '+esc(String(a.date||'').split('-').reverse().join('/'))+'</div></td><td class="bnsm">'+l.join('')+'</td><td class="bnsm">'+n.join('')+'</td><td style="white-space:nowrap"><button class="clsend" onclick="cliAccepter(\''+kk+'\',\'tout\')">✅ Prendre le nouveau</button> <button onclick="cliAccepter(\''+kk+'\',\'garder\')">Garder l’ancien</button></td></tr>';});
+    if(!av.length)h+='<tr><td colspan="4" style="text-align:center;padding:16px;color:#16a34a;font-weight:800">✅ Tout est à jour : aucun numéro différent sur les derniers bons.</td></tr>';
+    tb.innerHTML=h;var p=box.querySelector('.clintro');if(p)p.innerHTML='<b>Numéros à vérifier</b> : quand un bon arrive avec un téléphone, un email ou une adresse <b>différent</b> de la fiche (ex. nouvel animateur dans un centre aéré), il apparaît ici. Un clic : <b>Prendre le nouveau</b> (l’ancien est gardé dans l’historique) ou <b>Garder l’ancien</b>. En attendant, le chauffeur voit <b>les deux numéros</b>.';}
+};
+// ---------- 3) LES CAMIONS SUR LA CARTE (position envoyée par l'appli chauffeur) ----------
+var POS={L:[],t:0,couche:null};
+async function posCharger(){try{var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.POS_*&select=donnees&limit=200',{headers:clH()},1);if(!r.ok)return POS.L;POS.L=(await r.json()).map(function(x){var o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}return o||{};}).filter(function(o){return o.lat&&o.lng&&Date.now()-(o.ts||0)<12*3600000;});POS.t=Date.now();}catch(e){}return POS.L;}
+function posAge(ts){var m=Math.round((Date.now()-ts)/60000);return m<1?'à l’instant':m<60?'il y a '+m+' min':'il y a '+Math.round(m/60)+' h';}
+async function posDessiner(){
+  if(!PX2.carte||!window.L)return;await posCharger();if(!POS.couche)POS.couche=L.layerGroup().addTo(PX2.carte);POS.couche.clearLayers();
+  POS.L.forEach(function(p){var vieux=Date.now()-p.ts>15*60000;
+    L.marker([p.lat,p.lng],{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="mk-cam'+(vieux?' vieux':'')+'">🚚<span>'+esc(p.chauffeur||'')+'</span></div>',iconSize:[90,34],iconAnchor:[17,17]})})
+      .bindPopup('<b>🚚 '+esc(p.chauffeur||'')+'</b>'+(p.camion?'<br>'+esc(p.camion):'')+'<br>Position '+posAge(p.ts)+(p.vit?'<br>'+Math.round(p.vit*3.6)+' km/h':'')).addTo(POS.couche);});
+  var inf=document.getElementById('pxCarteInfo');if(inf){var t=inf.textContent.replace(/ · 🚚.*$/,'');inf.textContent=t+' · 🚚 '+POS.L.length+' camion(s) visible(s)';}
+}
+var _px2CarteV25=px2Carte;px2Carte=async function(f){await _px2CarteV25(f);posDessiner();};
+setInterval(function(){if(!document.hidden&&PX2.idx===2)posDessiner();},30000);
+// ---------- 4) UN SEUL VOYANT D'ÉTAT EN HAUT (les détails s'ouvrent au clic) ----------
+function v25Voyant(){
+  var top=document.querySelector('.px-top .pxAct');var st=document.querySelector('.px-st');if(!top||!st)return;
+  var v=document.getElementById('v25V');if(!v){v=document.createElement('div');v.id='v25V';v.innerHTML='<button id="v25B"></button><div id="v25D"></div>';top.insertBefore(v,top.firstChild);
+    document.getElementById('v25B').onclick=function(e){e.stopPropagation();v.classList.toggle('open');};document.addEventListener('click',function(e){if(!e.target.closest('#v25V'))v.classList.remove('open');});
+    document.getElementById('v25D').appendChild(st);st.classList.add('v25-liste');}
+  var txt=st.innerText||'';var grave=(typeof SV!=='undefined'&&SV.pb.some(function(p){return p.grave;}))||/injoignable|Hors ligne|ARRÊTÉE|arrêtée|❌/.test(txt);
+  var att=/⏳|Synchronisation…|Envoi aux chauffeurs/.test(txt);
+  var aActiver=/Planning partagé : à activer/.test(txt);
+  var b=document.getElementById('v25B');b.className=grave?'ko':(att||aActiver)?'att':'ok';b.innerHTML=grave?'⚠️ Problème — voir':aActiver?'☁️ Partage à activer':att?'⏳ Mise à jour…':'✅ Tout est à jour';
+}
+setTimeout(function(){v25Voyant();setInterval(v25Voyant,2000);},2500);
+// ---------- 5) VUE DOUBLE : deux écrans côte à côte ----------
+function v25Double(){document.body.classList.toggle('v25-double');try{fit();}catch(e){}try{if(PX2.carte)PX2.carte.invalidateSize();}catch(e){}
+  var b=document.getElementById('v25Dbl');if(b)b.classList.toggle('on',document.body.classList.contains('v25-double'));}
+setTimeout(function(){var d=document.getElementById('pxDots');if(!d||document.getElementById('v25Dbl'))return;var b=document.createElement('button');b.id='v25Dbl';b.className='v25-dbl';b.innerHTML='◫ Vue double';b.title='Deux écrans côte à côte : par exemple le planning et la carte';b.onclick=v25Double;var nav=d.querySelector('.px3-nav');(nav||d).appendChild(b);},1500);
+// le téléphone du bon du jour passe en premier ; celui de la fiche, s'il est différent, en second
+var _v25ClDay=clDay;clDay=function(d){var cols=_v25ClDay(d);var L=(bnCache[d]&&bnCache[d].l)||[];var ch=function(t){return String(t||'').replace(/\D/g,'');};
+  cols.forEach(function(c){c.items.forEach(function(it){if(!it.cid)return;var b=L.find(function(x){return x.date===it.cid;});if(!b)return;if(!it.adresse&&b.adresse)it.adresse=b.adresse;if(!it.code&&b.codeAcces)it.code=b.codeAcces;if(!it.email&&b.email)it.email=b.email;if(!b.tel)return;
+    if(it.tel&&ch(it.tel)!==ch(b.tel)){it.tel2=it.tel;it.tel=b.tel;}else if(!it.tel)it.tel=b.tel;});});return cols;};
+CL_VERSION='v25 · 19/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
