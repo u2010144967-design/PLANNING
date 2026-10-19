@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr"><head>
+<script>/* CANA LIVRAISONS : l'adresse officielle est désormais Scalingo — les anciens liens GitHub y renvoient tout seuls */
+(function(){try{if(/github\.io$/.test(location.hostname)){var f=location.pathname.split('/').pop()||'index.html';location.replace('https://h-logistique.osc-fr1.scalingo.io/'+f+location.search+location.hash);}}catch(e){}})();</script>
+
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cana Livraisons — Planning PRO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2555,7 +2558,13 @@ function syResume(d,diff){var L=[];
   return L.slice(0,15);}
 function syEnregistrerLocal(){try{localStorage.setItem('planning_final',JSON.stringify(store));}catch(e){}}
 function syEdition(){var a=document.activeElement;return !!(a&&a.closest&&a.closest('table')&&a.isContentEditable);}
-function syRendre(){if(syEdition()){SY.aRendre=true;return;}try{render();}catch(e){}}
+// on redessine TOUT DE SUITE, même si quelqu'un est en train d'écrire dans une case (on lui remet le curseur au même endroit)
+function syRendre(){
+  var a=document.activeElement,id=null,pos=0;
+  if(a&&a.id&&a.isContentEditable&&a.closest&&a.closest('table')){id=a.id;try{var sel=window.getSelection();if(sel.rangeCount){var r=sel.getRangeAt(0).cloneRange();r.selectNodeContents(a);r.setEnd(sel.getRangeAt(0).endContainer,sel.getRangeAt(0).endOffset);pos=r.toString().length;}}catch(e){}}
+  try{render();}catch(e){}
+  if(id){var e=document.getElementById(id);if(e){try{e.focus();var t=e.firstChild;var sel2=window.getSelection();var rg=document.createRange();if(t&&t.nodeType===3){rg.setStart(t,Math.min(pos,t.length));}else{rg.selectNodeContents(e);rg.collapse(false);}rg.collapse(true);sel2.removeAllRanges();sel2.addRange(rg);}catch(x){}}}
+}
 document.addEventListener('focusout',function(){setTimeout(function(){if(SY.aRendre&&!syEdition()){SY.aRendre=false;try{render();}catch(e){}}},150);});
 // ---------- voyant ----------
 function syBadge(txt,coul,titre){var b=document.getElementById('syBadge');if(!b){b=document.createElement('span');b.id='syBadge';b.style.cssText='cursor:pointer;color:#fff;font-weight:800;font-size:12px;padding:5px 12px;border-radius:20px;white-space:nowrap';b.onclick=syPanel;
@@ -2618,7 +2627,7 @@ async function syTirer(){
       var nouveau=sale?syAppliquer(o.jour,syDiff(SY.base[d],syCopie(store[d]))):syCopie(o.jour);
       var garde=store[d]&&store[d]._maj;store[d]=nouveau;if(garde)store[d]._maj=garde;SY.base[d]=syCopie(o.jour);SY.baseS[d]=sale?syS(o.jour):syS(store[d]);
       change=true;if(d===cur)curChange=true;});
-    if(change){syEnregistrerLocal();if(curChange)syRendre();}
+    if(change){syEnregistrerLocal();if(curChange){syRendre();try{if(typeof px2Kpi==='function')px2Kpi();if(typeof PX2!=='undefined'&&PX2.idx===1)px2Tournees();}catch(e){}}}
     if(!SY.erreur&&!SY.enCours)syOk();
   }catch(e){syBadge('⚠️ Hors ligne — nouvel essai…','#b91c1c');}
 }
@@ -2654,7 +2663,7 @@ async function syDemarrer(){
       SY.dernierPull='';}
   }catch(e){syBadge('⚠️ Planning partagé : '+e.message,'#b91c1c');setTimeout(syDemarrer,20000);return;}
   SY.pret=true;await syTirer();syOk();
-  clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},5000);
+  clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},3000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)syTirer();});
   window.addEventListener('online',function(){syFlush();syTirer();});
 }
@@ -2692,7 +2701,7 @@ async function syActiver(){
     localStorage.setItem('cana_sync_branche',dep);
     jours.forEach(function(d){SY.base[d]=syCopie(store[d]);SY.baseS[d]=syS(store[d]);SY.majVu[d]=maj;});
     SY.actif=true;SY.pret=true;SY.dernierPull=maj;syOk();
-    clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},5000);
+    clearInterval(SY.pull);SY.pull=setInterval(function(){if(!document.hidden)syTirer();},3000);
     alert('✅ Le planning est en ligne ('+jours.length+' journées).\n\nDonne ce lien à l’équipe :\n'+CANA_BASE+'cana-livraisons.html\n\nLes autres PC récupèrent ce planning tout seuls à leur prochaine ouverture.');
     syPanel();
   }catch(e){alert('❌ Mise en ligne interrompue ('+e.message+'). Rien n’est perdu : réessaie.');syPanel();}
