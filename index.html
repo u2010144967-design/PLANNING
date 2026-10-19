@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<script>/* CANA LIVRAISONS : l'adresse officielle est désormais Scalingo — les anciens liens GitHub y renvoient tout seuls */
-(function(){try{if(/github\.io$/.test(location.hostname)){var f=location.pathname.split('/').pop()||'index.html';location.replace('https://h-logistique.osc-fr1.scalingo.io/'+f+location.search+location.hash);}}catch(e){}})();</script>
+<script>/* CANA LIVRAISONS : l'adresse officielle est désormais Scalingo — les anciens liens GitHub et les fichiers téléchargés y renvoient tout seuls */
+(function(){try{var vieux=/github\.io$/.test(location.hostname)||(location.protocol==='file:'&&!navigator.webdriver);if(vieux){var f=(location.pathname.split('/').pop()||'index.html');f=/^index/i.test(f)?'index.html':'cana-livraisons.html';location.replace('https://h-logistique.osc-fr1.scalingo.io/'+f+location.search+location.hash);}}catch(e){}})();</script>
 
 <meta charset="UTF-8">
 <!-- ═══ PWA : Installation + Mise à jour automatique ═══ -->
@@ -3083,6 +3083,18 @@ function proNbClients(L){let n=0;L.forEach(m=>{if(m.tournee&&m.tournee.clients)n
 function proAlertes(ch){try{return JSON.parse(localStorage.getItem('cana_alertes_'+ch.id)||'[]');}catch(e){return [];}}
 function proChip(st){const S={ok:['Livré','#dcfce7','#166534'],ec:['En cours',PRO.bleu,'#fff'],av:['À venir','#f1f5f9','#475569']}[st]||['','#fff','#000'];
   return <span style={{fontSize:11,fontWeight:800,borderRadius:7,padding:'3px 8px',background:S[1],color:S[2],whiteSpace:'nowrap'}}>{S[0]}</span>;}
+/* ═══ position du camion : envoyée seulement quand l'appli est ouverte, et seulement si le chauffeur l'a accepté ═══ */
+let _gpsWatch=null,_gpsDernier={t:0,lat:0,lng:0};
+function gpsDistance(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180;const dl=r(c-a),dg=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function gpsDemarrer(ch){
+  if(_gpsWatch!==null||!navigator.geolocation||!ch)return;
+  _gpsWatch=navigator.geolocation.watchPosition(p=>{const c=p.coords;const maint=Date.now();
+    const bouge=_gpsDernier.t?gpsDistance(_gpsDernier.lat,_gpsDernier.lng,c.latitude,c.longitude):9999;
+    if(maint-_gpsDernier.t<45000&&bouge<150)return;_gpsDernier={t:maint,lat:c.latitude,lng:c.longitude};
+    bnPostA({date:'POS_'+ch.id,donnees:{type:'position',chauffeurId:ch.id,chauffeur:ch.display,camion:ch.truck||'',lat:c.latitude,lng:c.longitude,acc:Math.round(c.accuracy||0),vit:c.speed||0,ts:maint},updated_at:new Date().toISOString()}).catch(()=>{});
+  },()=>{},{enableHighAccuracy:true,maximumAge:30000,timeout:60000});
+}
+function gpsChoix(ch){try{return localStorage.getItem('cana_gps_'+ch.id);}catch(e){return null;}}
 function ProTabBar({actif,onNavigate}){
   const T=[['home','🏠','Accueil'],['tournee','🚚','Tournée'],['carte','🗺️','Carte'],['bons','📄','Bons'],['menu','☰','Plus']];
   return <div style={{position:'fixed',left:0,right:0,bottom:0,background:'#fff',borderTop:'1px solid '+PRO.bord,display:'flex',zIndex:50,paddingBottom:'env(safe-area-inset-bottom)'}}>
@@ -3103,6 +3115,7 @@ function AccueilPro({ch,planning,onNavigate}){
   const L=proMissionsJour(planning,ch);const tot=proNbClients(L);
   const faits=L.filter(m=>m._st==='ok').length,ec=L.filter(m=>m._st==='ec').length,av=L.filter(m=>m._st==='av').length;
   const prochain=L.find(m=>m._st==='ec');const d=planning&&planning.drivers&&planning.drivers[ch.id]||{};
+  const[gps,setGps]=useState(gpsChoix(ch));useEffect(()=>{if(gps==='oui')gpsDemarrer(ch);},[gps]);
   const etat=!L.length?['Pas de tournée','#e2e8f0','#475569']:faits===L.length?['Terminée','#dcfce7','#166534']:faits?['En cours','#dcfce7','#166534']:['À démarrer','#fef3c7','#92400e'];
   const nAl=proAlertes(ch).filter(a=>!a.vu).length;
   const[nAtt,setNAtt]=useState(+localStorage.getItem('cana_attente_n')||0);const[,forcer]=useState(0);
@@ -3122,6 +3135,10 @@ function AccueilPro({ch,planning,onNavigate}){
         </div>
         <button onClick={()=>onNavigate('tournee')} style={{width:'100%',marginTop:12,background:PRO.bleu,color:'#fff',border:'none',borderRadius:12,padding:'14px',fontWeight:900,fontSize:16,fontFamily:'inherit'}}>Voir ma tournée</button>
       </div>
+      {gps===null&&navigator.geolocation&&<div style={{background:'#eff6ff',border:'1px solid #93c5fd',borderRadius:14,padding:12,marginTop:12}}>
+        <div style={{fontWeight:900,color:PRO.txt}}>📍 Partager ma position pendant ma tournée ?</div>
+        <div style={{fontSize:12.5,color:PRO.gris,marginTop:3}}>Le responsable voit ton camion sur la carte (seulement quand l’appli est ouverte). Utile pour t’aider en cas de souci ou prévenir un client.</div>
+        <div style={{display:'flex',gap:8,marginTop:8}}><button onClick={()=>{localStorage.setItem('cana_gps_'+ch.id,'oui');setGps('oui');}} style={{flex:1,background:PRO.bleu,color:'#fff',border:'none',borderRadius:10,padding:10,fontWeight:900,fontFamily:'inherit'}}>✅ Oui, activer</button><button onClick={()=>{localStorage.setItem('cana_gps_'+ch.id,'non');setGps('non');}} style={{flex:1,background:'#fff',color:PRO.gris,border:'1px solid '+PRO.bord,borderRadius:10,padding:10,fontWeight:800,fontFamily:'inherit'}}>Plus tard</button></div></div>}
       {nAtt>0&&<div onClick={()=>onNavigate('signes_tel')} style={{background:'#fff7ed',border:'1px solid #fdba74',borderRadius:14,padding:12,marginTop:12,color:'#9a3412',fontWeight:800,cursor:'pointer'}}>📤 {nAtt} envoi(s) en attente de réseau — ils partiront tout seuls ›</div>}
       {prochain&&<div onClick={()=>{window.__retour='home';onNavigate('mission_detail',prochain);}} style={{background:'#fff',borderRadius:16,padding:12,marginTop:12,border:'2px solid '+PRO.bleu,cursor:'pointer'}}>
         <div style={{fontSize:11.5,fontWeight:900,color:PRO.bleu,textTransform:'uppercase'}}>Prochain arrêt</div>
@@ -3162,7 +3179,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
   const[onglet,setOnglet]=useState(mode||'liste');const[ouvert,setOuvert]=useState({});
   const L=proMissionsJour(planning,ch);const tot=proNbClients(L);const d=planning&&planning.drivers&&planning.drivers[ch.id]||{};
   const prochain=L.find(m=>m._st==='ec');
-  const ouvrir=m=>{window.__retour=onglet==='carte'?'carte':'tournee';onNavigate('mission_detail',m);};
+  const ouvrir=m=>{window.__retour=onglet==='carte'?'carte':'tournee';const k=m.bonCle||(m.bonCles&&m.bonCles[0]);if(k&&!m.tournee){onNavigate('bons',{client:m.client||m.task||'',date:m._date||jourLocal(),bonCle:k,bonCles:m.bonCles||[],fromMission:true});return;}onNavigate('mission_detail',m);};
   const gmaps=a=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||'');
   return <div className="screen" style={{background:PRO.fond}}>
     <ProEntete ch={ch} titre={'Ma tournée — '+ch.display} sous={(d.truck||ch.truck||'')+' · '+tot+' client'+(tot>1?'s':'')}/>
@@ -3179,9 +3196,9 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             <div style={{fontSize:11.5,color:PRO.gris,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t?t.length+' clients — touche pour voir':(m.adresse||(m.client?'':'Consigne'))}{m.avec?' · avec '+m.avec:''}</div></div>
           {t?<span style={{fontSize:16,color:PRO.gris}}>{ouvert[i]?'▲':'▼'}</span>:proChip(m._st)}
         </div>
-        {!t&&m.client&&(m.adresse||m.tel)&&<div style={{padding:'0 12px 10px 48px'}}><ProGps adresse={m.adresse} tel={m.tel} clair/></div>}
+        {!t&&m.client&&(m.adresse||m.tel)&&<div style={{padding:'0 12px 10px 48px'}}><ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/></div>}
         {t&&ouvert[i]&&<div style={{borderTop:'1px solid '+PRO.bord,background:'#f8fafc'}}>{t.map((c,j)=><div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||jourLocal(),bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px 9px 48px',borderBottom:'1px solid '+PRO.bord,cursor:'pointer'}}>
-          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?PRO.vert:PRO.txt}}>{((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?'✅ ':''}{j+1}. {c.client}</div>{c.adresse&&<div style={{fontSize:11,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} clair/></div><span style={{fontSize:12,color:PRO.bleu,fontWeight:800}}>📄 Bon</span></div>)}
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:13,color:((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?PRO.vert:PRO.txt}}>{((c.bonCle&&proSignes().cles[c.bonCle])||proSignes().clients[bnNormA(c.client)])?'✅ ':''}{j+1}. {c.client}</div>{c.adresse&&<div style={{fontSize:11,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div><span style={{fontSize:12,color:PRO.bleu,fontWeight:800}}>📄 Bon</span></div>)}
           <div onClick={()=>ouvrir(m)} style={{padding:'9px 12px',textAlign:'center',fontSize:12.5,fontWeight:800,color:PRO.bleu,cursor:'pointer'}}>Ouvrir la tournée (confirmer, photo…)</div></div>}
       </div>;})}
     </div>:<div style={{flex:1,margin:'10px 14px 150px',borderRadius:16,overflow:'hidden',border:'1px solid '+PRO.bord,background:'#fff'}}><ProCarte L={L} ch={ch}/></div>}
@@ -3210,7 +3227,7 @@ function AlertesScreen({ch,onNavigate,onBack}){
   </div>;
 }
 function MenuPro({ch,onNavigate,onLogout}){
-  const I=[['🚚','Ma tournée','tournee'],['✍️','Mes bons signés (sur ce téléphone)','signes_tel'],['💬','Messages','messages'],['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un incident','incident'],['🔔','Alertes','alertes'],['📸','Mes preuves','preuves'],['🏖️','Congés','conges'],['❓','Aide','help'],['🔄','Actualiser','refresh'],['🗂️','Ancien écran d’accueil','home_old']];
+  const I=[['🚚','Ma tournée','tournee'],['✍️','Mes bons signés (sur ce téléphone)','signes_tel'],['💬','Messages','messages'],['🗺️','Carte','carte'],['📄','Bons d’expédition','bons'],['📦','Matériel','materiel'],['📅','Mon planning','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['⚠️','Signaler un incident','incident'],['🔔','Alertes','alertes'],['📸','Mes preuves','preuves'],['🏖️','Congés','conges'],['❓','Aide','help'],['🔄','Actualiser','refresh'],['📍','Position du camion (oui / non)','gps'],['🗂️','Ancien écran d’accueil','home_old']];
   return <div className="screen" style={{background:PRO.fond}}>
     <ProEntete ch={ch} titre="Menu"/>
     <div className="scroll" style={{padding:'12px 14px 90px'}}>
@@ -3301,12 +3318,13 @@ function MesSignesScreen({ch,onBack,onNavigate}){
   </div>;
 }
 /* boutons Maps / Waze / Appeler, partout où il y a une adresse */
-function ProGps({adresse,tel,clair}){
+function ProGps({adresse,tel,tel2,clair}){
   if(!adresse&&!tel)return null;const st=(bg,c)=>({flex:1,textAlign:'center',textDecoration:'none',background:bg,color:c,borderRadius:10,padding:'9px 4px',fontWeight:900,fontSize:12.5});
   return <div style={{display:'flex',gap:6,marginTop:6}} onClick={e=>e.stopPropagation()}>
     {adresse&&<a href={'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(adresse)} target="_blank" rel="noreferrer" style={st(clair?'#eff6ff':'rgba(59,130,246,.18)',clair?'#1d4ed8':'#93c5fd')}>🗺️ Maps</a>}
     {adresse&&<a href={'https://waze.com/ul?navigate=yes&q='+encodeURIComponent(adresse)} target="_blank" rel="noreferrer" style={st(clair?'#ecfeff':'rgba(6,182,212,.18)',clair?'#0e7490':'#67e8f9')}>🚙 Waze</a>}
     {tel&&<a href={'tel:'+String(tel).split('/')[0].replace(/\s/g,'')} style={st(clair?'#f0fdf4':'rgba(34,197,94,.18)',clair?'#15803d':'#86efac')}>📞 Appeler</a>}
+    {tel2&&<a href={'tel:'+String(tel2).split('/')[0].replace(/\s/g,'')} style={st(clair?'#fef9c3':'rgba(234,179,8,.18)',clair?'#a16207':'#fde047')}>📞 Autre n°</a>}
   </div>;
 }
 
@@ -3320,6 +3338,8 @@ function App(){
   const auto=false;
   const[screenData,setScreenData]=useState(null);
   const[planning,setPlanning]=useState(null);
+  const screenRef=useRef('home');const dataRef=useRef(null);screenRef.current=screen;dataRef.current=screenData;
+  useEffect(()=>{const f=()=>{const p=window.__pile||[];const prec=p.pop();if(prec){setScreen(prec.s||'home');setScreenData(prec.d||null);}else{setScreen('home');setScreenData(null);}};window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f);},[]);
 
   useEffect(()=>{
     if(!ch) return;
@@ -3471,7 +3491,9 @@ function App(){
 
   if(!ch&&auto) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:18,fontWeight:900,background:'#071526'}}>⏳ Ouverture de ta journée…</div>;
   if(!ch) return <Login seulId={seulId} onLogin={d=>{setCh(d);setScreen('home');demanderPermissionNotif();debloquerAudio();}}/>;
-  const nav=(s,data=null)=>{if(s==='refresh'){if(window.__rafraichir)window.__rafraichir();showToast('🔄 Synchronisation…','var(--green)');return;}setScreen(s);setScreenData(data);};
+  const nav=(s,data=null)=>{if(s==='gps'){const v=gpsChoix(ch)==='oui'?'non':'oui';localStorage.setItem('cana_gps_'+ch.id,v);if(v==='oui')gpsDemarrer(ch);showToast(v==='oui'?'📍 Position partagée pendant la tournée':'📍 Position plus partagée (au prochain démarrage)',v==='oui'?'var(--green)':'#ea580c');return;}
+    try{window.__pile=window.__pile||[];window.__pile.push({s:screenRef.current,d:dataRef.current});history.pushState({cana:window.__pile.length},'');}catch(e){}
+    if(s==='refresh'){if(window.__rafraichir)window.__rafraichir();showToast('🔄 Synchronisation…','var(--green)');return;}setScreen(s);setScreenData(data);};
   const back=()=>{setScreen('home');setScreenData(null);};
 
   if(screen==='home') return <AccueilPro ch={ch} planning={planning} onNavigate={nav}/>;
