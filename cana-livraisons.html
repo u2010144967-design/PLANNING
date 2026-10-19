@@ -898,6 +898,19 @@ body.px2 .px-brand .pt-ic{width:32px;height:32px;font-size:16px}body.px2 .px-t{f
 #svAlerte.sv-orange .sv-bt button{padding:5px 10px!important;font-size:12px!important}
 @media (max-width:1450px){.pxGS{max-width:200px!important;min-width:150px!important}.pa-b{padding:8px 11px!important;font-size:12.5px!important}body.px2 .px-brand .px-t{font-size:15px!important}#v25B{padding:8px 10px!important;font-size:11.5px!important}}
 @media (max-width:1300px){body.px2 .px-brand .px-t{display:none}}
+.mbBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px}
+.mbPer{display:flex;background:#f1f5f9;border-radius:10px;padding:3px}.mbPer button{background:transparent!important;border:0!important;padding:6px 12px!important;border-radius:8px!important;font-weight:800!important;color:#475569!important}
+.mbPer button.on{background:#0b1b33!important;color:#fff!important}.mbLab{min-width:220px;text-align:center;font-size:15px}
+.mbK{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:4px 18px 8px}
+.mbC{background:#fff;border:1px solid #e2e8f0;border-left:6px solid #94a3b8;border-radius:12px;padding:10px 12px}.mbC small{display:block;font-size:11.5px;font-weight:800;color:#475569}
+.mbC b{display:block;font-size:28px;font-weight:900;color:#0f172a;line-height:1.1}.mbC em{font-style:normal;font-size:11.5px;color:#64748b}
+.mbC.l{border-left-color:#16a34a}.mbC.r{border-left-color:#2563eb}.mbC.w{border-left-color:#ea580c;background:#fff7ed}.mbC.o{border-left-color:#16a34a}
+.mbG{display:flex;align-items:flex-end;gap:4px;height:150px;padding:6px 18px;overflow-x:auto}
+.mbJ{display:flex;flex-direction:column;align-items:center;min-width:26px;height:100%}.mbJ span{font-size:9.5px;color:#64748b;margin-top:2px}
+.mbBars{flex:1;display:flex;align-items:flex-end;gap:2px;width:100%}.mbBars i{flex:1;border-radius:3px 3px 0 0;min-height:1px}
+.mbBars i.l,.mbLeg i.l{background:#16a34a}.mbBars i.r,.mbLeg i.r{background:#2563eb}
+.mbLeg{padding:0 18px 6px;font-size:12px;color:#475569}.mbLeg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+@media (max-width:1450px){.mbK{grid-template-columns:repeat(2,1fr)}}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -3481,6 +3494,63 @@ function v26Menu(){
 }
 setTimeout(v26Menu,900);setTimeout(v26Menu,2500);
 CL_VERSION='v26 · 19/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 21 : BILAN DES BACS GASTRO (jour / semaine / mois) =================
+var MB={per:'mois',ref:''};
+var MB_TYPES=['GN1','GN12','CAISSE','CONT','AUTRE'];
+function mbBornes(){var r=new Date((MB.ref||fmtD(new Date()))+'T12:00');var a,b,lab;
+  if(MB.per==='jour'){a=b=fmtD(r);lab=dayLabel(a);}
+  else if(MB.per==='semaine'){var l=new Date(r);l.setDate(r.getDate()-((r.getDay()+6)%7));var d=new Date(l);d.setDate(l.getDate()+6);a=fmtD(l);b=fmtD(d);lab='Semaine du '+a.split('-').reverse().join('/')+' au '+b.split('-').reverse().join('/');}
+  else{a=fmtD(new Date(r.getFullYear(),r.getMonth(),1));b=fmtD(new Date(r.getFullYear(),r.getMonth()+1,0));lab=r.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});lab=lab.charAt(0).toUpperCase()+lab.slice(1);}
+  return {a:a,b:b,lab:lab};}
+function mbDecaler(n){var r=new Date((MB.ref||fmtD(new Date()))+'T12:00');if(MB.per==='jour')r.setDate(r.getDate()+n);else if(MB.per==='semaine')r.setDate(r.getDate()+7*n);else r.setMonth(r.getMonth()+n);MB.ref=fmtD(r);matDessiner();}
+function mbCalcul(){
+  var B=mbBornes();var L=matTous.filter(function(o){return o.date>=B.a&&o.date<=B.b&&(!matCh||o.chauffeur===matCh);});
+  var tot={},parCli={},parCh={},parJour={};MB_TYPES.forEach(function(t){tot[t]={l:0,r:0};});
+  L.forEach(function(o){Object.keys(o.items||{}).forEach(function(t){var v=o.items[t];var l=+v.laisse||0,r=+v.repris||0;if(!tot[t])tot[t]={l:0,r:0};tot[t].l+=l;tot[t].r+=r;
+    var c=parCli[o.client||'?']=parCli[o.client||'?']||{l:0,r:0};c.l+=l;c.r+=r;
+    var h=parCh[o.chauffeur||'?']=parCh[o.chauffeur||'?']||{l:0,r:0,n:0};h.l+=l;h.r+=r;
+    var j=parJour[o.date]=parJour[o.date]||{l:0,r:0};j.l+=l;j.r+=r;});
+    if(parCh[o.chauffeur||'?'])parCh[o.chauffeur||'?'].n++;});
+  // ce qui est chez les clients (depuis le début), en fin de période
+  var circ={};matTous.forEach(function(o){if(o.date>B.b)return;Object.keys(o.items||{}).forEach(function(t){circ[t]=(circ[t]||0)+(+o.items[t].laisse||0)-(+o.items[t].repris||0);});});
+  return {B:B,L:L,tot:tot,parCli:parCli,parCh:parCh,parJour:parJour,circ:circ};}
+function mbBilan(){
+  var C=mbCalcul(),B=C.B;var sl=0,sr=0;MB_TYPES.forEach(function(t){sl+=C.tot[t].l;sr+=C.tot[t].r;});var gl=C.tot.GN1.l+C.tot.GN12.l,gr=C.tot.GN1.r+C.tot.GN12.r;
+  var circG=(C.circ.GN1||0)+(C.circ.GN12||0);
+  var h='<div class="mbBar"><div class="mbPer">'+[['jour','Jour'],['semaine','Semaine'],['mois','Mois']].map(function(x){return '<button class="'+(MB.per===x[0]?'on':'')+'" onclick="MB.per=\''+x[0]+'\';matDessiner()">'+x[1]+'</button>';}).join('')+'</div>'+
+    '<button onclick="mbDecaler(-1)">‹</button><b class="mbLab">'+esc(B.lab)+'</b><button onclick="mbDecaler(1)">›</button><button onclick="MB.ref=\'\';matDessiner()">Aujourd’hui</button><span style="flex:1"></span><button onclick="mbExport()">📊 Exporter (Excel)</button></div>';
+  h+='<div class="mbK"><div class="mbC l"><small>Bacs gastro LIVRÉS (laissés)</small><b>'+gl+'</b><em>GN 1/1 : '+C.tot.GN1.l+' · GN 1/2 : '+C.tot.GN12.l+'</em></div>'+
+     '<div class="mbC r"><small>Bacs gastro REPRIS</small><b>'+gr+'</b><em>GN 1/1 : '+C.tot.GN1.r+' · GN 1/2 : '+C.tot.GN12.r+'</em></div>'+
+     '<div class="mbC '+(gl-gr>0?'w':'o')+'"><small>Différence sur la période</small><b>'+(gl-gr>0?'+':'')+(gl-gr)+'</b><em>'+(gl-gr>0?'plus livrés que repris':gl-gr<0?'plus repris que livrés':'équilibré')+'</em></div>'+
+     '<div class="mbC '+(circG>0?'w':'o')+'"><small>Encore chez les clients (fin de période)</small><b>'+circG+'</b><em>GN 1/1 : '+(C.circ.GN1||0)+' · GN 1/2 : '+(C.circ.GN12||0)+'</em></div></div>';
+  // graphique par jour
+  var jours=Object.keys(C.parJour).sort();
+  if(jours.length>1){var mx=1;jours.forEach(function(d){mx=Math.max(mx,C.parJour[d].l,C.parJour[d].r);});
+    h+='<h3 class="cltitre">📈 Jour par jour</h3><div class="mbG">'+jours.map(function(d){var j=C.parJour[d];return '<div class="mbJ" title="'+esc(dayLabel(d))+' : '+j.l+' laissés, '+j.r+' repris"><div class="mbBars"><i class="l" style="height:'+Math.round(j.l*100/mx)+'%"></i><i class="r" style="height:'+Math.round(j.r*100/mx)+'%"></i></div><span>'+d.slice(8)+'/'+d.slice(5,7)+'</span></div>';}).join('')+'</div><div class="mbLeg"><i class="l"></i> laissés <i class="r"></i> repris</div>';}
+  // tous les types de matériel
+  h+='<h3 class="cltitre">📦 Par type de matériel</h3><div class="cltwrap"><table class="clt"><tr><th>Matériel</th><th>Laissés</th><th>Repris</th><th>Différence</th><th>Chez les clients</th></tr>'+
+    MB_TYPES.map(function(t){var x=C.tot[t];return '<tr><td><b>'+MAT_NOMS[t]+'</b></td><td style="color:#15803d;font-weight:800">'+x.l+'</td><td style="color:#1d4ed8;font-weight:800">'+x.r+'</td><td>'+(x.l-x.r)+'</td><td style="font-weight:800;'+((C.circ[t]||0)>0?'color:#c2410c':'')+'">'+(C.circ[t]||0)+'</td></tr>';}).join('')+'</table></div>';
+  // par client
+  var cl=Object.keys(C.parCli).sort(function(a,b){return (C.parCli[b].l+C.parCli[b].r)-(C.parCli[a].l+C.parCli[a].r);});
+  h+='<h3 class="cltitre">👥 Par client</h3>'+(cl.length?'<div class="cltwrap"><table class="clt"><tr><th>Client</th><th>Laissés</th><th>Repris</th><th>Différence</th></tr>'+cl.map(function(k){var x=C.parCli[k];return '<tr><td><b>'+esc(k)+'</b></td><td style="color:#15803d;font-weight:800">'+x.l+'</td><td style="color:#1d4ed8;font-weight:800">'+x.r+'</td><td style="'+(x.l-x.r>0?'color:#c2410c;font-weight:800':'')+'">'+(x.l-x.r)+'</td></tr>';}).join('')+'</table></div>':'<p class="clintro">Aucun mouvement sur cette période.</p>');
+  // par chauffeur
+  var chs=Object.keys(C.parCh).sort();
+  if(chs.length)h+='<h3 class="cltitre">🚚 Par chauffeur</h3><div class="cltwrap"><table class="clt"><tr><th>Chauffeur</th><th>Passages</th><th>Laissés</th><th>Repris</th></tr>'+chs.map(function(k){var x=C.parCh[k];return '<tr><td><b>'+esc(k)+'</b></td><td>'+x.n+'</td><td style="color:#15803d;font-weight:800">'+x.l+'</td><td style="color:#1d4ed8;font-weight:800">'+x.r+'</td></tr>';}).join('')+'</table></div>';
+  return h+'<div style="height:14px"></div>';
+}
+function mbExport(){var C=mbCalcul();var lignes=[['Date','Heure','Chauffeur','Client'].concat(MB_TYPES.map(function(t){return MAT_NOMS[t]+' laissés';})).concat(MB_TYPES.map(function(t){return MAT_NOMS[t]+' repris';})).concat(['Note'])];
+  C.L.slice().sort(function(a,b){return (a.date+a.heure).localeCompare(b.date+b.heure);}).forEach(function(o){var it=o.items||{};lignes.push([o.date.split('-').reverse().join('/'),o.heure||'',o.chauffeur||'',o.client||''].concat(MB_TYPES.map(function(t){return (it[t]&&it[t].laisse)||0;})).concat(MB_TYPES.map(function(t){return (it[t]&&it[t].repris)||0;})).concat([o.note||'']));});
+  var csv='\ufeff'+lignes.map(function(l){return l.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(';');}).join('\r\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bacs_gastro_'+C.B.a+'_'+C.B.b+'.csv';document.body.appendChild(a);a.click();a.remove();}
+var _matDessinerV27=matDessiner;
+matDessiner=function(){
+  _matDessinerV27();var box=document.getElementById('clBox');if(!box)return;var bar=box.querySelector('.clbar');
+  if(bar&&!bar.querySelector('.mbBtn')){var b=document.createElement('button');b.className='mbBtn'+(matVue==='bilan'?' clsend':'');b.textContent='📊 Bilan (jour / semaine / mois)';b.onclick=function(){matVue='bilan';matDessiner();};bar.insertBefore(b,bar.firstChild);
+    if(matVue==='bilan')bar.querySelectorAll('button').forEach(function(x){if(x!==b)x.classList.remove('clsend');});}
+  if(matVue==='bilan'){[].slice.call(box.children).forEach(function(c){if(!c.classList.contains('clhead')&&!c.classList.contains('clbar'))c.remove();});var d=document.createElement('div');d.innerHTML=mbBilan();box.appendChild(d);}
+};
+CL_VERSION='v27 · 19/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
