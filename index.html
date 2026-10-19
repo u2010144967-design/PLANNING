@@ -1100,7 +1100,8 @@ function MissionDetailScreen({ch,mission,planning,onBack,onNavigate}){
           category:mission.category||'',
           estTache:estTache(mission),
           libelle:libFait(mission),
-          heure:mission.heure||'',
+          heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+          heurePrevue:mission.heure||'',
           taskKey:mission._key||'',
           photo:dernierePhoto,
           date:jourLocal(),
@@ -2934,7 +2935,7 @@ function BonsScreen({ch,init,onBack,onNavigate}){
       if(nSig)evt={date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'signature',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:bon.client,date:jourLocal(),heure:hh,signature:nSig.png,dataUrl:nSig.png,signataire:nSig.qui,bon:k},updated_at:now.toISOString()};
       /* 1) TOUJOURS gardé sur le téléphone */
       try{const S=window.__signes||{cles:{},clients:{}};S.cles[bon.date]=1;S.clients[bnNormA(bon.client)]=1;window.__signes=S;}catch(e){}
-      await AIDB.set('signe:'+k,{cle:k,client:bon.client,jour:bon.jour,quand:dj+' '+hh,signataire:meta.signataire,pdf:bnVersB64(out),envoye:false});
+      await AIDB.set('signe:'+k,{cle:k,type:bon.type||'',client:bon.client,jour:bon.jour,quand:dj+' '+hh,signataire:meta.signataire,pdf:bnVersB64(out),envoye:false});
       setArchive({bytes:out,qui:meta.signataire,quand:meta.signeA,nbPhotos:nPhotos.length});
       setListe(l=>(l||[]).map(x=>x.date===bon.date?Object.assign({},x,{signe:Object.assign({date:k},meta)}):x));
       /* 2) envoi au logiciel */
@@ -3070,12 +3071,13 @@ const TRN_COUL={JAUNE:['#facc15','#fef9c3','#713f12'],ROSE:['#ec4899','#fce7f3',
 function livCle(ch,ds,client,heure){return 'LIV_'+ch.id+'_'+ds+'_'+(client||'')+'_'+(heure||'');}
 function livEstFait(ch,ds,client,heure,bonCle){try{if(localStorage.getItem(livCle(ch,ds,client,heure))==='done')return true;}catch(e){}const S=proSignes();return !!((bonCle&&S.cles[bonCle])||(client&&S.clients[bnNormA(client)]));}
 async function livPouce(ch,ds,client,heure,extra){
-  try{localStorage.setItem(livCle(ch,ds,client,heure),'done');}catch(e){}
+  try{localStorage.setItem(livCle(ch,ds,client,heure),'done');localStorage.setItem(livCle(ch,ds,client,heure)+'_h',new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));}catch(e){}
   if(navigator.vibrate)navigator.vibrate(40);
-  const ev={date:'EV_LIV_'+Date.now()+'_'+ch.id,donnees:Object.assign({type:'livraison_confirmee',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:client||'',heure:heure||'',libelle:'Livré',date:ds,ts:new Date().toISOString()},extra||{}),updated_at:new Date().toISOString()};
+  const ev={date:'EV_LIV_'+Date.now()+'_'+ch.id,donnees:Object.assign({type:'livraison_confirmee',_isEvent:true,chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client:client||'',heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),heurePrevue:heure||'',libelle:'Livré',date:ds,ts:new Date().toISOString()},extra||{}),updated_at:new Date().toISOString()};
   try{await sPostEvent(ev);}catch(e){await boiteAjouter({type:'post',row:ev});}
   window.dispatchEvent(new Event('cana-boite'));showToast('👍 '+(client||'Livraison')+' : livré','var(--green)');
 }
+function livHeure(ch,ds,client,heure){try{return localStorage.getItem(livCle(ch,ds,client,heure)+'_h')||'';}catch(e){return '';}}
 function livAnnuler(ch,ds,client,heure){try{localStorage.removeItem(livCle(ch,ds,client,heure));}catch(e){}window.dispatchEvent(new Event('cana-boite'));}
 function Pouce({fait,onClick}){return <button onClick={e=>{e.stopPropagation();onClick();}} title={fait?'Livré':'Toucher quand c’est livré'} style={{width:46,height:46,borderRadius:23,border:'none',flexShrink:0,background:fait?'#16a34a':'#dc2626',color:'#fff',fontSize:22,boxShadow:'0 3px 8px rgba(0,0,0,.2)',transform:fait?'none':'rotate(180deg)'}}>👍</button>;}
 function proMissionsJour(planning,ch){
@@ -3156,6 +3158,9 @@ function AccueilPro({ch,planning,onNavigate}){
         <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5}}>MES MISSIONS DU JOUR</div><div style={{fontSize:34,fontWeight:900,color:PRO.txt,lineHeight:1}}>{tot}<span style={{fontSize:15,color:PRO.gris,fontWeight:800}}> client{tot>1?'s':''}</span></div>
           <div style={{fontSize:12.5,fontWeight:800,color:faits===L.length&&L.length?PRO.vert:PRO.gris}}>{faits} / {L.length} livré{faits>1?'s':''} · <span style={{color:etat[2]}}>{etat[0]}</span></div></div>
         <span style={{fontSize:28,color:'#94a3b8'}}>›</span></div>
+      <div onClick={()=>onNavigate('autres')} style={{background:'#fff',borderRadius:18,display:'flex',alignItems:'center',gap:14,padding:'12px 16px',marginTop:10,boxShadow:'0 2px 10px rgba(15,23,42,.08)',cursor:'pointer'}}>
+        <div style={{width:58,height:58,borderRadius:14,background:'#7c3aed',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26}}>📅</div>
+        <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5}}>MES AUTRES MISSIONS</div><div style={{fontSize:15,fontWeight:800,color:PRO.txt}}>Demain, les jours suivants… et avant</div></div><span style={{fontSize:28,color:'#94a3b8'}}>›</span></div>
       <div onClick={()=>onNavigate('messages')} style={{background:'#fff',borderRadius:18,display:'flex',alignItems:'center',gap:14,padding:'12px 16px',marginTop:10,boxShadow:'0 2px 10px rgba(15,23,42,.08)',cursor:'pointer'}}>
         <div style={{width:58,height:58,borderRadius:14,background:'#0ea5e9',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26}}>✉️</div>
         <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,letterSpacing:.5}}>MESSAGES</div><div style={{fontSize:15,fontWeight:800,color:PRO.txt}}>Écrire au responsable</div></div><span style={{fontSize:28,color:'#94a3b8'}}>›</span></div>
@@ -3235,7 +3240,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
             {ouvert[i]!==false&&t.map((c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
               <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/></div>
               <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;})}
           </div>;}
         const fait=m._st==='ok';
@@ -3243,7 +3248,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}><div style={{fontWeight:900,color:PRO.txt,fontSize:14}}>{m.heure}</div>
             {m.client?<Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+m.client+' ?')&&livAnnuler(ch,ds,m.client,m.heure)):livPouce(ch,ds,m.client,m.heure,{bon:m.bonCle||''})}/>:<div style={{width:46,height:46,borderRadius:23,background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📝</div>}</div>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:900,fontSize:16,color:fait?'#14532d':PRO.txt}}>{fait?'✅ ':''}{m.client||m.task}</div>
+            <div style={{fontWeight:900,fontSize:16,color:fait?'#14532d':PRO.txt}}>{fait?'✅ ':''}{m.client||m.task}</div>{fait&&livHeure(ch,ds,m.client,m.heure)&&<div style={{fontSize:12,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,m.client,m.heure)} (prévu {m.heure})</div>}
             {m.client&&m.task&&m.task!==m.client&&<div style={{fontSize:12.5,color:PRO.bleu,fontWeight:700}}>{m.task}</div>}
             {m.adresse&&<div style={{fontSize:12.5,color:PRO.gris,marginTop:2}}>📍 {m.adresse}</div>}{m.codeAcces&&<div style={{fontSize:12,color:'#b45309'}}>🔑 {m.codeAcces}</div>}
             {m.avec&&<div style={{fontSize:12,color:PRO.gris}}>👥 avec {m.avec}</div>}
@@ -3258,6 +3263,33 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
       </div>:<button onClick={()=>{window.__retour='tournee';onNavigate('bons');}} style={{width:'100%',background:PRO.bleu,color:'#fff',border:'none',borderRadius:12,padding:'14px',fontWeight:900,fontSize:15,fontFamily:'inherit',boxShadow:'0 6px 18px rgba(37,99,235,.35)'}}>📄 Voir les bons d’expédition</button>}
     </div>
     <ProTabBar actif={onglet==='carte'?'carte':'tournee'} onNavigate={onNavigate}/>
+  </div>;
+}
+function AutresMissionsScreen({ch,planning,onNavigate,onBack}){
+  const auj=jourLocal();const[ouvert,setOuvert]=useState({});
+  const jours=[];for(let i=-3;i<=10;i++){const d=new Date();d.setDate(d.getDate()+i);const ds=isoLocal?isoLocal(d):d.toISOString().slice(0,10);if(ds===auj)continue;const ms=planning?getMissions(planning,ch.id,ds):[];if(ms.length)jours.push({ds,i,ms});}
+  const libJ=(ds,i)=>{const d=new Date(ds+'T12:00');const t=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});return (i===1?'Demain — ':i===-1?'Hier — ':i===2?'Après-demain — ':'')+t;};
+  const avant=jours.filter(j=>j.i<0),apres=jours.filter(j=>j.i>0);
+  const bloc=j=>{const n=proNbClients(j.ms);return <div key={j.ds} style={{background:'#fff',borderRadius:14,marginBottom:10,border:'1px solid '+PRO.bord,overflow:'hidden',opacity:j.i<0?.85:1}}>
+    <div onClick={()=>setOuvert(o=>({...o,[j.ds]:!o[j.ds]}))} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',cursor:'pointer',background:j.i===1?'#eff6ff':'#fff'}}>
+      <div style={{width:46,textAlign:'center'}}><div style={{fontSize:11,fontWeight:900,color:PRO.bleu,textTransform:'uppercase'}}>{new Date(j.ds+'T12:00').toLocaleDateString('fr-FR',{weekday:'short'})}</div><div style={{fontSize:22,fontWeight:900,color:PRO.txt,lineHeight:1}}>{new Date(j.ds+'T12:00').getDate()}</div></div>
+      <div style={{flex:1}}><div style={{fontWeight:900,color:PRO.txt,textTransform:'capitalize'}}>{libJ(j.ds,j.i)}</div><div style={{fontSize:12.5,color:PRO.gris}}>{n?n+' client'+(n>1?'s':''):j.ms.length+' mission'+(j.ms.length>1?'s':'')} · départ {j.ms[0].heure}</div></div><span style={{color:PRO.gris}}>{ouvert[j.ds]?'▲':'▼'}</span></div>
+    {ouvert[j.ds]&&j.ms.map((m,k)=><div key={k} style={{padding:'9px 14px',borderTop:'1px solid '+PRO.bord,fontSize:13.5}}>
+      <b style={{color:PRO.txt}}>{m.heure}</b> · {m.tournee?<b style={{color:(TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#334155'])[0]}}>TOURNÉE {(m.tournee.couleur||'').toUpperCase()} ({m.tournee.clients.length} clients)</b>:<span style={{color:PRO.txt,fontWeight:700}}>{m.client||m.task}</span>}
+      {m.tournee&&<div style={{fontSize:12,color:PRO.gris,marginTop:3}}>{m.tournee.clients.map(c=>c.client).join(' · ')}</div>}
+      {m.adresse&&<div style={{fontSize:12,color:PRO.gris}}>📍 {m.adresse}</div>}</div>)}
+  </div>;};
+  return <div className="screen" style={{background:PRO.fond}}>
+    <ProEntete ch={ch} titre="Mes autres missions" sous="Avant et après aujourd’hui" onBack={onBack}/>
+    <div className="scroll" style={{padding:'12px 14px 90px'}}>
+      <div onClick={()=>onNavigate('tournee')} style={{background:PRO.bleu,color:'#fff',borderRadius:14,padding:'12px 14px',marginBottom:12,fontWeight:900,cursor:'pointer'}}>📋 Aujourd’hui — {new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} ›</div>
+      <div style={{fontSize:12,fontWeight:900,color:PRO.gris,textTransform:'uppercase',margin:'4px 2px 8px'}}>À venir</div>
+      {apres.length?apres.map(bloc):<div style={{background:'#fff',borderRadius:14,padding:14,color:PRO.gris,marginBottom:10}}>Rien de prévu pour les prochains jours pour le moment.</div>}
+      {avant.length>0&&<div style={{fontSize:12,fontWeight:900,color:PRO.gris,textTransform:'uppercase',margin:'14px 2px 8px'}}>Les jours précédents</div>}
+      {avant.slice().reverse().map(bloc)}
+      <button onClick={()=>onNavigate('calendar')} style={{width:'100%',marginTop:6,background:'#fff',border:'1px solid '+PRO.bord,borderRadius:12,padding:12,fontWeight:800,color:PRO.txt,fontFamily:'inherit'}}>📅 Voir tout le mois</button>
+    </div>
+    <ProTabBar actif="" onNavigate={onNavigate}/>
   </div>;
 }
 function AlertesScreen({ch,onNavigate,onBack}){
@@ -3344,7 +3376,7 @@ async function envoyerAuto(cle,email,silencieux){
 }
 /* ---------- écran « Mes bons signés » (gardés sur ce téléphone) ---------- */
 function MesSignesScreen({ch,onBack,onNavigate}){
-  const[L,setL]=useState(null);const[voir,setVoir]=useState(null);const[n,setN]=useState(0);
+  const[L,setL]=useState(null);const[voir,setVoir]=useState(null);const[n,setN]=useState(0);const[cat,setCat]=useState('');const[q,setQ]=useState('');
   async function charger(){const ks=(await AIDB.cles('signe:')).sort().reverse();const a=[];for(const k of ks.slice(0,300)){const x=await AIDB.get(k);if(x)a.push(x);}a.sort((x,y)=>String(y.quand||'').localeCompare(String(x.quand||'')));setL(a);setN(await boiteCompter());}
   useEffect(()=>{charger();const f=()=>charger();window.addEventListener('cana-boite',f);return()=>window.removeEventListener('cana-boite',f);},[]);
   async function partager(x){const file=new File([bnVersOctets(x.pdf)],('Bon_'+x.client+'_'+x.jour).replace(/[^A-Za-z0-9_\-]+/g,'_')+'.pdf',{type:'application/pdf'});
@@ -3356,11 +3388,14 @@ function MesSignesScreen({ch,onBack,onNavigate}){
     <div className="scroll" style={{padding:'12px 14px 90px'}}>
       {n>0&&<div style={{background:'#fff7ed',border:'1px solid #fdba74',borderRadius:14,padding:12,marginBottom:10,color:'#9a3412',fontWeight:800}}>📤 {n} envoi(s) en attente de réseau — ils partiront tout seuls.<button onClick={()=>boiteVider()} style={{display:'block',marginTop:8,width:'100%',background:'#ea580c',color:'#fff',border:'none',borderRadius:10,padding:10,fontWeight:900,fontFamily:'inherit'}}>🔄 Réessayer maintenant</button></div>}
       {L===null?<div style={{textAlign:'center',color:PRO.gris,padding:20}}>⏳</div>:!L.length?<div style={{background:'#fff',borderRadius:14,padding:16,color:PRO.gris,textAlign:'center'}}>Aucun bon signé sur ce téléphone pour le moment.</div>:
-        L.map((x,i)=><div key={i} style={{background:'#fff',borderRadius:14,padding:12,marginBottom:8,border:'1px solid '+PRO.bord}}>
+        <>
+        <div style={{display:'flex',gap:6,marginBottom:8}}>{[['','Tous'],['FTBE','🍽️ FTBE'],['RESTOCO','🥗 Resto-Co'],['CENTRE','🏕️ Centres']].map(([k,l])=><button key={k} onClick={()=>setCat(k)} style={{flex:1,border:'none',borderRadius:10,padding:'9px 4px',fontWeight:900,fontSize:12.5,fontFamily:'inherit',background:cat===k?PRO.nav:'#fff',color:cat===k?'#fff':PRO.txt}}>{l}</button>)}</div>
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔎 Chercher un client…" style={{width:'100%',boxSizing:'border-box',padding:12,borderRadius:12,border:'1px solid '+PRO.bord,fontSize:15,marginBottom:10,fontFamily:'inherit'}}/>
+        {L.filter(x=>(!cat||(cat==='RESTOCO'?!/FTBE|CENTRE/.test(x.type||''):String(x.type||'')===cat))&&(!q||bnNormA(x.client).indexOf(bnNormA(q))>=0)).map((x,i)=><div key={i} style={{background:'#fff',borderRadius:14,padding:12,marginBottom:8,border:'1px solid '+PRO.bord}}>
           <div style={{display:'flex',justifyContent:'space-between',gap:6}}><b style={{color:PRO.txt}}>{x.client}</b><span style={{fontSize:11.5,fontWeight:800,color:x.envoye?PRO.vert:'#ea580c'}}>{x.envoye?'✅ Dans le logiciel':'⏳ En attente'}</span></div>
           <div style={{fontSize:12,color:PRO.gris,marginTop:2}}>{x.quand} · signé par {x.signataire||'—'}{x.emailA?' · ✉️ envoyé à '+x.email:''}</div>
           <div style={{display:'flex',gap:8,marginTop:8}}><button onClick={()=>setVoir(x)} style={{flex:1,background:'#eff6ff',color:PRO.bleu,border:'none',borderRadius:10,padding:9,fontWeight:800,fontFamily:'inherit'}}>📄 Voir</button><button onClick={()=>partager(x)} style={{flex:1,background:PRO.bleu,color:'#fff',border:'none',borderRadius:10,padding:9,fontWeight:800,fontFamily:'inherit'}}>📤 Envoyer</button></div>
-        </div>)}
+        </div>)}</>}
     </div>
     <ProTabBar actif="" onNavigate={onNavigate}/>
   </div>;
@@ -3549,6 +3584,7 @@ function App(){
   if(screen==='home_old') return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
   if(screen==='tournee') return <TourneeScreen ch={ch} planning={planning} onNavigate={nav} onBack={back}/>;
   if(screen==='carte') return <TourneeScreen key="carte" ch={ch} planning={planning} onNavigate={nav} onBack={back} mode="carte"/>;
+  if(screen==='autres') return <AutresMissionsScreen ch={ch} planning={planning} onNavigate={nav} onBack={back}/>;
   if(screen==='signes_tel') return <MesSignesScreen ch={ch} onBack={back} onNavigate={nav}/>;
   if(screen==='alertes') return <AlertesScreen ch={ch} onNavigate={nav} onBack={back}/>;
   if(screen==='menu') return <MenuPro ch={ch} onNavigate={nav} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
