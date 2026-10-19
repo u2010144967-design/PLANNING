@@ -38,6 +38,10 @@ app.use(express.static(path.join(__dirname), {
   setHeaders: (res, f) => { if (/\.(html|js|json)$/.test(f)) res.setHeader('Cache-Control', 'no-cache'); }
 }));
 app.get('/', (req, res) => res.redirect('/cana-livraisons.html'));
+// pour l'application Play Store (Android) : preuve que l'appli appartient bien à ce site
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  try { res.json(JSON.parse(process.env.ASSETLINKS || '[]')); } catch (e) { res.json([]); }
+});
 app.get('/sante', async (req, res) => {
   try { const r = await pool.query('SELECT count(*)::int AS n FROM planning'); res.type('text').send('✅ Serveur CANA LIVRAISONS : OK — ' + r.rows[0].n + ' lignes dans la base'); }
   catch (e) { res.status(500).type('text').send('❌ Base de données injoignable : ' + e.message); }
