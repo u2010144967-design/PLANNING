@@ -990,6 +990,27 @@ table.hor td.hc.off{background:#f1f5f9}.hh{display:flex;gap:3px;margin-top:3px}.
 @media (max-width:1450px){.pxKpi .v33arch{flex-basis:190px!important}.v33go input{width:104px}}
 .v33row{display:flex;align-items:center;gap:10px;padding-right:16px}.v33row .pxKpi{flex:1;min-width:0}
 .pa-u div:last-child{display:block!important}.pu-n{font-size:13px!important;white-space:nowrap}.pu-r{font-size:11px!important;color:#2563eb!important;font-weight:800!important;white-space:nowrap}
+/* ===== v34 : fenêtre « Bons à placer » ===== */
+#bpWin{position:fixed;z-index:800;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(15,23,42,.35);display:none;flex-direction:column;overflow:hidden;resize:both;min-width:300px;min-height:180px;border:1px solid #e2e8f0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+#bpWin.mini{height:46px!important;min-height:0;resize:none}#bpWin.mini>*:not(.bp-h){display:none}
+.bp-h{display:flex;align-items:center;gap:6px;padding:9px 10px;background:linear-gradient(90deg,#0b1b33,#1e3a8a);color:#fff;cursor:move;user-select:none}
+.bp-h b{font-size:14.5px}#bpN{font-size:11.5px;background:#f59e0b;color:#1c1917;border-radius:10px;padding:1px 8px;font-weight:900}
+.bp-h button{background:rgba(255,255,255,.14)!important;color:#fff!important;border:0!important;border-radius:8px!important;padding:3px 8px!important;font-size:13px!important}
+.bp-f{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:12px;align-items:center}
+.bp-f input[type=date]{padding:4px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px}#bpQ{flex:1;min-width:120px;padding:6px 9px;border:1px solid #e2e8f0;border-radius:9px}.bp-c{display:flex;align-items:center;gap:4px}
+.bp-aide{font-size:11.5px;color:#64748b;padding:6px 10px}
+.bp-l{flex:1;overflow:auto;padding:0 8px 10px}.bp-v{padding:20px;text-align:center;color:#16a34a;font-weight:800}
+.bp-j{position:sticky;top:0;background:#fff;z-index:1;font-weight:900;font-size:12.5px;color:#1e3a8a;padding:8px 4px 4px;border-bottom:2px solid #dbeafe;cursor:pointer}.bp-j small{color:#94a3b8;font-weight:700}
+.bp-i{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid #2563eb;border-radius:10px;padding:8px;margin:6px 0;cursor:grab}
+.bp-i:hover{border-color:#93c5fd;box-shadow:0 4px 12px rgba(37,99,235,.15)}.bp-i.drag{opacity:.45}
+.bp-g{color:#94a3b8;font-size:16px}.bp-t{flex:1;min-width:0}.bp-t b{display:block;font-size:13.5px}.bp-t small{display:block;color:#64748b;font-size:11.5px}.bp-t em{display:block;font-style:normal;font-size:11.5px;font-weight:800;color:#c2410c}
+.bp-i button{background:#eff6ff!important;color:#1d4ed8!important;border:0!important;border-radius:8px!important;padding:6px 9px!important}
+#grid td.bp-sur{outline:3px dashed #2563eb!important;outline-offset:-3px;background:#dbeafe!important}
+#grid td.bp-ok{animation:bpOk 1.2s}@keyframes bpOk{0%{background:#86efac}100%{}}
+#bpVue{position:fixed;inset:0;z-index:950;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center}
+.bpv-b{background:#fff;border-radius:14px;width:min(900px,94vw);height:88vh;display:flex;flex-direction:column;overflow:hidden}.bpv-h{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0b1b33;color:#fff}
+.bpv-h button{background:#fff!important;color:#0b1b33!important;font-weight:900!important}.bpv-c{flex:1}.bpv-c iframe{width:100%;height:100%;border:0}
+.po-b.bp-btn{background:#7c3aed!important;color:#fff!important;border-color:#7c3aed!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -4113,6 +4134,80 @@ setTimeout(function(){try{px2User();}catch(e){}},2000);
 // à la connexion d'un collègue, on garde aussi son service (Commerciale, Comptabilité…)
 (async function(){var id=localStorage.getItem('cana_user_id');if(!id)return;try{var L=await usLire();var u=L.find(function(x){return x.id===id;});if(u){localStorage.setItem('cana_service',u.service||'');px2User();}}catch(e){}})();
 CL_VERSION='v33 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 28 : FENÊTRE « BONS À PLACER » (glisser-déposer dans le planning) =================
+// Une fenêtre flottante : on la déplace, on l'agrandit, on la colle à gauche ou à droite, on la réduit.
+// Dedans : tous les bons FTBE d'une période qui ne sont pas encore placés. On glisse un bon sur une case → il est placé.
+var BP={L:null,t:0,de:'',a:'',q:'',tous:false,glisse:null};
+async function bpCharger(force){if(BP.L&&!force&&Date.now()-BP.t<60000)return BP.L;var l=[];try{l=await bnLire('BON_');}catch(e){}BP.L=l.filter(function(b){return !b.supprime||String(b.supprime)==='false';});BP.t=Date.now();return BP.L;}
+function bpPlaces(){var P={};Object.keys(store).forEach(function(d){var day=store[d];if(!day||!day.cells)return;Object.keys(day.cells).forEach(function(k){var o=day.cells[k];if(!o)return;if(o.bon&&o.bon.cid)P[o.bon.cid]=d;if(o.tournee)(o.tournee.cles||[]).forEach(function(c){P[c]=d;});});});return P;}
+function bpOuvrirFenetre(){
+  var w=document.getElementById('bpWin');
+  if(!w){w=document.createElement('div');w.id='bpWin';var pos={};try{pos=JSON.parse(localStorage.getItem('cana_bp_pos')||'{}');}catch(e){}
+    w.style.cssText='left:'+(pos.l||Math.max(80,window.innerWidth-470))+'px;top:'+(pos.t||120)+'px;width:'+(pos.w||420)+'px;height:'+(pos.h||Math.round(window.innerHeight*0.7))+'px';
+    w.innerHTML='<div class="bp-h" id="bpH"><b>📥 Bons FTBE à placer</b><span id="bpN"></span><span style="flex:1"></span><button title="Coller à gauche" onclick="bpColler(\'g\')">⇤</button><button title="Coller à droite" onclick="bpColler(\'d\')">⇥</button><button title="Réduire / agrandir" onclick="bpReduire()">▁</button><button title="Fermer" onclick="bpFermer()">✕</button></div>'+
+      '<div class="bp-f"><label>Du <input type="date" id="bpDe"></label><label>au <input type="date" id="bpA"></label><input id="bpQ" placeholder="🔎 Client, N°…"><label class="bp-c"><input type="checkbox" id="bpTous"> aussi Resto-Co</label></div>'+
+      '<div class="bp-aide">Glisse un bon sur une case du planning (le bon jour, le bon chauffeur, la bonne heure). Clic sur 👁 pour le voir.</div><div class="bp-l" id="bpL"></div>';
+    document.body.appendChild(w);
+    var de=new Date(),a=new Date();a.setDate(a.getDate()+60);BP.de=BP.de||fmtD(de);BP.a=BP.a||fmtD(a);
+    w.querySelector('#bpDe').value=BP.de;w.querySelector('#bpA').value=BP.a;
+    w.querySelector('#bpDe').onchange=function(){BP.de=this.value;bpDessiner();};w.querySelector('#bpA').onchange=function(){BP.a=this.value;bpDessiner();};
+    w.querySelector('#bpQ').oninput=function(){BP.q=this.value;bpDessiner();};w.querySelector('#bpTous').onchange=function(){BP.tous=this.checked;bpDessiner();};
+    // déplacer la fenêtre par sa barre de titre
+    var h=w.querySelector('#bpH');h.addEventListener('mousedown',function(e){if(e.target.tagName==='BUTTON')return;var x0=e.clientX-w.offsetLeft,y0=e.clientY-w.offsetTop;
+      function mv(ev){w.style.left=Math.max(0,Math.min(window.innerWidth-120,ev.clientX-x0))+'px';w.style.top=Math.max(0,Math.min(window.innerHeight-40,ev.clientY-y0))+'px';}
+      function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);bpMemo();}
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);e.preventDefault();});
+    new ResizeObserver(function(){bpMemo();}).observe(w);}
+  w.style.display='flex';bpCharger(true).then(bpDessiner);
+}
+function bpMemo(){var w=document.getElementById('bpWin');if(!w||w.classList.contains('mini'))return;try{localStorage.setItem('cana_bp_pos',JSON.stringify({l:w.offsetLeft,t:w.offsetTop,w:w.offsetWidth,h:w.offsetHeight}));}catch(e){}}
+function bpColler(c){var w=document.getElementById('bpWin');w.classList.remove('mini');var side=document.getElementById('pxSide');var g=side?side.offsetWidth+8:8;w.style.top='70px';w.style.height=(window.innerHeight-90)+'px';w.style.width='400px';w.style.left=(c==='g'?g:window.innerWidth-410)+'px';bpMemo();}
+function bpReduire(){var w=document.getElementById('bpWin');w.classList.toggle('mini');}
+function bpFermer(){var w=document.getElementById('bpWin');if(w)w.style.display='none';}
+function bpDessiner(){
+  var box=document.getElementById('bpL');if(!box)return;var P=bpPlaces();var q=bnNorm(BP.q||'');
+  var L=(BP.L||[]).filter(function(b){var c=bnCat(b);if(c!=='FTBE'&&!BP.tous)return false;if(P[b.date])return false;if(b.jour<BP.de||b.jour>BP.a)return false;return !q||bnNorm(b.client+' '+(b.no||'')).indexOf(q)>=0;})
+    .sort(function(a,b){return (a.jour+(a.heure||'')).localeCompare(b.jour+(b.heure||''));});
+  document.getElementById('bpN').textContent=L.length+' à placer';
+  if(!L.length){box.innerHTML='<div class="bp-v">✅ Tous les bons de cette période sont placés.</div>';return;}
+  var h='',prev='';
+  L.forEach(function(b){if(b.jour!==prev){h+='<div class="bp-j" onclick="bpAllerJour(\''+b.jour+'\')" title="Afficher ce jour dans le planning">📅 '+esc(dayLabel(b.jour))+' <small>→ voir ce jour</small></div>';prev=b.jour;}
+    var cs=(typeof csgPour==='function')?csgPour(b.jour,b.client):[];
+    h+='<div class="bp-i" draggable="true" data-k="'+b.date+'"><span class="bp-g">⠿</span><div class="bp-t"><b>'+esc(b.client)+'</b><small>'+(b.heure?'🕐 '+esc(b.heure)+' · ':'')+'N° '+esc(b.no||'—')+(b.adresse?' · '+esc(b.adresse):'')+'</small>'+
+      ((b.ajout||b.version>1)?'<em>'+(b.version>1?'🔁 modifié':'➕ ajout')+'</em>':'')+(cs.length?'<em style="color:#dc2626">⚠️ '+esc(cs.map(function(c){return c.texte;}).join(' · '))+'</em>':'')+'</div>'+
+      '<button title="Voir le bon" onclick="bpVoir(\''+b.date+'\')">👁</button></div>';});
+  box.innerHTML=h;
+  box.querySelectorAll('.bp-i').forEach(function(el){el.addEventListener('dragstart',function(e){BP.glisse=el.getAttribute('data-k');e.dataTransfer.setData('text/plain',BP.glisse);e.dataTransfer.effectAllowed='move';el.classList.add('drag');});
+    el.addEventListener('dragend',function(){el.classList.remove('drag');BP.glisse=null;document.querySelectorAll('#grid td.bp-sur').forEach(function(t){t.classList.remove('bp-sur');});});});
+}
+function bpAllerJour(d){V30.action=Date.now();cur=d;try{ensure(cur);render();}catch(e){}try{px2Ecran(0);}catch(e){}}
+async function bpVoir(k){
+  var ov=document.getElementById('bpVue');if(!ov){ov=document.createElement('div');ov.id='bpVue';document.body.appendChild(ov);}
+  ov.innerHTML='<div class="bpv-b"><div class="bpv-h"><b>📄 Bon</b><button onclick="document.getElementById(\'bpVue\').style.display=\'none\'">✕ Fermer</button></div><div class="bpv-c">⏳ Ouverture…</div></div>';ov.style.display='flex';
+  try{var b=await bnPdf(k);var u=URL.createObjectURL(b);ov.querySelector('.bpv-c').innerHTML='<iframe src="'+u+'"></iframe>';}catch(e){ov.querySelector('.bpv-c').textContent='❌ '+e.message;}
+  ov.onclick=function(e){if(e.target===ov)ov.style.display='none';};
+}
+// ---------- déposer sur une case du planning ----------
+document.addEventListener('dragover',function(e){if(!BP.glisse)return;var td=e.target.closest&&e.target.closest('#grid td[id^="c_"]');if(!td)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('#grid td.bp-sur').forEach(function(t){if(t!==td)t.classList.remove('bp-sur');});td.classList.add('bp-sur');});
+document.addEventListener('drop',async function(e){
+  var k=BP.glisse||(e.dataTransfer&&e.dataTransfer.getData('text/plain'));var td=e.target.closest&&e.target.closest('#grid td[id^="c_"]');if(!k||!td||!/^BON_/.test(k))return;e.preventDefault();td.classList.remove('bp-sur');
+  var b=(BP.L||[]).find(function(x){return x.date===k;});if(!b)return;var p=td.id.slice(2).split('_');var ri=+p[0],c=+p[1];
+  if(b.jour!==cur&&!confirm('Ce bon est pour le '+dayLabel(b.jour)+'.\nLe placer quand même le '+dayLabel(cur)+' ?'))return;
+  ensure(cur);var day=store[cur];
+  while(ri<TIMES.length-1&&day.cells[ri+'_'+c]&&day.cells[ri+'_'+c].t)ri++;   // case prise → la suivante libre en dessous
+  var o=cel(b.client);o.c=CAT_CELL[bnCat(b)]||'#F8BBD0';o.bon={cid:b.date,client:b.client,no:b.no||'',heure:TIMES[ri]};day.cells[ri+'_'+c]=o;
+  try{day._repartiLe=day._repartiLe||new Date().toISOString();}catch(x){}
+  lsSave();clQueue(cur);clFlush();try{render();}catch(x){}
+  var n=document.getElementById('c_'+ri+'_'+c);if(n){n.classList.add('bp-ok');setTimeout(function(){n.classList.remove('bp-ok');},1200);}
+  bpDessiner();try{px2Kpi();}catch(x){}
+});
+// boutons pour ouvrir la fenêtre : barre d'outils de la grille + page Traiteur FTBE
+function bpBoutons(){var o=document.getElementById('pxOutils');if(o&&!document.getElementById('bpBtn')){var b=document.createElement('button');b.id='bpBtn';b.className='po-b bp-btn';b.textContent='📥 Bons à placer';b.title='Ouvrir la fenêtre des bons FTBE à placer (glisser-déposer)';b.onclick=bpOuvrirFenetre;o.insertBefore(b,o.children[1]||null);}}
+setTimeout(bpBoutons,2000);setTimeout(bpBoutons,4000);
+var _ftbePanelV34=ftbePanel;ftbePanel=async function(){await _ftbePanelV34.apply(this,arguments);var bar=document.querySelector('#clBox .clbar');if(bar&&!bar.querySelector('.bp-btn')){var b=document.createElement('button');b.className='clsend bp-btn';b.style.background='#7c3aed';b.textContent='📥 Placer les bons (glisser-déposer)';b.onclick=function(){V30.action=Date.now();px2Ecran(0);bpOuvrirFenetre();};bar.appendChild(b);}};
+CL_VERSION='v34 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
