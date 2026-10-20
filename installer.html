@@ -1,6 +1,6 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Installer CANA Chauffeur</title>
+<title>Installer HB Logistique</title>
 <link rel="manifest" href="manifest-chauffeur.json"><meta name="theme-color" content="#0b1b33">
 <link rel="apple-touch-icon" href="icon-chauffeur.png"><link rel="icon" href="icon-chauffeur-192.png">
 <style>
@@ -12,10 +12,11 @@ img{width:120px;height:120px;border-radius:28px;box-shadow:0 12px 30px rgba(0,0,
 .etapes b{color:#fff}#nom{color:#fde68a}
 </style></head><body>
 <img src="icon-chauffeur.png" alt="">
-<h1>CANA Chauffeur</h1>
-<p id="qui">L’application des chauffeurs de La Table de Cana</p>
+<h1>HB Logistique</h1>
+<p id="qui">L’application des chauffeurs</p>
 <button id="inst" class="b ok">📲 Installer l’application</button>
 <div id="etapes" class="etapes"></div>
+<a id="apk" class="b ok" href="HB-Logistique.apk" style="display:none;background:#2563eb">📥 Télécharger l’appli Android (.apk)</a>
 <a id="ouvrir" class="b sec" href="index.html">Ouvrir sans installer</a>
 <script>
 (function(){
@@ -23,12 +24,13 @@ img{width:120px;height:120px;border-radius:28px;box-shadow:0 12px 30px rgba(0,0,
   if(id!==null&&id!==''){try{localStorage.setItem('cana_moi_id',String(+id));localStorage.removeItem('cana_moi');}catch(e){}}
   // prénom du chauffeur
   try{var m=localStorage.getItem('cana_moi_id');if(m!==null){fetch('/rest/v1/planning?date=eq.EQUIPE&select=donnees&limit=1',{headers:{apikey:'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV'}}).then(function(r){return r.json();}).then(function(r){var d=r&&r[0]&&r[0].donnees;var e=d&&d.drivers&&d.drivers[+m];if(e&&e.name)document.getElementById('qui').innerHTML='Bonjour <b id="nom">'+e.name.charAt(0)+e.name.slice(1).toLowerCase()+'</b> 👋<br>Installe ton application en un clic.';}).catch(function(){});}}catch(e){}
+  fetch('HB-Logistique.apk',{method:'HEAD'}).then(function(r){if(r.ok&&/android/i.test(navigator.userAgent))document.getElementById('apk').style.display='block';}).catch(function(){});
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-chauffeur.js').catch(function(){});
   var dejaInstalle=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;if(dejaInstalle){location.replace('index.html');return;}
   var ev=null;var b=document.getElementById('inst');var et=document.getElementById('etapes');
   var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;b.textContent='📲 Installer l’application';});
-  window.addEventListener('appinstalled',function(){b.textContent='✅ Installée ! Ouvre « CANA Chauffeur » depuis tes applis';b.disabled=true;});
+  window.addEventListener('appinstalled',function(){b.textContent='✅ Installée ! Ouvre « HB Logistique » depuis tes applis';b.disabled=true;});
   b.onclick=function(){
     if(ev){ev.prompt();ev.userChoice.then(function(c){if(c.outcome==='accepted'){b.textContent='✅ Installation en cours…';}});ev=null;return;}
     et.style.display='block';
