@@ -2939,7 +2939,8 @@ function BonsScreen({ch,init,onBack,onNavigate}){
   function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);setTempF('');setTempC('');setRemarque('');setMat(null);setVoirMat(false);}
   async function ouvrir(b){
     fermer();setBon(b);
-    try{const m=await bnDonnees(b.date);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe}));setOctets(await bnPdfA(m));
+    try{const m=await bnDonnees(b.date);const cs=await consignesPour(m.jour||b.jour||jourLocal(),m.client||b.client);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe,consignes:cs}));
+      let oc=await bnPdfA(m);if(cs.length)oc=await bnAnnoter(oc,['A NOTER (info ajoutee) :'].concat(cs.map(c=>'- '+c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':''))));setOctets(oc);
       setMail(m.email||((typeof ficheDe==='function'&&ficheDe(m.client))||{}).email||'');
       if(b.signe){try{const s=await bnDonnees(b.signe.date);setArchive({bytes:await bnPdfA(s),qui:s.signataire,quand:s.signeA,nbPhotos:+s.nbPhotos||0});}catch(e){}}
     }catch(e){showToast('Bon introuvable (internet ?)','var(--red)');setBon(null);}
@@ -3021,7 +3022,9 @@ function BonsScreen({ch,init,onBack,onNavigate}){
     return(<div className="screen">
       <Header title={'📄 '+bon.client} onBack={fermer}/>
       <div className="scroll"><div style={{padding:12}}>
-        {(bon.adresse||bon.tel)&&<div style={{background:'#0f1e35',border:'1px solid var(--border)',borderRadius:12,padding:10,marginBottom:8}}>{bon.adresse&&<div style={{fontSize:13,color:'#fff',fontWeight:700}}>📍 {bon.adresse}</div>}{bon.tel&&<div style={{fontSize:12.5,color:'#cbd5e1'}}>📞 {bon.tel}</div>}{bon.codeAcces&&<div style={{fontSize:12.5,color:'#fbbf24'}}>🔑 {bon.codeAcces}</div>}<ProGps adresse={bon.adresse} tel={bon.tel}/></div>}
+        {bon.consignes&&bon.consignes.length>0&&<div style={{background:'#7f1d1d',border:'2px solid #ef4444',borderRadius:12,padding:10,marginBottom:8,color:'#fff'}}><div style={{fontWeight:900,fontSize:15}}>⚠️ ATTENTION — info ajoutée</div>{bon.consignes.map((c,i)=><div key={i} style={{fontSize:14,fontWeight:800,marginTop:4}}>• {c.texte}{c.adresseDe?' → livrer à '+c.adresseDe+(c.adresse?' ('+c.adresse+')':''):''}</div>)}</div>}
+        {(bon.version>1||bon.ajout)&&<div style={{background:'#9a3412',borderRadius:10,padding:'7px 10px',marginBottom:8,color:'#fff',fontWeight:900,fontSize:13}}>{bon.version>1?'🔁 BON MODIFIÉ — nouvelle version'+(bon.modifieLe?' du '+bon.modifieLe:''):'➕ BON AJOUTÉ après la planification'}</div>}
+        {(bon.adresse||bon.tel)&&<div style={{background:'#0f1e35',border:'1px solid var(--border)',borderRadius:12,padding:10,marginBottom:8}}>{bon.adresse&&<div style={{fontSize:13,color:'#fff',fontWeight:700}}>📍 {bon.adresse}</div>}{bon.tel&&<div style={{fontSize:12.5,color:'#cbd5e1'}}>📞 {bon.tel}</div>}{bon.codeAcces&&<div style={{fontSize:12.5,color:'#fbbf24'}}>🔑 {bon.codeAcces}</div>}{((bon.consignes||[]).find(c=>c.adresse))&&<div style={{fontSize:13,fontWeight:900,color:'#fca5a5',marginTop:4}}>➡️ Livrer à : {(bon.consignes||[]).find(c=>c.adresse).adresseDe} — {(bon.consignes||[]).find(c=>c.adresse).adresse}</div>}<ProGps adresse={((bon.consignes||[]).find(c=>c.adresse)||{}).adresse||bon.adresse} tel={bon.tel}/></div>}
         <div style={{fontSize:12,color:'var(--muted)',marginBottom:8}}>{tag(bon.type).l} · {bnJourFR(bon.jour||jour)}{bon.no&&bon.type==='FTBE'?' · N° '+bon.no:''}{bon.tournee?' · tournée '+bon.tournee:''}</div>
         {archive&&<div style={{background:'rgba(34,197,94,.12)',border:'1px solid rgba(34,197,94,.5)',borderRadius:12,padding:10,fontSize:13,color:'#86efac',fontWeight:800,marginBottom:10}}>{archive.qui?'✅ Signé par '+archive.qui:'⏳ Pas encore signé'}{archive.quand?' · '+archive.quand:''}{archive.nbPhotos?' · 📷 '+archive.nbPhotos+' photo'+(archive.nbPhotos>1?'s':''):''}</div>}
         {!signer&&octets&&<div style={{background:'#0f1e35',border:'2px solid '+(temp===''?'#f59e0b':'rgba(34,197,94,.6)'),borderRadius:14,padding:12,marginBottom:10}}>
@@ -3088,9 +3091,20 @@ function BonsScreen({ch,init,onBack,onNavigate}){
 
 /* ═══════════════════ NOUVEAU LOOK (maquette) : accueil, tournée liste/carte, menu, alertes, barre d'onglets ═══════════════════ */
 const PRO={nav:'#0b1b33',bleu:'#2563eb',vert:'#16a34a',fond:'#f1f5f9',txt:'#0f172a',gris:'#64748b',bord:'#e2e8f0'};
+async function consignesPour(jour,client){try{const l=await bnLireA('date=like.CONSIGNE_'+jour+'_*');const k=bnNormA(client);return (l||[]).filter(c=>!c.supprime&&c.texte&&c.client&&(bnNormA(c.client)===k||(bnNormA(c.client).length>=4&&(k.indexOf(bnNormA(c.client))>=0||bnNormA(c.client).indexOf(k)>=0))));}catch(e){return [];}}
+async function bnAnnoter(octets,lignes){
+  if(!lignes||!lignes.length)return octets;
+  try{await bnLibsA();const doc=await PDFLib.PDFDocument.load(octets);const pg=doc.getPages()[0];const {width,height}=pg.getSize();const H=24+lignes.length*15;
+    pg.setMediaBox(0,0,width,height+H);if(pg.setCropBox)pg.setCropBox(0,0,width,height+H);
+    const f=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);const rouge=PDFLib.rgb(.75,.07,.07);
+    pg.drawRectangle({x:10,y:height+4,width:width-20,height:H-8,color:PDFLib.rgb(1,.95,.95),borderColor:rouge,borderWidth:1.5});
+    const nett=t=>String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');
+    lignes.forEach((l,i)=>pg.drawText(nett(l).slice(0,110),{x:20,y:height+H-22-i*15,size:10.5,font:f,color:rouge}));
+    return await doc.save();}catch(e){return octets;}}
 function proSignes(){return window.__signes||{cles:{},clients:{}};}
 function proNoterSignes(liste){const S=window.__signes||{cles:{},clients:{}};(liste||[]).forEach(b=>{if(b&&b.signe&&(b.signe.signataire||b.signe.signe)){S.cles[b.date]=1;S.clients[bnNormA(b.client)]=1;}});window.__signes=S;}
-const TRN_COUL={JAUNE:['#facc15','#fef9c3','#713f12'],ROSE:['#ec4899','#fce7f3','#831843'],VIOLET:['#a855f7','#f3e8ff','#581c87'],VERT:['#16a34a','#dcfce7','#14532d'],BLEU:['#3b82f6','#dbeafe','#1e3a8a']};
+const FAM_APP={'Traiteur':['#2563eb','#eff6ff','🍽️'],'Resto-Co':['#16a34a','#f0fdf4','🥗'],'Tâche':['#ea580c','#fff7ed','🧰']};
+const TRN_COUL={PIQUE:['#8d6e63','#efebe9','#3e2723'],JAUNE:['#facc15','#fef9c3','#713f12'],ROSE:['#ec4899','#fce7f3','#831843'],VIOLET:['#a855f7','#f3e8ff','#581c87'],VERT:['#16a34a','#dcfce7','#14532d'],BLEU:['#3b82f6','#dbeafe','#1e3a8a']};
 function livCle(ch,ds,client,heure){return 'LIV_'+ch.id+'_'+ds+'_'+(client||'')+'_'+(heure||'');}
 function livEstFait(ch,ds,client,heure,bonCle){try{if(localStorage.getItem(livCle(ch,ds,client,heure))==='done')return true;}catch(e){}const S=proSignes();return !!((bonCle&&S.cles[bonCle])||(client&&S.clients[bnNormA(client)]));}
 async function livPouce(ch,ds,client,heure,extra){
@@ -3233,21 +3247,27 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
           return <div key={i} style={{background:'#fff',borderRadius:16,marginBottom:12,overflow:'hidden',border:'2px solid '+C[0],boxShadow:'0 2px 8px rgba(15,23,42,.08)'}}>
             <div onClick={()=>setOuvert(o=>({...o,[i]:!o[i]}))} style={{background:C[0],color:'#fff',padding:'11px 12px',display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
               <div style={{fontWeight:900,fontSize:15,minWidth:46}}>{m.heure}</div>
-              <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15}}>🚚 TOURNÉE {(m.tournee.couleur||'').toUpperCase()}</div><div style={{fontSize:12,opacity:.95,fontWeight:700}}>{nb} / {t.length} livrés{m.avec?' · avec '+m.avec:''}</div></div>
+              <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15}}>{(m.tournee.couleur||'').toUpperCase()==='PIQUE'?'🥪 PIQUE-NIQUES POUR DEMAIN':'🚚 TOURNÉE '+(m.tournee.couleur||'').toUpperCase()}</div><div style={{fontSize:12,opacity:.95,fontWeight:700}}>{nb} / {t.length} livrés{m.avec?' · avec '+m.avec:''}</div></div>
               <span style={{fontSize:16}}>{ouvert[i]===false?'▼':'▲'}</span></div>
             <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
             {ouvert[i]!==false&&t.map((c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
               <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/><button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:c.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button></div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}{c.client}</div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}{c.adresseNote&&<div style={{fontSize:12,fontWeight:900,color:'#b91c1c'}}>📍 {c.adresseNote}</div>}{c.consigne&&<div style={{marginTop:4,background:'#fee2e2',border:'1px solid #ef4444',borderRadius:8,padding:'5px 8px',fontSize:12.5,fontWeight:900,color:'#b91c1c'}}>⚠️ {c.consigne}</div>}{c.modifie&&<div style={{fontSize:11.5,fontWeight:900,color:'#c2410c'}}>🔁 {c.modifie}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/><button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:c.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button></div>
               <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;})}
           </div>;}
         const fait=m._st==='ok';
-        return <div key={i} onClick={()=>ouvrir(m)} style={{background:fait?'#f0fdf4':'#fff',borderRadius:16,marginBottom:10,border:'1px solid '+(fait?'#86efac':m._st==='ec'?PRO.bleu:PRO.bord),padding:'11px 12px',display:'flex',gap:12,cursor:'pointer',boxShadow:'0 1px 4px rgba(15,23,42,.06)'}}>
+        const F=FAM_APP[m.famille]||null;const rouge=m.urgent||m.consigne;
+        return <div key={i} onClick={()=>ouvrir(m)} style={{background:fait?'#f0fdf4':rouge?'#fef2f2':F?F[1]:'#fff',borderRadius:16,marginBottom:10,border:(rouge&&!fait?'2px solid #dc2626':'1px solid '+(fait?'#86efac':m._st==='ec'?PRO.bleu:PRO.bord)),borderLeft:'7px solid '+(fait?'#16a34a':F?F[0]:'#cbd5e1'),padding:'11px 12px',display:'flex',gap:12,cursor:'pointer',boxShadow:'0 1px 4px rgba(15,23,42,.06)'}}>
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}><div style={{fontWeight:900,color:PRO.txt,fontSize:14}}>{m.heure}</div>
             {m.client?<Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+m.client+' ?')&&livAnnuler(ch,ds,m.client,m.heure)):livPouce(ch,ds,m.client,m.heure,{bon:m.bonCle||''})}/>:<div style={{width:46,height:46,borderRadius:23,background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📝</div>}</div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:900,fontSize:16,color:fait?'#14532d':PRO.txt}}>{fait?'✅ ':''}{m.client||m.task}</div>{fait&&livHeure(ch,ds,m.client,m.heure)&&<div style={{fontSize:12,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,m.client,m.heure)} (prévu {m.heure})</div>}
+            {F&&<span style={{display:'inline-block',fontSize:11,fontWeight:900,color:'#fff',background:F[0],borderRadius:6,padding:'1px 7px',marginTop:2}}>{F[2]} {m.famille}</span>}
             {m.client&&m.task&&m.task!==m.client&&<div style={{fontSize:12.5,color:PRO.bleu,fontWeight:700}}>{m.task}</div>}
+            {m.urgent&&!m.client&&<div style={{fontSize:13,fontWeight:900,color:'#b91c1c'}}>🚨 À ne pas oublier</div>}
+            {m.adresseNote&&<div style={{fontSize:12.5,fontWeight:900,color:'#b91c1c'}}>📍 {m.adresseNote}</div>}
+            {m.consigne&&<div style={{marginTop:4,background:'#fee2e2',border:'1px solid #ef4444',borderRadius:8,padding:'6px 8px',fontSize:13,fontWeight:900,color:'#b91c1c'}}>⚠️ {m.consigne}</div>}
+            {m.modifie&&<div style={{fontSize:12,fontWeight:900,color:'#c2410c'}}>🔁 {m.modifie}</div>}
             {m.adresse&&<div style={{fontSize:12.5,color:PRO.gris,marginTop:2}}>📍 {m.adresse}</div>}{m.codeAcces&&<div style={{fontSize:12,color:'#b45309'}}>🔑 {m.codeAcces}</div>}
             {m.avec&&<div style={{fontSize:12,color:PRO.gris}}>👥 avec {m.avec}</div>}
             {m.client&&<ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/>}
