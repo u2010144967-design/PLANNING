@@ -2913,7 +2913,7 @@ function MaterielScreen({ch,planning,onBack,init}){
     {cli&&<div><button className="btn-s" onClick={()=>setCli('')} style={{marginBottom:8}}>← Autre client</button><MaterielPad ch={ch} client={cli} onFini={()=>setCli('')}/></div>}
   </div></div></div>);
 }
-function BonsScreen({ch,init,onBack,onNavigate}){
+function BonsScreen({ch,init,onBack,onNavigate,planning}){
   const[jour,setJour]=useState((init&&init.date)||jourLocal());
   const[q,setQ]=useState(((init&&init.client)||'').replace(/\b\d{1,2}\s*[Hh:]\s*\d{0,2}\b.*$/,'').trim());
   const[liste,setListe]=useState(null);const[err,setErr]=useState('');
@@ -2922,7 +2922,8 @@ function BonsScreen({ch,init,onBack,onNavigate}){
   const[sig,setSig]=useState(null);const[photos,setPhotos]=useState([]);
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
   const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[tempF,setTempF]=useState('');const[tempC,setTempC]=useState('');const temp=(tempF!==''||tempC!=='')?'ok':'';const[remarque,setRemarque]=useState('');const[mat,setMat]=useState(null);const[voirMat,setVoirMat]=useState(false);const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
-  async function charger(d){setListe(null);setErr('');setAutres(null);try{const l=await bnBonsDuJour(d);if(d===jourLocal())proNoterSignes(l);setListe(l);}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
+  function mesCles(d){const K={};try{getMissions(planning,ch.id,d).forEach(m=>{if(m.bonCle)K[m.bonCle]=1;(m.bonCles||[]).forEach(x=>K[x]=1);if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>{if(c.bonCle)K[c.bonCle]=1;});});}catch(e){}return K;}
+  async function charger(d){setListe(null);setErr('');setAutres(null);try{let l=await bnBonsDuJour(d);if(d===jourLocal())proNoterSignes(l);if(!window.__modeResponsable&&planning){const K=mesCles(d);l=l.filter(b=>K[b.date]);}setListe(l);}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
   useEffect(()=>{charger(jour);},[jour]);
   const dejaOuvert=useRef(false);
   useEffect(()=>{if(dejaOuvert.current||!liste||!init||!init.bonCle)return;dejaOuvert.current=true;
@@ -2935,7 +2936,7 @@ function BonsScreen({ch,init,onBack,onNavigate}){
   const qCli=motCat?qn.replace(/\bCENTRES?\b|\bAERES?\b|RESTO\s*CO|RESTOCO|\bFTBE\b|TRAITEUR/g,'').trim():q;
   const ong=motCat||onglet;
   const vus=(liste||[]).filter(b=>!cles||cles.indexOf(b.date)>=0).filter(b=>!ong||catDe(b)===ong).map(b=>({b,s:bnScore(qCli,b.client)})).filter(x=>cles||!qCli.trim()||x.s>=0.5).sort((a,b)=>(({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(a.b)]-({FTBE:0,RESTOCO:1,CENTRE:2})[catDe(b.b)])||b.s-a.s||String(a.b.tournee||'').localeCompare(String(b.b.tournee||''))||String(a.b.client).localeCompare(String(b.b.client))).map(x=>x.b);
-  async function chercherPartout(){setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
+  async function chercherPartout(){if(!window.__modeResponsable){setAutres([]);return;}setAutres('…');try{setAutres(await bnCherche(q));}catch(e){setAutres([]);}}
   function fermer(){setBon(null);setOctets(null);setArchive(null);setSig(null);setPhotos([]);setSigner(false);setTempF('');setTempC('');setRemarque('');setMat(null);setVoirMat(false);}
   async function ouvrir(b){
     fermer();setBon(b);
@@ -3135,7 +3136,7 @@ function proMissionsJour(planning,ch){
     if(st!=='ok'&&!enCoursPose&&(m.client||m.tournee)){st='ec';enCoursPose=true;}
     return {...m,_st:st};});
 }
-function proNbClients(L){let n=0;L.forEach(m=>{if(m.tournee&&m.tournee.clients)n+=m.tournee.clients.length;else if(m.client)n++;});return n;}
+function proNbClients(L){let n=0;L.forEach(m=>{if(m.tournee&&m.tournee.clients){const S={};m.tournee.clients.forEach(c=>{S[c.groupe||c.client]=1;});n+=Object.keys(S).length;}else if(m.client)n++;});return n;}
 function proAlertes(ch){try{return JSON.parse(localStorage.getItem('cana_alertes_'+ch.id)||'[]');}catch(e){return [];}}
 function proChip(st){const S={ok:['Livré','#dcfce7','#166534'],ec:['En cours',PRO.bleu,'#fff'],av:['À venir','#f1f5f9','#475569']}[st]||['','#fff','#000'];
   return <span style={{fontSize:11,fontWeight:800,borderRadius:7,padding:'3px 8px',background:S[1],color:S[2],whiteSpace:'nowrap'}}>{S[0]}</span>;}
@@ -3257,10 +3258,18 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
               <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15}}>{(m.tournee.couleur||'').toUpperCase()==='PIQUE'?'🥪 PIQUE-NIQUES POUR DEMAIN':'🚚 TOURNÉE '+(m.tournee.couleur||'').toUpperCase()}</div><div style={{fontSize:12,opacity:.95,fontWeight:700}}>{nb} / {t.length} livrés{m.avec?' · avec '+m.avec:''}</div></div>
               <span style={{fontSize:16}}>{ouvert[i]===false?'▼':'▲'}</span></div>
             <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
-            {ouvert[i]!==false&&t.map((c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
+            {ouvert[i]!==false&&(()=>{const ligneClient=(c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
               <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
               <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}<span style={c.stabilo||/SECURITE CIVILE/.test(bnNormA(c.client))?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>{c.client}</span></div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}{c.adresseNote&&<div style={{fontSize:12,fontWeight:900,color:'#b91c1c'}}>📍 {c.adresseNote}</div>}{c.consigne&&<div style={{marginTop:6,background:'#dc2626',borderRadius:10,padding:'9px 10px',fontSize:16,fontWeight:900,color:'#fff',lineHeight:1.3}}>⚠️ {c.consigne}</div>}{c.modifie&&<div style={{fontSize:11.5,fontWeight:900,color:'#c2410c'}}>🔁 {c.modifie}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/><button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:c.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button></div>
-              <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;})}
+              <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;};
+            const G=[];const idx={};t.forEach(c=>{const g=c.groupe||c.client;if(idx[g]===undefined){idx[g]=G.length;G.push({nom:g,l:[]});}G[idx[g]].l.push(c);});
+            return G.map((g,gi)=>{if(g.l.length===1)return ligneClient(g.l[0],'s'+gi);const ok=g.l.filter(c=>livEstFait(ch,ds,c.client,m.heure,c.bonCle)).length;const tout=ok===g.l.length;const ko='g'+i+'_'+gi;
+              return <div key={ko} style={{borderTop:'1px solid '+PRO.bord}}>
+                <div onClick={()=>setOuvert(o=>({...o,[ko]:!o[ko]}))} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:tout?'#dcfce7':'#fff',cursor:'pointer'}}>
+                  <Pouce fait={tout} onClick={()=>{if(tout)return;g.l.forEach(c=>{if(!livEstFait(ch,ds,c.client,m.heure,c.bonCle))livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''});});}}/>
+                  <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15,color:tout?'#14532d':C[2]}}><span style={/SÉCURITÉ CIVILE/.test(g.nom)?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>🏢 {g.nom}</span></div><div style={{fontSize:12,color:PRO.gris,fontWeight:700}}>{g.l.length} bons · {ok}/{g.l.length} livrés · même lieu</div>{g.l[0].adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {g.l[0].adresse}</div>}<ProGps adresse={g.l[0].adresse} tel={g.l[0].tel} clair/></div>
+                  <span style={{fontSize:16,color:PRO.gris}}>{ouvert[ko]?'▲':'▼'}</span></div>
+                {ouvert[ko]&&<div style={{paddingLeft:14,background:'#f8fafc'}}>{g.l.map((c,j)=>ligneClient(c,ko+'_'+j))}</div>}</div>;});})()}
           </div>;}
         const fait=m._st==='ok';
         if(m.changeCamion)return <div key={i} style={{background:'#e0f2fe',border:'2px solid #0284c7',borderRadius:16,marginBottom:10,padding:'12px 14px',display:'flex',alignItems:'center',gap:12}}><div style={{fontWeight:900,color:PRO.txt,fontSize:14}}>{m.heure}</div><span style={{fontSize:28}}>🔄</span><div style={{flex:1}}><div style={{fontWeight:900,fontSize:16,color:'#075985'}}>Tu changes de camion</div><div style={{fontSize:15,fontWeight:800,color:'#0c4a6e'}}>🚚 {m.changeCamion}</div></div></div>;
@@ -3288,7 +3297,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
         <div style={{fontSize:11,fontWeight:900,color:PRO.gris,textTransform:'uppercase'}}>Prochain arrêt</div>
         <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}><div style={{background:PRO.vert,color:'#fff',borderRadius:8,padding:'4px 8px',fontWeight:900}}>{prochain.heure}</div><div style={{flex:1,fontWeight:900,color:PRO.txt,minWidth:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{prochain.client||prochain.task}</div></div>
         <div style={{display:'flex',gap:8,marginTop:8}}><a href={gmaps(prochain.adresse||prochain.client)} target="_blank" rel="noreferrer" style={{flex:1,textAlign:'center',textDecoration:'none',background:'#eff6ff',color:PRO.bleu,borderRadius:10,padding:'10px',fontWeight:900,fontSize:13}}>🧭 Itinéraire</a><button onClick={()=>ouvrir(prochain)} style={{flex:1.3,background:PRO.vert,color:'#fff',border:'none',borderRadius:10,padding:'10px',fontWeight:900,fontSize:13,fontFamily:'inherit'}}>📍 Arrivé sur place</button></div>
-      </div>:<button onClick={()=>{window.__retour='tournee';onNavigate('bons');}} style={{width:'100%',background:PRO.bleu,color:'#fff',border:'none',borderRadius:12,padding:'14px',fontWeight:900,fontSize:15,fontFamily:'inherit',boxShadow:'0 6px 18px rgba(37,99,235,.35)'}}>📄 Voir les bons d’expédition</button>}
+      </div>:null}
     </div>
     <ProTabBar actif={onglet==='carte'?'carte':'tournee'} onNavigate={onNavigate}/>
   </div>;
@@ -3383,6 +3392,8 @@ async function prechargerBons(planning,ch){
 }
 /* ---------- boîte d'envoi ---------- */
 async function boiteAjouter(job){job.id=Date.now()+'_'+Math.floor(Math.random()*1e6);await AIDB.set('job:'+job.id,job);boiteCompter();}
+async function archivePurger(){try{const lim=new Date();lim.setDate(lim.getDate()-2);const L=isoLocal(lim);for(const k of await AIDB.cles('signe:')){const x=await AIDB.get(k);if(x&&x.envoye&&x.jour&&x.jour<L)await AIDB.del(k);}for(const k of await AIDB.cles('pdf:')){}}catch(e){}}
+setTimeout(archivePurger,6000);
 async function boiteCompter(){const n=(await AIDB.cles('job:')).length;try{localStorage.setItem('cana_attente_n',String(n));}catch(e){}window.dispatchEvent(new Event('cana-boite'));return n;}
 let _boiteEnCours=false;
 async function boiteVider(){
@@ -3470,7 +3481,7 @@ function LoginSimple({seulId,onLogin}){
       {K.map((k,i)=>k===''?<div key={i}/>:<button key={i} onClick={()=>k==='⌫'?setPin(p=>p.slice(0,-1)):taper(k)} style={{width:84,height:84,borderRadius:42,border:'none',background:k==='⌫'?'transparent':'rgba(255,255,255,.14)',color:'#fff',fontSize:k==='⌫'?28:34,fontWeight:800,fontFamily:'inherit'}}>{k}</button>)}
     </div>
     <div style={{flex:1}}/>
-    {!perso&&<button onClick={()=>setListe(true)} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12.5,marginTop:20,textDecoration:'underline'}}>Responsable : voir la liste des chauffeurs</button>}
+    {!perso&&<button onClick={()=>{window.__modeResponsable=true;setListe(true);}} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12.5,marginTop:20,textDecoration:'underline'}}>Responsable : voir la liste des chauffeurs</button>}
     {perso&&<button onClick={()=>{try{localStorage.removeItem('cana_moi_id');}catch(e){}location.href=location.pathname;}} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12.5,marginTop:20,textDecoration:'underline'}}>Ce n’est pas moi</button>}
   </div>;
 }
@@ -3670,7 +3681,7 @@ function App(){
   if(screen==='conges') return <CongesScreen ch={ch} onBack={back}/>;
   if(screen==='bon') return <BonScreen ch={ch} mission={screenData} onBack={back}/>;
   if(screen==='materiel') return <MaterielScreen ch={ch} planning={planning} onBack={back} init={screenData}/>;
-  if(screen==='bons') return <BonsScreen ch={ch} init={screenData} onNavigate={nav} onBack={()=>{if(screenData&&screenData.fromMission){const r=window.__retour||'tournee';window.__retour=null;setScreen(r);setScreenData(null);}else back();}}/>;
+  if(screen==='bons') return <BonsScreen ch={ch} planning={planning} init={screenData} onNavigate={nav} onBack={()=>{if(screenData&&screenData.fromMission){const r=window.__retour||'tournee';window.__retour=null;setScreen(r);setScreenData(null);}else back();}}/>;
   if(screen==='horaires') return <HorairesScreen ch={ch} planning={planning} onBack={back}/>;
   if(screen==='plus') return <PlusScreen ch={ch} onNavigate={nav} onBack={back} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
   return <HomeScreen ch={ch} planning={planning} onNavigate={nav} unreadMsg={0} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
