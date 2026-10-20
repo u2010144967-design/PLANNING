@@ -1011,6 +1011,26 @@ table.hor td.hc.off{background:#f1f5f9}.hh{display:flex;gap:3px;margin-top:3px}.
 .bpv-b{background:#fff;border-radius:14px;width:min(900px,94vw);height:88vh;display:flex;flex-direction:column;overflow:hidden}.bpv-h{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0b1b33;color:#fff}
 .bpv-h button{background:#fff!important;color:#0b1b33!important;font-weight:900!important}.bpv-c{flex:1}.bpv-c iframe{width:100%;height:100%;border:0}
 .po-b.bp-btn{background:#7c3aed!important;color:#fff!important;border-color:#7c3aed!important}
+/* ===== v35 ===== */
+@keyframes pxFleur2{0%{clip-path:circle(14px at calc(100% - 40px) calc(100% - 40px));opacity:1;filter:brightness(1.08)}
+  25%{clip-path:circle(60px at calc(100% - 60px) calc(100% - 60px))}
+  100%{clip-path:circle(160% at calc(100% - 40px) calc(100% - 40px));filter:none}}
+.pxPane.px-fleur2{animation:pxFleur2 1.8s cubic-bezier(.45,.05,.25,1) both}
+#bpGhost{position:fixed;top:-100px;left:-400px;background:#2563eb;color:#fff;font-weight:900;font-size:13px;padding:6px 12px;border-radius:20px;box-shadow:0 6px 16px rgba(0,0,0,.25);white-space:nowrap;font-family:system-ui,sans-serif}
+#grid td.v35bon{background-image:none}#grid td.v35bon{box-shadow:inset 0 -3px 0 #2563eb}
+#grid td.v35bon:not(.v28csg)::before{content:'📄';position:absolute;right:3px;top:1px;font-size:11px}
+#grid td.v35bon{position:relative}
+/* grille moins blanche, police un peu plus grande en haut */
+#grid td[id^="c_"]:not([style*="background"]){background-color:#f6f8fb}
+#grid td.v32hd{font-size:14px!important}#grid td.v32r1{font-size:15px!important}
+#grid table{background:#f6f8fb}
+#v35P{position:fixed;top:0;right:0;bottom:0;width:min(50vw,760px);background:#fff;z-index:850;box-shadow:-20px 0 50px rgba(15,23,42,.25);transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+#v35P.on{transform:none}.v35h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(90deg,#0b1b33,#1e3a8a);color:#fff}.v35h button{background:#fff!important;color:#0b1b33!important;font-weight:900!important}
+.v35t{display:flex;gap:6px;padding:8px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;overflow-x:auto}.v35t button{white-space:nowrap;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:20px!important;padding:6px 12px!important;font-weight:800!important;font-size:12.5px!important}
+.v35t button.on{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}.v35c{flex:1}.v35c iframe{width:100%;height:100%;border:0}
+@keyframes arcenciel{0%{background:#dc2626}20%{background:#ea580c}40%{background:#ca8a04}60%{background:#16a34a}80%{background:#7c3aed}100%{background:#dc2626}}
+.v35arc{animation:arcenciel 6s linear infinite!important;color:#fff!important}
+.bndos .sv{background:#0f766e!important;color:#fff!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -4208,6 +4228,78 @@ function bpBoutons(){var o=document.getElementById('pxOutils');if(o&&!document.g
 setTimeout(bpBoutons,2000);setTimeout(bpBoutons,4000);
 var _ftbePanelV34=ftbePanel;ftbePanel=async function(){await _ftbePanelV34.apply(this,arguments);var bar=document.querySelector('#clBox .clbar');if(bar&&!bar.querySelector('.bp-btn')){var b=document.createElement('button');b.className='clsend bp-btn';b.style.background='#7c3aed';b.textContent='📥 Placer les bons (glisser-déposer)';b.onclick=function(){V30.action=Date.now();px2Ecran(0);bpOuvrirFenetre();};bar.appendChild(b);}};
 CL_VERSION='v34 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 29 : finitions + regroupement des clients + bon de service =================
+// ---------- 1) la « fleur » : un petit point en bas à droite qui grandit doucement jusqu'à la page ----------
+var _v33OuvrirV35=v33Ouvrir;
+v33Ouvrir=function(k){var s=document.getElementById('pxStrip');if(!s)return false;var i=PX3_DEF.findIndex(function(d){return d[0]===k;});if(i<0)return false;var p=s.children[i];if(!p)return false;
+  var fleur=V33.mode==='fleur'||(V33.mode==='alterne'&&i%2===1);if(!fleur)return false;
+  s.scrollTo({left:p.offsetLeft,behavior:'auto'});p.classList.remove('px-fleur2');void p.offsetWidth;p.classList.add('px-fleur2');setTimeout(function(){p.classList.remove('px-fleur2');},1900);return true;};
+// ---------- 2) glisser un bon : une petite étiquette propre au lieu de toute la ligne ----------
+document.addEventListener('dragstart',function(e){var el=e.target.closest&&e.target.closest('.bp-i');if(!el)return;var g=document.getElementById('bpGhost');if(!g){g=document.createElement('div');g.id='bpGhost';document.body.appendChild(g);}
+  g.textContent='📄 '+(el.querySelector('b')||{}).textContent;try{e.dataTransfer.setDragImage(g,14,14);}catch(x){}},true);
+function v35Texte(t){var n=String(t||'');try{var N=norm(n).replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();var P=mhPersonnes();var p=P.find(function(x){return N===x.k||N.indexOf(x.k+' ')===0;});if(p)N=N.slice(p.k.length).trim();
+  var cam=camEstChangement(N.split(' ').slice(0,2).join(' '))||camEstChangement(N.split(' ')[0]);if(cam)N=N.replace(norm(cam),'').trim();return N||n;}catch(e){return n;}}
+// ---------- 3) chaque case client montre son bon (📄) ; double-clic ou ⤢ pour l'ouvrir ----------
+var _v35Grille=v28Grille;v28Grille=function(){_v35Grille();var day=store[cur];if(!day)return;
+  Object.keys(day.cells).forEach(function(k){var o=day.cells[k];var td=document.getElementById('c_'+k);if(!td)return;var a=false;
+    if(o&&o.t&&!o.tournee){if(o.bon&&o.bon.cid)a=true;else{try{var p=k.split('_');var b=bnPourCase(cur,v35Texte(o.t),TIMES[+p[0]]);a=!!b;}catch(e){}}}
+    td.classList.toggle('v35bon',a);});
+  // un camion écrit dans une case (changement) ouvre aussi sa fiche
+};
+document.addEventListener('click',function(e){var td=e.target.closest&&e.target.closest('#grid td.v31cam');if(!td)return;var r=td.getBoundingClientRect();if(e.clientX>r.right-26){e.preventDefault();camFiche(camEstChangement(td.textContent));}},true);
+// ---------- 4) REGROUPER les clients d'un même lieu : AMPM · UNITÉS · SÉCURITÉ CIVILE · midi/soir ----------
+function grpCle(nom){var n=norm(nom||'').replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  if(/SECURITE CIVILE/.test(n))return 'SÉCURITÉ CIVILE';if(/^AMPM\b/.test(n))return 'AMPM';if(/^UNITE\b/.test(n))return 'UNITÉS';
+  return n.replace(/\b(MIDI|SOIR|BARQUETTE|MATIN)\b/g,'').replace(/\s+/g,' ').trim();}
+function grpCompter(clients){var S={};(clients||[]).forEach(function(c){S[grpCle(c.client||c)]=1;});return Object.keys(S).length;}
+var _v35ClDay=clDay;clDay=function(d){var cols=_v35ClDay(d);cols.forEach(function(col){col.items.forEach(function(it){if(it.tournee&&it.tournee.clients){it.tournee.clients.forEach(function(c){c.groupe=grpCle(c.client);});it.tournee.nbLieux=grpCompter(it.tournee.clients);
+  if(it.texte)it.texte=it.texte.replace(/\((\d+) clients?\)/,'('+it.tournee.nbLieux+' client'+(it.tournee.nbLieux>1?'s':'')+')');}});});return cols;};
+// le texte de la case « TOURNÉE … (n clients) » compte les lieux, pas les bons
+var _repPlacerV35=repPlacer;repPlacer=function(){var r=_repPlacerV35.apply(this,arguments);try{var day=store[repDay];Object.keys(day.cells).forEach(function(k){var o=day.cells[k];if(o&&o.tournee){var n=grpCompter(o.tournee.clients);var nb=(o.tournee.cles||[]).length;o.t=o.t.replace(/\((\d+) clients?\)/,'('+n+' client'+(n>1?'s':'')+(nb!==n?' · '+nb+' bons':'')+')');}});lsSave();render();}catch(e){}return r;};
+// ---------- 5) BON DE SERVICE (maîtres d'hôtel) ----------
+BN_CAT.SERVICE={l:'🎩 Bon de service (maître d’hôtel)',c:'sv'};
+var _bnCatV35=bnCat;bnCat=function(b){return b&&b.type==='SERVICE'?'SERVICE':_bnCatV35(b);};
+var _bnChoisirV35=bnChoisirDossier;bnChoisirDossier=function(){_bnChoisirV35();var d=document.querySelector('#clBox .bndos');if(d&&!d.querySelector('.sv')){var b=document.createElement('button');b.className='sv';b.textContent=BN_CAT.SERVICE.l;b.onclick=function(){bnDossier='SERVICE';document.getElementById('bnFile2').click();};d.insertBefore(b,d.querySelector('.auto'));}};
+// sur une case client (ou « FAROUK CG 13 » en M/H), on joint TOUS les bons du client ce jour-là : livraison + service
+var _v35ClDay2=clDay;clDay=function(d){var cols=_v35ClDay2(d);var L=(bnCache[d]&&bnCache[d].l)||[];
+  cols.forEach(function(col){col.items.forEach(function(it){if(it.type!=='client'||!it.client)return;var k=bnNorm(it.client);if(k.length<3)return;
+    var sv=L.filter(function(b){return b.type==='SERVICE'&&(bnNorm(b.client)===k||bnNorm(b.client).indexOf(k)>=0||k.indexOf(bnNorm(b.client))>=0);});if(!sv.length)return;
+    var cles=[].concat(it.cid?[it.cid]:[],it.cids||[]);sv.forEach(function(b){if(cles.indexOf(b.date)<0)cles.push(b.date);});if(!it.cid)it.cid=cles[0];it.cids=cles;it.service=true;});});return cols;};
+// la page Traiteur montre aussi les bons de service
+var _ftbePanelV35=ftbePanel;ftbePanel=async function(){var orig=bnCat;bnCat=function(b){var c=orig(b);return c==='SERVICE'?'FTBE':c;};try{await _ftbePanelV35.apply(this,arguments);}finally{bnCat=orig;}};
+// ---------- 6) voir les bons d'une case dans un panneau à droite (moitié d'écran), comme Airtable ----------
+async function v35Panneau(cles,titre){
+  var w=document.getElementById('v35P');if(!w){w=document.createElement('div');w.id='v35P';document.body.appendChild(w);}
+  var L=(bnCache[cur]&&bnCache[cur].l)||[];
+  w.innerHTML='<div class="v35h"><b>'+esc(titre||'Bons')+'</b><button onclick="document.getElementById(\'v35P\').classList.remove(\'on\')">✕</button></div><div class="v35t">'+cles.map(function(k,i){var b=L.find(function(x){return x.date===k;})||{};return '<button class="'+(i?'':'on')+'" data-k="'+k+'">'+(b.type==='SERVICE'?'🎩 Service':'📄 Livraison')+(b.client?' · '+esc(b.client):'')+'</button>';}).join('')+'</div><div class="v35c">⏳</div>';
+  w.classList.add('on');
+  var montre=async function(k){w.querySelectorAll('.v35t button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-k')===k);});var c=w.querySelector('.v35c');c.innerHTML='⏳ Ouverture…';
+    try{var bl=await bnPdf(k);var by=new Uint8Array(await bl.arrayBuffer());var m=await bnMeta(k);await csgCharger(m.jour);var cs=csgPour(m.jour,m.client);var sc=/SECURITE CIVILE/.test(norm(m.client||''));if(cs.length||sc)by=await v32Annoter(by,cs.length?['ATTENTION - INFO AJOUTEE :'].concat(cs.map(function(x){return x.texte;})):[],sc);
+      c.innerHTML='<iframe src="'+URL.createObjectURL(new Blob([by],{type:'application/pdf'}))+'"></iframe>';}catch(e){c.textContent='❌ '+e.message;}};
+  w.querySelectorAll('.v35t button').forEach(function(b){b.onclick=function(){montre(b.getAttribute('data-k'));};});if(cles[0])montre(cles[0]);}
+// double-clic sur une case client → ses bons dans le panneau de droite
+document.addEventListener('dblclick',function(e){var td=e.target.closest&&e.target.closest('#grid td.v35bon');if(!td)return;var k=td.id.slice(2);var o=store[cur].cells[k];if(!o)return;
+  var cles=[];if(o.bon&&o.bon.cid)cles.push(o.bon.cid);var p=k.split('_');var b=bnPourCase(cur,v35Texte(o.t),TIMES[+p[0]]);[].concat(b||[]).forEach(function(x){if(cles.indexOf(x.date)<0)cles.push(x.date);});
+  var L=(bnCache[cur]&&bnCache[cur].l)||[];var nk=bnNorm(clClientName(v35Texte(o.t)));L.forEach(function(x){if(x.type==='SERVICE'&&nk.length>=3&&(bnNorm(x.client).indexOf(nk)>=0||nk.indexOf(bnNorm(x.client))>=0)&&cles.indexOf(x.date)<0)cles.push(x.date);});
+  if(!cles.length)return;e.preventDefault();e.stopPropagation();v35Panneau(cles,o.t);},true);
+// ---------- 7) HORS CARTE : le bouton change de couleur en douceur tant qu'il reste quelque chose à acheter ----------
+setInterval(function(){try{var n=(hcItems||[]).filter(function(h){return h.statut==='atraiter';}).length;document.querySelectorAll('#hcBtn,#pxSide .sd-it').forEach(function(b){if(b.id==='hcBtn'||/Hors carte/.test(b.textContent))b.classList.toggle('v35arc',n>0);});}catch(e){}},3000);
+setTimeout(function(){try{hcLire().then(function(l){hcItems=l;});}catch(e){}},3000);setInterval(function(){try{hcLire().then(function(l){hcItems=l;});}catch(e){}},60000);
+// ---------- 8) STOCKAGE : voir la place prise et faire le ménage des vieux fichiers ----------
+async function stkPanel(){
+  var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';box.innerHTML='<div class="clhead"><h2>💾 Stockage</h2><button class="clx" onclick="clClose()">✕</button></div><p class="clintro">⏳</p>';
+  var j=null;try{var r=await clFetch(CL_SUPA+'/admin/stockage?cle='+encodeURIComponent(CL_KEY_PUB()),{headers:clH()},1);j=await r.json();}catch(e){}
+  var h='<div class="clhead"><h2>💾 Stockage de la base</h2><button class="clx" onclick="clClose()">✕</button></div>';
+  if(!j||!j.ok){box.innerHTML=h+'<div class="clwarn">Information disponible une fois le nouveau server.js en ligne.</div>';return;}
+  h+='<div class="mbK"><div class="mbC l"><small>Taille totale</small><b>'+j.total+'</b><em>'+j.lignes+' lignes</em></div>'+j.parType.map(function(x){return '<div class="mbC"><small>'+esc(x.type)+'</small><b>'+x.taille+'</b><em>'+x.n+' lignes</em></div>';}).join('')+'</div>';
+  h+='<p class="clintro">Les <b>bons signés</b> sont gardés pour toujours (preuves). Le ménage ne supprime que les <b>copies des bons d’origine</b>, les <b>photos</b> et les <b>événements</b> plus vieux que la durée choisie.</p><div class="clbar">Supprimer ce qui a plus de <select id="stkM"><option value="6">6 mois</option><option value="12" selected>12 mois</option><option value="24">24 mois</option></select><button class="clsend" onclick="stkMenage()">🧹 Faire le ménage</button></div>';
+  box.innerHTML=h;}
+function CL_KEY_PUB(){try{return clH().apikey||'';}catch(e){return '';}}
+async function stkMenage(){var m=document.getElementById('stkM').value;if(!confirm('Supprimer les bons d’origine, photos et événements de plus de '+m+' mois ?\nLes bons SIGNÉS sont gardés.'))return;
+  try{var r=await clFetch(CL_SUPA+'/admin/menage?cle='+encodeURIComponent(CL_KEY_PUB())+'&mois='+m,{method:'POST',headers:clH()},1);var j=await r.json();alert(j.ok?'✅ '+j.supprimees+' ligne(s) supprimée(s).':'❌ '+(j.erreur||'erreur'));stkPanel();}catch(e){alert('❌ '+e.message);}}
+(function(){var p=PX3_DEF.findIndex(function(d){return d[0]==='param';});PX3_DEF.splice(p,0,['stockage','💾','Stockage',function(){stkPanel();}]);PX3_FN.stkPanel='stockage';})();
+CL_VERSION='v35 · 21/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
