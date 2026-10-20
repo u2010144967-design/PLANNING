@@ -979,6 +979,17 @@ body.px2 .px-brand .pt-ic{width:32px;height:32px;font-size:16px}body.px2 .px-t{f
 .v32cl{border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}.v32cl.sc b{background:#86efac;padding:0 4px;border-radius:3px}.v32cl button{margin-top:4px}
 table.hor td.hc{min-width:118px;vertical-align:top}table.hor td.hc select{width:100%;padding:3px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px}
 table.hor td.hc.off{background:#f1f5f9}.hh{display:flex;gap:3px;margin-top:3px}.hh input{width:50%;font-size:11.5px;padding:2px;border:1px solid #e2e8f0;border-radius:6px}
+/* ===== v33 ===== */
+.sd-h.hb{font-family:Georgia,'Times New Roman',serif;font-size:17px!important;letter-spacing:.5px;border:2px solid #e8c66a;box-sizing:border-box}
+@keyframes pxFleur{0%{clip-path:circle(0% at 100% 100%);transform:scale(.92);opacity:.4}60%{opacity:1}100%{clip-path:circle(150% at 100% 100%);transform:scale(1);opacity:1}}
+.pxPane.px-fleur{animation:pxFleur .8s cubic-bezier(.2,.8,.2,1);transform-origin:100% 100%}
+.v33go input{width:128px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700}
+.v33go input:focus{outline:none;border-color:#2563eb;background:#fff}.v33go input.err{border-color:#dc2626;background:#fef2f2}
+.pxKpi .v33arch{flex:0 0 260px!important;max-width:300px!important;align-self:center;position:relative}.pxKpi .v33arch input{width:100%;font-size:12.5px!important;padding:10px 12px!important;border-radius:12px!important}
+.pxKpi .v33arch #pxGSr{left:auto;right:0}
+@media (max-width:1450px){.pxKpi .v33arch{flex-basis:190px!important}.v33go input{width:104px}}
+.v33row{display:flex;align-items:center;gap:10px;padding-right:16px}.v33row .pxKpi{flex:1;min-width:0}
+.pa-u div:last-child{display:block!important}.pu-n{font-size:13px!important;white-space:nowrap}.pu-r{font-size:11px!important;color:#2563eb!important;font-weight:800!important;white-space:nowrap}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -3354,7 +3365,7 @@ function usQR(i){var u=US.liste[i];var l=usLien(u);var w=window.open('','_blank'
   var u=null;try{var L=await usLire();u=L.find(function(x){return x.id===id&&x.actif!==false;});}catch(e){document.getElementById('usQui').textContent='Base injoignable — réessaie dans un instant';return;}
   if(!u){document.getElementById('usQui').textContent='Ce lien n’est plus valable. Demande ton accès au responsable.';localStorage.removeItem('cana_user_id');return;}
   document.getElementById('usQui').innerHTML='<b>'+esc(u.nom)+'</b><br><small>'+esc(u.service)+' · '+esc(ROLES[u.role]||u.role)+'</small>';
-  var ok=function(){if(document.getElementById('usPin').value===String(u.code)){localStorage.setItem('cana_nom',u.nom);localStorage.setItem('cana_role',u.role);sessionStorage.setItem('cana_ok_'+id,'1');location.reload();}else{document.getElementById('usErr').textContent='Code incorrect';document.getElementById('usPin').value='';}};
+  var ok=function(){if(document.getElementById('usPin').value===String(u.code)){localStorage.setItem('cana_nom',u.nom);localStorage.setItem('cana_role',u.role);localStorage.setItem('cana_service',u.service||'');sessionStorage.setItem('cana_ok_'+id,'1');location.reload();}else{document.getElementById('usErr').textContent='Code incorrect';document.getElementById('usPin').value='';}};
   document.getElementById('usOk').onclick=ok;document.getElementById('usPin').addEventListener('keydown',function(e){if(e.key==='Enter')ok();});setTimeout(function(){document.getElementById('usPin').focus();},100);
 })();
 // ---------- 2) COLONNE M/H : chaque case va au prénom écrit dedans ----------
@@ -4065,6 +4076,43 @@ async function caseInfo(k){
       (cs.length?'<div style="color:#b91c1c;font-weight:900">⚠️ '+cs.map(function(c){return esc(c.texte);}).join(' · ')+'</div>':'')+(b?'<button onclick="bnOuvrir(\''+b.date+'\')">📄 Voir le bon</button>':'')+'</div>';});
   ov.innerHTML=h+'</div>';ov.style.display='flex';}
 CL_VERSION='v32 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 27 : « HB Logistique », ouvertures animées, aller à une date, fonction de chaque personne =================
+// ---------- 1) HB dans un rond ----------
+function v33Marque(){var h=document.querySelector('#pxSide .sd-h');if(h&&h.textContent!=='HB'){h.textContent='HB';h.classList.add('hb');}var t=document.querySelector('#pxSide .sd-t');if(t)t.textContent='Logistique';var s=document.querySelector('#pxSide .sd-s');if(s)s.textContent='HB Logistique';document.title=document.title.replace('H Logistique','HB Logistique');}
+setTimeout(v33Marque,1200);setTimeout(v33Marque,3000);
+// ---------- 2) OUVERTURE DES PAGES : « glisser » ou « fleur » (depuis le coin en bas à droite) ----------
+var V33={mode:localStorage.getItem('cana_anim')||'alterne'};
+function v33Ouvrir(k){
+  var s=document.getElementById('pxStrip');if(!s)return false;var i=PX3_DEF.findIndex(function(d){return d[0]===k;});if(i<0)return false;var p=s.children[i];if(!p)return false;
+  var fleur=V33.mode==='fleur'||(V33.mode==='alterne'&&i%2===1);
+  if(!fleur)return false;
+  s.scrollTo({left:p.offsetLeft,behavior:'auto'});p.classList.remove('px-fleur');void p.offsetWidth;p.classList.add('px-fleur');setTimeout(function(){p.classList.remove('px-fleur');},900);return true;}
+var _px3DefilerV33=px3Defiler;px3Defiler=function(k){if(Date.now()-V30.action>2000)return;if(v33Ouvrir(k))return;return _px3DefilerV33(k);};
+var _px2EcranV33=px2Ecran;px2Ecran=function(i){if(Date.now()-V30.action>2000)return;var k=(PX3_DEF[i]||[])[0];if(k&&v33Ouvrir(k)){try{PX2.idx=i;px2Points();if(i===1)px2Tournees();if(i===2)px2Carte();if(i===3)px2Bons();}catch(e){}return;}return _px2EcranV33(i);};
+function v33Mode(){var L=['alterne','glisser','fleur'];V33.mode=L[(L.indexOf(V33.mode)+1)%3];localStorage.setItem('cana_anim',V33.mode);v33BoutonMode();}
+function v33BoutonMode(){var b=document.getElementById('v33Anim');if(!b){var sd=document.getElementById('pxSide');if(!sd)return;b=document.createElement('button');b.id='v33Anim';b.className='sd-repli';b.onclick=v33Mode;var r=sd.querySelector('.sd-repli');sd.insertBefore(b,r||null);}
+  b.textContent={alterne:'✨ Ouverture : glisser / fleur',glisser:'➡️ Ouverture : glisser',fleur:'🌸 Ouverture : fleur'}[V33.mode];b.title='Changer l’effet d’ouverture des pages';}
+setTimeout(v33BoutonMode,1500);
+// ---------- 3) ALLER À UNE DATE en la tapant (ex. 12/12/26) ----------
+function v33Date(){
+  if(document.getElementById('v33Go'))return;var dt=document.querySelector('.px-top .px-dt');if(!dt)return;
+  var w=document.createElement('div');w.className='v33go';w.innerHTML='<input id="v33Go" placeholder="Aller au… 12/12/26" inputmode="numeric" title="Tape une date puis Entrée">';dt.appendChild(w);
+  var i=w.querySelector('input');i.addEventListener('keydown',function(e){if(e.key!=='Enter')return;var t=i.value.trim();var m=t.match(/^(\d{1,2})[\/\.\- ](\d{1,2})(?:[\/\.\- ](\d{2,4}))?$/);
+    if(!m){i.classList.add('err');setTimeout(function(){i.classList.remove('err');},800);return;}
+    var j=+m[1],mo=+m[2],a=m[3]?+m[3]:new Date().getFullYear();if(a<100)a+=2000;var d=new Date(a,mo-1,j);if(d.getMonth()!==mo-1){i.classList.add('err');return;}
+    V30.action=Date.now();cur=fmtD(d);try{ensure(cur);render();}catch(x){}try{px2Ecran(0);}catch(x){}i.value='';i.blur();});}
+setTimeout(v33Date,1800);setTimeout(v33Date,3500);
+// ---------- 4) La recherche des archives toujours visible (à droite des indicateurs) + la fonction de chacun ----------
+function v33Archives(){var gs=document.querySelector('.pxGS');var k=document.getElementById('pxKpi');if(!gs||!k||gs.classList.contains('v33arch'))return;var w=document.createElement('div');w.className='v33row';k.parentNode.insertBefore(w,k);w.appendChild(k);w.appendChild(gs);gs.classList.add('v33arch');var i=document.getElementById('pxGS');if(i)i.placeholder='🗂️ Rechercher dans les archives (bons, clients…)';}
+setTimeout(v33Archives,2600);setTimeout(v33Archives,4500);
+var _px2UserV33=px2User;px2User=function(){var u=document.getElementById('pxUser');if(!u)return;var n=(typeof SY!=='undefined'&&SY.nom)||'Responsable';
+  var f=ROLE==='responsable'&&!localStorage.getItem('cana_user_id')?'Responsable Logistique':(localStorage.getItem('cana_service')||(typeof ROLES!=='undefined'&&ROLES[ROLE])||'');
+  u.innerHTML='<div class="pu-a">'+esc(n.slice(0,2).toUpperCase())+'</div><div><div class="pu-n">'+esc(n)+'</div><div class="pu-r">'+esc(f)+'</div></div>';};
+setTimeout(function(){try{px2User();}catch(e){}},2000);
+// à la connexion d'un collègue, on garde aussi son service (Commerciale, Comptabilité…)
+(async function(){var id=localStorage.getItem('cana_user_id');if(!id)return;try{var L=await usLire();var u=L.find(function(x){return x.id===id;});if(u){localStorage.setItem('cana_service',u.service||'');px2User();}}catch(e){}})();
+CL_VERSION='v33 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
