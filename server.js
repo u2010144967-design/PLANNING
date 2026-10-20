@@ -164,6 +164,9 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
     const r1 = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle]);
     if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'bon signé introuvable' });
     const m = r1.rows[0].donnees || {};
+    const TYPES = String(process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE').toUpperCase().split(',').map(x => x.trim()).filter(Boolean);
+    const typeBon = String(m.type || 'RESTOCO').toUpperCase();
+    if (!TYPES.includes(typeBon) && !TYPES.includes('TOUS')) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore activé pour les bons ' + typeBon });
     if ((m.nbEmails || 0) >= 5) return res.status(429).json({ ok: false, erreur: "trop d'envois pour ce bon" });
     let b64 = m.pdf || '';
     if (!b64) {
@@ -197,6 +200,54 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
     await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
+});
+
+// ---- TEST DE L'ENVOI D'EMAIL : https://<app>/admin/test-email?cle=<API_KEY>&a=<adresse> ----
+app.get('/admin/test-email', async (req, res) => {
+  if (CLE && req.query.cle !== CLE) return res.status(401).type('text').send('clé invalide');
+  const a = String(req.query.a || process.env.SMTP_USER || '');
+  const page = (ok, txt) => res.type('html').send('<meta charset="utf-8"><body style="font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px"><h2>✉️ Test de l\'envoi automatique</h2><p style="font-size:18px;font-weight:800;color:' + (ok ? '#15803d' : '#b91c1c') + '">' + txt + '</p>' +
+    '<p>Réglages lus : serveur <b>' + (process.env.SMTP_HOST || '—') + '</b>, port <b>' + (process.env.SMTP_PORT || '587') + '</b>, compte <b>' + (process.env.SMTP_USER || '—') + '</b>, mot de passe ' + (process.env.SMTP_PASS ? '<b>présent</b>' : '<b style="color:#b91c1c">absent</b>') + ', bons envoyés automatiquement : <b>' + (process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE') + '</b></p></body>');
+  if (!process.env.SMTP_HOST) return page(false, '❌ SMTP_HOST n’est pas réglé dans Scalingo (onglet Environment).');
+  if (!a) return page(false, '❌ Indique une adresse : …/admin/test-email?cle=…&a=ton.adresse@exemple.fr');
+  try {
+    const nodemailer = require('nodemailer');
+    const tr = nodemailer.createTransport(process.env.SMTP_HOST === 'test' ? { jsonTransport: true } : { host: process.env.SMTP_HOST, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+    if (process.env.SMTP_HOST !== 'test') await tr.verify();
+    await tr.sendMail({ from: `"${process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille'}" <${process.env.EXPEDITEUR || process.env.SMTP_USER}>`, to: a, subject: 'Test CANA LIVRAISONS — envoi automatique des bons', html: '<p>Bonjour,</p><p>Ceci est un test : si vous lisez ce message, l’envoi automatique des bons signés fonctionne. ✅</p>' });
+    page(true, '✅ Email de test envoyé à ' + a + ' — vérifie la boîte de réception (et les indésirables).');
+  } catch (e) {
+    const m = String(e.message || e);
+    const aide = /auth|535|534|Invalid login|Username and Password/i.test(m) ? ' → identifiant ou mot de passe refusé. Si c’est une boîte Microsoft 365 / Outlook, il faut souvent activer « SMTP authentifié » pour cette boîte, ou utiliser un « mot de passe d’application ».'
+      : /ENOTFOUND|getaddrinfo/i.test(m) ? ' → le nom du serveur SMTP est faux.' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' → le port ne répond pas : essaie 587 (ou 465).' : '';
+    page(false, '❌ L’envoi a échoué : ' + m.replace(/</g, '&lt;') + aide);
+  }
+});
+
+// ---- STOCKAGE : place prise + ménage des vieux fichiers (les bons SIGNÉS sont toujours gardés) ----
+function cleAdmin(req) { const k = process.env.ADMIN_CLE || CLE; return !k || req.query.cle === k; }
+const taille = n => n > 1073741824 ? (n / 1073741824).toFixed(2) + ' Go' : (n / 1048576).toFixed(1) + ' Mo';
+app.get('/admin/stockage', async (req, res) => {
+  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clé invalide' });
+  try {
+    const rows = (await pool.query("SELECT date, length(donnees::text) AS o FROM planning")).rows;
+    let tot = 0; const G = {};
+    rows.forEach(r => { const ty = String(r.date).split('_')[0]; const o = +r.o || 0; tot += o; G[ty] = G[ty] || { type: ty, n: 0, o: 0 }; G[ty].n++; G[ty].o += o; });
+    try { const x = await pool.query("SELECT pg_total_relation_size('planning') AS t"); if (+x.rows[0].t) tot = +x.rows[0].t; } catch (e) {}
+    const t = { rows: [{ t: tot, n: rows.length }] };
+    const p = { rows: Object.values(G).sort((a, b) => b.o - a.o).slice(0, 8) };
+    const NOMS = { BONPDF: 'Fichiers PDF des bons', BON: 'Fiches des bons', BONSIGNE: 'Bons signés', PHOTO: 'Photos', EV: 'Événements', GRILLE: 'Planning partagé', MAT: 'Matériel', JOURNAL: 'Journal' };
+    res.json({ ok: true, total: taille(+t.rows[0].t), lignes: t.rows[0].n, parType: p.rows.map(x => ({ type: NOMS[x.type] || (/^\d{4}-/.test(x.type) ? 'Journées' : x.type), n: x.n, taille: taille(+x.o) })) });
+  } catch (e) { res.status(500).json({ ok: false, erreur: e.message }); }
+});
+app.post('/admin/menage', async (req, res) => {
+  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clé invalide' });
+  const mois = Math.max(3, parseInt(req.query.mois || '12', 10) || 12);
+  try {
+    const r = await pool.query(`DELETE FROM planning WHERE updated_at < now() - ($1 || ' months')::interval AND (
+        (date LIKE 'BONPDF\\_%' AND date NOT LIKE 'BONPDF\\_S%') OR date LIKE 'PHOTO\\_%' OR date LIKE 'EV\\_%' OR date LIKE 'POS\\_%' OR date LIKE 'JOURNAL\\_%')`, [String(mois)]);
+    res.json({ ok: true, supprimees: r.rowCount });
+  } catch (e) { res.status(500).json({ ok: false, erreur: e.message }); }
 });
 
 // ---- COMPTAGE DES BACS GASTRO SUR PHOTO (IA) ----
