@@ -958,6 +958,27 @@ body.px2 .px-brand .pt-ic{width:32px;height:32px;font-size:16px}body.px2 .px-t{f
 #qlBox{flex:1 1 360px!important;min-width:280px!important}
 #grid td.v31cam{background:repeating-linear-gradient(135deg,#e0f2fe,#e0f2fe 8px,#f0f9ff 8px,#f0f9ff 16px)!important;color:#075985!important;font-weight:900!important;box-shadow:inset 6px 0 0 #0284c7!important}
 #grid td.v31cam::before{content:'🔄🚚 ';}
+/* ===== v32 : en-têtes sobres, une seule couleur ===== */
+#grid td.v32hd{background:#eef2f7!important;color:#0f172a!important;font-size:13px!important;font-weight:800!important;letter-spacing:.3px;padding:2px 4px!important;border-color:#dbe3ee!important}
+#grid td.v32r1{background:#1e3a5f!important;color:#fff!important;font-size:14px!important;font-weight:900!important}
+#grid td.v32r2{background:#f8fafc!important;color:#334155!important;font-size:12px!important;position:relative}
+#grid td.v32hor::after{content:attr(data-hor);display:block;font-size:10.5px;font-weight:900;color:#15803d;line-height:1.1}
+#grid td.v32off::after{color:#b91c1c}
+#grid td.v32ch{position:relative}#grid td.v32ch::after{content:'👤';position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:12px;cursor:pointer;opacity:.85}
+#grid td.v32sc{background:linear-gradient(transparent 15%,rgba(134,239,172,.95) 15%,rgba(134,239,172,.95) 85%,transparent 85%)!important;color:#14532d!important;font-weight:900!important}
+#grid td[id^="c_"]:hover{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Ctext x='0' y='12' font-size='12'%3E%E2%A4%A2%3C/text%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 3px bottom 2px}
+.v32ov{position:fixed;inset:0;z-index:900;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+.v32b{max-height:86vh;overflow:auto}.v32av{width:44px;height:44px;border-radius:22px;background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+.v32tel{display:flex;gap:8px;align-items:center;margin:6px 0 10px}.v32tel a{flex:1;background:#16a34a;color:#fff;text-decoration:none;font-size:22px;font-weight:900;border-radius:14px;padding:12px 14px;text-align:center}
+.v32tel button{background:#f1f5f9!important;border-radius:12px!important;padding:12px!important}
+.v32l{margin:5px 0;font-size:14px}.v32l a{color:#1d4ed8}.v32lien{cursor:pointer;text-decoration:underline;color:#1d4ed8}
+.v32sem{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0}.v32j{background:#f8fafc;border-radius:8px;padding:5px;text-align:center}.v32j small{display:block;font-size:10.5px;color:#64748b}.v32j b{font-size:11.5px}
+.v32r{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}.v32r small{font-weight:900;color:#64748b;margin-right:4px}.v32r span{border:1px solid #e2e8f0;border-radius:20px;padding:3px 9px;font-size:12px}
+.v32chb{display:block;width:100%;margin:6px 0;padding:12px!important;font-size:16px!important;text-align:left}
+.v32f{margin-left:6px;font-size:11.5px!important;padding:3px 7px!important}
+.v32cl{border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}.v32cl.sc b{background:#86efac;padding:0 4px;border-radius:3px}.v32cl button{margin-top:4px}
+table.hor td.hc{min-width:118px;vertical-align:top}table.hor td.hc select{width:100%;padding:3px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px}
+table.hor td.hc.off{background:#f1f5f9}.hh{display:flex;gap:3px;margin-top:3px}.hh input{width:50%;font-size:11.5px;padding:2px;border:1px solid #e2e8f0;border-radius:6px}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -3916,6 +3937,134 @@ function trExport(){var L=trSegments(TR31.de,TR31.a);var csv='\ufeff'+[['Jour','
 (function(){var p=PX3_DEF.findIndex(function(d){return d[0]==='equipe';})+1;PX3_DEF.splice(p,0,['camions','🚚','Qui conduit quel camion',function(){trPanel();}]);PX3_FN.trPanel='camions';})();
 // « qui livre aujourd'hui ? » : le bon camion (après un changement)
 CL_VERSION='v31 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 26 : fiche chauffeur, horaires & absences, en-têtes sobres, consignes en grand, Sécurité civile, fenêtres d'infos =================
+var V32={eq:null,hor:null};
+var STATUTS={T:['Travail','#16a34a'],R:['Repos','#64748b'],CP:['Congé payé','#2563eb'],C:['Congé','#7c3aed'],A:['Arrêt maladie','#dc2626'],ABS:['Absent','#b91c1c'],RET:['Retard','#ea580c'],F:['Formation','#0891b2']};
+async function v32Equipe(force){if(V32.eq&&!force)return V32.eq;try{V32.eq=await eqLire();}catch(e){V32.eq=V32.eq||{drivers:[]};}return V32.eq;}
+async function v32Horaires(force){if(V32.hor&&!force)return V32.hor;try{V32.hor=(await v28Lire('HORAIRES'))||{};}catch(e){V32.hor=V32.hor||{};}return V32.hor;}
+setTimeout(function(){v32Equipe();v32Horaires();},2000);
+function v32Id(nom){var n=norm(nom||'').replace(/[^A-Z ]/g,' ').trim();var L=(V32.eq&&V32.eq.drivers)||[];for(var i=0;i<L.length;i++){if(L[i].actif===false)continue;var k=norm(L[i].name||'').replace(/[^A-Z ]/g,' ').trim();if(k&&(k===n||n.split(' ').indexOf(k)>=0))return i;}return -1;}
+function horDe(id,d){var H=V32.hor||{};return (H[id]&&H[id][d])||null;}
+// ---------- 1) ÉQUIPE : téléphone + email pour chaque chauffeur ----------
+var _eqDessinerV32=eqDessiner;
+eqDessiner=function(){_eqDessinerV32();var tb=document.querySelector('#clBox table.clt');if(!tb)return;var rows=[].slice.call(tb.rows);
+  if(rows[0]&&!rows[0].querySelector('.v32h')){var th=document.createElement('th');th.className='v32h';th.textContent='Téléphone';rows[0].insertBefore(th,rows[0].cells[2]);var th2=document.createElement('th');th2.textContent='Email';rows[0].insertBefore(th2,rows[0].cells[3]);}
+  rows.slice(1).forEach(function(tr){var inp=tr.querySelector('input[onchange^="eqRenommer("]');if(!inp)return;var i=+inp.getAttribute('onchange').match(/eqRenommer\((\d+)/)[1];var e=eqData.drivers[i]||{};
+    var t1=document.createElement('td');t1.innerHTML='<input type="tel" value="'+esc(e.tel||'').replace(/"/g,'&quot;')+'" placeholder="06…" onchange="eqChamp('+i+',\'tel\',this.value)" style="width:120px">';
+    var t2=document.createElement('td');t2.innerHTML='<input type="email" value="'+esc(e.email||'').replace(/"/g,'&quot;')+'" placeholder="email" onchange="eqChamp('+i+',\'email\',this.value)" style="width:170px">';
+    tr.insertBefore(t1,tr.cells[2]);tr.insertBefore(t2,tr.cells[3]);
+    var nm=tr.cells[1];if(nm&&!nm.querySelector('.v32f')){var b=document.createElement('button');b.className='v32f';b.textContent='👤 Fiche';b.onclick=function(){chFiche(e.name);};nm.appendChild(b);}});};
+async function eqChamp(i,k,v){eqData.drivers[i][k]=String(v||'').trim();try{await eqEcrire(eqData);V32.eq=eqData;}catch(e){alert('❌ '+e.message);}}
+// le lien envoyé au chauffeur passe par la page d'installation (l'appli s'installe tout de suite sur son téléphone)
+eqLien=function(i,e){return CANA_BASE+'installer.html?chauffeur='+i;};
+// ---------- 2) FICHE CHAUFFEUR (clic sur un nom de chauffeur, partout) ----------
+async function chFiche(nom){
+  await v32Equipe();await v32Horaires();var noms=String(nom||'').split(/[\/,+&]| ET /).map(function(x){return x.trim();}).filter(Boolean);
+  if(noms.length>1){var ov0=v32Ov();ov0.innerHTML='<div class="cam-b"><div class="cam-h"><span>👥</span><b>'+esc(nom)+'</b><button onclick="v32Fermer()">✕</button></div>'+noms.map(function(n){return '<button class="v32chb" onclick="chFiche(\''+esc(n).replace(/'/g,"\\'")+'\')">👤 '+esc(n)+'</button>';}).join('')+'</div>';ov0.style.display='flex';return;}
+  var id=v32Id(nom);var ov=v32Ov();
+  if(id<0){ov.innerHTML='<div class="cam-b"><div class="cam-h"><span>👤</span><b>'+esc(nom)+'</b><button onclick="v32Fermer()">✕</button></div><p>Ce chauffeur n’est pas encore dans l’équipe. Ajoute-le dans <b>👥 Chauffeurs / Véhicules</b> avec son téléphone.</p></div>';ov.style.display='flex';return;}
+  var e=V32.eq.drivers[id];var auj=fmtD(new Date());var h=horDe(id,auj);var camAuj='';try{clDay(auj).forEach(function(c){if(c.ids&&c.ids.indexOf(id)>=0&&!camAuj)camAuj=(c.items.slice(-1)[0]||{}).camion||c.camion;});}catch(x){}
+  var pl=camAuj&&typeof pqDe==='function'?pqDe(camAuj):'';
+  // résumé du mois
+  var m0=auj.slice(0,7);var R={};var hm=0;Object.keys((V32.hor&&V32.hor[id])||{}).forEach(function(d){if(d.slice(0,7)!==m0)return;var x=V32.hor[id][d];R[x.s||'T']=(R[x.s||'T']||0)+1;if((x.s||'T')==='T'&&x.d&&x.f){var a=x.d.split(':'),b=x.f.split(':');hm+=Math.max(0,(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]));}});
+  var sem=[];for(var j=0;j<7;j++){var dd=new Date();dd.setDate(dd.getDate()+j);var ds=fmtD(dd);var x=horDe(id,ds);sem.push('<div class="v32j"><small>'+dd.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})+'</small>'+(x?(x.s&&x.s!=='T'?'<b style="color:'+STATUTS[x.s][1]+'">'+STATUTS[x.s][0]+'</b>':'<b>'+esc(x.d||'')+'–'+esc(x.f||'')+'</b>'):'<b style="color:#94a3b8">—</b>')+'</div>');}
+  ov.innerHTML='<div class="cam-b v32b"><div class="cam-h"><span class="v32av">'+esc((e.name||'?').slice(0,1))+'</span><b>'+esc(e.name)+'</b><button onclick="v32Fermer()">✕</button></div>'+
+    '<div class="v32tel">'+(e.tel?'<a href="tel:'+esc(String(e.tel).replace(/\s/g,''))+'">📞 '+esc(e.tel)+'</a><button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+esc(e.tel)+'\');this.textContent=\'✅ Copié\'">📋 Copier</button>':'<span style="color:#b91c1c">📞 Pas de téléphone enregistré — ajoute-le dans 👥 Chauffeurs / Véhicules</span>')+'</div>'+
+    (e.email?'<div class="v32l">✉️ <a href="mailto:'+esc(e.email)+'">'+esc(e.email)+'</a></div>':'')+
+    '<div class="v32l">🚚 Aujourd’hui : <b>'+esc(camAuj||e.truck||'—')+'</b>'+(pl?' · '+esc(pl):'')+'</div>'+
+    '<div class="v32l">🕐 Aujourd’hui : '+(h?(h.s&&h.s!=='T'?'<b style="color:'+STATUTS[h.s][1]+'">'+STATUTS[h.s][0]+'</b>':'<b>'+esc(h.d||'')+' → '+esc(h.f||'')+'</b>'):'<span style="color:#94a3b8">horaires non renseignés</span>')+'</div>'+
+    '<div class="v32sem">'+sem.join('')+'</div>'+
+    '<div class="v32r"><small>Ce mois-ci</small>'+Object.keys(STATUTS).filter(function(k){return R[k];}).map(function(k){return '<span style="border-color:'+STATUTS[k][1]+';color:'+STATUTS[k][1]+'">'+STATUTS[k][0]+' : <b>'+R[k]+' j</b></span>';}).join('')+(hm?'<span>⏱️ <b>'+Math.floor(hm/60)+' h '+String(hm%60).padStart(2,'0')+'</b> travaillées</span>':'')+(Object.keys(R).length?'':'<span style="color:#94a3b8">rien encore</span>')+'</div>'+
+    (ROLE==='responsable'?'<button class="clsend" style="width:100%;margin-top:10px" onclick="v32Fermer();horPage()">🕐 Modifier ses horaires / absences</button>':'')+'</div>';
+  ov.style.display='flex';}
+function v32Ov(){var ov=document.getElementById('v32Ov');if(!ov){ov=document.createElement('div');ov.id='v32Ov';ov.className='v32ov';document.body.appendChild(ov);ov.onclick=function(e){if(e.target===ov)v32Fermer();};}return ov;}
+function v32Fermer(){var o=document.getElementById('v32Ov');if(o)o.style.display='none';}
+function horPage(){V30.action=Date.now();px3Cible('horaires');horPanel();px3Defiler('horaires');}
+// clic sur le nom d'un chauffeur en haut de sa colonne (petite icône 👤 à droite)
+document.addEventListener('click',function(e){var td=e.target.closest&&e.target.closest('td.v32ch');if(!td)return;var r=td.getBoundingClientRect();if(e.clientX>r.right-26){e.preventDefault();chFiche((td.textContent||'').trim());}},true);
+// « Qui livre aujourd'hui ? » : le nom du chauffeur est cliquable
+var _qlChercherV32=qlChercher;qlChercher=async function(){await _qlChercherV32();document.querySelectorAll('#qlR .ql-qui b').forEach(function(b){b.style.cursor='pointer';b.style.textDecoration='underline';b.title='Voir son téléphone';b.onclick=function(ev){ev.stopPropagation();chFiche(b.textContent.replace(/^M\/H · /,''));};});};
+// ---------- 3) HORAIRES & ABSENCES (à la semaine, au mois) ----------
+var HOR={lundi:''};
+function horLundi(d){var x=new Date((d||fmtD(new Date()))+'T12:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return fmtD(x);}
+async function horPanel(garder){
+  if(!garder){await v32Equipe(true);await v32Horaires(true);}else{await v32Equipe();await v32Horaires();}if(!HOR.lundi)HOR.lundi=horLundi(cur);var jours=[];for(var j=0;j<7;j++){var x=new Date(HOR.lundi+'T12:00');x.setDate(x.getDate()+j);jours.push(fmtD(x));}
+  var L=V32.eq.drivers.map(function(e,i){return {e:e,i:i};}).filter(function(x){return x.e.actif!==false&&x.e.name;});
+  var box=document.getElementById('clBox');document.getElementById('clPanel').style.display='flex';
+  var h='<div class="clhead"><h2>🕐 Horaires & absences des chauffeurs</h2><button class="clx" onclick="clClose()">✕</button></div>';
+  h+='<div class="clbar"><button onclick="horSem(-1)">‹</button><b style="min-width:240px;text-align:center">Semaine du '+HOR.lundi.split('-').reverse().join('/')+'</b><button onclick="horSem(1)">›</button><span style="flex:1"></span><button onclick="horCopier()">📋 Recopier la semaine d’avant</button><button onclick="horMois()">📅 Appliquer cette semaine à tout le mois</button><button onclick="horRecap()">📊 Récapitulatif</button></div>';
+  h+='<p class="clintro">Choisis pour chaque jour : les heures (début → fin) ou <b>Repos, Congé payé, Congé, Arrêt, Absent, Retard, Formation</b>. Ça part tout de suite dans l’appli du chauffeur, et ça s’affiche sous son nom dans le planning. Tout est gardé pour le récapitulatif.</p>';
+  h+='<div class="cltwrap"><table class="clt hor"><tr><th>Chauffeur</th>'+jours.map(function(d){var x=new Date(d+'T12:00');return '<th>'+x.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+'</th>';}).join('')+'</tr>';
+  L.forEach(function(x){h+='<tr><td><b class="v32lien" onclick="chFiche(\''+esc(x.e.name).replace(/'/g,"\\'")+'\')">'+esc(x.e.name)+'</b></td>'+jours.map(function(d){var v=horDe(x.i,d)||{};var s=v.s||'';return '<td class="hc'+(s&&s!=='T'?' off':'')+'"><select onchange="horSet('+x.i+',\''+d+'\',\'s\',this.value)">'+['',].concat(Object.keys(STATUTS)).map(function(k){return '<option value="'+k+'"'+(k===s?' selected':'')+'>'+(k?STATUTS[k][0]:'—')+'</option>';}).join('')+'</select>'+
+      ((!s||s==='T'||s==='RET')?'<div class="hh"><input type="time" value="'+esc(v.d||'')+'" onchange="horSet('+x.i+',\''+d+'\',\'d\',this.value)"><input type="time" value="'+esc(v.f||'')+'" onchange="horSet('+x.i+',\''+d+'\',\'f\',this.value)"></div>':'')+'</td>';}).join('')+'</tr>';});
+  box.innerHTML=h+'</table></div>';}
+function horSem(n){var x=new Date(HOR.lundi+'T12:00');x.setDate(x.getDate()+7*n);HOR.lundi=fmtD(x);horPanel(true);}
+var HOR_T=null;
+function horSet(i,d,k,v){var H=V32.hor;H[i]=H[i]||{};var x=H[i][d]=H[i][d]||{};x[k]=v;if(k==='s'&&v&&v!=='T'&&v!=='RET'){delete x.d;delete x.f;}if(k!=='s'&&!x.s)x.s='T';if(!x.s&&!x.d&&!x.f)delete H[i][d];
+  clearTimeout(HOR_T);HOR_T=setTimeout(horSauver,600);if(k==='s')horPanel(true);}
+async function horSauver(){try{await v28Ecrire('HORAIRES',V32.hor);try{render();}catch(e){}}catch(e){alert('❌ '+e.message);}}
+function horCopier(){var p=new Date(HOR.lundi+'T12:00');p.setDate(p.getDate()-7);var H=V32.hor;Object.keys(H).forEach(function(i){for(var j=0;j<7;j++){var a=new Date(p);a.setDate(p.getDate()+j);var b=new Date(HOR.lundi+'T12:00');b.setDate(b.getDate()+j);var v=H[i][fmtD(a)];if(v)H[i][fmtD(b)]=JSON.parse(JSON.stringify(v));}});horSauver().then(function(){horPanel(true);});}
+function horMois(){if(!confirm('Recopier cette semaine sur toutes les semaines du mois ?'))return;var L=new Date(HOR.lundi+'T12:00');var m=L.getMonth();var H=V32.hor;
+  Object.keys(H).forEach(function(i){for(var j=0;j<7;j++){var src=new Date(L);src.setDate(L.getDate()+j);var v=H[i][fmtD(src)];if(!v)continue;for(var w=-5;w<=5;w++){if(!w)continue;var t=new Date(src);t.setDate(src.getDate()+7*w);if(t.getMonth()===m)H[i][fmtD(t)]=JSON.parse(JSON.stringify(v));}}});horSauver().then(function(){horPanel(true);});}
+async function horRecap(){
+  var m=prompt('Récapitulatif de quel mois ? (AAAA-MM)',fmtD(new Date()).slice(0,7));if(!m)return;var H=V32.hor;var L=V32.eq.drivers.map(function(e,i){return {e:e,i:i};}).filter(function(x){return x.e.name;});
+  var h='<div class="clhead"><h2>📊 Récapitulatif '+esc(m)+'</h2><button class="clx" onclick="horPanel(true)">✕</button></div><div class="cltwrap"><table class="clt"><tr><th>Chauffeur</th>'+Object.keys(STATUTS).map(function(k){return '<th>'+STATUTS[k][0]+'</th>';}).join('')+'<th>Heures</th></tr>';
+  var csv=[['Chauffeur'].concat(Object.keys(STATUTS).map(function(k){return STATUTS[k][0];})).concat(['Heures'])];
+  L.forEach(function(x){var R={},hm=0;Object.keys(H[x.i]||{}).forEach(function(d){if(d.slice(0,7)!==m)return;var v=H[x.i][d];var s=v.s||'T';R[s]=(R[s]||0)+1;if((s==='T'||s==='RET')&&v.d&&v.f){var a=v.d.split(':'),b=v.f.split(':');hm+=Math.max(0,(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]));}});
+    var hh=Math.floor(hm/60)+' h '+String(hm%60).padStart(2,'0');h+='<tr><td><b>'+esc(x.e.name)+'</b></td>'+Object.keys(STATUTS).map(function(k){return '<td style="text-align:center;font-weight:800;color:'+(R[k]?STATUTS[k][1]:'#cbd5e1')+'">'+(R[k]||0)+'</td>';}).join('')+'<td><b>'+hh+'</b></td></tr>';
+    csv.push([x.e.name].concat(Object.keys(STATUTS).map(function(k){return R[k]||0;})).concat([hh]));});
+  h+='</table></div><div class="clbar"><button onclick="horCsv()">📊 Exporter (Excel)</button></div>';window._horCsv=csv;document.getElementById('clBox').innerHTML=h;}
+function horCsv(){var t='\ufeff'+window._horCsv.map(function(l){return l.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(';');}).join('\r\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='horaires.csv';document.body.appendChild(a);a.click();a.remove();}
+(function(){var p=PX3_DEF.findIndex(function(d){return d[0]==='equipe';})+1;PX3_DEF.splice(p,0,['horaires','🕐','Horaires & absences',function(){horPanel();}]);PX3_FN.horPanel='horaires';})();
+// ---------- 4) EN-TÊTES : une seule couleur, plus petits ; horaires sous le nom ; icônes 👤 / ℹ️ ----------
+var _v32Grille=v28Grille;
+v28Grille=function(){_v32Grille();var tb=document.querySelector('#grid table');if(!tb)return;
+  for(var r=0;r<3&&r<tb.rows.length;r++){[].slice.call(tb.rows[r].cells).forEach(function(td,ci){if(td.classList.contains('lbl'))return;td.classList.add('v32hd','v32r'+r);td.style.background='';td.style.color='';
+    if(r===1)td.classList.toggle('v32ch',!!(td.textContent||'').trim());});}
+  // horaires du jour sous chaque chauffeur (si renseignés)
+  if(tb.rows[2]&&V32.eq){[].slice.call(tb.rows[1].cells).forEach(function(td,ci){if(td.classList.contains('lbl'))return;var cell=tb.rows[2].cells[ci];if(!cell)return;var nm=(td.textContent||'').trim();if(!nm)return;
+    var ids=nm.split(/[\/,+&]/).map(function(x){return v32Id(x);}).filter(function(x){return x>=0;});var t=ids.map(function(id){var h=horDe(id,cur);if(!h)return '';return h.s&&h.s!=='T'?STATUTS[h.s][0].toUpperCase():(h.d||'')+(h.f?'–'+h.f:'');}).filter(Boolean).join(' / ');
+    cell.setAttribute('data-hor',t);cell.classList.toggle('v32hor',!!t);cell.classList.toggle('v32off',/REPOS|CONG|ARR|ABSENT/.test(t));});}
+  // Sécurité civile au stabilo vert
+  var day=store[cur];if(day)Object.keys(day.cells).forEach(function(k){var o=day.cells[k];var td=document.getElementById('c_'+k);if(td)td.classList.toggle('v32sc',!!(o&&/SECURITE CIVILE/.test(norm(o.t||''))));});
+};
+// ---------- 5) AMPM puis SÉCURITÉ CIVILE à la suite, dans chaque tournée ----------
+function v32Ordre(L){var amp=[],sc=[],rest=[];(L||[]).forEach(function(c){var n=norm(c.client||c);if(/SECURITE CIVILE/.test(n))sc.push(c);else if(/^AMPM\b|^AMP\b/.test(n))amp.push(c);else rest.push(c);});
+  if(!sc.length&&!amp.length)return L;var out=[];var place=false;(L||[]).forEach(function(c){var n=norm(c.client||c);if(/SECURITE CIVILE|^AMPM\b|^AMP\b/.test(n)){if(!place){out=out.concat(amp,sc);place=true;}}else out.push(c);});return out;}
+var _v32ClDay=clDay;clDay=function(d){var cols=_v32ClDay(d);cols.forEach(function(col){col.items.forEach(function(it){if(it.tournee&&it.tournee.clients){it.tournee.clients=v32Ordre(it.tournee.clients);it.tournee.clients.forEach(function(c){if(/SECURITE CIVILE/.test(norm(c.client)))c.stabilo=true;});}});});return cols;};
+// ---------- 6) BONS ouverts dans le logiciel : consignes EN GRAND en haut + Sécurité civile au stabilo ----------
+async function v32Annoter(bytes,lignes,stabilo){
+  if(!window.PDFLib)return bytes;var doc=await PDFLib.PDFDocument.load(bytes);var pg=doc.getPages()[0];var sz=pg.getSize();var W=sz.width,Hh=sz.height;
+  var rouge=PDFLib.rgb(.8,.05,.05);var f=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+  if(stabilo&&window.pdfjsLib){try{var p=await pdfjsLib.getDocument({data:bytes.slice(0)}).promise;var pg1=await p.getPage(1);var tc=await pg1.getTextContent();
+      tc.items.forEach(function(it){if(/S[ÉE]CURIT[ÉE]\s+CIVILE/i.test(it.str)){var x=it.transform[4],y=it.transform[5],w=it.width||200,h=Math.abs(it.transform[3])||10;pg.drawRectangle({x:x-2,y:y-3,width:w+4,height:h+5,color:PDFLib.rgb(.45,.95,.35),opacity:.45});}});}catch(e){}}
+  if(lignes&&lignes.length){var H=30+lignes.length*22;pg.setMediaBox(0,0,W,Hh+H);try{pg.setCropBox(0,0,W,Hh+H);}catch(e){}
+    pg.drawRectangle({x:6,y:Hh+4,width:W-12,height:H-8,color:PDFLib.rgb(1,.92,.92),borderColor:rouge,borderWidth:3});
+    var nett=function(t){return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');};
+    lignes.forEach(function(l,i){pg.drawText(nett(l).slice(0,80),{x:18,y:Hh+H-30-i*22,size:i?16:17,font:f,color:rouge});});}
+  return await doc.save();}
+var _bnOuvrirV32=bnOuvrir;
+bnOuvrir=async function(key){
+  if(!/^BON_/.test(key||''))return _bnOuvrirV32(key);
+  var m=null;try{m=await bnMeta(key);}catch(e){}if(!m)return _bnOuvrirV32(key);
+  await csgCharger(m.jour);var cs=csgPour(m.jour,m.client);var sc=/SECURITE CIVILE/.test(norm(m.client||''));
+  if(!cs.length&&!sc)return _bnOuvrirV32(key);
+  var w=window.open('','_blank');try{if(w)w.document.write('<p style="font-family:Arial;padding:20px">⏳ Ouverture du bon…</p>');var b=await bnPdf(key);var by=new Uint8Array(await b.arrayBuffer());
+    by=await v32Annoter(by,cs.length?['ATTENTION - INFO AJOUTEE :'].concat(cs.map(function(c){return c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':'');})):[],sc);
+    var u=URL.createObjectURL(new Blob([by],{type:'application/pdf'}));if(w)w.location.href=u;else window.open(u,'_blank');}catch(e){if(w)w.close();_bnOuvrirV32(key);}};
+// ---------- 7) FENÊTRE D'INFOS sur chaque case (petite icône ⤢ en bas à droite) ----------
+document.addEventListener('click',function(e){var td=e.target.closest&&e.target.closest('#grid td[id^="c_"]');if(!td||!td.textContent.trim())return;var r=td.getBoundingClientRect();if(e.clientX>r.right-20&&e.clientY>r.bottom-18){e.preventDefault();e.stopPropagation();caseInfo(td.id.slice(2));}},true);
+async function caseInfo(k){
+  var day=store[cur];var o=day&&day.cells[k];if(!o)return;var p=k.split('_');var col=+p[1];var heure=TIMES[+p[0]]||'';var chNom=clClean(day.ch[col]&&day.ch[col].t);
+  await bnCacheJour(cur);var L=(bnCache[cur]&&bnCache[cur].l)||[];var clients=o.tournee?(o.tournee.clients||[]):[(o.bon&&o.bon.client)||o.t];
+  var ov=v32Ov();var h='<div class="cam-b v32b"><div class="cam-h"><span>📋</span><b>'+esc(o.t)+'</b><button onclick="v32Fermer()">✕</button></div>';
+  h+='<div class="v32l">🕐 <b>'+esc(heure)+'</b> · 👤 <b class="v32lien" onclick="chFiche(\''+esc(chNom).replace(/'/g,"\\'")+'\')">'+esc(chNom||'—')+'</b> · 🚚 '+esc(clClean(day.cam[col]&&day.cam[col].t)||'—')+'</div>';
+  clients.slice(0,14).forEach(function(cn){var f=clFiche(cn)||{};var b=L.find(function(x){return bnNorm(x.client)===bnNorm(cn);})||L.find(function(x){return o.bon&&x.date===o.bon.cid;});var cs=csgPour(cur,cn);
+    h+='<div class="v32cl'+(/SECURITE CIVILE/.test(norm(cn))?' sc':'')+'"><b>'+esc(cn)+'</b>'+(f.adresse||(b&&b.adresse)?'<div>📍 '+esc(f.adresse||b.adresse)+'</div>':'')+(f.tel||(b&&b.tel)?'<div>📞 '+esc(f.tel||b.tel)+'</div>':'')+(f.email?'<div>✉️ '+esc(f.email)+'</div>':'')+
+      (cs.length?'<div style="color:#b91c1c;font-weight:900">⚠️ '+cs.map(function(c){return esc(c.texte);}).join(' · ')+'</div>':'')+(b?'<button onclick="bnOuvrir(\''+b.date+'\')">📄 Voir le bon</button>':'')+'</div>';});
+  ov.innerHTML=h+'</div>';ov.style.display='flex';}
+CL_VERSION='v32 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
