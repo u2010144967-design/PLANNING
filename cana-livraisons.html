@@ -931,6 +931,16 @@ body.px2 .px-brand .pt-ic{width:32px;height:32px;font-size:16px}body.px2 .px-t{f
 .csgF{display:flex;gap:8px;flex-wrap:wrap;padding:8px 18px}.csgF input{padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;min-width:150px;flex:1}
 .v28nv{margin-left:4px;font-size:11.5px!important;padding:4px 7px!important;background:#fff7ed!important;color:#c2410c!important;border:1px solid #fdba74!important;border-radius:8px!important}
 .bndos .pq{background:#8d6e63!important;color:#fff!important}
+#qlBox{position:relative;flex:0 1 300px;min-width:200px}
+#qlIn{width:100%;box-sizing:border-box;background:#ecfdf5;border:2px solid #86efac;border-radius:14px;padding:9px 12px;font-size:13.5px;font-weight:700;color:#065f46}
+#qlIn::placeholder{color:#059669;font-weight:700}#qlIn:focus{outline:none;border-color:#16a34a;background:#fff;box-shadow:0 0 0 4px rgba(22,163,74,.15)}
+#qlR{display:none;position:absolute;top:calc(100% + 6px);left:0;width:min(560px,92vw);background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 20px 45px rgba(15,23,42,.2);z-index:420;padding:6px;max-height:70vh;overflow:auto;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+.ql-t{font-size:11.5px;font-weight:900;color:#16a34a;text-transform:uppercase;padding:6px 10px}.ql-v{padding:12px;color:#64748b}
+.ql-l{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border-bottom:1px solid #f1f5f9}.ql-l:hover{background:#f8fafc}
+.ql-qui{min-width:118px;display:flex;flex-direction:column}.ql-qui b{font-size:15px;color:#0f172a}.ql-qui small{font-size:11px;color:#64748b}
+.ql-c{flex:1;min-width:0;display:flex;flex-direction:column}.ql-c b{font-size:13.5px;color:#0f172a}.ql-c small{font-size:11.5px;color:#64748b}.ql-c em{font-style:normal;font-size:12px;font-weight:800;color:#dc2626}
+.ql-st{font-size:11.5px;font-weight:900;text-align:center;border-radius:8px;padding:4px 8px;white-space:nowrap}.ql-st.ok{background:#dcfce7;color:#166534}.ql-st.av{background:#fef3c7;color:#92400e}
+@media (max-width:1450px){#qlBox{flex-basis:220px;min-width:170px}.pxGS{max-width:160px!important}}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -3750,6 +3760,41 @@ if(typeof CLI_CAT!=='undefined'&&!CLI_CAT.AIDE)CLI_CAT.AIDE=['🤝','Aide alimen
 (function(){var t=setInterval(function(){if(typeof PX3==='undefined'||!PX3.pret)return;clearInterval(t);var nav=document.querySelector('#pxSide .sd-nav');if(!nav)return;
   [['📌','Consignes & infos ajoutées',csgPanel,'param'],['🧰','Tâches des chauffeurs',tachesPanel,'param']].forEach(function(x){var b=document.createElement('button');b.className='sd-it';b.title=x[1];b.innerHTML='<span>'+x[0]+'</span>'+x[1];b.onclick=function(){px3Cible('outils');x[2]();px3Defiler('outils');};var ref=nav.querySelector('.sd-it:nth-child(6)');nav.insertBefore(b,ref);});},300);})();
 CL_VERSION='v28 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 23 : « QUI LIVRE AUJOURD'HUI ? » — une petite recherche à part, toujours visible =================
+// La grande recherche reste pour les archives (toutes les dates). Celle-ci ne regarde QUE le planning d'aujourd'hui.
+px2Recherche=_px2RechV28;   // on retire l'ajout « qui livre » de la grande recherche (il a sa propre case maintenant)
+var QL={t:null};
+function qlConstruire(){
+  if(document.getElementById('qlBox'))return;var top=document.querySelector('.px-top');var gs=top&&top.querySelector('.pxGS');if(!top||!gs)return;
+  var b=document.createElement('div');b.id='qlBox';b.innerHTML='<input id="qlIn" placeholder="🚚 Qui livre aujourd’hui ? (client, tâche…)" autocomplete="off"><div id="qlR"></div>';
+  gs.parentNode.insertBefore(b,gs);
+  var i=b.querySelector('#qlIn');i.addEventListener('input',function(){clearTimeout(QL.t);QL.t=setTimeout(qlChercher,150);});i.addEventListener('focus',qlChercher);
+  document.addEventListener('click',function(e){if(!e.target.closest('#qlBox')){var r=document.getElementById('qlR');if(r)r.style.display='none';}});
+}
+async function qlChercher(){
+  var i=document.getElementById('qlIn'),r=document.getElementById('qlR');if(!i||!r)return;var q=bnNorm(i.value);
+  if(q.length<2){r.style.display='none';return;}
+  var auj=fmtD(new Date());r.style.display='block';
+  try{ensure(auj);await bnCacheJour(auj);if(clSuivi.date!==auj||Date.now()-(clSuivi.t||0)>60000)await clChargerSuivi(auj,true);}catch(e){}
+  var res=[];var memo=cur;cur=auj;
+  try{clDay(auj).forEach(function(col){var qui=(col.label||('Colonne '+(col.c+1))).replace(/^M\/H · /,'M/H · ');var id=col.ids&&col.ids[0];
+    col.items.forEach(function(it){
+      var st=function(nom,h){if(id==null)return null;var E=clEtat(id,{client:nom,texte:nom,heure:h});return E.liv;};
+      if(it.tournee){var nomT=it.texte||('TOURNÉE '+it.tournee.couleur);var dansNom=bnNorm(nomT).indexOf(q)>=0;
+        (it.tournee.clients||[]).forEach(function(c){if(dansNom||bnNorm(c.client).indexOf(q)>=0)res.push({nom:c.client,dans:nomT,qui:qui,cam:col.camion,h:it.heure,liv:st(c.client,it.heure),cs:c.consigne,ad:c.adresse});});}
+      else{var nom=it.type==='client'?it.client:it.texte;if(bnNorm(nom+' '+(it.texte||'')).indexOf(q)>=0)res.push({nom:nom,dans:it.type==='client'?'':'tâche',qui:qui,cam:col.camion,h:it.heure,liv:it.type==='client'?st(nom,it.heure):null,cs:it.consigne,ad:it.adresse});}
+    });});}catch(e){}
+  cur=memo;
+  var titre='<div class="ql-t">Aujourd’hui · '+esc(new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))+'</div>';
+  if(!res.length){r.innerHTML=titre+'<div class="ql-v">Rien trouvé aujourd’hui pour « '+esc(i.value)+' ».</div>';return;}
+  r.innerHTML=titre+res.slice(0,12).map(function(x){return '<div class="ql-l">'+
+    '<div class="ql-qui"><b>'+esc(x.qui)+'</b>'+(x.cam?'<small>🚚 '+esc(x.cam)+'</small>':'')+'</div>'+
+    '<div class="ql-c"><b>'+esc(x.nom)+'</b><small>'+(x.dans?esc(x.dans)+' · ':'')+'prévu à '+esc(x.h)+(x.ad?' · '+esc(x.ad):'')+'</small>'+(x.cs?'<em>⚠️ '+esc(x.cs)+'</em>':'')+'</div>'+
+    '<div class="ql-st '+(x.liv?'ok':'av')+'">'+(x.liv?'✅ Livré'+(x.liv.heure?'<br>à '+esc(x.liv.heure):''):(x.dans==='tâche'?'📋 Prévu':'⏳ Pas encore<br>livré'))+'</div></div>';}).join('');
+}
+setTimeout(qlConstruire,1800);setTimeout(qlConstruire,3500);
+CL_VERSION='v29 · 20/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
