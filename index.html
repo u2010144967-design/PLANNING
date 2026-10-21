@@ -2840,10 +2840,12 @@ function MaterielPad({ch,client,bonCle,onFini}){
   const[items,setItems]=useState({});const[solde,setSolde]=useState(null);const[note,setNote]=useState('');const[envoi,setEnvoi]=useState(false);
   const[photo,setPhoto]=useState(null);const[ia,setIa]=useState(null);const[iaEnCours,setIaEnCours]=useState(false);const[sens,setSens]=useState(null);const[calc,setCalc]=useState(null);
   const fileRef=useRef();
-  useEffect(()=>{matHistorique(client).then(h=>{const S=matSoldes(h);setSolde(S);setSens(x=>x||(Object.values(S).some(v=>v>0)?'repris':'laisse'));}).catch(()=>{setSolde({});setSens(x=>x||'laisse');});},[client]);
+  useEffect(()=>{matHistorique(client).then(h=>{const S=matSoldes(h);setSolde(S);setSens(x=>x||(Object.values(S).some(v=>v>0)?'repris':'laisse'));
+    const der=(h||[]).slice().reverse().find(x=>x&&x.items&&Object.values(x.items).some(v=>+v.laisse>0));const pre={};if(der)Object.entries(der.items).forEach(([k,v])=>{if(+v.laisse>0)pre[k]={laisse:+v.laisse,repris:0};});Object.entries(S).forEach(([k,v])=>{if(v>0){pre[k]=pre[k]||{laisse:0,repris:0};pre[k].repris=v;}});if(Object.keys(pre).length){setItems(pre);setNote(n=>n);}
+  }).catch(()=>{setSolde({});setSens(x=>x||'laisse');});},[client]);
   const fixer=(k,f,v)=>setItems(it=>{const o=Object.assign({laisse:0,repris:0},it[k]||{});o[f]=Math.max(0,+v||0);return Object.assign({},it,{[k]:o});});
   const ch2=(k,f,d)=>setItems(it=>{const v=Object.assign({laisse:0,repris:0},it[k]||{});v[f]=Math.max(0,(+v[f]||0)+d);return Object.assign({},it,{[k]:v});});
-  async function prendrePhoto(e){const f=e.target.files&&e.target.files[0];if(!f)return;try{const img=await bnPhotoCompresse(f);setPhoto(img);setIa(null);compter(img);}catch(x){showToast('Photo illisible','var(--red)');}e.target.value='';}
+  async function prendrePhoto(e){const f=e.target.files&&e.target.files[0];if(!f)return;try{const img=await bnPhotoCompresse(f);setPhoto(img);setIa(null);showToast('📷 Photo ajoutée (preuve)','var(--green)');}catch(x){showToast('Photo illisible','var(--red)');}e.target.value='';}
   async function compter(img){
     if(!navigator.onLine){showToast('📴 Pas de réseau : compte à la main, la photo partira quand même','#ea580c');return;}
     setIaEnCours(true);
@@ -2857,7 +2859,7 @@ function MaterielPad({ch,client,bonCle,onFini}){
   function toutRepris(){if(!solde)return;Object.entries(solde).forEach(([k,v])=>{if(v>0)fixer(k,'repris',v);});setSens('repris');showToast('↩️ Tout ce qui était chez le client est noté « repris »','var(--green)');}
   async function valider(){
     const it={};Object.entries(items).forEach(([k,v])=>{if(v.laisse||v.repris)it[k]=v;});
-    if(!Object.keys(it).length&&!note&&!photo){showToast('Rien à enregistrer','var(--red)');return;}
+    if(!Object.keys(it).length&&!note&&!photo){onFini&&onFini({aucun:true});showToast('✅ Aucun bac noté','var(--green)');return;}
     setEnvoi(true);const now=new Date();const hh=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const row={date:'MAT_'+matSlug(client)+'_'+Date.now()+'_'+ch.id,donnees:{type:'materiel',client,date:jourLocal(),heure:hh,chauffeur:ch.display,chauffeurId:ch.id,vehicule:ch.truck||'',items:it,note,bon:bonCle||'',photo:photo||null,ia:ia&&!ia.erreur?{total:ia.total,gn1:ia.gn1,gn12:ia.gn12,confiance:ia.confiance}:null},updated_at:now.toISOString()};
     const ev=photo?{date:'PHOTO_'+Date.now()+'_'+ch.id,donnees:{type:'photo',_isEvent:true,categorie:'materiel',chauffeurId:ch.id,chauffeur:ch.display,vehicule:ch.truck,client,date:jourLocal(),heure:hh,photo,dataUrl:photo,nb_bacs:ia&&ia.total,details_bacs:Object.entries(it).map(([k,v])=>k.replace('GN12','GN 1/2').replace('GN1','GN 1/1')+' : '+(v.laisse||0)+' laissé(s), '+(v.repris||0)+' repris').join(' · '),ts:now.toISOString()},updated_at:now.toISOString()}:null;
@@ -2945,7 +2947,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
   async function ouvrir(b){
     fermer();setBon(b);
     try{const m=await bnDonnees(b.date);const cs=await consignesPour(m.jour||b.jour||jourLocal(),m.client||b.client);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe,consignes:cs}));
-      let oc=await bnPdfA(m);const sc=/SECURITE CIVILE/.test(bnNormA(m.client||b.client||''));const dep=!/^(FTBE|SERVICE)$/.test(String(m.type||b.type||'').toUpperCase());if(cs.length||sc||dep)oc=await bnAnnoter(oc,(dep?['TEMPERATURE AU DEPART :  CHAUD (69 C)   -   FROID (3 C)']:[]).concat(cs.length?['ATTENTION - INFO AJOUTEE :'].concat(cs.map(c=>c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':''))):[]),sc);setOctets(oc);
+      let oc=await bnPdfA(m);const sc=/SECURITE CIVILE/.test(bnNormA(m.client||b.client||''));const dep=!/^(FTBE|SERVICE)$/.test(String(m.type||b.type||'').toUpperCase());const an=cs.find(c=>c.annule);const cs2=cs.filter(c=>!c.annule);if(cs.length||sc||dep)oc=await bnAnnoter(oc,cs2.length?['ATTENTION - INFO AJOUTEE :'].concat(cs2.map(c=>c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':''))):[],sc,dep,an?(an.texte||'ANNULE'):'');setOctets(oc);
       setMail(m.email||((typeof ficheDe==='function'&&ficheDe(m.client))||{}).email||'');
       if(b.signe){try{const s=await bnDonnees(b.signe.date);setArchive({bytes:await bnPdfA(s),qui:s.signataire,quand:s.signeA,nbPhotos:+s.nbPhotos||0});}catch(e){}}
     }catch(e){showToast('Bon introuvable (internet ?)','var(--red)');setBon(null);}
@@ -3028,6 +3030,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
     return(<div className="screen">
       <Header title={'📄 '+bon.client} onBack={direct?onBack:fermer}/>
       <div className="scroll"><div style={{padding:12}}>
+        {(bon.svc==='oui'||String(bon.type||'').toUpperCase()==='SERVICE')&&<button onClick={()=>onNavigate('feuille',{bonCle:bon.date,client:bon.client,jour:bon.jour,adresse:bon.adresse,svcMep:bon.svcMep,svcDebut:bon.svcDebut,svcFin:bon.svcFin,svcPers:bon.svcPers})} style={{width:'100%',marginBottom:10,padding:14,borderRadius:14,border:'none',background:'#0f766e',color:'#fff',fontWeight:900,fontSize:16,fontFamily:'inherit'}}>🎩 Feuille de service (heures de l’équipe){bon.svcDebut?' · '+bon.svcDebut+' → '+(bon.svcFin||''):''}</button>}
         {bon.consignes&&bon.consignes.length>0&&<div style={{background:'#dc2626',border:'3px solid #fecaca',borderRadius:14,padding:14,marginBottom:10,color:'#fff',boxShadow:'0 0 0 4px rgba(220,38,38,.35)'}}><div style={{fontWeight:900,fontSize:20}}>⚠️ ATTENTION — INFO AJOUTÉE</div>{bon.consignes.map((c,i)=><div key={i} style={{fontSize:19,fontWeight:900,marginTop:6,lineHeight:1.3}}>• {c.texte}{c.adresseDe?' → livrer à '+c.adresseDe+(c.adresse?' ('+c.adresse+')':''):''}</div>)}</div>}
         {(bon.version>1||bon.ajout)&&<div style={{background:'#9a3412',borderRadius:10,padding:'7px 10px',marginBottom:8,color:'#fff',fontWeight:900,fontSize:13}}>{bon.version>1?'🔁 BON MODIFIÉ — nouvelle version'+(bon.modifieLe?' du '+bon.modifieLe:''):'➕ BON AJOUTÉ après la planification'}</div>}
         {(bon.adresse||bon.tel)&&<div style={{background:'#0f1e35',border:'1px solid var(--border)',borderRadius:12,padding:10,marginBottom:8}}>{bon.adresse&&<div style={{fontSize:13,color:'#fff',fontWeight:700}}>📍 {bon.adresse}</div>}{bon.tel&&<div style={{fontSize:12.5,color:'#cbd5e1'}}>📞 {bon.tel}</div>}{bon.codeAcces&&<div style={{fontSize:12.5,color:'#fbbf24'}}>🔑 {bon.codeAcces}</div>}{((bon.consignes||[]).find(c=>c.adresse))&&<div style={{fontSize:13,fontWeight:900,color:'#fca5a5',marginTop:4}}>➡️ Livrer à : {(bon.consignes||[]).find(c=>c.adresse).adresseDe} — {(bon.consignes||[]).find(c=>c.adresse).adresse}</div>}<ProGps adresse={((bon.consignes||[]).find(c=>c.adresse)||{}).adresse||bon.adresse} tel={bon.tel}/></div>}
@@ -3053,7 +3056,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
         </div>}
         {!signer&&octets&&<div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:12}}>
           <div style={{display:'flex',gap:8}}>
-            <button className="btn-p" style={{flex:1,opacity:(envoi||temp==='')?.45:1}} disabled={envoi} onClick={()=>{if(temp===''){showToast('🌡️ Choisis d’abord la température','var(--red)');return;}setSigner(true);}}>{archive&&archive.qui?'✍️ Refaire':'✍️ Faire signer'}</button>
+            <button className="btn-p" style={{flex:1,opacity:(envoi||temp==='')?.45:1}} disabled={envoi} onClick={()=>{if(temp===''){showToast('🌡️ Choisis d’abord la température','var(--red)');return;}if(!mat&&!/^(FTBE|SERVICE)$/.test(String(bon.type||'').toUpperCase())){setVoirMat(true);showToast('📦 Vérifie d’abord les bacs (déjà pré-remplis) puis valide','var(--red)');return;}setSigner(true);}}>{archive&&archive.qui?'✍️ Refaire':'✍️ Faire signer'}</button>
             <button className="btn-p" style={{flex:1,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',opacity:envoi?.5:1}} disabled={envoi} onClick={()=>photoRef.current&&photoRef.current.click()}>📷 Photo → responsable{photos.length?' ('+photos.length+')':''}</button>
             <input ref={photoRef} type="file" accept="image/*" capture="environment" multiple style={{display:'none'}} onChange={ajouterPhoto}/>
           </div>
@@ -3099,8 +3102,14 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
 /* ═══════════════════ NOUVEAU LOOK (maquette) : accueil, tournée liste/carte, menu, alertes, barre d'onglets ═══════════════════ */
 const PRO={nav:'#0b1b33',bleu:'#2563eb',vert:'#16a34a',fond:'#f1f5f9',txt:'#0f172a',gris:'#64748b',bord:'#e2e8f0'};
 async function consignesPour(jour,client){try{const l=await bnLireA('date=like.CONSIGNE_'+jour+'_*');const k=bnNormA(client);return (l||[]).filter(c=>!c.supprime&&c.texte&&c.client&&(bnNormA(c.client)===k||(bnNormA(c.client).length>=4&&(k.indexOf(bnNormA(c.client))>=0||bnNormA(c.client).indexOf(k)>=0))));}catch(e){return [];}}
-async function bnAnnoter(octets,lignes,stabilo){
-  if((!lignes||!lignes.length)&&!stabilo)return octets;
+async function bnAnnoter(octets,lignes,stabilo,depart,annule){
+  if((!lignes||!lignes.length)&&!stabilo&&!depart&&!annule)return octets;
+  if(depart){try{await bnLibsA();const p=await pdfjsLib.getDocument({data:octets.slice(0)}).promise;const p1=await p.getPage(1);const tc=await p1.getTextContent();
+    const it=tc.items;const dep=it.find(x=>/D[ÉE]PART/i.test(x.str));const chd=it.find(x=>/^\s*CHAUD\s*$/i.test(x.str));const frd=it.find(x=>/^\s*FROID\s*$/i.test(x.str));
+    if(dep&&chd&&frd){const doc0=await PDFLib.PDFDocument.load(octets);const pg0=doc0.getPages()[0];const f0=await doc0.embedFont(PDFLib.StandardFonts.HelveticaBold);const bleu=PDFLib.rgb(.05,.2,.6);const x=dep.transform[4]+2;
+      pg0.drawText('69 C',{x:x,y:chd.transform[5],size:11,font:f0,color:bleu});pg0.drawText('3 C',{x:x,y:frd.transform[5],size:11,font:f0,color:bleu});octets=await doc0.save();depart=false;}}catch(e){}
+    if(depart)lignes=['TEMPERATURE AU DEPART :  CHAUD (69 C)   -   FROID (3 C)'].concat(lignes||[]);}
+  if((!lignes||!lignes.length)&&!stabilo&&!annule)return octets;
   try{await bnLibsA();const doc=await PDFLib.PDFDocument.load(octets);const pg=doc.getPages()[0];const {width,height}=pg.getSize();
     if(stabilo&&window.pdfjsLib){try{const p=await pdfjsLib.getDocument({data:octets.slice(0)}).promise;const p1=await p.getPage(1);const tc=await p1.getTextContent();
       tc.items.forEach(it=>{if(/S[ÉE]CURIT[ÉE]\s+CIVILE/i.test(it.str)){const x=it.transform[4],y=it.transform[5],w=it.width||200,h=Math.abs(it.transform[3])||10;pg.drawRectangle({x:x-2,y:y-3,width:w+4,height:h+5,color:PDFLib.rgb(.45,.95,.35),opacity:.45});}});}catch(e){}}
@@ -3109,6 +3118,9 @@ async function bnAnnoter(octets,lignes,stabilo){
       pg.drawRectangle({x:6,y:height+4,width:width-12,height:H-8,color:PDFLib.rgb(1,.92,.92),borderColor:rouge,borderWidth:3});
       const nett=t=>String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');
       lignes.forEach((l,i)=>pg.drawText(nett(l).slice(0,80),{x:18,y:height+H-30-i*22,size:i?16:17,font:f,color:rouge}));}
+    if(annule){const fa=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);const rr=PDFLib.rgb(.86,.05,.05);const t=String(annule).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ').toUpperCase().slice(0,30);
+      doc.getPages().forEach(pp=>{const z=pp.getSize();pp.drawLine({start:{x:20,y:20},end:{x:z.width-20,y:z.height-20},thickness:7,color:rr,opacity:.85});const ang=Math.atan2(z.height,z.width);const sz=Math.min(64,(z.width*0.9)/(t.length*0.62));const w=fa.widthOfTextAtSize(t,sz);
+        pp.drawText(t,{x:z.width/2-Math.cos(ang)*w/2+Math.sin(ang)*sz/3,y:z.height/2-Math.sin(ang)*w/2-Math.cos(ang)*sz/3,size:sz,font:fa,color:rr,rotate:PDFLib.degrees(ang*180/Math.PI),opacity:.9});});}
     return await doc.save();}catch(e){return octets;}}
 function proSignes(){return window.__signes||{cles:{},clients:{}};}
 function proNoterSignes(liste){const S=window.__signes||{cles:{},clients:{}};(liste||[]).forEach(b=>{if(b&&b.signe&&(b.signe.signataire||b.signe.signe)){S.cles[b.date]=1;S.clients[bnNormA(b.client)]=1;}});window.__signes=S;}
@@ -3294,6 +3306,7 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             {m.adresseNote&&<div style={{fontSize:12.5,fontWeight:900,color:'#b91c1c'}}>📍 {m.adresseNote}</div>}
             {m.consigne&&<div style={{marginTop:6,background:'#dc2626',borderRadius:10,padding:'10px 12px',fontSize:17,fontWeight:900,color:'#fff',lineHeight:1.3}}>⚠️ {m.consigne}</div>}
             {m.modifie&&<div style={{fontSize:12,fontWeight:900,color:'#c2410c'}}>🔁 {m.modifie}</div>}
+            {m.feuille&&<button onClick={e=>{e.stopPropagation();onNavigate('feuille',{client:m.client||m.task,jour:ds,bonCle:m.bonCle||'',adresse:m.adresse||''});}} style={{marginTop:8,width:'100%',padding:'11px',borderRadius:12,border:'none',background:'#0f766e',color:'#fff',fontWeight:900,fontSize:14.5,fontFamily:'inherit'}}>🎩 Contrat & feuille d’heures</button>}
             {m.adresse&&<div style={{fontSize:12.5,color:PRO.gris,marginTop:2}}>📍 {m.adresse}</div>}{m.codeAcces&&<div style={{fontSize:12,color:'#b45309'}}>🔑 {m.codeAcces}</div>}
             {m.avec&&<div style={{fontSize:12,color:PRO.gris}}>👥 avec {m.avec}</div>}
             {m.client&&<ProGps adresse={m.adresse} tel={m.tel} tel2={m.tel2} clair/>}
@@ -3362,7 +3375,7 @@ function AlertesScreen({ch,onNavigate,onBack}){
   </div>;
 }
 function MenuPro({ch,onNavigate,onLogout}){
-  const I=[['📦','Bacs gastro (laissés / repris)','materiel'],['💬','Messages','messages'],['🗺️','Carte de ma tournée','carte'],['✍️','Mes bons signés','signes_tel'],['⚠️','Signaler un problème','incident'],['📅','Mon planning du mois','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['🏖️','Congés','conges'],['🔄','Actualiser','refresh'],['📍','Position du camion (oui / non)','gps'],['📲','Installer l’application','installer'],['❓','Aide','help']];
+  const I=[['🎩','Feuille de service (maître d’hôtel)','feuille'],['📦','Bacs gastro (laissés / repris)','materiel'],['💬','Messages','messages'],['🗺️','Carte de ma tournée','carte'],['✍️','Mes bons signés','signes_tel'],['⚠️','Signaler un problème','incident'],['📅','Mon planning du mois','calendar'],['🕐','Mes horaires','horaires'],['🛒','Hors carte','horscarte'],['🏖️','Congés','conges'],['🔄','Actualiser','refresh'],['📍','Position du camion (oui / non)','gps'],['📲','Installer l’application','installer'],['❓','Aide','help']];
   return <div className="screen" style={{background:PRO.fond}}>
     <ProEntete ch={ch} titre="Menu"/>
     <div className="scroll" style={{padding:'12px 14px 90px'}}>
@@ -3492,6 +3505,65 @@ function LoginSimple({seulId,onLogin}){
     {!perso&&<button onClick={()=>{window.__modeResponsable=true;setListe(true);}} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12.5,marginTop:20,textDecoration:'underline'}}>Responsable : voir la liste des chauffeurs</button>}
     {perso&&<button onClick={()=>{try{localStorage.removeItem('cana_moi_id');}catch(e){}location.href=location.pathname;}} style={{background:'none',border:'none',color:'#94a3b8',fontSize:12.5,marginTop:20,textDecoration:'underline'}}>Ce n’est pas moi</button>}
   </div>;
+}
+
+/* ═══ 🎩 FEUILLE DE SERVICE : le maître d'hôtel note les heures réelles de toute son équipe, chacun signe, le client signe ═══ */
+function FeuilleService({ch,init,onBack,onNavigate}){
+  const I=init||{};const h0=I.svcMep||I.svcDebut||'';const h1=I.svcFin||'';
+  const nb0=Math.max(1,((I.svcPers||'').match(/(\d+)\s+(Ma[iî]tre|Serveu|Barman|Cuisin)/gi)||[]).reduce((a,x)=>a+(+x.match(/\d+/)[0]),0));
+  const vide=(p)=>({nom:'',poste:p||'Serveur',debut:h0,fin:h1,pause:0,tel:'',email:'',sig:null,contrat:true});
+  const[L,setL]=useState([{nom:ch.display,poste:'Maître d’hôtel',debut:h0,fin:h1,pause:0,tel:'',email:'',sig:null,contrat:true}].concat(Array.from({length:nb0-1},()=>vide())));
+  const combien=n=>setL(l=>n>l.length?l.concat(Array.from({length:n-l.length},()=>vide())):l.slice(0,n));
+  const[contrat,setContrat]=useState(null);
+  async function lireContrat(){setContrat('…');try{const m=await bnDonnees('CONTRAT_MODELE');setContrat(await bnPdfA(m));}catch(e){setContrat('x');}}
+  const[signe,setSigne]=useState(null);const[client,setClient]=useState(I.client||'');const[lieu,setLieu]=useState(I.adresse||'');const[rq,setRq]=useState('');const[sigC,setSigC]=useState(null);const[envoi,setEnvoi]=useState(false);
+  const maj=(i,k,v)=>setL(l=>l.map((x,j)=>j===i?Object.assign({},x,{[k]:v}):x));
+  const heures=x=>{if(!x.debut||!x.fin)return 0;const a=x.debut.split(':'),b=x.fin.split(':');let m=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]);if(m<0)m+=1440;return Math.max(0,m-(+x.pause||0))/60;};
+  const fmtH=v=>Math.floor(v)+' h '+String(Math.round((v%1)*60)).padStart(2,'0');
+  async function envoyer(){
+    if(!client.trim())return showToast('Écris le client','var(--red)');
+    const manque=L.filter(x=>!x.nom.trim()||!x.debut||!x.fin||!x.sig);if(manque.length)return showToast('Chaque personne doit avoir ses heures ET sa signature','var(--red)');
+    if(!sigC)return showToast('Fais signer le client à la fin','var(--red)');
+    setEnvoi(true);const now=new Date();const row={date:'FEUILLE_'+(I.jour||jourLocal())+'_'+Date.now().toString(36)+'_'+ch.id,donnees:{type:'feuille',jour:I.jour||jourLocal(),client,lieu,bonCle:I.bonCle||'',mh:ch.display,mhId:ch.id,
+      prevu:{mep:I.svcMep||'',debut:I.svcDebut||'',fin:I.svcFin||'',personnel:I.svcPers||''},equipe:L.map(x=>({nom:x.nom,poste:x.poste,debut:x.debut,fin:x.fin,pause:+x.pause||0,heures:Math.round(heures(x)*100)/100,tel:x.tel,email:x.email,contrat:!!x.contrat,sig:x.sig})),
+      remarques:rq,signatureClient:sigC.img,signataireClient:sigC.nom,statut:'a_valider',envoyeLe:now.toISOString()},updated_at:now.toISOString()};
+    try{await bnPostA(row);showToast('✅ Feuille de service envoyée au bureau','var(--green)');onBack();}
+    catch(e){await boiteAjouter({type:'post',row});showToast('📴 Pas de réseau : la feuille partira toute seule','#ea580c');onBack();}setEnvoi(false);}
+  if(contrat)return <div className="screen" style={{background:PRO.fond}}><Header title="📄 Le contrat" onBack={()=>setContrat(null)}/><div className="scroll" style={{padding:10}}>{contrat==='…'?<div style={{textAlign:'center',padding:30}}>⏳ Ouverture…</div>:contrat==='x'?<div style={{padding:20,textAlign:'center'}}>Le contrat n’est pas encore enregistré par le bureau.</div>:<BnPdfView bytes={contrat}/>}<button onClick={()=>setContrat(null)} style={{width:'100%',marginTop:10,padding:14,borderRadius:14,border:'none',background:'#2563eb',color:'#fff',fontWeight:900,fontSize:16}}>← Revenir à la feuille</button></div></div>;
+  if(signe!==null)return <div className="screen" style={{background:PRO.fond}}><Header title={signe==='client'?'✍️ Signature du client':'✍️ '+(L[signe]||{}).nom} onBack={()=>setSigne(null)}/><div className="scroll" style={{padding:14}}>
+    {signe!=='client'&&<div style={{background:'#fff',borderRadius:12,padding:12,marginBottom:10,fontSize:14}}>Je confirme mes heures : <b>{L[signe].debut} → {L[signe].fin}</b>{+L[signe].pause?' (pause '+L[signe].pause+' min)':''} = <b>{fmtH(heures(L[signe]))}</b>{L[signe].contrat?<><br/>et j’accepte mon <b>contrat extra</b> pour cette prestation.</>:null}</div>}
+    <BnSignPad onAnnule={()=>setSigne(null)} onValide={(img,nom,prenom)=>{if(signe==='client')setSigC({img,nom:(prenom+' '+nom).trim()});else maj(signe,'sig',img);setSigne(null);}}/></div></div>;
+  const tot=L.reduce((a,x)=>a+heures(x),0);
+  const inp={width:'100%',padding:'10px',borderRadius:10,border:'1px solid #cbd5e1',fontSize:15,fontFamily:'inherit',boxSizing:'border-box'};
+  return <div className="screen" style={{background:PRO.fond}}><Header title="🎩 Feuille de service" onBack={onBack}/>
+    <div className="scroll" style={{padding:'12px 14px 110px'}}>
+      <div style={{background:'#fff',borderRadius:16,padding:12,border:'1px solid '+PRO.bord}}>
+        <div style={{fontSize:12.5,fontWeight:900,color:PRO.gris}}>CLIENT / ÉVÉNEMENT</div><input style={inp} value={client} onChange={e=>setClient(e.target.value)} placeholder="Client"/>
+        <div style={{fontSize:12.5,fontWeight:900,color:PRO.gris,marginTop:8}}>LIEU</div><input style={inp} value={lieu} onChange={e=>setLieu(e.target.value)} placeholder="Lieu de la prestation"/>
+        {(I.svcDebut||I.svcPers)&&<div style={{marginTop:8,fontSize:13,color:'#0f766e',fontWeight:800}}>Prévu sur le bon : {I.svcMep?'mise en place '+I.svcMep+' · ':''}service {I.svcDebut||'?'} → {I.svcFin||'?'}{I.svcPers?' · '+I.svcPers:''}</div>}
+      </div>
+      <div style={{background:'#fff',borderRadius:16,padding:12,marginTop:12,border:'1px solid '+PRO.bord}}>
+        <div style={{fontWeight:900,fontSize:16,color:PRO.txt}}>👥 Vous êtes combien sur place ?</div>
+        <div style={{display:'flex',gap:6,marginTop:8}}>{[1,2,3,4,5,6].map(n=><button key={n} onClick={()=>combien(n)} style={{flex:1,padding:'12px 0',borderRadius:12,border:'none',fontWeight:900,fontSize:18,background:L.length===n?'#0f766e':'#f1f5f9',color:L.length===n?'#fff':PRO.txt}}>{n}</button>)}</div>
+        <button onClick={lireContrat} style={{width:'100%',marginTop:10,padding:12,borderRadius:12,border:'2px solid #0f766e',background:'#ecfdf5',color:'#0f766e',fontWeight:900,fontSize:15}}>📄 Lire le contrat avant de signer</button>
+      </div>
+      <div style={{fontWeight:900,fontSize:16,margin:'16px 2px 6px',color:PRO.txt}}>👥 L’équipe sur place — chacun met ses heures et signe</div>
+      {L.map((x,i)=><div key={i} style={{background:'#fff',borderRadius:16,padding:12,marginBottom:10,border:'2px solid '+(x.sig?'#86efac':PRO.bord)}}>
+        <div style={{display:'flex',gap:8}}><input style={Object.assign({},inp,{flex:2})} value={x.nom} onChange={e=>maj(i,'nom',e.target.value)} placeholder="Prénom NOM"/>
+          <select style={Object.assign({},inp,{flex:1})} value={x.poste} onChange={e=>maj(i,'poste',e.target.value)}>{['Maître d’hôtel','Serveur','Serveuse','Barman','Cuisinier','Plongeur','Autre'].map(p=><option key={p}>{p}</option>)}</select></div>
+        {i>0&&<div style={{display:'flex',gap:8,marginTop:6}}><input style={inp} value={x.tel} onChange={e=>maj(i,'tel',e.target.value)} placeholder="Téléphone" inputMode="tel"/><input style={inp} value={x.email} onChange={e=>maj(i,'email',e.target.value)} placeholder="Email (pour son contrat)" inputMode="email"/></div>}
+        <div style={{display:'flex',gap:8,marginTop:6,alignItems:'center'}}><span style={{fontSize:13,fontWeight:800}}>Début</span><input type="time" style={inp} value={x.debut} onChange={e=>maj(i,'debut',e.target.value)}/><span style={{fontSize:13,fontWeight:800}}>Fin</span><input type="time" style={inp} value={x.fin} onChange={e=>maj(i,'fin',e.target.value)}/></div>
+        <div style={{display:'flex',gap:8,marginTop:6,alignItems:'center'}}><span style={{fontSize:13,fontWeight:800,whiteSpace:'nowrap'}}>Pause (min)</span><input type="number" style={inp} value={x.pause} onChange={e=>maj(i,'pause',e.target.value)}/><b style={{whiteSpace:'nowrap',fontSize:15}}>= {fmtH(heures(x))}</b></div>
+        <label style={{display:'flex',gap:8,alignItems:'center',marginTop:8,fontSize:13.5}}><input type="checkbox" checked={!!x.contrat} onChange={e=>maj(i,'contrat',e.target.checked)}/> Extra : contrat du jour à signer</label>
+        <div style={{display:'flex',gap:8,marginTop:8}}><button onClick={()=>{if(!x.debut||!x.fin)return showToast('Mets d’abord les heures','var(--red)');setSigne(i);}} style={{flex:1,padding:12,borderRadius:12,border:'none',fontWeight:900,fontSize:15,background:x.sig?'#16a34a':'#2563eb',color:'#fff',fontFamily:'inherit'}}>{x.sig?'✅ Signé':'✍️ Faire signer '+(x.nom.split(' ')[0]||'')}</button>
+          {i>0&&<button onClick={()=>setL(l=>l.filter((_,j)=>j!==i))} style={{padding:'12px 14px',borderRadius:12,border:'1px solid #fecaca',background:'#fef2f2',color:'#b91c1c',fontWeight:900}}>🗑</button>}</div>
+      </div>)}
+      <button onClick={()=>setL(l=>l.concat([{nom:'',poste:'Serveur',debut:L[0].debut,fin:L[0].fin,pause:0,tel:'',email:'',sig:null,contrat:true}]))} style={{width:'100%',padding:14,borderRadius:14,border:'2px dashed #2563eb',background:'#eff6ff',color:'#1d4ed8',fontWeight:900,fontSize:15.5,fontFamily:'inherit'}}>➕ Ajouter un serveur / une personne</button>
+      <div style={{background:'#fff',borderRadius:16,padding:12,marginTop:14,border:'1px solid '+PRO.bord}}><div style={{fontWeight:900}}>⏱️ Total équipe : {fmtH(tot)}</div>
+        <textarea style={Object.assign({},inp,{marginTop:8,minHeight:60})} value={rq} onChange={e=>setRq(e.target.value)} placeholder="Remarques (dépassement demandé par le client, incident…)"/>
+        <button onClick={()=>setSigne('client')} style={{width:'100%',marginTop:8,padding:13,borderRadius:12,border:'none',fontWeight:900,fontSize:15,background:sigC?'#16a34a':'#7c3aed',color:'#fff',fontFamily:'inherit'}}>{sigC?'✅ Client signé : '+sigC.nom:'✍️ Signature du client (fin de prestation)'}</button></div>
+      <button disabled={envoi} onClick={envoyer} style={{width:'100%',marginTop:14,padding:16,borderRadius:16,border:'none',fontWeight:900,fontSize:17,background:'#0f766e',color:'#fff',fontFamily:'inherit',opacity:envoi?.6:1}}>{envoi?'⏳ Envoi…':'📤 Envoyer la feuille au bureau'}</button>
+    </div></div>;
 }
 
 function App(){
@@ -3669,6 +3741,7 @@ function App(){
   if(screen==='carte') return <TourneeScreen key="carte" ch={ch} planning={planning} onNavigate={nav} onBack={back} mode="carte"/>;
   if(screen==='autres') return <AutresMissionsScreen ch={ch} planning={planning} onNavigate={nav} onBack={back}/>;
   if(screen==='signes_tel') return <MesSignesScreen ch={ch} onBack={back} onNavigate={nav}/>;
+  if(screen==='feuille') return <FeuilleService ch={ch} init={screenData} onBack={back} onNavigate={nav}/>;
   if(screen==='horaires') return <MesHorairesPro ch={ch} onBack={back} onNavigate={nav}/>;
   if(screen==='alertes') return <AlertesScreen ch={ch} onNavigate={nav} onBack={back}/>;
   if(screen==='menu') return <MenuPro ch={ch} onNavigate={nav} onLogout={()=>{setCh(null);setScreen('home');setPlanning(null);}}/>;
