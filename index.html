@@ -113,6 +113,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe 
 #toast.show{opacity:1}
 @keyframes slideUpPad{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>body,button,input,select,textarea{font-family:'Inter',system-ui,-apple-system,Roboto,sans-serif!important;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}</style>
 </head>
 <body>
 <div id="root"></div>
@@ -2923,8 +2925,10 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
   const[signer,setSigner]=useState(false);const[envoi,setEnvoi]=useState(false);
   const[mail,setMail]=useState('');const photoRef=useRef();const[onglet,setOnglet]=useState('');const[tempF,setTempF]=useState('');const[tempC,setTempC]=useState('');const temp=(tempF!==''||tempC!=='')?'ok':'';const[remarque,setRemarque]=useState('');const[mat,setMat]=useState(null);const[voirMat,setVoirMat]=useState(false);const cles=(init&&init.bonCles&&init.bonCles.length)?init.bonCles:null;
   function mesCles(d){const K={};try{getMissions(planning,ch.id,d).forEach(m=>{if(m.bonCle)K[m.bonCle]=1;(m.bonCles||[]).forEach(x=>K[x]=1);if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>{if(c.bonCle)K[c.bonCle]=1;});});}catch(e){}return K;}
-  async function charger(d){setListe(null);setErr('');setAutres(null);try{let l=await bnBonsDuJour(d);if(d===jourLocal())proNoterSignes(l);if(!window.__modeResponsable&&planning){const K=mesCles(d);l=l.filter(b=>K[b.date]);}setListe(l);}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
-  useEffect(()=>{charger(jour);},[jour]);
+  async function charger(d){setListe(null);setErr('');setAutres(null);try{let l=await bnBonsDuJour(d);if(d===jourLocal())proNoterSignes(l);const K0=mesCles(d);const autres=Object.keys(K0).filter(k=>!/^BON_/.test(k));if(autres.length){try{const x=await bnLireA('date=in.('+autres.map(encodeURIComponent).join(',')+')');l=l.concat(x.map(b=>Object.assign({type:/^CMDLC_/.test(b.date)?'FTBE':'FTBE'},b)));}catch(e){}}if(planning&&!window.__modeResponsable){const K=mesCles(d);l=l.filter(b=>K[b.date]);}else if(!planning){l=[];}setListe(l);}catch(e){setErr('Impossible de charger les bons (internet ?)');setListe([]);}}
+  const direct=!!(init&&init.fromMission&&init.bonCle);
+  useEffect(()=>{if(direct&&!dejaDirect.current){dejaDirect.current=true;ouvrir({date:init.bonCle,client:init.client||'',jour:init.date});return;}if(!direct)charger(jour);},[jour]);
+  const dejaDirect=useRef(false);
   const dejaOuvert=useRef(false);
   useEffect(()=>{if(dejaOuvert.current||!liste||!init||!init.bonCle)return;dejaOuvert.current=true;
     if(init.bonCle){const b=liste.find(x=>x.date===init.bonCle);ouvrir(b||{date:init.bonCle,client:init.client||'',type:'FTBE',jour:init.date});}},[liste]);
@@ -2941,7 +2945,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
   async function ouvrir(b){
     fermer();setBon(b);
     try{const m=await bnDonnees(b.date);const cs=await consignesPour(m.jour||b.jour||jourLocal(),m.client||b.client);setBon(Object.assign({},b,m,{date:b.date,signe:b.signe,consignes:cs}));
-      let oc=await bnPdfA(m);const sc=/SECURITE CIVILE/.test(bnNormA(m.client||b.client||''));if(cs.length||sc)oc=await bnAnnoter(oc,cs.length?['ATTENTION - INFO AJOUTEE :'].concat(cs.map(c=>c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':''))):[],sc);setOctets(oc);
+      let oc=await bnPdfA(m);const sc=/SECURITE CIVILE/.test(bnNormA(m.client||b.client||''));const dep=!/^(FTBE|SERVICE)$/.test(String(m.type||b.type||'').toUpperCase());if(cs.length||sc||dep)oc=await bnAnnoter(oc,(dep?['TEMPERATURE AU DEPART :  CHAUD (69 C)   -   FROID (3 C)']:[]).concat(cs.length?['ATTENTION - INFO AJOUTEE :'].concat(cs.map(c=>c.texte+(c.adresseDe?' (livrer a '+c.adresseDe+')':''))):[]),sc);setOctets(oc);
       setMail(m.email||((typeof ficheDe==='function'&&ficheDe(m.client))||{}).email||'');
       if(b.signe){try{const s=await bnDonnees(b.signe.date);setArchive({bytes:await bnPdfA(s),qui:s.signataire,quand:s.signeA,nbPhotos:+s.nbPhotos||0});}catch(e){}}
     }catch(e){showToast('Bon introuvable (internet ?)','var(--red)');setBon(null);}
@@ -3018,10 +3022,11 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
       </div>
       <div style={{fontSize:22}}>{b.signe?'✅':'📄'}</div>
     </div>);};
+  if(direct&&!bon)return <div className="screen" style={{background:PRO.fond}}><Header title={'📄 '+(init.client||'Bon')} onBack={onBack}/><div style={{textAlign:'center',padding:40,fontSize:16,color:PRO.gris}}>⏳ Ouverture…</div></div>;
   if(bon){
     const fait=archive||sig;
     return(<div className="screen">
-      <Header title={'📄 '+bon.client} onBack={fermer}/>
+      <Header title={'📄 '+bon.client} onBack={direct?onBack:fermer}/>
       <div className="scroll"><div style={{padding:12}}>
         {bon.consignes&&bon.consignes.length>0&&<div style={{background:'#dc2626',border:'3px solid #fecaca',borderRadius:14,padding:14,marginBottom:10,color:'#fff',boxShadow:'0 0 0 4px rgba(220,38,38,.35)'}}><div style={{fontWeight:900,fontSize:20}}>⚠️ ATTENTION — INFO AJOUTÉE</div>{bon.consignes.map((c,i)=><div key={i} style={{fontSize:19,fontWeight:900,marginTop:6,lineHeight:1.3}}>• {c.texte}{c.adresseDe?' → livrer à '+c.adresseDe+(c.adresse?' ('+c.adresse+')':''):''}</div>)}</div>}
         {(bon.version>1||bon.ajout)&&<div style={{background:'#9a3412',borderRadius:10,padding:'7px 10px',marginBottom:8,color:'#fff',fontWeight:900,fontSize:13}}>{bon.version>1?'🔁 BON MODIFIÉ — nouvelle version'+(bon.modifieLe?' du '+bon.modifieLe:''):'➕ BON AJOUTÉ après la planification'}</div>}
@@ -3039,6 +3044,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
                 <option value="">—</option>{Array.from({length:38},(_,i)=>i+63).map(v=><option key={v} value={v}>{v} °C</option>)}</select></div>
           </div>
           <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>Froid : de -10 à 10 °C · Chaud : de 63 à 100 °C. Si tu livres les deux, remplis les deux.</div>
+          {tempF!==''&&+tempF>3&&<div style={{marginTop:6,background:'#dc2626',color:'#fff',borderRadius:10,padding:'8px 10px',fontWeight:900,fontSize:14}}>🌡️ Attention : le froid doit être à 3 °C maximum. Préviens le responsable.</div>}
           <div style={{fontSize:13,fontWeight:900,color:'#93c5fd',margin:'10px 0 6px'}}>📝 Remarques (client ou chauffeur)</div>
           <textarea value={remarque} onChange={e=>setRemarque(e.target.value)} rows={3} maxLength={180} placeholder="Ex : 2 bacs manquants, client absent, produit abîmé, livré à l'accueil…" style={{width:'100%',boxSizing:'border-box',padding:10,borderRadius:10,border:'1px solid var(--border)',background:'#071526',color:'#fff',fontSize:15,fontFamily:'inherit',resize:'vertical'}}/>
           <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>Températures, remarques et bacs sont écrits sur le bon signé.</div>
@@ -3081,7 +3087,7 @@ function BonsScreen({ch,init,onBack,onNavigate,planning}){
       {liste===null?<div style={{textAlign:'center',color:'var(--muted)',padding:24}}>⏳ Chargement…</div>:
         vus.length?vus.map((b,i)=>{const sec=!ong&&(i===0||catDe(vus[i-1])!==catDe(b));return <div key={b.date}>{sec&&<div style={{fontSize:12,fontWeight:900,color:'#fff',background:({FTBE:'#1d4ed8',RESTOCO:'#15803d',CENTRE:'#c2410c'})[catDe(b)],borderRadius:8,padding:'6px 10px',margin:'4px 0 8px'}}>{({FTBE:'🍽️ TRAITEUR — bons FTBE',RESTOCO:'🥗 RESTO-CO',CENTRE:'🏕️ CENTRE AÉRÉ'})[catDe(b)]}</div>}<Carte b={b}/></div>;}):
         <div style={{textAlign:'center',color:'var(--muted)',padding:'18px 8px',fontSize:13}}>{liste.length?'Aucun bon pour « '+q+' » ce jour-là.':'Aucun bon rangé pour ce jour.'}</div>}
-      {q.trim().length>=3&&autres===null&&<button className="btn-s" style={{width:'100%'}} onClick={chercherPartout}>🔎 Chercher « {q} » sur tous les jours</button>}
+      {window.__modeResponsable&&q.trim().length>=3&&autres===null&&<button className="btn-s" style={{width:'100%'}} onClick={chercherPartout}>🔎 Chercher « {q} » sur tous les jours</button>}
       {autres==='…'&&<div style={{textAlign:'center',color:'var(--muted)',padding:12}}>⏳ Recherche…</div>}
       {onNavigate&&<div style={{height:70}}/>}
       {Array.isArray(autres)&&(autres.length?<div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',textTransform:'uppercase',margin:'10px 0 6px'}}>Tous les jours</div>{autres.map(b=><Carte key={b.date} b={b} date/>)}</div>:<div style={{textAlign:'center',color:'var(--muted)',padding:12,fontSize:13}}>Aucun bon trouvé pour ce client.</div>)}
@@ -3260,14 +3266,14 @@ function TourneeScreen({ch,planning,onNavigate,onBack,mode}){
             <div style={{height:5,background:C[1]}}><div style={{height:'100%',width:(t.length?Math.round(nb*100/t.length):0)+'%',background:'#16a34a'}}/></div>
             {ouvert[i]!==false&&(()=>{const ligneClient=(c,j)=>{const fait=livEstFait(ch,ds,c.client,m.heure,c.bonCle);return <div key={j} onClick={()=>{window.__retour='tournee';onNavigate('bons',{client:c.client,date:(c.bonCle&&c.bonCle.slice(4,14))||ds,bonCle:c.bonCle,fromMission:true});}} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderTop:'1px solid '+PRO.bord,background:fait?'#dcfce7':C[1],cursor:'pointer'}}>
               <Pouce fait={fait} onClick={()=>fait?(confirm('Annuler « livré » pour '+c.client+' ?')&&livAnnuler(ch,ds,c.client,m.heure)):livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''})}/>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}<span style={c.stabilo||/SECURITE CIVILE/.test(bnNormA(c.client))?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>{c.client}</span></div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {c.adresse}</div>}{c.codeAcces&&<div style={{fontSize:11.5,color:'#b45309'}}>🔑 {c.codeAcces}</div>}{c.adresseNote&&<div style={{fontSize:12,fontWeight:900,color:'#b91c1c'}}>📍 {c.adresseNote}</div>}{c.consigne&&<div style={{marginTop:6,background:'#dc2626',borderRadius:10,padding:'9px 10px',fontSize:16,fontWeight:900,color:'#fff',lineHeight:1.3}}>⚠️ {c.consigne}</div>}{c.modifie&&<div style={{fontSize:11.5,fontWeight:900,color:'#c2410c'}}>🔁 {c.modifie}</div>}<ProGps adresse={c.adresse} tel={c.tel} tel2={c.tel2} clair/><button onClick={e=>{e.stopPropagation();onNavigate('materiel',{client:c.client});}} style={{marginTop:6,width:'100%',background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:10,padding:'8px',fontWeight:900,fontSize:12.5,fontFamily:'inherit'}}>📦 Bacs gastro (laissés / repris)</button></div>
-              <span style={{fontSize:12,color:PRO.bleu,fontWeight:900}}>📄 Bon ›</span></div>;};
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:900,fontSize:14,color:fait?'#14532d':C[2]}}>{fait?'✅ ':''}<span style={c.stabilo||/SECURITE CIVILE/.test(bnNormA(c.client))?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>{c.client}</span></div>{fait&&livHeure(ch,ds,c.client,m.heure)&&<div style={{fontSize:11.5,fontWeight:800,color:'#15803d'}}>Livré à {livHeure(ch,ds,c.client,m.heure)}</div>}{c.adresseNote&&<div style={{fontSize:12,fontWeight:900,color:'#b91c1c'}}>📍 {c.adresseNote}</div>}{c.consigne&&<div style={{marginTop:6,background:'#dc2626',borderRadius:10,padding:'9px 10px',fontSize:16,fontWeight:900,color:'#fff',lineHeight:1.3}}>⚠️ {c.consigne}</div>}{c.modifie&&<div style={{fontSize:11.5,fontWeight:900,color:'#c2410c'}}>🔁 {c.modifie}</div>}</div>
+              <span style={{fontSize:22,color:PRO.gris}}>›</span></div>;};
             const G=[];const idx={};t.forEach(c=>{const g=c.groupe||c.client;if(idx[g]===undefined){idx[g]=G.length;G.push({nom:g,l:[]});}G[idx[g]].l.push(c);});
             return G.map((g,gi)=>{if(g.l.length===1)return ligneClient(g.l[0],'s'+gi);const ok=g.l.filter(c=>livEstFait(ch,ds,c.client,m.heure,c.bonCle)).length;const tout=ok===g.l.length;const ko='g'+i+'_'+gi;
               return <div key={ko} style={{borderTop:'1px solid '+PRO.bord}}>
                 <div onClick={()=>setOuvert(o=>({...o,[ko]:!o[ko]}))} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:tout?'#dcfce7':'#fff',cursor:'pointer'}}>
                   <Pouce fait={tout} onClick={()=>{if(tout)return;g.l.forEach(c=>{if(!livEstFait(ch,ds,c.client,m.heure,c.bonCle))livPouce(ch,ds,c.client,m.heure,{tournee:m.tournee.couleur,bon:c.bonCle||''});});}}/>
-                  <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15,color:tout?'#14532d':C[2]}}><span style={/SÉCURITÉ CIVILE/.test(g.nom)?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>🏢 {g.nom}</span></div><div style={{fontSize:12,color:PRO.gris,fontWeight:700}}>{g.l.length} bons · {ok}/{g.l.length} livrés · même lieu</div>{g.l[0].adresse&&<div style={{fontSize:11.5,color:PRO.gris}}>📍 {g.l[0].adresse}</div>}<ProGps adresse={g.l[0].adresse} tel={g.l[0].tel} clair/></div>
+                  <div style={{flex:1}}><div style={{fontWeight:900,fontSize:15,color:tout?'#14532d':C[2]}}><span style={/SÉCURITÉ CIVILE/.test(g.nom)?{background:'#86efac',padding:'0 4px',borderRadius:4,color:'#14532d'}:{}}>🏢 {g.nom}</span></div><div style={{fontSize:12,color:PRO.gris,fontWeight:700}}>{g.l.length} bons · {ok}/{g.l.length} livrés · même lieu</div></div>
                   <span style={{fontSize:16,color:PRO.gris}}>{ouvert[ko]?'▲':'▼'}</span></div>
                 {ouvert[ko]&&<div style={{paddingLeft:14,background:'#f8fafc'}}>{g.l.map((c,j)=>ligneClient(c,ko+'_'+j))}</div>}</div>;});})()}
           </div>;}
@@ -3310,10 +3316,10 @@ function AutresMissionsScreen({ch,planning,onNavigate,onBack}){
   const bloc=j=>{const n=proNbClients(j.ms);return <div key={j.ds} style={{background:'#fff',borderRadius:14,marginBottom:10,border:'1px solid '+PRO.bord,overflow:'hidden',opacity:j.i<0?.85:1}}>
     <div onClick={()=>setOuvert(o=>({...o,[j.ds]:!o[j.ds]}))} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',cursor:'pointer',background:j.i===1?'#eff6ff':'#fff'}}>
       <div style={{width:46,textAlign:'center'}}><div style={{fontSize:11,fontWeight:900,color:PRO.bleu,textTransform:'uppercase'}}>{new Date(j.ds+'T12:00').toLocaleDateString('fr-FR',{weekday:'short'})}</div><div style={{fontSize:22,fontWeight:900,color:PRO.txt,lineHeight:1}}>{new Date(j.ds+'T12:00').getDate()}</div></div>
-      <div style={{flex:1}}><div style={{fontWeight:900,color:PRO.txt,textTransform:'capitalize'}}>{libJ(j.ds,j.i)}</div><div style={{fontSize:12.5,color:PRO.gris}}>{n?n+' client'+(n>1?'s':''):j.ms.length+' mission'+(j.ms.length>1?'s':'')} · départ {j.ms[0].heure}</div></div><span style={{color:PRO.gris}}>{ouvert[j.ds]?'▲':'▼'}</span></div>
-    {ouvert[j.ds]&&j.ms.map((m,k)=><div key={k} style={{padding:'9px 14px',borderTop:'1px solid '+PRO.bord,fontSize:13.5}}>
+      <div style={{flex:1}}><div style={{fontWeight:900,color:PRO.txt,textTransform:'capitalize',fontSize:17}}>{libJ(j.ds,j.i)}</div><div style={{fontSize:12.5,color:PRO.gris}}>{n?n+' client'+(n>1?'s':''):j.ms.length+' mission'+(j.ms.length>1?'s':'')} · départ {j.ms[0].heure}</div></div><span style={{color:PRO.gris}}>{ouvert[j.ds]?'▲':'▼'}</span></div>
+    {ouvert[j.ds]&&j.ms.map((m,k)=><div key={k} style={{padding:'12px 14px',borderTop:'1px solid '+PRO.bord,fontSize:16,background:j.i===1?'#f5f9ff':'#fff'}}>
       <b style={{color:PRO.txt}}>{m.heure}</b> · {m.tournee?<b style={{color:(TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#334155'])[0]}}>TOURNÉE {(m.tournee.couleur||'').toUpperCase()} ({m.tournee.clients.length} clients)</b>:<span style={{color:PRO.txt,fontWeight:700}}>{m.client||m.task}</span>}
-      {m.tournee&&<div style={{fontSize:12,color:PRO.gris,marginTop:3}}>{m.tournee.clients.map(c=>c.client).join(' · ')}</div>}
+      {m.tournee&&<div style={{marginTop:8}}>{(()=>{const S={};m.tournee.clients.forEach(c=>{const g=c.groupe||c.client;S[g]=(S[g]||0)+1;});return Object.keys(S).map((g,gi)=><div key={gi} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',marginTop:6,borderRadius:12,background:(TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#334155','#f1f5f9'])[1],borderLeft:'6px solid '+(TRN_COUL[(m.tournee.couleur||'').toUpperCase()]||['#334155'])[0],fontWeight:800,fontSize:16,color:PRO.txt}}><span style={/SÉCURITÉ CIVILE/.test(g)?{background:'#86efac',padding:'0 4px',borderRadius:4}:{}}>{g}</span>{S[g]>1&&<span style={{marginLeft:'auto',fontSize:12.5,color:PRO.gris}}>{S[g]} bons</span>}</div>);})()}</div>}
       {m.adresse&&<div style={{fontSize:12,color:PRO.gris}}>📍 {m.adresse}</div>}</div>)}
   </div>;};
   return <div className="screen" style={{background:PRO.fond}}>
