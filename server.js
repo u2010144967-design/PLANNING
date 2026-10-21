@@ -1,14 +1,14 @@
 // =====================================================================
-//  CANA LIVRAISONS — serveur de données (Scalingo)
-//  Il parle le MÊME langage que Supabase pour la table « planning » :
-//  le planning et l'application chauffeur n'ont qu'à changer d'adresse.
+//  CANA LIVRAISONS â€” serveur de donnÃ©es (Scalingo)
+//  Il parle le MÃŠME langage que Supabase pour la table Â« planning Â» :
+//  le planning et l'application chauffeur n'ont qu'Ã  changer d'adresse.
 // =====================================================================
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
-const CLE = process.env.API_KEY || '';                 // clé demandée aux applis (en-tête « apikey »)
+const CLE = process.env.API_KEY || '';                 // clÃ© demandÃ©e aux applis (en-tÃªte Â« apikey Â»)
 const DB_URL = process.env.SCALINGO_POSTGRESQL_URL || process.env.DATABASE_URL || '';
 
 let pool = global.__poolTest || new Pool({
@@ -31,28 +31,28 @@ const app = express();
 app.use(cors({ origin: true, allowedHeaders: ['apikey', 'authorization', 'content-type', 'prefer', 'x-client-info', 'accept'], methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'] }));
 app.use(express.json({ limit: '15mb' }));
 
-// ---- les pages (planning, appli chauffeur…) sont servies par le même serveur ----
+// ---- les pages (planning, appli chauffeurâ€¦) sont servies par le mÃªme serveur ----
 const path = require('path');
 app.use(express.static(path.join(__dirname), {
   index: false,
   setHeaders: (res, f) => { if (/\.(html|js|json)$/.test(f)) res.setHeader('Cache-Control', 'no-cache'); }
 }));
 app.get('/', (req, res) => res.redirect('/cana-livraisons.html'));
-// pour l'application Play Store (Android) : preuve que l'appli appartient bien à ce site
+// pour l'application Play Store (Android) : preuve que l'appli appartient bien Ã  ce site
 app.get('/.well-known/assetlinks.json', (req, res) => {
   try { res.json(JSON.parse(process.env.ASSETLINKS || '[]')); } catch (e) { res.json([]); }
 });
 app.get('/sante', async (req, res) => {
-  try { const r = await pool.query('SELECT count(*)::int AS n FROM planning'); res.type('text').send('✅ Serveur CANA LIVRAISONS : OK — ' + r.rows[0].n + ' lignes dans la base'); }
-  catch (e) { res.status(500).type('text').send('❌ Base de données injoignable : ' + e.message); }
+  try { const r = await pool.query('SELECT count(*)::int AS n FROM planning'); res.type('text').send('âœ… Serveur CANA LIVRAISONS : OK â€” ' + r.rows[0].n + ' lignes dans la base'); }
+  catch (e) { res.status(500).type('text').send('âŒ Base de donnÃ©es injoignable : ' + e.message); }
 });
 
-// ---- clé ----
+// ---- clÃ© ----
 function verifCle(req, res, next) {
   if (!CLE) return next();
   const k = req.get('apikey') || req.query.apikey || (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (k === CLE) return next();
-  res.status(401).json({ message: 'clé invalide' });
+  res.status(401).json({ message: 'clÃ© invalide' });
 }
 
 // ---- traduction des filtres Supabase (date=eq.X, like.X*, in.(a,b), gte., lt., or=(...)) ----
@@ -115,7 +115,7 @@ app.get('/rest/v1/planning', verifCle, async (req, res) => {
   } catch (e) { res.status(400).json({ message: String(e.message || e) }); }
 });
 
-// ---- ÉCRIRE (créer ou remplacer) ----
+// ---- Ã‰CRIRE (crÃ©er ou remplacer) ----
 async function ecrire(row) {
   if (!row || !row.date) throw new Error('date manquante');
   await pool.query(
@@ -151,22 +151,22 @@ app.delete('/rest/v1/planning', verifCle, async (req, res) => {
   } catch (e) { res.status(400).json({ message: String(e.message || e) }); }
 });
 
-// ---- ENVOI AUTOMATIQUE DU BON SIGNÉ AU CLIENT (même adresse que la fonction Supabase) ----
+// ---- ENVOI AUTOMATIQUE DU BON SIGNÃ‰ AU CLIENT (mÃªme adresse que la fonction Supabase) ----
 app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
   try {
     const { cle, email } = req.body || {};
     if (!cle || !String(cle).startsWith('BONSIGNE_')) return res.status(400).json({ ok: false, erreur: 'bon inconnu' });
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, erreur: 'email invalide' });
     const BREVO = process.env.BREVO_API_KEY, SMTP = process.env.SMTP_HOST;
-    if (!BREVO && !SMTP) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore configuré (SMTP_HOST ou BREVO_API_KEY)' });
+    if (!BREVO && !SMTP) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore configurÃ© (SMTP_HOST ou BREVO_API_KEY)' });
     const FROM = process.env.EXPEDITEUR || 'restauco@latabledecana-marseille.com';
     const FROM_NOM = process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
     const r1 = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle]);
-    if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'bon signé introuvable' });
+    if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'bon signÃ© introuvable' });
     const m = r1.rows[0].donnees || {};
     const TYPES = String(process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE').toUpperCase().split(',').map(x => x.trim()).filter(Boolean);
     const typeBon = String(m.type || 'RESTOCO').toUpperCase();
-    if (!TYPES.includes(typeBon) && !TYPES.includes('TOUS')) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore activé pour les bons ' + typeBon });
+    if (!TYPES.includes(typeBon) && !TYPES.includes('TOUS')) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore activÃ© pour les bons ' + typeBon });
     if ((m.nbEmails || 0) >= 5) return res.status(429).json({ ok: false, erreur: "trop d'envois pour ce bon" });
     let b64 = m.pdf || '';
     if (!b64) {
@@ -178,23 +178,23 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
     }
     const jour = String(m.jour || '').split('-').reverse().join('/');
     const nomF = `Bon_${String(m.client || 'client').replace(/[^A-Za-z0-9]+/g, '_')}_${m.jour || ''}_signe.pdf`;
-    const html = `<p>Bonjour,</p><p>Veuillez trouver ci-joint le bon de livraison signé du <b>${jour}</b> (${m.client}).</p>` +
-      (m.signataire ? `<p>Signé par ${m.signataire} le ${m.signeA || ''}.</p>` : '') + (m.temperature ? `<p>Température à la livraison : ${m.temperature}.</p>` : '') +
+    const html = `<p>Bonjour,</p><p>Veuillez trouver ci-joint le bon de livraison signÃ© du <b>${jour}</b> (${m.client}).</p>` +
+      (m.signataire ? `<p>SignÃ© par ${m.signataire} le ${m.signeA || ''}.</p>` : '') + (m.temperature ? `<p>TempÃ©rature Ã  la livraison : ${m.temperature}.</p>` : '') +
       `<p>Cordialement,<br>${FROM_NOM}</p>`;
     if (SMTP) {
-      // envoi DIRECT depuis la boîte mail de l'entreprise (aucun service extérieur)
+      // envoi DIRECT depuis la boÃ®te mail de l'entreprise (aucun service extÃ©rieur)
       const nodemailer = require('nodemailer');
       const tr = SMTP === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({
         host: SMTP, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465',
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
       await tr.sendMail({ from: `"${FROM_NOM}" <${process.env.SMTP_USER && SMTP !== 'test' ? (process.env.EXPEDITEUR || process.env.SMTP_USER) : FROM}>`, to: email,
-        subject: `Bon de livraison signé — ${m.client} — ${jour}`, html, attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] });
+        subject: `Bon de livraison signÃ© â€” ${m.client} â€” ${jour}`, html, attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] });
       m.emailEnvoye = new Date().toISOString(); m.emailA = email; m.nbEmails = (m.nbEmails || 0) + 1;
       await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
       return res.json({ ok: true, par: 'smtp' });
     }
     const r3 = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': BREVO, 'Content-Type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ sender: { name: FROM_NOM, email: FROM }, to: [{ email }], subject: `Bon de livraison signé — ${m.client} — ${jour}`, htmlContent: html, attachment: [{ content: b64, name: nomF }] }) });
+      body: JSON.stringify({ sender: { name: FROM_NOM, email: FROM }, to: [{ email }], subject: `Bon de livraison signÃ© â€” ${m.client} â€” ${jour}`, htmlContent: html, attachment: [{ content: b64, name: nomF }] }) });
     if (!r3.ok) return res.status(502).json({ ok: false, erreur: 'Brevo : ' + (await r3.text()).slice(0, 200) });
     m.emailEnvoye = new Date().toISOString(); m.emailA = email; m.nbEmails = (m.nbEmails || 0) + 1;
     await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
@@ -202,33 +202,67 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
 });
 
+// ---- ENVOI D'UNE COMMANDE LECOURTIER (PDF dÃ©jÃ  enregistrÃ© dans la base) ----
+app.post('/api/envoyer-commande', verifCle, async (req, res) => {
+  try {
+    const { cle, a, cc, sujet, html } = req.body || {};
+    const okMail = x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(x || '').trim());
+    const A = [].concat(a || []).map(x => String(x).trim()).filter(okMail), CC = [].concat(cc || []).map(x => String(x).trim()).filter(okMail);
+    if (!cle || !/^CMDLC_|^PREP_/.test(cle)) return res.status(400).json({ ok: false, erreur: 'commande inconnue' });
+    if (!A.length) return res.status(400).json({ ok: false, erreur: 'aucune adresse email valide pour Lecourtier (RÃ©glages)' });
+    const SMTP = process.env.SMTP_HOST, BREVO = process.env.BREVO_API_KEY;
+    if (!SMTP && !BREVO) return res.status(404).json({ ok: false, erreur: "l'envoi automatique n'est pas encore configurÃ© (SMTP_HOST dans Scalingo)" });
+    const r1 = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle]);
+    if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'commande introuvable' });
+    const m = r1.rows[0].donnees || {};
+    const cles = Array.from({ length: +m.parts || 0 }, (_, i) => `BONPDF_${m.pid}_${String(i).padStart(3, '0')}`);
+    const r2 = await pool.query('SELECT donnees FROM planning WHERE date IN (' + cles.map((_, i) => '$' + (i + 1)).join(',') + ')', cles);
+    const parts = []; r2.rows.forEach(x => { const o = x.donnees || {}; parts[o.i] = o.d; });
+    if (!cles.length || parts.length !== cles.length || parts.some(p => typeof p !== 'string')) return res.status(500).json({ ok: false, erreur: 'PDF incomplet' });
+    const b64 = parts.join(''), nomF = (m.fichier || 'Commande_Lecourtier') + '.pdf';
+    const FROM_NOM = process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
+    if (SMTP) {
+      const nodemailer = require('nodemailer');
+      const tr = SMTP === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({ host: SMTP, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+      await tr.sendMail({ from: `"${FROM_NOM}" <${process.env.EXPEDITEUR || process.env.SMTP_USER || 'logistique@latabledecana-marseille.com'}>`, to: A, cc: CC, subject: sujet || 'Commande de matÃ©riel', html: html || '<p>Bonjour,</p><p>Veuillez trouver ci-joint notre commande.</p>', attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] });
+    } else {
+      const r3 = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': BREVO, 'Content-Type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ sender: { name: FROM_NOM, email: process.env.EXPEDITEUR || 'logistique@latabledecana-marseille.com' }, to: A.map(email => ({ email })), cc: CC.length ? CC.map(email => ({ email })) : undefined, subject: sujet, htmlContent: html, attachment: [{ content: b64, name: nomF }] }) });
+      if (!r3.ok) return res.status(502).json({ ok: false, erreur: 'Brevo : ' + (await r3.text()).slice(0, 200) });
+    }
+    m.envoyeLe = new Date().toISOString(); m.envoyeA = A.join(', ');
+    await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
+});
+
 // ---- TEST DE L'ENVOI D'EMAIL : https://<app>/admin/test-email?cle=<API_KEY>&a=<adresse> ----
 app.get('/admin/test-email', async (req, res) => {
-  if (CLE && req.query.cle !== CLE) return res.status(401).type('text').send('clé invalide');
+  if (CLE && req.query.cle !== CLE) return res.status(401).type('text').send('clÃ© invalide');
   const a = String(req.query.a || process.env.SMTP_USER || '');
-  const page = (ok, txt) => res.type('html').send('<meta charset="utf-8"><body style="font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px"><h2>✉️ Test de l\'envoi automatique</h2><p style="font-size:18px;font-weight:800;color:' + (ok ? '#15803d' : '#b91c1c') + '">' + txt + '</p>' +
-    '<p>Réglages lus : serveur <b>' + (process.env.SMTP_HOST || '—') + '</b>, port <b>' + (process.env.SMTP_PORT || '587') + '</b>, compte <b>' + (process.env.SMTP_USER || '—') + '</b>, mot de passe ' + (process.env.SMTP_PASS ? '<b>présent</b>' : '<b style="color:#b91c1c">absent</b>') + ', bons envoyés automatiquement : <b>' + (process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE') + '</b></p></body>');
-  if (!process.env.SMTP_HOST) return page(false, '❌ SMTP_HOST n’est pas réglé dans Scalingo (onglet Environment).');
-  if (!a) return page(false, '❌ Indique une adresse : …/admin/test-email?cle=…&a=ton.adresse@exemple.fr');
+  const page = (ok, txt) => res.type('html').send('<meta charset="utf-8"><body style="font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px"><h2>âœ‰ï¸ Test de l\'envoi automatique</h2><p style="font-size:18px;font-weight:800;color:' + (ok ? '#15803d' : '#b91c1c') + '">' + txt + '</p>' +
+    '<p>RÃ©glages lus : serveur <b>' + (process.env.SMTP_HOST || 'â€”') + '</b>, port <b>' + (process.env.SMTP_PORT || '587') + '</b>, compte <b>' + (process.env.SMTP_USER || 'â€”') + '</b>, mot de passe ' + (process.env.SMTP_PASS ? '<b>prÃ©sent</b>' : '<b style="color:#b91c1c">absent</b>') + ', bons envoyÃ©s automatiquement : <b>' + (process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE') + '</b></p></body>');
+  if (!process.env.SMTP_HOST) return page(false, 'âŒ SMTP_HOST nâ€™est pas rÃ©glÃ© dans Scalingo (onglet Environment).');
+  if (!a) return page(false, 'âŒ Indique une adresse : â€¦/admin/test-email?cle=â€¦&a=ton.adresse@exemple.fr');
   try {
     const nodemailer = require('nodemailer');
     const tr = nodemailer.createTransport(process.env.SMTP_HOST === 'test' ? { jsonTransport: true } : { host: process.env.SMTP_HOST, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
     if (process.env.SMTP_HOST !== 'test') await tr.verify();
-    await tr.sendMail({ from: `"${process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille'}" <${process.env.EXPEDITEUR || process.env.SMTP_USER}>`, to: a, subject: 'Test CANA LIVRAISONS — envoi automatique des bons', html: '<p>Bonjour,</p><p>Ceci est un test : si vous lisez ce message, l’envoi automatique des bons signés fonctionne. ✅</p>' });
-    page(true, '✅ Email de test envoyé à ' + a + ' — vérifie la boîte de réception (et les indésirables).');
+    await tr.sendMail({ from: `"${process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille'}" <${process.env.EXPEDITEUR || process.env.SMTP_USER}>`, to: a, subject: 'Test CANA LIVRAISONS â€” envoi automatique des bons', html: '<p>Bonjour,</p><p>Ceci est un test : si vous lisez ce message, lâ€™envoi automatique des bons signÃ©s fonctionne. âœ…</p>' });
+    page(true, 'âœ… Email de test envoyÃ© Ã  ' + a + ' â€” vÃ©rifie la boÃ®te de rÃ©ception (et les indÃ©sirables).');
   } catch (e) {
     const m = String(e.message || e);
-    const aide = /auth|535|534|Invalid login|Username and Password/i.test(m) ? ' → identifiant ou mot de passe refusé. Si c’est une boîte Microsoft 365 / Outlook, il faut souvent activer « SMTP authentifié » pour cette boîte, ou utiliser un « mot de passe d’application ».'
-      : /ENOTFOUND|getaddrinfo/i.test(m) ? ' → le nom du serveur SMTP est faux.' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' → le port ne répond pas : essaie 587 (ou 465).' : '';
-    page(false, '❌ L’envoi a échoué : ' + m.replace(/</g, '&lt;') + aide);
+    const aide = /auth|535|534|Invalid login|Username and Password/i.test(m) ? ' â†’ identifiant ou mot de passe refusÃ©. Si câ€™est une boÃ®te Microsoft 365 / Outlook, il faut souvent activer Â« SMTP authentifiÃ© Â» pour cette boÃ®te, ou utiliser un Â« mot de passe dâ€™application Â».'
+      : /ENOTFOUND|getaddrinfo/i.test(m) ? ' â†’ le nom du serveur SMTP est faux.' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' â†’ le port ne rÃ©pond pas : essaie 587 (ou 465).' : '';
+    page(false, 'âŒ Lâ€™envoi a Ã©chouÃ© : ' + m.replace(/</g, '&lt;') + aide);
   }
 });
 
-// ---- STOCKAGE : place prise + ménage des vieux fichiers (les bons SIGNÉS sont toujours gardés) ----
+// ---- STOCKAGE : place prise + mÃ©nage des vieux fichiers (les bons SIGNÃ‰S sont toujours gardÃ©s) ----
 function cleAdmin(req) { const k = process.env.ADMIN_CLE || CLE; return !k || req.query.cle === k; }
 const taille = n => n > 1073741824 ? (n / 1073741824).toFixed(2) + ' Go' : (n / 1048576).toFixed(1) + ' Mo';
 app.get('/admin/stockage', async (req, res) => {
-  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clé invalide' });
+  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clÃ© invalide' });
   try {
     const rows = (await pool.query("SELECT date, length(donnees::text) AS o FROM planning")).rows;
     let tot = 0; const G = {};
@@ -236,12 +270,12 @@ app.get('/admin/stockage', async (req, res) => {
     try { const x = await pool.query("SELECT pg_total_relation_size('planning') AS t"); if (+x.rows[0].t) tot = +x.rows[0].t; } catch (e) {}
     const t = { rows: [{ t: tot, n: rows.length }] };
     const p = { rows: Object.values(G).sort((a, b) => b.o - a.o).slice(0, 8) };
-    const NOMS = { BONPDF: 'Fichiers PDF des bons', BON: 'Fiches des bons', BONSIGNE: 'Bons signés', PHOTO: 'Photos', EV: 'Événements', GRILLE: 'Planning partagé', MAT: 'Matériel', JOURNAL: 'Journal' };
-    res.json({ ok: true, total: taille(+t.rows[0].t), lignes: t.rows[0].n, parType: p.rows.map(x => ({ type: NOMS[x.type] || (/^\d{4}-/.test(x.type) ? 'Journées' : x.type), n: x.n, taille: taille(+x.o) })) });
+    const NOMS = { BONPDF: 'Fichiers PDF des bons', BON: 'Fiches des bons', BONSIGNE: 'Bons signÃ©s', PHOTO: 'Photos', EV: 'Ã‰vÃ©nements', GRILLE: 'Planning partagÃ©', MAT: 'MatÃ©riel', JOURNAL: 'Journal' };
+    res.json({ ok: true, total: taille(+t.rows[0].t), lignes: t.rows[0].n, parType: p.rows.map(x => ({ type: NOMS[x.type] || (/^\d{4}-/.test(x.type) ? 'JournÃ©es' : x.type), n: x.n, taille: taille(+x.o) })) });
   } catch (e) { res.status(500).json({ ok: false, erreur: e.message }); }
 });
 app.post('/admin/menage', async (req, res) => {
-  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clé invalide' });
+  if (!cleAdmin(req)) return res.status(401).json({ ok: false, erreur: 'clÃ© invalide' });
   const mois = Math.max(3, parseInt(req.query.mois || '12', 10) || 12);
   try {
     const r = await pool.query(`DELETE FROM planning WHERE updated_at < now() - ($1 || ' months')::interval AND (
@@ -255,15 +289,15 @@ app.post('/admin/menage', async (req, res) => {
 app.post('/api/compter-bacs', verifCle, async (req, res) => {
   try {
     const KEYIA = process.env.ANTHROPIC_API_KEY;
-    if (!KEYIA) return res.status(404).json({ ok: false, erreur: 'comptage par photo pas encore activé (ANTHROPIC_API_KEY)' });
+    if (!KEYIA) return res.status(404).json({ ok: false, erreur: 'comptage par photo pas encore activÃ© (ANTHROPIC_API_KEY)' });
     let { image, media } = req.body || {};
     if (!image) return res.status(400).json({ ok: false, erreur: 'photo manquante' });
     if (KEYIA === 'test') return res.json({ ok: true, gn1: 12, gn12: 8, autres: 0, total: 20, confiance: 'moyenne', conseil: '' });
     const m = String(image).match(/^data:(image\/[a-z]+);base64,(.*)$/); if (m) { media = m[1]; image = m[2]; }
-    const consigne = "Tu es le contrôleur matériel d'un traiteur. La photo montre des bacs gastronormes (inox ou plastique) : " +
-      "GN 1/1 = grand rectangle (environ 53 x 32 cm), GN 1/2 = moitié (environ 32 x 26 cm). Ils sont souvent EMPILÉS les uns dans les autres, parfois dans des caisses. " +
-      "Méthode : repère chaque pile ; pour chaque pile, compte les rebords visibles sur le côté (chaque rebord = 1 bac) ; si une pile est trop haute, estime avec sa hauteur (un bac emboîté ajoute environ 1,5 à 2 cm). Additionne toutes les piles. " +
-      "Réponds UNIQUEMENT avec ce JSON, sans texte autour : {\"gn1\":0,\"gn12\":0,\"autres\":0,\"total\":0,\"piles\":[{\"type\":\"GN 1/1\",\"nb\":0}],\"confiance\":\"haute|moyenne|faible\",\"conseil\":\"une phrase courte pour mieux prendre la photo si besoin\"}";
+    const consigne = "Tu es le contrÃ´leur matÃ©riel d'un traiteur. La photo montre des bacs gastronormes (inox ou plastique) : " +
+      "GN 1/1 = grand rectangle (environ 53 x 32 cm), GN 1/2 = moitiÃ© (environ 32 x 26 cm). Ils sont souvent EMPILÃ‰S les uns dans les autres, parfois dans des caisses. " +
+      "MÃ©thode : repÃ¨re chaque pile ; pour chaque pile, compte les rebords visibles sur le cÃ´tÃ© (chaque rebord = 1 bac) ; si une pile est trop haute, estime avec sa hauteur (un bac emboÃ®tÃ© ajoute environ 1,5 Ã  2 cm). Additionne toutes les piles. " +
+      "RÃ©ponds UNIQUEMENT avec ce JSON, sans texte autour : {\"gn1\":0,\"gn12\":0,\"autres\":0,\"total\":0,\"piles\":[{\"type\":\"GN 1/1\",\"nb\":0}],\"confiance\":\"haute|moyenne|faible\",\"conseil\":\"une phrase courte pour mieux prendre la photo si besoin\"}";
     const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST',
       headers: { 'x-api-key': KEYIA, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6', max_tokens: 600,
@@ -284,8 +318,8 @@ async function ecrireSiPlusRecent(row) {
      WHERE planning.updated_at IS NULL OR EXCLUDED.updated_at >= planning.updated_at`,
     [String(row.date), JSON.stringify(row.donnees === undefined ? null : row.donnees), row.updated_at || null]);
 }
-// ---- COPIE depuis Supabase : en arrière-plan, par petits paquets, avec reprise sur erreur ----
-//  Ouvrir : https://<ton-app>.osc-fr1.scalingo.io/admin/importer?cle=<API_KEY>   (la page se met à jour toute seule)
+// ---- COPIE depuis Supabase : en arriÃ¨re-plan, par petits paquets, avec reprise sur erreur ----
+//  Ouvrir : https://<ton-app>.osc-fr1.scalingo.io/admin/importer?cle=<API_KEY>   (la page se met Ã  jour toute seule)
 const IMPORT = { enCours: false, fini: false, total: 0, n: 0, erreurs: [], debut: null, fin: null, message: '' };
 const attendre = ms => new Promise(r => setTimeout(r, ms));
 async function supaGet(url, H, essais = 5) {
@@ -301,21 +335,21 @@ async function lancerImport(depuis) {
   const SUPA = process.env.SUPABASE_URL || 'https://lllzlidwtcjwsxbgkygn.supabase.co';
   const SKEY = process.env.SUPABASE_KEY || 'sb_publishable_3weqcRqeCv9lwclSAPC2rA_48OAwGcV';
   const H = { apikey: SKEY, Authorization: 'Bearer ' + SKEY };
-  Object.assign(IMPORT, { enCours: true, fini: false, total: 0, n: 0, erreurs: [], debut: new Date(), fin: null, message: 'Liste des lignes…' });
+  Object.assign(IMPORT, { enCours: true, fini: false, total: 0, n: 0, erreurs: [], debut: new Date(), fin: null, message: 'Liste des lignesâ€¦' });
   try {
-    // 1) la liste des lignes, page par page ; si Supabase coupe (délai dépassé), on prend des pages plus petites
+    // 1) la liste des lignes, page par page ; si Supabase coupe (dÃ©lai dÃ©passÃ©), on prend des pages plus petites
     let cles = [], dernier = '', taille = 200;
     const filtre = depuis ? `&updated_at=gte.${encodeURIComponent(depuis)}` : '';
     while (true) {
       const apres = dernier ? `&date=gt.${encodeURIComponent(dernier)}` : '';
       let p;
       try { p = await supaGet(`${SUPA}/rest/v1/planning?select=date&order=date.asc&limit=${taille}${apres}${filtre}`, H, 2); }
-      catch (e) { if (taille > 10) { taille = Math.max(10, Math.floor(taille / 3)); IMPORT.message = 'Supabase est lent, pages plus petites (' + taille + ')…'; continue; } throw e; }
-      p.forEach(x => cles.push(x.date)); IMPORT.message = new Set(cles).size + ' lignes trouvées…';
+      catch (e) { if (taille > 10) { taille = Math.max(10, Math.floor(taille / 3)); IMPORT.message = 'Supabase est lent, pages plus petites (' + taille + ')â€¦'; continue; } throw e; }
+      p.forEach(x => cles.push(x.date)); IMPORT.message = new Set(cles).size + ' lignes trouvÃ©esâ€¦';
       if (p.length < taille) break; dernier = p[p.length - 1].date;
     }
     cles = [...new Set(cles)];
-    IMPORT.total = cles.length; IMPORT.message = 'Copie en cours…';
+    IMPORT.total = cles.length; IMPORT.message = 'Copie en coursâ€¦';
     // 2) copie par petits paquets (les PDF sont lourds)
     let pos = 0;
     async function ouvrier() {
@@ -329,25 +363,25 @@ async function lancerImport(depuis) {
       }
     }
     await Promise.all([ouvrier(), ouvrier(), ouvrier(), ouvrier()]);
-    IMPORT.message = IMPORT.erreurs.length ? `Terminé avec ${IMPORT.erreurs.length} ligne(s) non copiée(s)` : 'Copie terminée';
-  } catch (e) { IMPORT.message = 'Arrêtée : Supabase répond ' + e.message; IMPORT.erreurs.push(String(e.message)); }
+    IMPORT.message = IMPORT.erreurs.length ? `TerminÃ© avec ${IMPORT.erreurs.length} ligne(s) non copiÃ©e(s)` : 'Copie terminÃ©e';
+  } catch (e) { IMPORT.message = 'ArrÃªtÃ©e : Supabase rÃ©pond ' + e.message; IMPORT.erreurs.push(String(e.message)); }
   IMPORT.enCours = false; IMPORT.fini = true; IMPORT.fin = new Date();
 }
 function pageImport(cle) {
   const pct = IMPORT.total ? Math.round(IMPORT.n * 100 / IMPORT.total) : 0;
   const ok = IMPORT.fini && !IMPORT.erreurs.length;
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${IMPORT.enCours ? `<meta http-equiv="refresh" content="3;url=/admin/importer?cle=${encodeURIComponent(cle)}&suivre=1">` : ''}
-  <title>Copie Supabase → Scalingo</title><body style="font-family:system-ui,Arial;max-width:640px;margin:40px auto;padding:0 16px;color:#0f172a">
-  <h2>📦 Copie des données Supabase → Scalingo</h2>
-  <p style="font-size:20px;font-weight:800">${IMPORT.enCours ? '⏳ ' : ok ? '✅ ' : IMPORT.fini ? '⚠️ ' : ''}${IMPORT.message}</p>
+  <title>Copie Supabase â†’ Scalingo</title><body style="font-family:system-ui,Arial;max-width:640px;margin:40px auto;padding:0 16px;color:#0f172a">
+  <h2>ðŸ“¦ Copie des donnÃ©es Supabase â†’ Scalingo</h2>
+  <p style="font-size:20px;font-weight:800">${IMPORT.enCours ? 'â³ ' : ok ? 'âœ… ' : IMPORT.fini ? 'âš ï¸ ' : ''}${IMPORT.message}</p>
   <div style="background:#e2e8f0;border-radius:10px;height:22px;overflow:hidden"><div style="background:#16a34a;height:100%;width:${pct}%"></div></div>
-  <p><b>${IMPORT.n}</b> / ${IMPORT.total || '?'} lignes copiées (${pct} %)</p>
-  ${IMPORT.enCours ? '<p>La page se met à jour toute seule. Tu peux la laisser ouverte.</p>' : ''}
-  ${IMPORT.erreurs.length ? '<details open><summary>Problèmes (' + IMPORT.erreurs.length + ')</summary><pre style="white-space:pre-wrap;font-size:12px">' + IMPORT.erreurs.slice(0, 30).join('\n').replace(/</g, '&lt;') + '</pre></details><p><a href="/admin/importer?cle=' + encodeURIComponent(cle) + '&relancer=1">🔄 Relancer la copie</a> (ce qui est déjà copié est simplement remis à jour)</p>' : ''}
-  ${ok ? '<p>👉 Ouvre maintenant le planning : <a href="/cana-livraisons.html">cana-livraisons.html</a></p>' : ''}</body>`;
+  <p><b>${IMPORT.n}</b> / ${IMPORT.total || '?'} lignes copiÃ©es (${pct} %)</p>
+  ${IMPORT.enCours ? '<p>La page se met Ã  jour toute seule. Tu peux la laisser ouverte.</p>' : ''}
+  ${IMPORT.erreurs.length ? '<details open><summary>ProblÃ¨mes (' + IMPORT.erreurs.length + ')</summary><pre style="white-space:pre-wrap;font-size:12px">' + IMPORT.erreurs.slice(0, 30).join('\n').replace(/</g, '&lt;') + '</pre></details><p><a href="/admin/importer?cle=' + encodeURIComponent(cle) + '&relancer=1">ðŸ”„ Relancer la copie</a> (ce qui est dÃ©jÃ  copiÃ© est simplement remis Ã  jour)</p>' : ''}
+  ${ok ? '<p>ðŸ‘‰ Ouvre maintenant le planning : <a href="/cana-livraisons.html">cana-livraisons.html</a></p>' : ''}</body>`;
 }
 app.get('/admin/importer', async (req, res) => {
-  if (CLE && req.query.cle !== CLE) return res.status(401).type('text').send('clé invalide');
+  if (CLE && req.query.cle !== CLE) return res.status(401).type('text').send('clÃ© invalide');
   if (!IMPORT.enCours && (!IMPORT.debut || req.query.relancer || (!req.query.suivre && IMPORT.fini))) lancerImport(req.query.depuis || '');
   await attendre(400);
   res.type('html').send(pageImport(req.query.cle || ''));
@@ -355,6 +389,6 @@ app.get('/admin/importer', async (req, res) => {
 
 module.exports = { app, preparer, setPool: p => { pool = p; } };
 if (require.main === module) {
-  preparer().then(() => app.listen(PORT, () => console.log('Serveur CANA prêt sur le port ' + PORT)))
+  preparer().then(() => app.listen(PORT, () => console.log('Serveur CANA prÃªt sur le port ' + PORT)))
     .catch(e => { console.error('Base inaccessible :', e.message); process.exit(1); });
 }
