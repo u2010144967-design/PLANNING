@@ -4465,7 +4465,7 @@ function lcEditeur(){
   h+='<div class="lcEt"><b>1. Choisir les bons</b><b class="on">2. Vérifier</b><b>3. Envoyer</b></div>';
   h+='<div class="clbar"><b>Type :</b>'+['Nouvelle commande','Modification','Rajout'].map(function(n){return '<button class="'+(LC.nature===n?'clsend':'')+'" onclick="LC.nature=\''+n+'\';lcEditeur()">'+({'Nouvelle commande':'🆕','Modification':'✏️','Rajout':'➕'}[n])+' '+n+'</button>';}).join('')+
     '<span style="flex:1"></span><button onclick="lcToutes(\'veille\')">Enlèvement la veille pour tous</button><button onclick="lcToutes(\'jour\')">Le jour même pour tous</button><button onclick="lcToutes(\'ret\')">Retour le lendemain pour tous</button></div>';
-  LC.orders.forEach(function(o,oi){var lec=o.lignes.filter(function(l){return l.statut==='lec';}),aut=o.lignes.filter(function(l){return l.statut!=='lec';});
+  LC.orders.forEach(function(o,oi){var lec=o.lignes.filter(function(l){return l.statut==='lec';}),aut=o.lignes.filter(function(l){return l.statut!=='lec'&&!l.titre;});
     h+='<div class="lcO'+(o.inclus?'':' off')+'"><div class="lcOh"><div style="flex:1"><b>'+esc(o.numero||'')+' — '+esc(o.titre)+'</b><small>Livraison : '+esc(o.client||'')+' · '+esc(o.dateLiv?dayLabel(o.dateLiv):'')+(o.heureLiv?' à '+esc(o.heureLiv):'')+'</small>'+(o.erreur?'<em>'+esc(o.erreur)+'</em>':'')+'</div>'+
       '<label class="lcInc"><input type="checkbox" '+(o.inclus?'checked':'')+' onchange="LC.orders['+oi+'].inclus=this.checked;lcEditeur()"> Commander</label></div>';
     if(o.inclus){var v=o.dateLiv?(function(){var x=new Date(o.dateLiv+'T12:00');x.setDate(x.getDate()-1);return fmtD(x);})():'';var lend=o.dateLiv?(function(){var x=new Date(o.dateLiv+'T12:00');x.setDate(x.getDate()+1);return fmtD(x);})():'';
@@ -4488,7 +4488,7 @@ function lcEstLec(oi,li){var l=LC.orders[oi].lignes[li];l.statut='lec';l.why='';
 function lcConstruire(){var errs=[],blocs=[];
   LC.orders.forEach(function(o){if(!o.inclus)return;var ls=o.lignes.filter(function(l){return l.statut==='lec'&&l.coche;});if(!ls.length)return;var nm=(o.numero?o.numero+' - ':'')+o.titre;
     if(!o.dateEnl)errs.push(nm+' : choisis le jour d’enlèvement.');var agg={};ls.forEach(function(l){if(!l.articleId){errs.push(nm+' : une ligne n’a pas d’article choisi.');return;}if(!(l.q>0)){errs.push(nm+' : quantité manquante pour « '+lcArt(l.articleId)+' ».');return;}var n=lcArt(l.articleId);agg[n]=(agg[n]||0)+l.q;});
-    blocs.push({bonCle:o.bonCle,numero:o.numero,titre:o.titre,client:o.client,dateLiv:o.dateLiv,heureLiv:o.heureLiv,dateEnl:o.dateEnl,dateRet:o.dateRet,lignes:Object.keys(agg).map(function(n){return {nom:n,q:agg[n]};}),autres:o.lignes.filter(function(l){return l.statut!=='lec';}).map(function(l){return {q:l.q,l:l.l};})});});
+    blocs.push({bonCle:o.bonCle,numero:o.numero,titre:o.titre,client:o.client,dateLiv:o.dateLiv,heureLiv:o.heureLiv,dateEnl:o.dateEnl,dateRet:o.dateRet,lignes:Object.keys(agg).map(function(n){return {nom:n,q:agg[n]};}),autres:o.lignes.filter(function(l){return l.statut!=='lec'&&!l.titre;}).map(function(l){return {q:l.q,l:l.l};})});});
   if(!blocs.length&&!errs.length)errs.push('Aucune ligne cochée à commander.');return errs.length?{errs:errs}:{blocs:blocs};}
 // --- fabrication des PDF ---
 async function lcPdfCommande(blocs,nature,note){
@@ -4949,21 +4949,24 @@ CL_VERSION='v40 · 21/10';try{document.getElementById('clVer').textContent=CL_VE
 
 // ================= CANA LIVRAISONS 35 : Lecourtier à la semaine + bons de fabrication + HEURES EXTRAS signées + CONTRATS EXTRAS =================
 // ---------- A) lecture du BL : on distingue le MATÉRIEL (à préparer ou Lecourtier) de la nourriture / boissons ----------
-var LC_MAT_RE=/(usage unique|kit service|mat[ée]riel|vaisselle|mobilier|nappage|location)/i,LC_FOOD_RE=/(pause caf|cocktail|boisson|softs|le caf[ée]|plateau|menu|buffet froid|formule (d[ée]jeuner|d[îi]ner)|petit d[ée]jeuner|ap[ée]ritif|vins?|champagne\b(?! seau))/i;
+LC._info={};var LC_MAT_RE=/(usage unique|kit service|mat[ée]riel|vaisselle|mobilier|nappage|location)/i,LC_FOOD_RE=/(pause caf|cocktail|boisson|softs|le caf[ée]|plateau|menu|buffet froid|formule (d[ée]jeuner|d[îi]ner)|petit d[ée]jeuner|ap[ée]ritif|vins?|champagne\b(?! seau))/i;
 lcPage=function(lines){var d={numero:null,titre:'',client:'',date:'',heure:'',lignes:[]};var mode=LC._modePage||'';
   lines.forEach(function(raw){var s=String(raw).replace(/\s+/g,' ').trim();if(!s)return;
     var mN=s.match(/\bN\s*[°ºo]\s*[^\d\s]{0,3}\s*(\d{8})\s*[-–—~]?\s*(.*)$/);if(mN&&!d.numero){d.numero='C'+mN[1];d.titre=mN[2].replace(/\s*[-–—]\s*$/,'').trim();return;}
     var mP=s.match(/Pour\s+(\d{1,2})\s*[:hH.]\s*(\d{2})\s+le\s+\S+\s+(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})/i);if(mP&&!d.date){d.heure=String(mP[1]).padStart(2,'0')+':'+mP[2];d.date=mP[5]+'-'+String(mP[4]).padStart(2,'0')+'-'+String(mP[3]).padStart(2,'0');}
+    var mf=s.match(/entre\s+(\d{1,2}[:h]\d{2})\s+et\s+(\d{1,2}[:h]\d{2})/i);if(mf&&!LC._info.fenetre)LC._info.fenetre=mf[1]+' - '+mf[2];
+    var mc=s.match(/pour\s+(\d+)\s+convives/i);if(mc&&!LC._info.convives)LC._info.convives=mc[1];var md=s.match(/Dress\.\s*:\s*([^/]+)\/\s*Serv\.\s*:\s*(\S+)/i);if(md&&!LC._info.dress)LC._info.dress='Dressage : '+md[1].trim()+' / Service : '+(md[2]==='O'?'oui':md[2]==='N'?'non':md[2]);
+    if(/^Retour\s*:/i.test(s)&&!LC._info.retour)LC._info.retour=s;
     // titres de sections (sans quantité) : « Le Matériel à usage unique - … », « Le Cocktail - … », « Le Service - … », « Livraison - … »
-    if(/^(Le|La|Les)\s+\S/.test(s)&&/Dress\.|convives|\s-\s/.test(s)&&!/^\d/.test(s)){mode=LC_MAT_RE.test(s.split(' - ')[0])?'mat':'autre';return;}
+    if(/^(Le|La|Les)\s+\S/.test(s)&&/Dress\.|convives|\s-\s/.test(s)&&!/^\d/.test(s)){mode=LC_MAT_RE.test(s.split(' - ')[0])?'mat':'autre';if(mode==='mat')d.lignes.push({id:lcUid(),titre:true,statut:'titre',l:s.split(' - ')[0].replace(/\s*Dress\..*$/,'').trim(),mat:true});return;}
     if(/^Livraison\s*-/i.test(s)){mode='autre';return;}
     var m=s.match(/^(\d{1,4}(?:[.,]\d{1,2})?)\s*[-–—~]+\s*(\S.*)$/)||s.match(/^(\d{1,4}(?:[.,]\d{1,2})?)\s+([A-Za-zÀ-ÿ"«].*)$/);if(!m)return;
     var lab=m[2].replace(/\s+[|_\\\/~—–-]+\s*$/,'').trim();if(lab.length<3||!/[a-zA-ZÀ-ÿ]{3}/.test(lab))return;
-    if(/^(FORMULE|PRESTATION)\b/i.test(lab)||/^"?\s*Forfait/i.test(lab)){mode=LC_MAT_RE.test(lab)?'mat':(/PRESTATION|Forfait/i.test(lab)?'autre':'autre');return;}
+    if(/^(FORMULE|PRESTATION)\b/i.test(lab)||/^"?\s*Forfait/i.test(lab)){mode=LC_MAT_RE.test(lab)?'mat':'autre';if(mode==='mat')d.lignes.push({id:lcUid(),titre:true,statut:'titre',q:parseFloat(m[1].replace(',','.')),l:lab,mat:true});return;}
     if(/^\d+(?:[.,]\d+)?\s+(Ma[iî]tre d.?h[oô]tel|Serveu)|^(Ma[iî]tre d.?h[oô]tel|Serveur|Serveuse)$|Livraison zone|Plateaux?-repas|heure suppl/i.test(lab))return;
     var L=lcLigne(parseFloat(m[1].replace(',','.')),lab);L.mat=(mode==='mat')||L.statut==='lec';if(L.mat||L.statut==='lec')d.lignes.push(L);});
   LC._modePage=mode;return d;};
-var _lcLireBonV41=lcLireBon;lcLireBon=async function(b){LC._modePage='';var o=await _lcLireBonV41(b);if(o){o.lignes.forEach(function(l){if(l.statut==='lec')l.mat=true;});if(b.client){o.sous=o.titre;o.titre=b.client;o.client=o.client||b.client;}o.svc=b.svc==='oui';o.svcTxt=b.svc==='oui'?((b.svcMep?'mise en place '+b.svcMep+' · ':'')+'service '+(b.svcDebut||'?')+' → '+(b.svcFin||'?')+(b.svcPers?' · '+b.svcPers:'')):'';o.mode=o.mode||'enl';}return o;};
+var _lcLireBonV41=lcLireBon;lcLireBon=async function(b){LC._modePage='';LC._info={};var o=await _lcLireBonV41(b);if(o){o.info=LC._info;o.adresse=b.adresse||'';o.tel=b.tel||'';}if(o){o.lignes.forEach(function(l){if(l.statut==='lec')l.mat=true;});if(b.client){o.sous=o.titre;o.titre=b.client;o.client=o.client||b.client;}o.svc=b.svc==='oui';o.svcTxt=b.svc==='oui'?((b.svcMep?'mise en place '+b.svcMep+' · ':'')+'service '+(b.svcDebut||'?')+' → '+(b.svcFin||'?')+(b.svcPers?' · '+b.svcPers:'')):'';o.mode=o.mode||'enl';}return o;};
 // ---------- B) la page : choisir LA SEMAINE, le logiciel lit tout ----------
 function lcSemaine(n){var x=new Date();x.setDate(x.getDate()-((x.getDay()+6)%7)+7*n);var a=fmtD(x);x.setDate(x.getDate()+6);LC.de=a;LC.a=fmtD(x);lcPanel();}
 var _lcPanelV41=lcPanel;lcPanel=async function(){if(!LC.de){lcSemaine(1);return;}await _lcPanelV41();if(LC.orders.length&&document.getElementById('lcWin'))return;
@@ -4990,26 +4993,40 @@ var _lcConstruireV41=lcConstruire;lcConstruire=function(){var r=_lcConstruireV41
 async function lcFabrication(){
   var O=LC.orders.filter(function(o){return o.lignes.some(function(l){return l.mat||l.statut==='lec';});});if(!O.length){alert('Aucun matériel trouvé sur les bons.');return;}
   O.sort(function(a,b){return (a.dateLiv+(a.heureLiv||'')).localeCompare(b.dateLiv+(b.heureLiv||''));});
-  var doc=await PDFLib.PDFDocument.create();var fb=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),fr=await doc.embedFont(PDFLib.StandardFonts.Helvetica);var W=595,H=842;
+  var doc=await PDFLib.PDFDocument.create();var fb=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold),fr=await doc.embedFont(PDFLib.StandardFonts.Helvetica);var W=595,H=842;var N=PDFLib.rgb(0,0,0),G=PDFLib.rgb(.35,.35,.35);
   var nt=function(t){return String(t==null?'':t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');};var dl=function(x){return x?x.split('-').reverse().join('/'):'';};
-  for(var oi=0;oi<O.length;oi++){var o=O[oi];var pg=doc.addPage([W,H]);var y=H-46;
-    var tx=function(t,x,s,f,c){if(y<60){pg=doc.addPage([W,H]);y=H-46;}pg.drawText(nt(t).slice(0,90),{x:x,y:y,size:s,font:f||fr,color:c||PDFLib.rgb(0,0,0)});};
-    tx('BON DE FABRICATION - LA TABLE DE CANA',40,16,fb);y-=20;
-    pg.drawRectangle({x:36,y:y-48,width:W-72,height:62,borderColor:PDFLib.rgb(0,0,0),borderWidth:1.2});
-    tx((o.numero?o.numero+' - ':'')+o.titre,46,12.5,fb);y-=15;tx('Client : '+(o.client||o.titre),46,10.5,fr);y-=14;
-    tx('Livraison : '+dl(o.dateLiv)+(o.heureLiv?' a '+o.heureLiv:'')+'      Lecourtier : '+(o.mode==='labo'?'livre au labo':'enlevement')+' '+dl(o.dateEnl)+(o.dateRet?' / retour '+dl(o.dateRet):''),46,10.5,fr);y-=14;
-    if(o.svc){tx('AVEC SERVICE : '+o.svcTxt,46,10,fb);}y-=26;
-    tx('Prepare par : ..............................     Verifie par : ..............................',40,10,fr);y-=24;
-    var lignes=o.lignes.filter(function(l){return l.mat||l.statut==='lec';});
-    lignes.forEach(function(l){var lec=l.statut==='lec'&&l.coche!==false;if(y<70){pg=doc.addPage([W,H]);y=H-46;}
-      if(lec)pg.drawRectangle({x:58,y:y-4,width:W-100,height:16,color:PDFLib.rgb(1,.96,.4)});
-      pg.drawRectangle({x:42,y:y-2,width:11,height:11,borderColor:PDFLib.rgb(0,0,0),borderWidth:1});
-      pg.drawText(nt(l.q==null?'':String(l.q)),{x:62,y:y,size:11,font:fb});pg.drawText(nt(l.l).slice(0,70),{x:100,y:y,size:10.5,font:fr});
-      if(lec)pg.drawText('LECOURTIER',{x:W-112,y:y,size:9.5,font:fb});y-=19;});
-    y-=10;tx('Les lignes surlignees "LECOURTIER" sont fournies par Lecourtier. Tout le reste est prepare au labo.',40,9,fr,PDFLib.rgb(.3,.3,.3));
-    // le même bon part aussi avec la livraison du client (chez le chauffeur)
-    try{var one=await PDFLib.PDFDocument.create();var cp=await one.copyPages(doc,doc.getPageIndices().slice(-1));cp.forEach(function(p){one.addPage(p);});var bb=await one.save();var p2='F'+Date.now().toString(36)+oi;var n2=await bnStockerPdf(p2,bb);
-      await bnPost({date:'PREP_'+o.dateLiv+'_'+(o.numero||lcUid()),donnees:{type:'PREP',jour:o.dateLiv,client:'Fabrication — '+o.titre,numero:o.numero,pid:p2,parts:n2},updated_at:new Date().toISOString()});}catch(e){}}
+  var jourLong=function(iso){return iso?new Date(iso+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase():'';};
+  for(var oi=0;oi<O.length;oi++){var o=O[oi];var inf=o.info||{};var pg=doc.addPage([W,H]);var y=H-40;var page=1;
+    var entete=function(suite){pg.drawText(nt('BON DE FABRICATION - LA TABLE DE CANA'+(suite?' (suite)':'')),{x:36,y:y,size:11,font:fb,color:G});pg.drawText(nt(o.numero||''),{x:W-140,y:y,size:11,font:fb,color:G});y-=8;pg.drawLine({start:{x:36,y:y},end:{x:W-36,y:y},thickness:1.2,color:N});y-=26;};
+    var nouvellePage=function(){pg=doc.addPage([W,H]);y=H-40;page++;entete(true);pg.drawText(nt(jourLong(o.dateLiv)+'  -  '+(o.client||o.titre)).slice(0,80),{x:36,y:y,size:12,font:fb});y-=24;};
+    entete(false);
+    // LE JOUR, EN TRÈS GROS
+    pg.drawRectangle({x:36,y:y-14,width:W-72,height:40,color:PDFLib.rgb(.92,.92,.92),borderColor:N,borderWidth:1.5});
+    var jl=nt(jourLong(o.dateLiv));var sz=Math.min(22,(W-90)/(fb.widthOfTextAtSize(jl,22)/22));pg.drawText(jl,{x:(W-fb.widthOfTextAtSize(jl,sz))/2,y:y,size:sz,font:fb});y-=46;
+    // LE CLIENT, EN GROS
+    var cl=nt(o.client||o.titre);var sc=Math.min(18,(W-80)/(fb.widthOfTextAtSize(cl,18)/18));pg.drawText(cl,{x:36,y:y,size:sc,font:fb});y-=22;
+    var info=function(t,f,s){if(!t)return;pg.drawText(nt(t).slice(0,100),{x:36,y:y,size:s||10.5,font:f||fr});y-=(s||10.5)+5;};
+    info((o.sous||'')+(inf.convives?'   -   TOTAL : '+inf.convives+' CONVIVES':''),fb,12);
+    info('Livraison : '+dl(o.dateLiv)+(inf.fenetre?' entre '+inf.fenetre:(o.heureLiv?' a '+o.heureLiv:''))+(o.adresse?'   -   '+o.adresse:''));
+    if(o.tel)info('Telephone : '+o.tel);info(inf.dress||'');if(inf.retour)info(inf.retour);
+    if(o.svc)info('AVEC SERVICE : '+o.svcTxt,fb,10.5);
+    info('LECOURTIER : '+(o.mode==='labo'?'livre au labo le ':'enlevement le ')+dl(o.dateEnl)+(o.dateRet?'   -   retour le '+dl(o.dateRet):''),fb,10.5);
+    y-=4;pg.drawText(nt('Prepare par : ..............................       Verifie par : ..............................'),{x:36,y:y,size:10,font:fr});y-=14;
+    pg.drawLine({start:{x:36,y:y},end:{x:W-36,y:y},thickness:.8,color:N});y-=18;
+    // LE MATÉRIEL, DANS L'ORDRE DU BL : Lecourtier surligné, le reste à préparer à Cana
+    var nb=0,nbL=0;
+    o.lignes.forEach(function(l){if(!(l.mat||l.statut==='lec'||l.titre))return;if(y<70)nouvellePage();
+      if(l.titre){y-=4;pg.drawRectangle({x:36,y:y-4,width:W-72,height:17,color:PDFLib.rgb(.85,.85,.85)});pg.drawText(nt((l.q?l.q+'  ':'')+l.l).slice(0,90),{x:42,y:y,size:10.5,font:fb});y-=21;return;}
+      var lec=l.statut==='lec'&&l.coche!==false;nb++;if(lec)nbL++;
+      if(lec)pg.drawRectangle({x:60,y:y-4,width:W-96,height:16,color:PDFLib.rgb(1,.95,.3)});
+      pg.drawRectangle({x:40,y:y-2,width:11,height:11,borderColor:N,borderWidth:1});
+      pg.drawText(nt(l.q==null?'':String(l.q)),{x:64,y:y,size:11,font:fb});pg.drawText(nt(l.l).slice(0,68),{x:104,y:y,size:10.5,font:fr});
+      if(lec)pg.drawText('LECOURTIER',{x:W-108,y:y,size:9.5,font:fb});y-=18;});
+    if(y<90)nouvellePage();y-=8;pg.drawLine({start:{x:36,y:y},end:{x:W-36,y:y},thickness:.8,color:N});y-=16;
+    pg.drawText(nt(nb+' ligne(s) de materiel dont '+nbL+' LECOURTIER (surlignees) et '+(nb-nbL)+' a preparer a La Table de Cana.'),{x:36,y:y,size:10,font:fb});y-=14;
+    pg.drawText(nt('Copie du materiel ecrit sur le BL par la commerciale. En cas de doute, verifier le BL d origine.'),{x:36,y:y,size:8.5,font:fr,color:G});
+    try{var one=await PDFLib.PDFDocument.create();var idx=doc.getPageIndices().slice(-page);var cp=await one.copyPages(doc,idx);cp.forEach(function(p){one.addPage(p);});var bb=await one.save();var p2='F'+Date.now().toString(36)+oi;var n2=await bnStockerPdf(p2,bb);
+      await bnPost({date:'PREP_'+o.dateLiv+'_'+(o.numero||lcUid()),donnees:{type:'PREP',jour:o.dateLiv,client:'Fabrication — '+(o.client||o.titre),numero:o.numero,pid:p2,parts:n2},updated_at:new Date().toISOString()});}catch(e){}}
   var by=await doc.save();window.open(URL.createObjectURL(new Blob([by],{type:'application/pdf'})),'_blank');dlBlob2(by,'Bons_de_fabrication_'+LC.de+'_au_'+LC.a+'.pdf');try{lcPreps(true);}catch(e){}}
 // ---------- D) 🎩 HEURES EXTRAS : feuilles de service signées, validation, récap comptable ----------
 var HX={de:'',a:'',L:null,reg:null,extras:null};
