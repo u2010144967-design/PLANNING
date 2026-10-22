@@ -5132,5 +5132,24 @@ var _hxContratsDeV42=hxContratsDe;hxContratsDe=async function(k){var f=await bnM
   var orig=hxContratPdf;hxContratPdf=function(v,s){v.REEL=window._v42Reel[norm(v.NOM)]||'';return orig(v,s);};try{await _hxContratsDeV42(k);}finally{hxContratPdf=orig;}};
 CL_VERSION='v42 · 21/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
+// ================= CANA LIVRAISONS 37 : les dates se tapent EN ENTIER avant que la page bouge =================
+// Partout dans le logiciel : quand on TAPE une date au clavier, rien ne bouge tant qu'on n'a pas appuyé sur Entrée
+// ou quitté la case. Un choix dans le petit calendrier, lui, s'applique tout de suite.
+var V43={tape:new WeakMap(),laisse:false};
+document.addEventListener('keydown',function(e){var t=e.target;if(!t||t.tagName!=='INPUT'||!/^(date|month|datetime-local)$/.test(t.type))return;
+  if(e.key==='Enter'){if(V43.tape.get(t)){V43.tape.set(t,false);V43.laisse=true;t.dispatchEvent(new Event('change',{bubbles:true}));V43.laisse=false;}return;}
+  if(/^[0-9]$/.test(e.key)||e.key==='Backspace'||e.key==='Delete'||e.key==='ArrowUp'||e.key==='ArrowDown')V43.tape.set(t,'clavier');},true);
+['change','input'].forEach(function(ev){document.addEventListener(ev,function(e){var t=e.target;if(V43.laisse||!t||t.tagName!=='INPUT'||!/^(date|month|datetime-local)$/.test(t.type))return;
+  if(V43.tape.get(t)&&document.activeElement===t){e.stopImmediatePropagation();V43.tape.set(t,'attente');}},true);});
+document.addEventListener('blur',function(e){var t=e.target;if(!t||t.tagName!=='INPUT'||!/^(date|month|datetime-local)$/.test(t.type))return;
+  if(V43.tape.get(t)==='attente'){V43.tape.set(t,false);V43.laisse=true;t.dispatchEvent(new Event('change',{bubbles:true}));V43.laisse=false;}else V43.tape.set(t,false);},true);
+// « Aller au… » : on attend la date COMPLÈTE (8 chiffres, ex. 21102026) ou la touche Entrée
+(function(){var t=setInterval(function(){var i=document.getElementById('v33Go');if(!i||i.getAttribute('data-v43'))return;clearInterval(t);i.setAttribute('data-v43','1');
+  var n=i.cloneNode(true);n.setAttribute('data-m','1');i.parentNode.replaceChild(n,i);n.placeholder='Aller au… (ex. 21102026)';
+  var aller=function(v){var j=+v.slice(0,2),m=+v.slice(2,4),a=+v.slice(4);if(a<100)a+=2000;var d=new Date(a,m-1,j);if(d.getMonth()!==m-1||d.getDate()!==j){n.classList.add('err');setTimeout(function(){n.classList.remove('err');},800);return;}V30.action=Date.now();cur=fmtD(d);try{ensure(cur);render();px2Ecran(0);}catch(x){}n.value='';n.blur();};
+  n.addEventListener('input',function(){var v=n.value.replace(/\D/g,'').slice(0,8);var o=v.slice(0,2);if(v.length>2)o+='/'+v.slice(2,4);if(v.length>4)o+='/'+v.slice(4);n.value=o;if(v.length===8)setTimeout(function(){aller(v);},300);});
+  n.addEventListener('keydown',function(e){if(e.key!=='Enter')return;var v=n.value.replace(/\D/g,'');if(v.length===6||v.length===8)aller(v);});},500);})();
+CL_VERSION='v43 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
 </script>
 </body></html>
