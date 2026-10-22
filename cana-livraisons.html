@@ -1102,6 +1102,32 @@ body.sd-reduit #v39Moi .v39t,.sd-mini #v39Moi .v39t{display:none}
 .hxH{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px}.hxH b{display:block;font-size:15px}.hxH small{color:#64748b}
 .hxB{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .v42m{margin:6px 18px 10px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.v42m.ok{background:#ecfdf5;border-color:#86efac}.v42m small{color:#64748b}
+.v44w{display:inline-flex;align-items:center;gap:2px;position:relative;vertical-align:middle}
+.v44t{width:112px;padding:7px 9px;border:1px solid #cbd5e1;border-radius:9px;font-size:13.5px;font-weight:700;letter-spacing:.5px;background:#fff}.v44t:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}.v44t.err{border-color:#dc2626;background:#fef2f2}
+.v44b{background:#f1f5f9!important;border:1px solid #cbd5e1!important;border-radius:9px!important;padding:6px 8px!important;font-size:14px!important;cursor:pointer}
+input.v44cache{position:absolute!important;left:0;bottom:0;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none;padding:0!important;border:0!important}
+.csgF .v40ck input{flex:0 0 auto!important;min-width:0!important;width:18px;height:18px;padding:0!important}.csgF .v40ck{order:-1}
+/* ===== v45 : impression au style HB ===== */
+#printArea,#printArea *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;font-family:'Inter',system-ui,Arial,sans-serif!important}
+#printArea .hbtete{display:flex;align-items:center;gap:10px;border-bottom:2.5px solid #0b1b33;padding:0 0 4px;margin:0 0 4px}
+#printArea .hblogo{width:30px;height:30px;border-radius:15px;border:2px solid #e8c66a;background:#0b1b33;color:#fff;display:flex;align-items:center;justify-content:center;font:900 13px Georgia,serif!important}
+#printArea .hbtete b{display:block;font-size:17px;color:#0b1b33;letter-spacing:.3px}#printArea .hbtete small{display:block;font-size:10.5px;color:#475569;font-weight:700}#printArea .hbtete>div{flex:1}
+#printArea .hbdate{font-size:9px;color:#64748b}
+#printArea table.hbpg{width:100%;border-collapse:collapse;table-layout:fixed}
+#printArea table.hbpg td{border:1px solid #cbd5e1!important;padding:1px 4px!important;font-size:11.5px!important;font-weight:800;vertical-align:middle;overflow:hidden;line-height:1.15}
+#printArea table.hbpg td.lbl{background:#0b1b33!important;color:#fff!important;font-size:9px!important;text-align:center;font-weight:900}
+#printArea table.hbpg td.tcell{background:#f1f5f9!important;color:#0f172a!important;font-size:10px!important;text-align:center;font-weight:900}
+#printArea table.hbpg td.hbjour{background:#0b1b33!important;color:#fff!important;text-align:center;font-size:11px!important}
+#printArea table.hbpg td.hbcam{background:#eef2f7!important;color:#0f172a!important;text-align:center;font-size:12.5px!important;font-weight:900}#printArea td.hbcam small{display:block;font-size:8.5px;color:#475569}
+#printArea table.hbpg td.hbch{background:#1e3a5f!important;color:#fff!important;text-align:center;font-size:13.5px!important;font-weight:900}
+#printArea table.hbpg td.hbdeb{background:#f8fafc!important;color:#334155!important;text-align:center;font-size:10.5px!important}#printArea td.hbdeb small{display:block;font-size:9px;color:#15803d;font-weight:900}#printArea td.hbdeb small.off{color:#b91c1c}
+#printArea table.hbpg td.hbv{background:#fbfcfe!important}
+#printArea td.hbc i.cs{display:block;font-style:normal;font-size:8.5px;color:#b91c1c;font-weight:900}
+#printArea td.hbc.ann{text-decoration:line-through;color:#b91c1c!important}
+#printArea td.hbc .sc{background:#86efac;padding:0 2px}
+#printArea .hbleg{display:flex;gap:10px;align-items:center;font-size:8.5px;color:#475569;margin-top:3px}#printArea .hbleg i{display:inline-block;width:10px;height:8px;margin-right:3px}#printArea .hbleg .ann{color:#b91c1c}
+#printArea .hbsig{margin-top:8px;font-size:11px}
+@media print{body.printing{padding:0!important;margin:0!important;background:#fff!important}body.printing>*:not(#printArea){display:none!important}body.printing #printArea{display:block!important;position:static!important;inset:auto!important;margin:0!important;padding:0!important;background:#fff!important;width:auto!important}}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5150,6 +5176,69 @@ document.addEventListener('blur',function(e){var t=e.target;if(!t||t.tagName!=='
   n.addEventListener('input',function(){var v=n.value.replace(/\D/g,'').slice(0,8);var o=v.slice(0,2);if(v.length>2)o+='/'+v.slice(2,4);if(v.length>4)o+='/'+v.slice(4);n.value=o;if(v.length===8)setTimeout(function(){aller(v);},300);});
   n.addEventListener('keydown',function(e){if(e.key!=='Enter')return;var v=n.value.replace(/\D/g,'');if(v.length===6||v.length===8)aller(v);});},500);})();
 CL_VERSION='v43 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 38 : TOUTES les cases de date deviennent « comme la recherche en haut » =================
+// On tape 01102026 (les « / » se mettent tout seuls) : RIEN ne bouge pendant la frappe.
+// La date s'applique seulement quand elle est complète (8 chiffres), ou avec Entrée, ou en quittant la case.
+// Le petit 📅 à côté ouvre toujours le calendrier.
+function v44Iso2Fr(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v.split('-').reverse().join('/'):'';}
+function v44Transformer(d){
+  if(!d||d.getAttribute('data-v44')||d.type!=='date')return;d.setAttribute('data-v44','1');
+  var w=document.createElement('span');w.className='v44w';var t=document.createElement('input');t.type='text';t.className='v44t';t.inputMode='numeric';t.placeholder='jj/mm/aaaa';t.value=v44Iso2Fr(d.value);t.autocomplete='off';
+  var b=document.createElement('button');b.type='button';b.className='v44b';b.textContent='📅';b.title='Ouvrir le calendrier';
+  d.parentNode.insertBefore(w,d);w.appendChild(t);w.appendChild(b);w.appendChild(d);d.classList.add('v44cache');d.tabIndex=-1;
+  var dernier=d.value;
+  var appliquer=function(){var v=t.value.replace(/\D/g,'');if(!v){return;}if(v.length===6)v=v.slice(0,4)+'20'+v.slice(4);if(v.length!==8){t.classList.add('err');setTimeout(function(){t.classList.remove('err');},900);t.value=v44Iso2Fr(d.value);return;}
+    var j=+v.slice(0,2),m=+v.slice(2,4),a=+v.slice(4);var x=new Date(a,m-1,j);if(x.getMonth()!==m-1||x.getDate()!==j||a<2000||a>2100){t.classList.add('err');setTimeout(function(){t.classList.remove('err');},900);return;}
+    var iso=a+'-'+String(m).padStart(2,'0')+'-'+String(j).padStart(2,'0');t.value=v44Iso2Fr(iso);if(iso===dernier)return;dernier=iso;d.value=iso;
+    V43.laisse=true;try{d.dispatchEvent(new Event('input',{bubbles:true}));d.dispatchEvent(new Event('change',{bubbles:true}));}finally{V43.laisse=false;}};
+  t.addEventListener('input',function(){var v=t.value.replace(/\D/g,'').slice(0,8);var o=v.slice(0,2);if(v.length>2)o+='/'+v.slice(2,4);if(v.length>4)o+='/'+v.slice(4);t.value=o;if(v.length===8)setTimeout(appliquer,250);});
+  t.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();appliquer();}});
+  t.addEventListener('blur',function(){setTimeout(function(){if(document.activeElement!==t)appliquer();},120);});
+  t.addEventListener('focus',function(){t.select();});
+  b.addEventListener('click',function(){try{d.showPicker();}catch(e){d.focus();d.click();}});
+  // un choix dans le calendrier : appliqué tout de suite, et la case texte suit
+  d.addEventListener('change',function(){t.value=v44Iso2Fr(d.value);dernier=d.value;});}
+function v44Tout(r){(r||document).querySelectorAll('input[type=date]:not([data-v44])').forEach(v44Transformer);}
+new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;if(n.matches&&n.matches('input[type=date]'))v44Transformer(n);else if(n.querySelectorAll)v44Tout(n);});});}).observe(document.body,{childList:true,subtree:true});
+setTimeout(v44Tout,800);
+CL_VERSION='v44 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 39 : les FICHES IMPRIMÉES identiques au planning en ligne (l'ancien modèle est supprimé) =================
+function v45Jour(day){var k=Object.keys(store).find(function(x){return store[x]===day;});return k||cur;}
+var _colsDayV45=colsDay;colsDay=function(day){var c=_colsDayV45(day);var d=v45Jour(day);c.forEach(function(x){x.d=d;});return c;};
+function v45Hor(nom,d){try{var t=String(nom||'').split(/[\/,+&]/).map(function(x){var id=v32Id(x);var h=id>=0?horDe(id,d):null;if(!h)return '';return h.s&&h.s!=='T'?STATUTS[h.s][0].toUpperCase():(h.d||'')+(h.f?' - '+h.f:'');}).filter(Boolean).join(' / ');return t;}catch(e){return '';}}
+// la grille imprimée = la même que celle à l'écran (en-têtes sobres, couleurs des cases, bande traiteur/resto-co/tâche, consignes, annulations)
+gridTable=function(cols,heads){
+  var FAMC={tr:'#2563eb',rc:'#16a34a',ta:'#ea580c'};
+  var h='<table class="pg hbpg"><colgroup><col style="width:16mm">'+cols.map(function(){return '<col>';}).join('')+'</colgroup>';
+  if(heads)h+='<tr><td class="lbl"></td>'+cols.map(function(c){return '<td class="hbjour">'+esc(c.head||'')+'</td>';}).join('')+'</tr>';
+  h+='<tr><td class="lbl">CAMION</td>'+cols.map(function(c){var t=clClean((c.cam||{}).t||'');var pl=t&&typeof pqDe==='function'?pqDe(t):'';return '<td class="hbcam">'+esc(t)+(pl?'<small>'+esc(pl)+'</small>':'')+'</td>';}).join('')+'</tr>';
+  h+='<tr><td class="lbl">CHAUFF.</td>'+cols.map(function(c){return '<td class="hbch">'+esc(clClean((c.ch||{}).t||''))+'</td>';}).join('')+'</tr>';
+  h+='<tr><td class="lbl">DÉBUT</td>'+cols.map(function(c){var t=(c.deb||{}).t||'';var hr=v45Hor((c.ch||{}).t,c.d||cur);return '<td class="hbdeb">'+esc(t)+(hr?'<small class="'+(/REPOS|CONG|ARR|ABSENT/.test(hr)?'off':'')+'">'+esc(hr)+'</small>':'')+'</td>';}).join('')+'</tr>';
+  for(var ri=0;ri<TIMES.length;ri++){h+='<tr><td class="tcell">'+TIMES[ri]+'</td>'+cols.map(function(c){var o=c.cell(ri)||{};if(!o.t)return '<td class="hbv"></td>';
+      var d=c.d||cur;var f='';try{f=famDe(d,o,o.t);}catch(e){}var cl=(o.bon&&o.bon.client)||o.t;var cs=[],an=[];try{cs=csgPour(d,cl);an=cs.filter(function(x){return x.annule;});}catch(e){}
+      var sc=/SECURITE CIVILE/.test(norm(o.t));var bg=o.c&&o.c!=='#FFFFFF'?o.c:'#ffffff';
+      return '<td class="hbc'+(an.length?' ann':'')+'" style="background:'+bg+';color:'+tc(bg)+';border-left:4px solid '+(FAMC[f]||'#cbd5e1')+'">'+(sc?'<span class="sc">'+esc(o.t)+'</span>':esc(o.t))+(cs.filter(function(x){return !x.annule;}).length?'<i class="cs">⚠ '+esc(cs.filter(function(x){return !x.annule;}).map(function(x){return x.texte;}).join(' · ')).slice(0,60)+'</i>':'')+(an.length?'<i class="cs">❌ '+esc(an[0].texte||'ANNULÉ')+'</i>':'')+'</td>';}).join('')+'</tr>';}
+  return h+'</table>';};
+function v45Titre(t,sous){return '<div class="hbtete"><span class="hblogo">HB</span><div><b>'+esc(t)+'</b>'+(sous?'<small>'+esc(sous)+'</small>':'')+'</div><span class="hbdate">Imprimé le '+new Date().toLocaleDateString('fr-FR')+'</span></div>';}
+function v45Legende(){return '<div class="hbleg"><i style="background:#2563eb"></i>Traiteur <i style="background:#16a34a"></i>Resto-Co <i style="background:#ea580c"></i>Tâche <span>⚠ consigne</span> <span class="ann">❌ annulé</span></div>';}
+// 1) le jour, tous les chauffeurs
+printDay=function(){var day=store[cur];openPrint('A4 landscape',172,v45Titre(dayLabel(cur).toUpperCase(),'Planning des chauffeurs')+gridTable(colsDay(day))+v45Legende());};
+// 2) une fiche par chauffeur
+printByDriver=function(){var day=store[cur];var html='';var n=0;
+  for(var ci=0;ci<6;ci++){if(!hasCol(day,ci))continue;n++;var c=colsDay(day)[ci];var nom=clClean(day.ch[ci].t||DRIVERS[ci]);
+    html+='<div class="brk">'+v45Titre(nom+' — '+dayLabel(cur).toUpperCase(),'Fiche chauffeur · camion '+clClean(day.cam[ci].t||'—'))+gridTable([c])+v45Legende()+'<div class="hbsig">Signature du chauffeur : ................................................</div></div>';}
+  if(!n){alert('Rien à imprimer pour ce jour.');return;}openPrint('A4 portrait',238,html);};
+// 3) la semaine de chaque chauffeur
+printDriverWeek=function(){var days=weekDays(cur);days.forEach(function(d){ensure(d);});var html='';var n=0;
+  for(var ci=0;ci<6;ci++){var any=days.some(function(d){return hasCol(store[d],ci);});if(!any)continue;n++;
+    var cols=days.map(function(d){var dd=store[d];return {ci:ci,d:d,head:shortDay(d),cam:dd.cam[ci],ch:dd.ch[ci],deb:dd.deb[ci],cell:(function(dd){return function(ri){return dd.cells[ri+'_'+ci];};})(dd)};});
+    html+='<div class="brk">'+v45Titre(clClean(store[days[0]].ch[ci].t||DRIVERS[ci])+' — semaine du '+days[0].split('-').reverse().join('/'),'Fiche semaine chauffeur')+gridTable(cols,true)+v45Legende()+'</div>';}
+  if(!n){alert('Rien à imprimer cette semaine.');return;}openPrint('A4 landscape',168,html);};
+// 4) la semaine en A3 (un jour par page)
+printWeekA3=function(){var days=weekDays(cur);var html='';days.forEach(function(d){ensure(d);html+='<div class="brk">'+v45Titre(dayLabel(d).toUpperCase(),'Planning des chauffeurs')+gridTable(colsDay(store[d]))+v45Legende()+'</div>';});openPrint('A3 landscape',255,html);};
+CL_VERSION='v45 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
