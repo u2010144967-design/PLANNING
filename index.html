@@ -3207,11 +3207,12 @@ function AccueilPro({ch,planning,onNavigate}){
   const dateTxt=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const[hor,setHor]=useState(null);useEffect(()=>{horChargerApp().then(H=>setHor((H&&H[ch.id])||{}));},[]);
   const[aLire,setALire]=useState([]);useEffect(()=>{const C=[];L.forEach(m=>{if(m.consigne&&m.client&&!estLu(cleLu(m.client,m.consigne)))C.push({client:m.client,texte:m.consigne});if(m.tournee&&m.tournee.clients)m.tournee.clients.forEach(c=>{if(c.consigne&&!estLu(cleLu(c.client,c.consigne)))C.push({client:c.client,texte:c.consigne});});});setALire(C);},[L.length]);
+  const[horMois,setHorMois]=useState(false);
   const[dispos,setDispos]=useState([]);useEffect(()=>{(async()=>{try{const r=await sGet('planning?date=like.DISPO_*&select=date,donnees&limit=300');const auj=jourLocal();setDispos((r||[]).map(x=>{let o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}return Object.assign({cle:x.date},o||{});}).filter(o=>!o.supprime&&(o.jour||'')>=auj&&(o.qui||[]).some(q=>+q.i===+ch.id)&&!(o.reponses||{})[ch.id]));}catch(e){}})();},[]);
   async function repondreDispo(o,v){try{const r=await sGet('planning?date=eq.'+encodeURIComponent(o.cle)+'&select=donnees&limit=1');let d=r&&r[0]&&r[0].donnees;if(typeof d==='string')d=JSON.parse(d);d=d||o;d.reponses=Object.assign({},d.reponses||{},{[ch.id]:v});await bnPostA({date:o.cle,donnees:d,updated_at:new Date().toISOString()});setDispos(x=>x.filter(y=>y.cle!==o.cle));showToast(v==='oui'?'✅ Merci, le bureau sait que tu es disponible':'Merci, c’est noté','var(--green)');}catch(e){showToast('Pas de réseau, réessaie','var(--red)');}}
   const[rdv,setRdv]=useState([]);useEffect(()=>{(async()=>{try{const r=await sGet('planning?date=like.RDV_*&select=date,donnees&limit=500');const auj=jourLocal();setRdv((r||[]).map(x=>{let o=x.donnees;if(typeof o==='string'){try{o=JSON.parse(o);}catch(e){o={};}}return o||{};}).filter(o=>!o.supprime&&+o.chauffeurId===+ch.id&&(o.jour||'')>=auj).sort((a,b)=>(a.jour+a.debut).localeCompare(b.jour+b.debut)).slice(0,6));}catch(e){}})();},[]);const hj=hor&&hor[jourLocal()];const off=hj&&hj.s&&hj.s!=='T'&&hj.s!=='RET';
   const pct=tot?Math.round(L.filter(m=>m._st==='ok').length*100/Math.max(1,L.length)):0;
-  const gros=(bg)=>({width:'100%',border:'none',borderRadius:22,padding:'20px 18px',display:'flex',alignItems:'center',gap:16,color:'#fff',background:bg,fontFamily:'inherit',textAlign:'left',boxShadow:'0 8px 22px rgba(15,23,42,.18)',marginTop:14,cursor:'pointer'});
+  const gros=(bg)=>({width:'100%',border:'none',borderRadius:16,padding:'11px 14px',display:'flex',alignItems:'center',gap:12,color:'#fff',background:bg,fontFamily:'inherit',textAlign:'left',boxShadow:'0 4px 12px rgba(15,23,42,.15)',marginTop:10,cursor:'pointer'});
   if(aLire.length)return <div className="screen" style={{background:'#7f1d1d'}}><div className="scroll" style={{padding:'calc(20px + env(safe-area-inset-top)) 16px 30px'}}>
     <div style={{color:'#fff',fontSize:24,fontWeight:900}}>⚠️ À LIRE AVANT DE PARTIR</div><div style={{color:'#fecaca',fontSize:15,marginTop:4}}>Le bureau a ajouté des infos importantes. Lis-les et touche « J’ai lu » pour chacune.</div>
     {aLire.map((c,i)=><div key={i} style={{background:'#fff',borderRadius:16,padding:14,marginTop:12}}><div style={{fontWeight:900,fontSize:16}}>{c.client}</div><div style={{fontSize:18,fontWeight:900,color:'#b91c1c',marginTop:6}}>{c.texte}</div>
@@ -3219,41 +3220,43 @@ function AccueilPro({ch,planning,onNavigate}){
       <button onClick={()=>{marquerLu(ch,jourLocal(),c.client,c.texte);setALire(a=>a.filter((_,j)=>j!==i));}} style={{flex:1,padding:12,borderRadius:12,border:'none',background:'#16a34a',color:'#fff',fontWeight:900,fontSize:16}}>✅ J’ai lu</button></div></div>)}
   </div></div>;
   return <div className="screen" style={{background:PRO.fond}}>
-    <div style={{background:'linear-gradient(160deg,#0b1b33 0%,#1e3a8a 100%)',color:'#fff',padding:'18px 18px 26px',paddingTop:'calc(18px + env(safe-area-inset-top))'}}>
+    <div style={{background:'linear-gradient(160deg,#0b1b33 0%,#1e3a8a 100%)',color:'#fff',padding:'12px 16px 16px',paddingTop:'calc(12px + env(safe-area-inset-top))'}}>
       <div style={{display:'flex',alignItems:'center'}}><div style={{flex:1,fontSize:13,color:'#c7d2fe',textTransform:'capitalize'}}>{dateTxt}</div>
         <button onClick={()=>onNavigate('alertes')} style={{position:'relative',background:'rgba(255,255,255,.14)',border:'none',color:'#fff',borderRadius:12,width:44,height:44,fontSize:20}}>🔔{nAl>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',borderRadius:10,fontSize:11,fontWeight:900,padding:'1px 6px'}}>{nAl}</span>}</button></div>
-      <div style={{fontSize:32,fontWeight:900,marginTop:4}}>Bonjour {ch.display} 👋</div>
-      <div style={{fontSize:15,color:'#e0e7ff',marginTop:2}}>🚚 {d.truck||ch.truck||'Camion'}{hj&&!off&&hj.d?' · '+hj.d+(hj.f?' → '+hj.f:''):(d.start?' · début '+d.start:'')}</div>
+      <div style={{fontSize:24,fontWeight:900,marginTop:2}}>Bonjour {ch.display} 👋</div>
+      <div style={{fontSize:18,fontWeight:800,color:'#fff',marginTop:4}}>🚚 {d.truck||ch.truck||'Camion'}{hj&&!off&&hj.d?' · '+hj.d+(hj.f?' → '+hj.f:''):(d.start?' · début '+d.start:'')}</div>
       {off&&<div style={{marginTop:10,background:'#f59e0b',color:'#1c1917',borderRadius:14,padding:'12px 14px',fontSize:20,fontWeight:900}}>🏖️ Aujourd’hui : {HOR_LIB[hj.s]||hj.s}</div>}
     </div>
     <div className="scroll" style={{padding:'4px 16px 100px'}}>
       <button onClick={()=>onNavigate('tournee')} style={{...gros(L.length&&faits===L.length?'#16a34a':'#2563eb'),flexDirection:'column',alignItems:'stretch'}}>
-        <div style={{display:'flex',alignItems:'center',gap:14}}><span style={{fontSize:44}}>🚚</span>
-          <div style={{flex:1}}><div style={{fontSize:21,fontWeight:900,lineHeight:1.15}}>MA TOURNÉE<br/>D’AUJOURD’HUI</div>
-            <div style={{fontSize:15,fontWeight:700,marginTop:4,opacity:.95}}>{L.length?(faits===L.length?'✅ Tout est livré, bravo !':tot+' client'+(tot>1?'s':'')+' · '+faits+' fait'+(faits>1?'s':'')):'Rien de prévu aujourd’hui'}</div></div>
-          <span style={{fontSize:34}}>›</span></div>
-        {L.length>0&&<div style={{height:10,background:'rgba(255,255,255,.3)',borderRadius:6,marginTop:12,overflow:'hidden'}}><div style={{height:'100%',width:pct+'%',background:'#fff'}}/></div>}
+        <div style={{display:'flex',alignItems:'center',gap:12}}><span style={{fontSize:30}}>🚚</span>
+          <div style={{flex:1}}><div style={{fontSize:17,fontWeight:900,lineHeight:1.15}}>MA TOURNÉE<br/>D’AUJOURD’HUI</div>
+            <div style={{fontSize:13.5,fontWeight:700,marginTop:2,opacity:.95}}>{L.length?(faits===L.length?'✅ Tout est livré, bravo !':tot+' client'+(tot>1?'s':'')+' · '+faits+' fait'+(faits>1?'s':'')):'Rien de prévu aujourd’hui'}</div></div>
+          <span style={{fontSize:26}}>›</span></div>
+        {L.length>0&&<div style={{height:7,background:'rgba(255,255,255,.3)',borderRadius:6,marginTop:8,overflow:'hidden'}}><div style={{height:'100%',width:pct+'%',background:'#fff'}}/></div>}
       </button>
-      <button onClick={()=>onNavigate('autres')} style={gros('#7c3aed')}><span style={{fontSize:38}}>📅</span><div style={{flex:1}}><div style={{fontSize:18,fontWeight:900}}>DEMAIN ET LES AUTRES JOURS</div><div style={{fontSize:13.5,opacity:.9}}>Ce que je ferai après</div></div><span style={{fontSize:30}}>›</span></button>
+      <button onClick={()=>onNavigate('autres')} style={gros('#7c3aed')}><span style={{fontSize:26}}>📅</span><div style={{flex:1}}><div style={{fontSize:15,fontWeight:900}}>DEMAIN ET LES AUTRES JOURS</div></div><span style={{fontSize:24}}>›</span></button>
       {dispos.map((o,i)=><div key={i} style={{background:'#fff',border:'3px solid #0f766e',borderRadius:18,padding:'12px 14px',marginTop:14}}>
         <div style={{fontWeight:900,fontSize:17,color:'#0f766e'}}>📨 Es-tu disponible ?</div>
         <div style={{fontSize:16,fontWeight:800,marginTop:4,textTransform:'capitalize'}}>{new Date(o.jour+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
         <div style={{fontSize:15,marginTop:2}}>🕐 {o.debut} → {o.fin} · {o.poste}{o.client?' · '+o.client:''}</div>
         <div style={{display:'flex',gap:8,marginTop:10}}><button onClick={()=>repondreDispo(o,'oui')} style={{flex:1,padding:14,borderRadius:12,border:'none',background:'#16a34a',color:'#fff',fontWeight:900,fontSize:17}}>✅ Oui</button><button onClick={()=>repondreDispo(o,'non')} style={{flex:1,padding:14,borderRadius:12,border:'none',background:'#e2e8f0',color:'#0f172a',fontWeight:900,fontSize:17}}>❌ Non</button></div></div>)}
       {rdv.length>0&&<div style={{background:'#ecfeff',border:'2px solid #0891b2',borderRadius:18,padding:'12px 14px',marginTop:14}}><div style={{fontWeight:900,fontSize:17,color:'#0e7490'}}>📅 Mes rendez-vous</div>{rdv.map((r,i)=><div key={i} style={{display:'flex',gap:10,alignItems:'center',marginTop:8,background:'#fff',borderRadius:12,padding:'9px 10px'}}><div style={{textAlign:'center',minWidth:52}}><div style={{fontSize:11.5,fontWeight:900,color:'#0891b2',textTransform:'uppercase'}}>{r.jour===jourLocal()?'Aujourd’hui':new Date(r.jour+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</div><div style={{fontSize:17,fontWeight:900}}>{r.debut}{r.fin?'–'+r.fin:''}</div></div><div style={{flex:1}}><div style={{fontWeight:900,fontSize:15.5}}>{r.type}</div>{r.lieu&&<div style={{fontSize:13.5,color:PRO.gris}}>📍 {r.lieu}</div>}{r.note&&<div style={{fontSize:13.5,color:PRO.gris}}>{r.note}</div>}</div></div>)}</div>}
-      <a href="tel:0601247308" style={{...gros('#0f766e'),textDecoration:'none'}}><span style={{fontSize:38}}>📞</span><div style={{flex:1}}><div style={{fontSize:18,fontWeight:900}}>APPELER LE BUREAU</div><div style={{fontSize:13.5,opacity:.9}}>Une question, un souci</div></div></a>
-      {L.length>0&&faits===L.length&&<div style={{background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',borderRadius:18,padding:'14px 16px',marginTop:14}}><div style={{fontSize:20,fontWeight:900}}>🎉 Bravo {ch.display} !</div><div style={{fontSize:15,fontWeight:700,marginTop:4}}>{tot} client{tot>1?'s':''} livré{tot>1?'s':''} aujourd’hui. Merci pour ton travail, bonne fin de journée 👏</div></div>}
-      <CompteurCamion ch={ch} camion={d.truck||ch.truck}/>
-      {(()=>{const auj=jourLocal();const d0=new Date(auj.slice(0,7)+'-01T12:00');const J=[];for(let x=new Date(d0);x.getMonth()===d0.getMonth();x.setDate(x.getDate()+1))J.push(isoLocal(x));
+      <a href="tel:0601247308" style={{...gros('#0f766e'),textDecoration:'none'}}><span style={{fontSize:26}}>📞</span><div style={{flex:1}}><div style={{fontSize:15,fontWeight:900}}>APPELER LE BUREAU</div></div></a>
+      {(()=>{const auj=jourLocal();const d0=new Date(auj.slice(0,7)+'-01T12:00');const J=[];if(horMois){for(let x=new Date(d0);x.getMonth()===d0.getMonth();x.setDate(x.getDate()+1))J.push(isoLocal(x));}else{for(let k=0;k<7;k++){const x=new Date(auj+'T12:00');x.setDate(x.getDate()+k);J.push(isoLocal(x));}}
         const H=hor||{};const lib=v=>!v?'—':(v.s&&v.s!=='T'&&v.s!=='RET')?(HOR_LIB[v.s]||v.s):((v.d||'?')+' → '+(v.f||'?'));
         return <div style={{background:'#fff',border:'2px solid #0f172a',borderRadius:18,marginTop:14,overflow:'hidden'}}>
-          <div style={{background:'#0f172a',color:'#fff',padding:'10px 14px',fontWeight:900,fontSize:17,display:'flex',alignItems:'center'}}>🕐 Mes horaires — {d0.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</div>
-          {hor===null?<div style={{padding:14,textAlign:'center',color:PRO.gris}}>⏳</div>:!Object.keys(H).some(k=>k.slice(0,7)===auj.slice(0,7))?<div style={{padding:14,color:PRO.gris,fontSize:14}}>Tes horaires du mois ne sont pas encore saisis.</div>:
+          <div style={{background:'#0f172a',color:'#fff',padding:'10px 14px',fontWeight:900,fontSize:17,display:'flex',alignItems:'center'}}>🕐 Mes horaires {horMois?'— '+d0.toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):'— cette semaine'}</div>
+          {hor===null?<div style={{padding:14,textAlign:'center',color:PRO.gris}}>⏳</div>:!Object.keys(H).some(k=>J.indexOf(k)>=0)?<div style={{padding:14,color:PRO.gris,fontSize:14}}>Tes horaires du mois ne sont pas encore saisis.</div>:
           J.map(ds=>{const v=H[ds];const off=v&&v.s&&v.s!=='T'&&v.s!=='RET';const t=ds===auj;const passe=ds<auj;const dd=new Date(ds+'T12:00');
             return <div key={ds} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 14px',borderTop:'1px solid #e2e8f0',background:t?'#dbeafe':off?'#fff7ed':'#fff',opacity:passe?.5:1}}>
               <div style={{width:74,fontWeight:900,fontSize:14,color:t?'#1d4ed8':PRO.txt,textTransform:'capitalize'}}>{dd.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}</div>
               <div style={{flex:1,fontWeight:900,fontSize:16,color:off?'#b45309':v?PRO.txt:'#94a3b8'}}>{off?'🏖️ ':''}{lib(v)}</div>{t&&<span style={{fontSize:11,fontWeight:900,color:'#fff',background:'#2563eb',borderRadius:8,padding:'2px 8px'}}>Aujourd’hui</span>}</div>;})}
+          <button onClick={()=>setHorMois(v=>!v)} style={{width:'100%',padding:10,border:'none',borderTop:'1px solid #e2e8f0',background:'#f8fafc',fontWeight:900,fontSize:14,color:'#1d4ed8'}}>{horMois?'▲ Voir seulement cette semaine':'▼ Voir tout le mois'}</button>
         </div>;})()}
+
+      {L.length>0&&faits===L.length&&<div style={{background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',borderRadius:18,padding:'14px 16px',marginTop:14}}><div style={{fontSize:20,fontWeight:900}}>🎉 Bravo {ch.display} !</div><div style={{fontSize:15,fontWeight:700,marginTop:4}}>{tot} client{tot>1?'s':''} livré{tot>1?'s':''} aujourd’hui. Merci pour ton travail, bonne fin de journée 👏</div></div>}
+      <CompteurCamion ch={ch} camion={d.truck||ch.truck}/>
       {nAtt>0&&<div onClick={()=>onNavigate('signes_tel')} style={{background:'#fff7ed',border:'1px solid #fdba74',borderRadius:14,padding:12,marginTop:14,color:'#9a3412',fontWeight:800,fontSize:14}}>📤 {nAtt} envoi(s) en attente de réseau — ils partiront tout seuls</div>}
       {gps===null&&navigator.geolocation&&<div style={{background:'#fff',border:'1px solid '+PRO.bord,borderRadius:14,padding:12,marginTop:14}}>
         <div style={{fontWeight:900,color:PRO.txt,fontSize:15}}>📍 Le responsable peut voir où est ton camion ?</div>
