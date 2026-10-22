@@ -1202,6 +1202,22 @@ body.px2 .px-top{background:#fff!important;border-bottom:1px solid var(--bd)!imp
 #v39Moi .v39t small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.px2 .px-top b,body.px2 .px-top strong{font-weight:700}
 .po-b,.po-b *{font-weight:600!important}
+/* ===== v48 : menu sans débordement + fenêtres flottantes ===== */
+body.px2:not(.menu-reduit){padding-left:238px!important}body:not(.menu-reduit) #pxSide{width:238px!important}
+#pxSide .sd-nav{overflow-x:hidden!important}
+.v47g{box-sizing:border-box;overflow:hidden;margin:6px 8px!important}
+.v47gb{overflow:hidden}
+#pxSide .sd-it,.v47gh{box-sizing:border-box!important;max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;min-width:0}
+#pxSide .sd-it span,.v47gh span{flex:0 0 auto}
+#pxSide .v47gb .sd-it{width:100%!important;margin:1px 0!important}
+.v48w{position:fixed;display:none;flex-direction:column;filter:drop-shadow(0 24px 40px rgba(15,23,42,.28));animation:v48in .22s ease-out}
+.v48w[style*="flex"]{display:flex!important}
+.v48w .cam-b{box-shadow:none!important;max-height:84vh;overflow:auto;border:1px solid #e5e7eb}
+.v48w .cam-h{cursor:move;user-select:none;position:sticky;top:-18px;background:#fff;z-index:2;padding-top:4px;margin-top:-4px}
+@keyframes v48in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.v48cli{cursor:pointer;text-decoration:underline dotted #94a3b8;text-underline-offset:3px}.v48cli:hover{color:#2563eb!important}
+#pxSide .sd-nav{overflow-y:auto!important}.v47g,#pxSide .sd-nav>.sd-it{flex-shrink:0!important}
+#pxSide .v47gb .sd-it{font-size:12.5px!important;padding:6px 8px 6px 10px!important;gap:8px!important}#pxSide .v47gb .sd-it span{font-size:13px!important;width:18px;text-align:center}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5489,6 +5505,29 @@ function v47Menu(){var nav=document.querySelector('#pxSide .sd-nav');if(!nav||na
   var k=document.createElement('button');k.className='sd-it v47kbtn';k.innerHTML='<span>🔎</span>Rechercher (Ctrl+K)';k.onclick=cmdK;nav.insertBefore(k,nav.firstChild);}
 setTimeout(v47Menu,2500);setTimeout(v47Menu,4500);
 CL_VERSION='v47 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 42 : des FENÊTRES qui s'ouvrent les unes sur les autres (déplaçables, empilées) =================
+// Toutes les fiches (dossier de prestation, fiche client, fiche chauffeur, fenêtre d'infos d'une case…) s'ouvrent maintenant
+// dans une vraie fenêtre flottante. Un bouton dans une fenêtre en ouvre une autre par-dessus. Chacune se déplace et se ferme seule.
+var V48={pile:[],z:1300};
+v32Ov=function(){var w=document.createElement('div');w.className='v48w';var n=V48.pile.length;
+  var L=Math.max(80,Math.round(window.innerWidth/2-360)+n*34),T=Math.max(20,70+n*34);w.style.cssText='left:'+L+'px;top:'+T+'px;z-index:'+(++V48.z);
+  V48.pile.forEach(function(x){x.removeAttribute('id');});w.id='v32Ov';document.body.appendChild(w);V48.pile.push(w);
+  w.addEventListener('mousedown',function(){w.style.zIndex=++V48.z;V48.pile.splice(V48.pile.indexOf(w),1);V48.pile.push(w);V48.pile.forEach(function(x){x.removeAttribute('id');});w.id='v32Ov';},true);
+  // déplacer par la barre de titre
+  w.addEventListener('mousedown',function(e){var h=e.target.closest('.cam-h');if(!h||e.target.closest('button'))return;var x0=e.clientX-w.offsetLeft,y0=e.clientY-w.offsetTop;
+    function mv(ev){w.style.left=Math.max(0,ev.clientX-x0)+'px';w.style.top=Math.max(0,ev.clientY-y0)+'px';}function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);e.preventDefault();});
+  w.style.display='none';return w;};
+v32Fermer=function(){var w=V48.pile.pop();if(w)w.remove();var t=V48.pile[V48.pile.length-1];if(t)t.id='v32Ov';};
+function v48ToutFermer(){while(V48.pile.length)v32Fermer();}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&V48.pile.length&&!document.getElementById('v47K')?.style.display?.includes('flex'))v32Fermer();});
+// les noms de clients deviennent cliquables (fiche client complète) dans les tableaux du logiciel
+document.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('.v48cli');if(!el)return;e.preventDefault();e.stopPropagation();client360(el.getAttribute('data-c')||el.textContent.trim());},true);
+function v48Liens(){document.querySelectorAll('#clBox table.clt td:first-child b, #clBox .bp-t b, .ftH b, #qlR .ql-c b').forEach(function(b){if(b.classList.contains('v48cli')||b.closest('.v48w'))return;var t=b.textContent.trim();if(t.length<3||/^\d|semaine|total|^(jeu|ven|lun|mar|mer|sam|dim)/i.test(t))return;
+  var ok=Object.keys(clFiches||{}).some(function(k){return bnNorm(clFiches[k].nom||k)===bnNorm(t);})||((typeof V47!=='undefined'&&V47.bons)||[]).some(function(x){return bnNorm(x.client)===bnNorm(t);});if(ok){b.classList.add('v48cli');b.title='Ouvrir la fiche du client';}});}
+setInterval(v48Liens,1500);
+CL_VERSION='v48 · 22/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
