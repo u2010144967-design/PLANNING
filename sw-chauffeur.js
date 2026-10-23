@@ -1,7 +1,7 @@
 /* CANA LIVRAISONS â€” app chauffeur : ouverture mÃªme sans internet.
    RÃ©seau d'abord (toujours la derniÃ¨re version), copie de secours si pas de rÃ©seau.
    Ne touche qu'Ã  l'app chauffeur et Ã  ses bibliothÃ¨ques, jamais aux autres applis du dÃ©pÃ´t. */
-const CACHE = 'hb-logistique-v2';
+const CACHE = 'hb-logistique-v3';
 const MOI = ['index.html', 'installer.html', 'manifest-chauffeur.json', 'icon-chauffeur.png', 'icon-chauffeur-192.png', 'icon-chauffeur-maskable.png'];
 
 self.addEventListener('install', e => {
