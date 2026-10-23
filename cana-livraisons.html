@@ -1254,6 +1254,10 @@ body.px2:not(.menu-reduit){padding-left:238px!important}body:not(.menu-reduit) #
 .v54 ins{background:#bbf7d0;text-decoration:none;font-weight:800;padding:0 2px;border-radius:3px}.v54 del{background:#fecaca;color:#991b1b;padding:0 2px;border-radius:3px}
 .v54av,.v54ap{margin-top:3px}.v54nv{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important;font-weight:800!important}.v54btn{background:#ede9fe!important;color:#5b21b6!important;border-color:#ddd6fe!important;font-weight:800!important}
 .v54r{margin-top:6px;font-size:12.5px;font-weight:700;color:#5b21b6}
+.v55z{margin-top:8px;background:#fff;border:1px dashed #f9a8d4;border-radius:10px;padding:8px 10px;font-size:13px}.v55z ul{margin:4px 0 0 16px;padding:0}.v55z li,.v55ol li{margin:2px 0}
+.v55z li.kq,.v55ol li.kq{color:#92400e;font-weight:700}.v55z li.km,.v55ol li.km{color:#5b21b6}.v55z li.k\+,.v55ol li.k\+{color:#166534;font-weight:700}.v55z li.k-,.v55ol li.k-{color:#991b1b;font-weight:700}
+.v55ol{margin:6px 0 0 20px;padding:0;font-size:14px;line-height:1.5}
+.v56b{background:#fef2f2!important;color:#b91c1c!important;border:1px solid #fecaca!important;font-weight:700!important;border-radius:10px!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5881,6 +5885,64 @@ var _v50ListeV54=v50ListeRemplaces;v50ListeRemplaces=function(L,fam){var h=_v50L
   L.forEach(function(b){if(!b.ancienCle)return;h=h.replace('<button onclick="v35Panneau([\''+b.date+'\'],\'Nouvelle version\')">👁 Nouvelle</button>','<button class="v54nv" onclick="v35Panneau([\''+b.date+'\'],\'NOUVEAU BL\')">🆕 NOUVEAU BL</button><button class="v54btn" onclick="v54Comparer(\''+b.ancienCle+'\',\''+b.date+'\',\''+esc(b.client).replace(/'/g,'')+'\')">🔍 Ce qui a changé</button>');
     if(b.resumeChangement)h=h.replace('🔄 v'+(b.version||2)+'</span></div>','🔄 v'+(b.version||2)+'</span></div><div class="v54r">🔍 '+esc(b.resumeChangement)+'</div>');});return h;};
 CL_VERSION='v54 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 48 : les changements écrits directement sur chaque BL remplacé + « Vérifié » qui montre d'abord le détail =================
+// 1) retrouver l'ancienne version même pour un BL remplacé avant la v50 (ses morceaux de PDF sont encore dans la base)
+async function v55Ancien(b){if(b.ancienCle)return b.ancienCle;try{var m=await bnMeta(b.date);if(m.ancienCle)return m.ancienCle;var id=String(b.date).split('_').slice(2).join('_');
+  var r=await clFetch(CL_SUPA+'/rest/v1/planning?date=like.BONPDF_'+encodeURIComponent(id)+'x*&select=date&limit=2000',{headers:clH()},1);var rows=await r.json();var P={};
+  rows.forEach(function(x){var mm=String(x.date).match(/^BONPDF_(.+)_(\d{3})$/);if(mm){P[mm[1]]=(P[mm[1]]||0)+1;}});
+  var pids=Object.keys(P).filter(function(p){return p!==m.pid;}).sort(function(a,b){return parseInt(b.split('x').pop(),36)-parseInt(a.split('x').pop(),36);});if(!pids.length)return null;
+  var old='BONOLD_'+b.date+'_'+pids[0];await _bnPostV49({date:old,donnees:{type:m.type,jour:m.jour,client:m.client+' (ancienne version)',no:m.no,pid:pids[0],parts:P[pids[0]]},updated_at:new Date().toISOString()});
+  m.ancienCle=old;await _bnPostV49({date:b.date,donnees:m,updated_at:new Date().toISOString()});b.ancienCle=old;return old;}catch(e){return null;}}
+// 2) le calcul des différences (sans fenêtre)
+async function v55Calcul(ancien,nouveau){var A=await v54Lignes(ancien),B=await v54Lignes(nouveau);var d=v54Lcs(A,B);var C=[],moins=[],plus=[];
+  var vider=function(){moins.forEach(function(m){var best=-1,bs=0;plus.forEach(function(p,pi){if(p.pris)return;var s=v54Sans(m)===v54Sans(p.t)?1:v54Proche(m,p.t);if(s>bs){bs=s;best=pi;}});
+      if(best>=0&&bs>=0.5){var p=plus[best];p.pris=true;var qa=(m.match(/^(\d+(?:[.,]\d+)?)\s/)||[])[1],qb=(p.t.match(/^(\d+(?:[.,]\d+)?)\s/)||[])[1];
+        if(qa&&qb&&qa!==qb&&v54Sans(m)===v54Sans(p.t))C.push({k:'q',art:v54Sans(m),a:qa,b:qb});else{var D=v54Detail(m,p.t);C.push({k:'m',a:m,b:p.t,quoi:D.quoi});}}else C.push({k:'-',a:m});});
+    plus.forEach(function(p){if(!p.pris)C.push({k:'+',b:p.t});});moins=[];plus=[];};
+  d.forEach(function(o){if(o.t==='='){vider();return;}if(o.t==='-')moins.push(o.a);else plus.push({t:o.b});});vider();return C;}
+function v55Phrase(c){if(c.k==='q')return '🔢 '+c.art+' : '+c.a+' → '+c.b;if(c.k==='+')return '➕ Ajouté : '+c.b;if(c.k==='-')return '➖ Enlevé : '+c.a;
+  var ch=(c.quoi||[]).map(function(q){return q.replace('« , » ajouté','une virgule ajoutée').replace('« , » enlevé','une virgule enlevée').replace('« . » ajouté','un point ajouté').replace('« . » enlevé','un point enlevé');});return '✏️ « '+c.a+' » → « '+c.b+' »'+(ch.length?' ('+ch.slice(0,4).join(', ')+')':'');}
+// 3) sur chaque carte « BL remplacé » : la liste des changements, écrite directement
+async function v55Remplir(){var cartes=[].slice.call(document.querySelectorAll('#clBox .ftC'));for(var i=0;i<cartes.length;i++){var el=cartes[i];if(el.getAttribute('data-v55'))continue;el.setAttribute('data-v55','1');
+    var btn=el.querySelector('button[onclick^="v50Verifie("]');if(!btn)continue;var k=(btn.getAttribute('onclick').match(/v50Verifie\('([^']+)'/)||[])[1];var fam=(btn.getAttribute('onclick').match(/,'(\w+)'\)/)||[])[1]||'tr';if(!k)continue;
+    btn.setAttribute('onclick','v55Verifier(\''+k+'\',\''+fam+'\')');btn.textContent='✅ Vérifier les changements';
+    var zone=document.createElement('div');zone.className='v55z';zone.innerHTML='⏳ Je compare l’ancien et le nouveau BL…';el.appendChild(zone);
+    try{var b=(await v47Bons()).find(function(x){return x.date===k;})||Object.assign({date:k},await bnMeta(k));var old=await v55Ancien(b);
+      if(!old){zone.innerHTML='<span style="color:#b45309">L’ancienne version de ce BL n’a pas été gardée (remplacé avant la mise à jour). Les prochains remplacements seront comparés automatiquement.</span>';continue;}
+      var C=await v55Calcul(old,k);b.v55=C;
+      zone.innerHTML=C.length?'<b>Pourquoi il a été remplacé — '+C.length+' changement(s) :</b><ul>'+C.slice(0,12).map(function(c){return '<li class="k'+c.k+'">'+esc(v55Phrase(c))+'</li>';}).join('')+(C.length>12?'<li>… et '+(C.length-12)+' autre(s)</li>':'')+'</ul>':'<span style="color:#166534">✅ Aucune différence d’écrit (seule la mise en page ou l’heure d’édition a changé).</span>';
+      var gros=el.querySelector('.ftB');if(gros&&!gros.querySelector('.v54btn'))gros.insertAdjacentHTML('afterbegin','<button class="v54btn" onclick="v54Comparer(\''+old+'\',\''+k+'\',\''+esc(b.client).replace(/'/g,'')+'\')">🔍 Détail surligné</button>');
+    }catch(e){zone.innerHTML='<span style="color:#b91c1c">Comparaison impossible : '+esc(e.message)+'</span>';}}}
+// 4) « Vérifier » : montre d'abord tous les changements, puis tu confirmes
+async function v55Verifier(k,fam){var b=(await v47Bons()).find(function(x){return x.date===k;})||Object.assign({date:k},await bnMeta(k));var old=await v55Ancien(b);var C=b.v55||(old?await v55Calcul(old,k):[]);
+  var ov=v32Ov();ov.innerHTML='<div class="cam-b v47dos v54"><div class="cam-h"><span>✅</span><b>Vérifier : '+esc(b.client)+'</b><button onclick="v32Fermer()">✕</button></div>'+
+    '<p style="font-size:14px">'+esc(dayLabel(b.jour))+(b.no?' · N° '+esc(b.no):'')+' — voici <b>tout ce qui a changé</b> entre l’ancien BL et le nouveau :</p>'+
+    (old?(C.length?'<ol class="v55ol">'+C.map(function(c){return '<li class="k'+c.k+'">'+esc(v55Phrase(c))+'</li>';}).join('')+'</ol>':'<div class="v47todo ok">Aucune différence d’écrit.</div>'):'<div class="v47todo">L’ancienne version n’a pas été gardée : impossible de comparer ce BL-là.</div>')+
+    '<div class="v47btns" style="margin-top:10px">'+(old?'<button onclick="v54Comparer(\''+old+'\',\''+k+'\',\''+esc(b.client).replace(/'/g,'')+'\')">🔍 Détail surligné</button><button onclick="v35Panneau([\''+old+'\',\''+k+'\'],\'Ancien / nouveau BL\')">👁 Les deux BL</button>':'')+'<button class="lc" style="background:#16a34a!important" onclick="v32Fermer();v50Verifie(\''+k+'\',\''+fam+'\')">✅ C’est bon, j’ai vérifié</button></div></div>';ov.style.display='flex';}
+// déclenché à chaque ouverture des onglets « BL remplacés »
+var _ftbePanelV55=ftbePanel;ftbePanel=async function(){await _ftbePanelV55.apply(this,arguments);if(FT_ONG==='REMPL')v55Remplir();};
+var _rcPanelV55=rcPanel;rcPanel=async function(){await _rcPanelV55.apply(this,arguments);if(RC.ong==='rempl')v55Remplir();};
+CL_VERSION='v55 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 49 : « 🗑 Effacer l'ancien BL » sur chaque BL remplacé =================
+async function v56Effacer(k,fam){
+  var m=await bnMeta(k);var b=Object.assign({date:k},m);var old=await v55Ancien(b);if(!old){alert('Il n’y a plus d’ancienne version pour ce BL.');return;}
+  var om=null;try{om=await bnMeta(old);}catch(e){}
+  if(!confirm('Effacer définitivement l’ANCIENNE version du BL de '+m.client+' ?\n\nLe NOUVEAU BL reste, lui, en place.\n(Après ça, on ne pourra plus comparer les deux.)'))return;
+  try{if(om&&om.pid&&om.pid!==m.pid){await clFetch(CL_SUPA+'/rest/v1/planning?date=like.BONPDF_'+encodeURIComponent(om.pid)+'_*',{method:'DELETE',headers:clH()},1);}
+    await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.'+encodeURIComponent(old),{method:'DELETE',headers:clH()},1);
+    delete m.ancienCle;m.ancienEfface=new Date().toISOString();m.verifie=true;m.remplace=false;await _bnPostV49({date:k,donnees:m,updated_at:new Date().toISOString()});
+    v49Log('bon','Ancienne version du BL effacée : '+m.client+' ('+dayLabel(m.jour)+')',{bon:k});V47.bons=null;
+    if(fam==='rc')rcPanel();else ftbePanel();}catch(e){alert('❌ '+e.message);}}
+// le bouton, juste à côté des autres, sur chaque carte « BL remplacé »
+var _v55RemplirV56=v55Remplir;v55Remplir=async function(){
+  document.querySelectorAll('#clBox .ftC').forEach(function(el){var btn=el.querySelector('button[onclick^="v50Verifie("],button[onclick^="v55Verifier("]');if(!btn||el.querySelector('.v56b'))return;var k=(btn.getAttribute('onclick').match(/\('([^']+)'/)||[])[1];var fam=(btn.getAttribute('onclick').match(/,'(\w+)'\)/)||[])[1]||'tr';if(!k)return;
+    var e=document.createElement('button');e.className='v56b';e.textContent='🗑 Effacer l’ancien';e.title='Effacer l’ancienne version (le nouveau BL reste)';e.onclick=function(){v56Effacer(k,fam);};btn.parentNode.appendChild(e);});
+  return _v55RemplirV56.apply(this,arguments);};
+// et dans la fenêtre « Vérifier »
+var _v55VerifierV56=v55Verifier;v55Verifier=async function(k,fam){await _v55VerifierV56(k,fam);var z=document.querySelector('#v32Ov .v47btns');if(z&&!z.querySelector('.v56b'))z.insertAdjacentHTML('beforeend','<button class="v56b" onclick="v32Fermer();v56Effacer(\''+k+'\',\''+fam+'\')">🗑 Effacer l’ancien</button>');};
+CL_VERSION='v56 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
