@@ -1245,6 +1245,9 @@ body.px2:not(.menu-reduit){padding-left:238px!important}body:not(.menu-reduit) #
 @media (max-width:1750px){#qlBox{max-width:400px!important;flex:1 1 300px!important}}
 @media (max-width:1500px){#qlBox{max-width:300px!important;min-width:200px!important}.v33go input{width:96px!important}body.px2 .px-brand .px-t{display:none}}
 .px-top{gap:8px!important}
+.v53d{display:flex;flex-wrap:wrap;gap:4px 6px;max-width:520px}.v53c{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:3px 8px;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap}
+.v53c input{margin:0}.v53all{background:#ecfdf5;border-color:#a7f3d0;font-weight:700}.v53lec{background:#fef3c7;border-color:#fde68a}
+.v53d{min-width:420px}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5813,6 +5816,22 @@ setInterval(function(){document.querySelectorAll('#pxSide .sd-it').forEach(funct
 // la page : un mode d'emploi clair en haut
 var _usDessinerV51=usDessiner;usDessiner=function(){_usDessinerV51();var h=document.querySelector('#clBox .clhead');if(h&&!document.getElementById('v51Aide'))h.insertAdjacentHTML('afterend','<div id="v51Aide" class="v50sec"><b>Comment donner l’accès à un collègue (comme pour les chauffeurs) :</b><ol><li>Écris son <b>prénom</b>, choisis sa <b>fonction</b> (Comptabilité, Commerciale traiteur, Resto-Co…) et clique <b>Ajouter</b> : son <b>code à 4 chiffres est créé tout seul</b>.</li><li>Clique <b>📋 Copier le lien</b> ou <b>📱 QR code</b> et envoie-lui <b>son lien</b> et <b>son code</b> (par SMS ou email).</li><li><b>⚙️ Droits</b> : coche les rubriques qu’il peut ouvrir (et lecture seule si besoin).</li><li>Il ouvre son lien, tape son code : il arrive sur le logiciel <b>à son nom</b>. Tout ce qu’il fait est tracé, et tu es prévenu.</li></ol></div>');};
 CL_VERSION='v52 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 46 : les DROITS en cases à cocher, directement sur la ligne de chaque personne =================
+var V53_R=[['0','🚚 Planning & livraisons'],['1','🍽️ Traiteur'],['2','🥗 Resto-Co'],['3','👥 Équipe & RH'],['4','⚙️ Pilotage & réglages'],['stk','💾 Stockage']];
+function v53Droits(u){var R=u.rubriques||{};var o={};V53_R.forEach(function(x){o[x[0]]=R[x[0]]!==false;});return o;}
+var _usDessinerV53=usDessiner;usDessiner=function(){_usDessinerV53();var tb=document.querySelector('#clBox table.clt');if(!tb)return;var L=US.liste||[];var vis=L.map(function(u,i){return {u:u,i:i};}).filter(function(x){return x.u.actif!==false;});
+  var th=tb.rows[0]&&tb.rows[0].cells[2];if(th)th.textContent='Ce qu’il peut ouvrir (coche)';
+  [].slice.call(tb.rows).slice(1).forEach(function(tr,j){var x=vis[j];if(!x)return;var D=v53Droits(x.u);var tout=V53_R.every(function(r){return D[r[0]];});var td=tr.cells[2];if(!td)return;
+    td.innerHTML='<div class="v53d"><label class="v53c v53all"><input type="checkbox" '+(tout?'checked':'')+' onchange="v53Tout('+x.i+',this.checked)"> ✅ Accès complet</label>'+V53_R.map(function(r){return '<label class="v53c"><input type="checkbox" '+(D[r[0]]?'checked':'')+' onchange="v53Set('+x.i+',\''+r[0]+'\',this.checked)"> '+r[1]+'</label>';}).join('')+
+      '<label class="v53c v53lec"><input type="checkbox" '+(x.u.role==='lecture'?'checked':'')+' onchange="v53Lecture('+x.i+',this.checked)"> 👁 Lecture seule</label>'+(x.u.dateFin?'<small style="color:#b45309">accès jusqu’au '+x.u.dateFin.split('-').reverse().join('/')+'</small>':'')+'</div>';});};
+async function v53Sauver(i,txt){try{await usEcrire(US.liste);v49Log('acces','Droits de '+US.liste[i].nom+' : '+txt);usDessiner();}catch(e){alert('❌ '+e.message);}}
+function v53Set(i,k,v){var u=US.liste[i];u.rubriques=Object.assign({},u.rubriques||{});u.rubriques[k]=!!v;v53Sauver(i,(v?'ajout ':'retrait ')+(V53_R.find(function(r){return r[0]===k;})||['',''])[1]);}
+function v53Tout(i,v){var u=US.liste[i];u.rubriques={};V53_R.forEach(function(r){u.rubriques[r[0]]=!!v;});v53Sauver(i,v?'accès complet':'aucune rubrique');}
+function v53Lecture(i,v){var u=US.liste[i];u.role=v?'lecture':'commercial';v53Sauver(i,v?'lecture seule':'peut modifier');}
+// ce que le collègue voit : ses rubriques, et la page Stockage seulement s'il l'a
+var _v49AppliquerV53=v49AppliquerDroits;v49AppliquerDroits=function(){_v49AppliquerV53();if(!localStorage.getItem('cana_user_id'))return;var R=V49.droits||{};document.querySelectorAll('#pxSide .sd-it').forEach(function(b){if(/Stockage/.test(b.textContent))b.style.display=R.stk===false?'none':'';});};
+CL_VERSION='v53 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
