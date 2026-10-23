@@ -5791,5 +5791,17 @@ var _journeeV50=journeePanel;journeePanel=async function(){await _journeeV50();v
   box.insertAdjacentHTML('beforeend',h);};
 CL_VERSION='v50 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
+// ================= CANA LIVRAISONS 45 : « 🔑 Accès des collègues » bien visible (comme pour les chauffeurs, mais pour le logiciel) =================
+(function(){var p=PX3_DEF.findIndex(function(d){return d[0]==='equipe';});PX3_DEF.splice(p,0,['acces','🔑','Accès des collègues (logiciel)',function(){usPanel();}]);PX3_FN.usPanel='acces';
+  var g=V47M.find(function(r){return /Équipe/.test(r[1]);});if(g){g[3]=g[3].filter(function(x){return x!=='Accès au logiciel';});g[3].unshift('Accès des collègues');}})();
+// l'ancien bouton (ajouté tout en bas du menu) est caché : la page est maintenant en haut de « Équipe & RH »
+setInterval(function(){document.querySelectorAll('#pxSide .sd-it').forEach(function(b){if(b.textContent.trim()==='🔑Accès au logiciel'||/^\s*🔑\s*Accès au logiciel\s*$/.test(b.textContent))b.style.display='none';});},1500);
+// un bouton en haut de l'écran, pour le responsable seulement
+setTimeout(function(){if(localStorage.getItem('cana_user_id')||ROLE!=='responsable')return;var top=document.querySelector('.px-top .pxAct')||document.querySelector('.px-top');if(!top||document.getElementById('v51Acc'))return;
+  var b=document.createElement('button');b.id='v51Acc';b.className='v49bell';b.style.cssText='background:#fef3c7!important;color:#92400e!important;border-color:#fde68a!important';b.textContent='🔑 Accès collègues';b.title='Créer un accès (lien + code) pour un collègue';b.onclick=function(){V30.action=Date.now();px3Cible('acces');usPanel();px3Defiler('acces');};top.insertBefore(b,top.firstChild);},3200);
+// la page : un mode d'emploi clair en haut
+var _usDessinerV51=usDessiner;usDessiner=function(){_usDessinerV51();var h=document.querySelector('#clBox .clhead');if(h&&!document.getElementById('v51Aide'))h.insertAdjacentHTML('afterend','<div id="v51Aide" class="v50sec"><b>Comment donner l’accès à un collègue (comme pour les chauffeurs) :</b><ol><li>Écris son <b>prénom</b>, choisis sa <b>fonction</b> (Comptabilité, Commerciale traiteur, Resto-Co…) et clique <b>Ajouter</b> : son <b>code à 4 chiffres est créé tout seul</b>.</li><li>Clique <b>📋 Copier le lien</b> ou <b>📱 QR code</b> et envoie-lui <b>son lien</b> et <b>son code</b> (par SMS ou email).</li><li><b>⚙️ Droits</b> : coche les rubriques qu’il peut ouvrir (et lecture seule si besoin).</li><li>Il ouvre son lien, tape son code : il arrive sur le logiciel <b>à son nom</b>. Tout ce qu’il fait est tracé, et tu es prévenu.</li></ol></div>');};
+CL_VERSION='v51 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
 </script>
 </body></html>
