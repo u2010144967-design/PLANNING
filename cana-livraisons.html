@@ -3966,19 +3966,20 @@ function acMontrer(td){
   var q=norm((td.innerText||'').trim());if(q.length<2){acFermer();return;}
   var L=acSources().filter(function(x){var n=norm(x.t);return n.indexOf(q)===0||n.indexOf(' '+q)>=0;}).slice(0,8);
   if(!L.length||(L.length===1&&norm(L[0].t)===q)){acFermer();return;}
-  AC.td=td;AC.liste=L;AC.i=0;if(!AC.box){AC.box=document.createElement('div');AC.box.id='acBox';document.body.appendChild(AC.box);}
+  AC.td=td;AC.liste=L;AC.i=-1;AC.nav=false;if(!AC.box){AC.box=document.createElement('div');AC.box.id='acBox';document.body.appendChild(AC.box);}
   var r=td.getBoundingClientRect();AC.box.style.cssText='display:block;left:'+Math.round(r.left)+'px;top:'+Math.round(r.bottom+2)+'px;min-width:'+Math.max(240,Math.round(r.width))+'px';
   acDessiner();}
-function acDessiner(){AC.box.innerHTML=AC.liste.map(function(x,i){return '<div class="ac-l'+(i===AC.i?' on':'')+'" data-i="'+i+'"><i style="background:'+FAM[x.f][1]+'"></i><b>'+esc(x.t)+'</b><small>'+esc(x.s)+'</small></div>';}).join('')+'<div class="ac-aide">↑ ↓ pour choisir · Entrée pour valider · Échap pour fermer</div>';
+function acDessiner(){AC.box.innerHTML=AC.liste.map(function(x,i){return '<div class="ac-l'+(i===AC.i?' on':'')+'" data-i="'+i+'"><i style="background:'+FAM[x.f][1]+'"></i><b>'+esc(x.t)+'</b><small>'+esc(x.s)+'</small></div>';}).join('')+'<div class="ac-aide">Clique une proposition, ou ↓ puis Entrée · Entrée seule = garder ce que tu as écrit</div>';
   AC.box.querySelectorAll('.ac-l').forEach(function(el){el.onmousedown=function(e){e.preventDefault();acChoisir(+el.getAttribute('data-i'));};});}
 function acChoisir(i){var x=AC.liste[i];var td=AC.td;if(!x||!td)return;td.innerText=x.t;td.dispatchEvent(new Event('input',{bubbles:true}));
   var k=(td.id||'').replace(/^c_/,'');var day=store[cur];if(day&&day.cells[k]){var o=day.cells[k];if(!o.c||o.c==='#FFFFFF'||o.c==='')o.c=FAM[x.f][2];lsSave();}
   acFermer();setTimeout(function(){try{render();}catch(e){}},50);}
 document.addEventListener('input',function(e){var td=e.target;if(!td||td.tagName!=='TD'||!/^c_\d+_\d+$/.test(td.id||''))return;acMontrer(td);},true);
 document.addEventListener('keydown',function(e){if(!AC.td||!AC.box||AC.box.style.display==='none')return;
-  if(e.key==='ArrowDown'){e.preventDefault();AC.i=Math.min(AC.liste.length-1,AC.i+1);acDessiner();}
-  else if(e.key==='ArrowUp'){e.preventDefault();AC.i=Math.max(0,AC.i-1);acDessiner();}
-  else if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();e.stopPropagation();acChoisir(AC.i);}
+  if(e.key==='ArrowDown'){e.preventDefault();AC.nav=true;AC.i=Math.min(AC.liste.length-1,AC.i+1);acDessiner();}
+  else if(e.key==='ArrowUp'){e.preventDefault();AC.nav=true;AC.i=Math.max(0,AC.i-1);acDessiner();}
+  else if((e.key==='Enter'||e.key==='Tab')&&AC.nav&&AC.i>=0){e.preventDefault();e.stopPropagation();acChoisir(AC.i);}
+  else if(e.key==='Enter'){acFermer();}
   else if(e.key==='Escape'){acFermer();}},true);
 document.addEventListener('focusout',function(e){if(e.target===AC.td)setTimeout(acFermer,150);});
 // ---------- 4) page TÂCHES des chauffeurs ----------
@@ -5958,6 +5959,25 @@ async function v57Effacer(k,fam){await v56Effacer(k,fam);try{await bpCharger(tru
 // après « C'est bon, j'ai vérifié » ou « Effacer », la fenêtre des bons se met à jour aussi
 var _v50VerifieV57=v50Verifie;v50Verifie=async function(k,fam){await _v50VerifieV57(k,fam);try{if(document.getElementById('bpWin')&&document.getElementById('bpWin').style.display!=='none'){await bpCharger(true);bpDessiner();}}catch(e){}};
 CL_VERSION='v57 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 51 : écrire dans les cases sans que rien ne disparaisse =================
+// Pendant que tu écris dans une case, le planning ne se redessine plus et la synchro attend : tes mots restent,
+// les propositions restent affichées. Entrée = garder ce que tu as écrit et descendre à la case suivante.
+var V58={edit:0,attente:null};
+function v58EnTrainDEcrire(){var a=document.activeElement;return !!(a&&a.id&&/^c_\d+_\d+$/.test(a.id)&&a.isContentEditable&&Date.now()-V58.edit<6000);}
+['input','keydown','focusin'].forEach(function(ev){document.addEventListener(ev,function(e){var t=e.target;if(t&&t.id&&/^c_\d+_\d+$/.test(t.id))V58.edit=Date.now();},true);});
+var _renderV58=render;render=function(){if(v58EnTrainDEcrire()){clearTimeout(V58.attente);V58.attente=setTimeout(function(){render();},1500);return;}return _renderV58.apply(this,arguments);};
+if(typeof syTirer==='function'){var _syTirerV58=syTirer;syTirer=async function(){if(v58EnTrainDEcrire())return;return _syTirerV58.apply(this,arguments);};}
+// Entrée (sans proposition choisie) : on valide le texte tapé et on descend — jamais de retour à la ligne
+document.addEventListener('keydown',function(e){if(e.key!=='Enter'||e.shiftKey||e.altKey)return;var td=e.target;if(!td||!td.id||!/^c_\d+_\d+$/.test(td.id))return;
+  if(typeof AC!=='undefined'&&AC.nav&&AC.i>=0&&AC.box&&AC.box.style.display!=='none')return;   // une proposition a été choisie avec les flèches : elle s'applique
+  e.preventDefault();e.stopImmediatePropagation();if(typeof acFermer==='function')acFermer();
+  td.innerText=String(td.innerText||'').replace(/\n+$/,'');td.dispatchEvent(new Event('input',{bubbles:true}));
+  var p=td.id.slice(2).split('_');var n=document.getElementById('c_'+(+p[0]+1)+'_'+p[1]);V58.edit=0;td.blur();
+  if(n){n.focus();try{var r=document.createRange();r.selectNodeContents(n);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}catch(x){}}},true);
+// la liste des propositions suit la case si on fait défiler
+document.addEventListener('scroll',function(){if(typeof AC!=='undefined'&&AC.td&&AC.box&&AC.box.style.display!=='none'){var r=AC.td.getBoundingClientRect();AC.box.style.left=Math.round(r.left)+'px';AC.box.style.top=Math.round(r.bottom+2)+'px';}},true);
+CL_VERSION='v58 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
