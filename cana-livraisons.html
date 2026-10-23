@@ -6737,7 +6737,7 @@ async function accueilPanel(){var box=document.getElementById('clBox');document.
   var initiales=(m.nom||'?').split(/\s+/).map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();var mt=new Date(HB.mois+'-01T12:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
   var h='<div class="hbtop"><div class="hbtt"><span class="hbico">🏠</span><div><b>Accueil</b><small>Ta journée, tes alertes et tes raccourcis</small></div></div><div class="hbmois"><button onclick="HB.mois=v59Plus(HB.mois+\'-01\',-1).slice(0,7);accueilPanel()">‹</button><b onclick="MM.mois=HB.mois;MM.portee=\'mois\';mmOuvrir()" title="Ouvrir ce mois">'+esc(mt)+'</b><button onclick="HB.mois=v59Plus(HB.mois+\'-28\',5).slice(0,7);accueilPanel()">›</button></div></div>';
   h+='<div class="hbban"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><div class="hbbt"><span class="hblogo2">HB</span>HB Logistique</div></div>';
-  h+='<div class="hbbonj"><span class="hbav">'+esc(initiales)+'</span><b>Bonjour '+esc(m.nom.split(' ')[0])+'</b><span style="flex:1"></span><div class="hbsearch"><input id="hbQ" placeholder="Rechercher un client, un chauffeur, un bon, une date…" onkeydown="if(event.key===\'Enter\'){cmdK();var i=document.getElementById(\'v47Ki\');i.value=this.value;cmdKMaj();}"><span>🔎</span></div><button class="hbgrid" onclick="hbChoisirCartes()" title="Choisir mes cartes">⊞</button></div>';
+  h+='<div class="hbbonj"><span style="flex:1"></span><div class="hbsearch"><input id="hbQ" placeholder="Rechercher un client, un chauffeur, un bon, une date…" onkeydown="if(event.key===\'Enter\'){cmdK();var i=document.getElementById(\'v47Ki\');i.value=this.value;cmdKMaj();}"><span>🔎</span></div><button class="hbgrid" onclick="hbChoisirCartes()" title="Choisir mes cartes">⊞</button></div>';
   var raccourcis=[['🗓️','Planning du jour','V30.action=Date.now();px2Ecran(0)'],['📆','Mon mois','mmOuvrir()'],['🧩','Fenêtres chauffeurs','fcOuvrir()'],['📥','Bons à placer','bpOuvrirFenetre()'],['📥','Importer des bons','v50Depot()'],['🍽️','Traiteur FTBE','v47Ouvrir(\'traiteur\',ftbePanel)'],['🥗','Bons Resto-Co','v47Ouvrir(\'bonsrc\',rcPanel)'],['🧭','Répartition','v47Ouvrir(\'repartition\',function(){repPanel(cur)})'],['🧾','Commande Lecourtier','v47Ouvrir(\'lecourtier\',lcPanel)'],['🕐','Horaires & absences','v47Ouvrir(\'horaires\',horPanel)'],['🚦','Suivi des tournées','v63Suivi()'],['📈','Rapport du mois','v47Ouvrir(\'rapport\',rapportPanel)']];
   h+='<div class="hbcols"><div class="hbrac">'+raccourcis.map(function(r){return '<button onclick="'+r[2]+'"><span>'+r[0]+'</span>'+r[1]+'</button>';}).join('')+'</div><div class="hbmid" id="hbMid"></div><div class="hbdroite" id="hbDr"></div></div>';
   box.innerHTML=h;hbRemplir(On,resp);}
@@ -6797,6 +6797,25 @@ CL_VERSION='v66 · 23/10';try{document.getElementById('clVer').textContent=CL_VE
 px3Surligner=function(){var s=document.getElementById('pxStrip');if(!s)return;var i=Math.round(s.scrollLeft/Math.max(1,s.clientWidth));var d=PX3_DEF[i];var lab=d?d[2]:'';
   document.querySelectorAll('#pxSide .sd-it').forEach(function(b){var t=b.textContent.replace(/^\S+\s*/,'').trim();b.classList.toggle('on',!!lab&&(b.textContent.trim().slice(-lab.length)===lab));});
   var dl=document.getElementById('px3Pos');if(dl)dl.textContent=(d?d[1]+' '+d[2]:'');};
+
+// ================= CANA LIVRAISONS 60 : le prénom et le camion écrits DANS les cases « Livreur : » et « Véhicule : » du BL =================
+// Le logiciel trouve tout seul où sont écrits « Livreur : » et « Véhicule : » sur le bon, et écrit à côté le prénom du chauffeur
+// et le camion de la colonne où le bon est posé (au moment d'imprimer : si tu changes de case, c'est le nouveau chauffeur).
+async function v67Champs(by){var R=[];try{var pdf=await pdfjsLib.getDocument({data:by.slice(0)}).promise;for(var p=1;p<=pdf.numPages;p++){var pg=await pdf.getPage(p);var tc=await pg.getTextContent();
+    tc.items.forEach(function(it){var s=String(it.str||'');var m=s.match(/(Livreur|V[ée]hicule|Chauffeur)\s*:/i);if(!m)return;var x=it.transform[4],y=it.transform[5];var h=Math.abs(it.transform[3])||9;
+      // position juste après les deux-points
+      var avant=s.slice(0,m.index+m[0].length);var w=it.width*(avant.length/Math.max(1,s.length));R.push({page:p-1,type:/v[ée]hicule/i.test(m[1])?'veh':'liv',x:x+w+5,y:y,h:h});});}}catch(e){}return R;}
+var _v61TamponnerV67=v61Tamponner;v61Tamponner=async function(by,info){var pl=info&&info.place;if(!pl)return by;var C=await v67Champs(by);
+  if(!C.some(function(c){return c.type==='liv';}))return _v61TamponnerV67(by,info);     // pas de case « Livreur » (ex. bon Resto-Co) : bandeau en haut
+  var doc=await PDFLib.PDFDocument.load(by);var fb=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);var nt=function(t){return String(t==null?'':t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');};var P=doc.getPages();
+  var liv=pl.mh?pl.chauffeur+' (maitre d hotel)':pl.chauffeur;var veh=pl.mh?'':(pl.camion||'')+(pl.plaque?' ('+pl.plaque+')':'');
+  C.forEach(function(c){var page=P[c.page];if(!page)return;var t=nt(c.type==='veh'?veh:liv);if(!t)return;var sz=Math.max(10,Math.min(14,c.h*1.25));
+    page.drawRectangle({x:c.x-2,y:c.y-3,width:fb.widthOfTextAtSize(t,sz)+6,height:sz+4,color:PDFLib.rgb(1,1,1)});page.drawText(t,{x:c.x,y:c.y,size:sz,font:fb,color:PDFLib.rgb(0,0,0)});});
+  // les infos utiles en plus (heure prévue, tournée, maître d'hôtel) en petit, sous l'en-tête, seulement si on a de la place en haut
+  if(pl.tournee||(pl.mhNom&&!pl.mh)){var p0=P[0];var mb=p0.getMediaBox();var H=16;p0.setMediaBox(mb.x,mb.y,mb.width,mb.height+H);try{p0.setCropBox(mb.x,mb.y,mb.width,mb.height+H);}catch(e){}
+    var fr=await doc.embedFont(PDFLib.StandardFonts.Helvetica);p0.drawText(nt('Prevu '+pl.heure+(pl.tournee?' - tournee '+pl.tournee+' arret '+pl.rang+'/'+pl.total:'')+(pl.mhNom&&!pl.mh?' - maitre d hotel : '+pl.mhNom:'')),{x:mb.x+20,y:mb.y+mb.height+4,size:8,font:fr});}
+  return await doc.save();};
+CL_VERSION='v67 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
