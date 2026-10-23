@@ -1312,6 +1312,20 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v63k{display:flex;gap:6px;flex-wrap:wrap;padding:8px}.v63k span{border-radius:10px;padding:4px 9px;font-size:12px;font-weight:700}.v63k .ok{background:#dcfce7;color:#166534}.v63k .okret{background:#fef9c3;color:#854d0e}.v63k .att{background:#f1f5f9;color:#334155}.v63k .or{background:#ffedd5;color:#9a3412}.v63k .ro{background:#fee2e2;color:#991b1b}.v63k .ab{background:#ede9fe;color:#5b21b6}
 .v63i{display:flex;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid #f1f5f9;border-left:5px solid #cbd5e1;font-size:13px}.v63i small{display:block;color:#6b7280}.v63h{font-weight:800;width:44px}.v63e{font-weight:700;font-size:12.5px;text-align:right;white-space:nowrap}
 .v63i.ok{border-left-color:#16a34a}.v63i.okret{border-left-color:#eab308}.v63i.orange{border-left-color:#f97316;background:#fff7ed}.v63i.rouge{border-left-color:#dc2626;background:#fef2f2}.v63i.abs{border-left-color:#7c3aed;background:#f5f3ff}
+/* ===== v64 : Espace responsable + Mon mois lisible ===== */
+.v47g5{background:#fef3c7}
+.v60w.v64large .v60t{width:100%;table-layout:fixed}.v60w.v64large .v60t td[data-r]{max-width:none}.v60w.v64large .v60t .v60c0{width:70px}
+.v60t .v60c0{font-size:calc(var(--mmz)*1.05)!important;color:#334155!important}
+.v60t tbody tr.v64h td{border-top:2px solid #e2c6d3}.v60t tbody tr.v64h td.v60c0{font-weight:800;color:#0f172a!important}.v60t tbody tr:not(.v64h) td.v60c0{color:#94a3b8!important;font-size:calc(var(--mmz)*.85)!important}
+.v60t .v64lun{border-left:3px solid #94a3b8!important}
+.v60t thead th{border-bottom:3px solid var(--chc,#cbd5e1)!important}.v60t thead th b{font-size:calc(var(--mmz)*1.05)}
+.v60t thead th.auj{background:#2563eb!important;color:#fff!important}.v60t thead th.auj small,.v60t thead th.auj em{color:#dbeafe!important}.v60t td.auj{background:#eff6ff}
+.v60t td[data-r].v64plein{background:var(--chb,#eff6ff);box-shadow:inset 3px 0 0 var(--chc,#2563eb);font-weight:700;color:#0f172a}
+.v60t td[data-r]:hover{background:#fff7d6}
+.v60cols .v64tab{border-color:var(--cc)!important;color:var(--cc)!important;background:var(--cb)!important}.v60cols .v64tab.on{background:var(--cc)!important;color:#fff!important}
+.v60t.tous td.v64c{background:var(--cb)}.v60t.tous tr.we td.v64c{background:repeating-linear-gradient(45deg,var(--cb),var(--cb) 6px,#f3f4f6 6px,#f3f4f6 12px)}.v60t.tous td.v64c:focus{background:#fff}
+.v60t.tous td[data-d]{border-right:2px solid #fff}.v60t.tous thead th{font-size:calc(var(--mmz)*1.05)!important;text-align:center}
+.v64p button{font-weight:700!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -6524,6 +6538,44 @@ async function v63RapportPdf(){var R=window._rp;var doc=await PDFLib.PDFDocument
   T('Ces chiffres sont calcules automatiquement a partir du planning, des confirmations et des bons signes.',8,fr);dlBlob2(await doc.save(),'Rapport_logistique_'+RP.mois+'.pdf');}
 (function(){var p=PX3_DEF.findIndex(function(d){return d[0]==='direction';});PX3_DEF.splice(p>=0?p:PX3_DEF.length,0,['rapport','📈','Rapport du mois',function(){rapportPanel();}]);PX3_FN.rapportPanel='rapport';var g=V47M.find(function(r){return /Pilotage/.test(r[1]);});if(g&&g[3].indexOf('Rapport du mois')<0)g[3].splice(2,0,'Rapport du mois');})();
 CL_VERSION='v63 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 57 : barre du haut allégée (« Espace responsable » à gauche) + « Mon mois » plus lisible =================
+// ---------- 1) les nouveaux outils rangés dans le menu de gauche ----------
+var V64_OUTILS=[['🪄','Placer comme d’habitude',function(){v62Proposer(cur);}],['🚦','Suivi des tournées',function(){v63Suivi();}],['🖨️','Bons + livreurs du jour',function(){v61Journee(cur);}],['📨','Demandes des services',function(){dmFenetre();}],['🕵️','Activité des autres services',function(){v49FilFenetre();}],['📈','Rapport du mois',function(){V30.action=Date.now();px3Cible('rapport');rapportPanel();px3Defiler('rapport');}],['📋','Modèles de planning',function(){mmModeles();}]];
+function v64Menu(){if(localStorage.getItem('cana_user_id'))return;var nav=document.querySelector('#pxSide .sd-nav');if(!nav||!nav.getAttribute('data-v47')||document.getElementById('v64G'))return;
+  var g=document.createElement('div');g.className='v47g v47g5';g.id='v64G';var ouvert=localStorage.getItem('cana_v64_ouv')!=='0';
+  g.innerHTML='<button class="v47gh" style="--c:#b45309"><span>⭐</span>Espace responsable<i>'+(ouvert?'▾':'▸')+'</i></button><div class="v47gb"'+(ouvert?'':' style="display:none"')+'></div>';var gb=g.querySelector('.v47gb');
+  V64_OUTILS.forEach(function(o){var b=document.createElement('button');b.className='sd-it v47in';b.innerHTML='<span>'+o[0]+'</span>'+o[1];b.onclick=o[2];gb.appendChild(b);});
+  g.querySelector('.v47gh').onclick=function(){var vis=gb.style.display!=='none';gb.style.display=vis?'none':'';this.querySelector('i').textContent=vis?'▸':'▾';localStorage.setItem('cana_v64_ouv',vis?'0':'1');};
+  var premier=nav.querySelector('.v47g');nav.insertBefore(g,premier||null);}
+setInterval(v64Menu,1500);
+// on enlève ces boutons de la barre du haut (pour le responsable) — « Mon mois », « Bons à placer », « Rendez-vous », « Hors carte » et « Importer » restent en haut
+setInterval(function(){if(localStorage.getItem('cana_user_id'))return;['v62Btn','v63Btn','v61Btn','dmBtn'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display='none';});},1500);
+// ---------- 2) « Mon mois » plus lisible : semaine / 2 semaines / mois, une couleur par chauffeur, heures bien marquées ----------
+var V64_COUL=[['#2563eb','#eff6ff'],['#16a34a','#f0fdf4'],['#d97706','#fffbeb'],['#db2777','#fdf2f8'],['#7c3aed','#f5f3ff'],['#0d9488','#f0fdfa'],['#ea580c','#fff7ed'],['#4f46e5','#eef2ff']];
+function v64Coul(i){return V64_COUL[i%V64_COUL.length];}
+MM.portee=localStorage.getItem('cana_mm_portee')||'semaine';MM.debut='';if(!localStorage.getItem('cana_mm_zoom'))MM.zoom=14;
+mmJours=function(){if(MM.portee==='mois'){var d1=new Date(MM.mois+'-01T12:00');var nb=new Date(d1.getFullYear(),d1.getMonth()+1,0).getDate();var J=[];for(var j=1;j<=nb;j++)J.push(MM.mois+'-'+String(j).padStart(2,'0'));return J;}
+  if(!MM.debut)MM.debut=horLundi(cur);var n=MM.portee==='2sem'?14:7;var L=[];for(var i=0;i<n;i++)L.push(v59Plus(MM.debut,i));return L;};
+mmMois=function(n){v59Vider();if(MM.portee==='mois'){var x=new Date(MM.mois+'-01T12:00');x.setMonth(x.getMonth()+n);MM.mois=fmtD(x).slice(0,7);}else{MM.debut=v59Plus(MM.debut||horLundi(cur),n*(MM.portee==='2sem'?14:7));MM.mois=MM.debut.slice(0,7);}v59Notes(MM.mois).then(mmDessiner);};
+function v64Portee(p){MM.portee=p;localStorage.setItem('cana_mm_portee',p);MM.debut=horLundi(cur);MM.mois=cur.slice(0,7);v59Vider();mmDessiner();}
+var _mmOuvrirV64=mmOuvrir;mmOuvrir=function(seul){if(!MM.debut)MM.debut=horLundi(cur);_mmOuvrirV64(seul);var h=document.getElementById('mmH');if(h&&!h.querySelector('.v64p')){var z=document.createElement('div');z.className='v60vues v64p';z.innerHTML=[['semaine','Semaine'],['2sem','2 semaines'],['mois','Mois']].map(function(p){return '<button data-p="'+p[0]+'">'+p[1]+'</button>';}).join('');z.querySelectorAll('button').forEach(function(b){b.onclick=function(){v64Portee(b.getAttribute('data-p'));};});h.insertBefore(z,h.querySelector('button[onclick="mmMois(-1)"]'));}
+  var w=document.getElementById('mmW');if(w&&!w.getAttribute('data-v64')){w.setAttribute('data-v64','1');w.style.setProperty('--mmz',MM.zoom+'px');var zr=w.querySelector('#mmZ');if(zr)zr.value=MM.zoom;}};
+var _mmDessinerV64=mmDessiner;mmDessiner=function(){_mmDessinerV64();var w=document.getElementById('mmW');if(!w||w.style.display==='none')return;var J=mmJours();
+  // titre de la période
+  var t=document.getElementById('mmTitre');if(t&&MM.portee!=='mois')t.textContent='du '+new Date(J[0]+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' au '+new Date(J[J.length-1]+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  w.querySelectorAll('.v64p button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-p')===MM.portee);});
+  w.classList.toggle('v64large',J.length<=14);
+  // une couleur par chauffeur : onglets (vue par chauffeur) et colonnes (vue tout le monde)
+  w.querySelectorAll('#mmC button').forEach(function(b,i){var c=v64Coul(i);b.style.setProperty('--cc',c[0]);b.style.setProperty('--cb',c[1]);b.classList.add('v64tab');});
+  var col=v64Coul(MM.col);w.style.setProperty('--chc',col[0]);w.style.setProperty('--chb',col[1]);
+  var T2=document.getElementById('mmT2');if(T2){var ths=T2.querySelectorAll('thead th');ths.forEach(function(th,i){if(i===0)return;var c=v64Coul(i-1);th.style.background=c[0];th.style.color='#fff';});
+    T2.querySelectorAll('tbody tr').forEach(function(tr){[].slice.call(tr.cells).forEach(function(td,i){if(i===0)return;var c=v64Coul(i-1);td.style.setProperty('--cb',c[1]);td.style.setProperty('--cc',c[0]);td.classList.add('v64c');});});}
+  // les heures pleines bien marquées, les lundis séparés
+  var T=document.getElementById('mmT');if(T){T.querySelectorAll('tbody tr').forEach(function(tr,ri){if(TIMES[ri]&&/:00$/.test(TIMES[ri]))tr.classList.add('v64h');});
+    J.forEach(function(d,j){if(new Date(d+'T12:00').getDay()===1&&j>0){T.querySelectorAll('[data-j="'+j+'"]').forEach(function(td){td.classList.add('v64lun');});var th=T.querySelectorAll('thead th')[j+1];if(th)th.classList.add('v64lun');}});
+    T.querySelectorAll('td[data-r]').forEach(function(td){if(td.textContent.trim())td.classList.add('v64plein');});}};
+CL_VERSION='v64 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
