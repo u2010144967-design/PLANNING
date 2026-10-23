@@ -152,21 +152,53 @@ app.delete('/rest/v1/planning', verifCle, async (req, res) => {
 });
 
 // ---- ENVOI AUTOMATIQUE DU BON SIGNÃ‰ AU CLIENT (mÃªme adresse que la fonction Supabase) ----
+
+// ================= EMAILS : uniquement par les boÃ®tes mail de l'entreprise (SMTP), rÃ©glages secrets dans Scalingo =================
+// Comptes possibles (variables Scalingo) : SMTP_HOST/PORT/USER/PASS (compte par dÃ©faut)
+//   et, si on veut une boÃ®te par service : SMTP_RESTOCO_HOSTâ€¦, SMTP_TRAITEUR_HOSTâ€¦, SMTP_LOGISTIQUE_HOSTâ€¦ (+ _PORT _USER _PASS _FROM)
+function compteSmtp(nom) {
+  const p = nom && nom !== 'DEFAUT' ? 'SMTP_' + nom + '_' : 'SMTP_';
+  const host = process.env[p + 'HOST'] || (p !== 'SMTP_' ? null : null);
+  if (!host) return nom && nom !== 'DEFAUT' ? compteSmtp('DEFAUT') : null;
+  const user = process.env[p + 'USER'] || '';
+  return { nom: nom || 'DEFAUT', host, port: +(process.env[p + 'PORT'] || 587), user, pass: process.env[p + 'PASS'] || '', from: process.env[p + 'FROM'] || user || process.env.EXPEDITEUR || '' };
+}
+function comptesDispo() { const L = []; ['DEFAUT', 'RESTOCO', 'TRAITEUR', 'LOGISTIQUE'].forEach(n => { const p = n === 'DEFAUT' ? 'SMTP_' : 'SMTP_' + n + '_'; if (process.env[p + 'HOST']) L.push({ nom: n, from: process.env[p + 'FROM'] || process.env[p + 'USER'] || '', host: process.env[p + 'HOST'] }); }); return L; }
+async function reglagesEmail() { try { const r = await pool.query("SELECT donnees FROM planning WHERE date = 'EMAIL_REGLAGES'"); return (r.rows[0] && r.rows[0].donnees) || {}; } catch (e) { return {}; } }
+async function envoyerMail(service, msg) {
+  const R = (await reglagesEmail())[service] || {};
+  if (R.actif === false) { const e = new Error('envoi dÃ©sactivÃ© pour ' + service); e.code = 404; throw e; }
+  const c = compteSmtp(R.compte || 'DEFAUT');
+  if (!c) { const e = new Error("aucune boÃ®te mail n'est encore rÃ©glÃ©e dans Scalingo (SMTP_HOST, SMTP_USER, SMTP_PASS)"); e.code = 404; throw e; }
+  const nodemailer = require('nodemailer');
+  const tr = c.host === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({ host: c.host, port: c.port, secure: c.port === 465, auth: { user: c.user, pass: c.pass } });
+  const nomAff = R.nom || process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
+  const cc = [].concat(msg.cc || [], String(R.cc || '').split(/[,;\s]+/)).map(x => String(x).trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  const html = (msg.html || '') + (R.signature ? '<p>' + String(R.signature).replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</p>' : '');
+  const info = await tr.sendMail({ from: `"${nomAff}" <${c.from || 'logistique@latabledecana-marseille.com'}>`, replyTo: R.repondreA || undefined, to: msg.to, cc: cc.length ? cc : undefined, subject: msg.subject, html, attachments: msg.attachments });
+  return { compte: c.nom, from: c.from, info };
+}
+app.get('/api/email-comptes', verifCle, (req, res) => res.json({ ok: true, comptes: comptesDispo() }));
+app.post('/api/email-test', verifCle, async (req, res) => {
+  try { const { service, a } = req.body || {}; if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(a || ''))) return res.status(400).json({ ok: false, erreur: 'adresse invalide' });
+    const r = await envoyerMail(service || 'logistique', { to: a, subject: 'Test HB Logistique â€” envoi des emails (' + (service || 'logistique') + ')', html: '<p>Bonjour,</p><p>Ceci est un email de test : lâ€™envoi automatique fonctionne âœ…</p>' });
+    res.json({ ok: true, compte: r.compte, from: r.from });
+  } catch (e) { const m = String(e.message || e); res.status(e.code === 404 ? 404 : 500).json({ ok: false, erreur: m + (/auth|535|534|Invalid login/i.test(m) ? ' â†’ identifiant ou mot de passe refusÃ© par la boÃ®te mail' : /ENOTFOUND|getaddrinfo/i.test(m) ? ' â†’ le nom du serveur SMTP est faux' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' â†’ le port ne rÃ©pond pas (essaie 587 ou 465)' : '') }); }
+});
+
 app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
   try {
     const { cle, email } = req.body || {};
     if (!cle || !String(cle).startsWith('BONSIGNE_')) return res.status(400).json({ ok: false, erreur: 'bon inconnu' });
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ ok: false, erreur: 'email invalide' });
-    const BREVO = process.env.BREVO_API_KEY, SMTP = process.env.SMTP_HOST;
-    if (!BREVO && !SMTP) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore configurÃ© (SMTP_HOST ou BREVO_API_KEY)' });
     const FROM = process.env.EXPEDITEUR || 'restauco@latabledecana-marseille.com';
     const FROM_NOM = process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
     const r1 = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle]);
     if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'bon signÃ© introuvable' });
     const m = r1.rows[0].donnees || {};
-    const TYPES = String(process.env.EMAIL_AUTO_TYPES || 'RESTOCO,CENTRE,PIQUE').toUpperCase().split(',').map(x => x.trim()).filter(Boolean);
-    const typeBon = String(m.type || 'RESTOCO').toUpperCase();
-    if (!TYPES.includes(typeBon) && !TYPES.includes('TOUS')) return res.status(404).json({ ok: false, erreur: 'envoi automatique pas encore activÃ© pour les bons ' + typeBon });
+    let typeBon = String(m.type || '').toUpperCase();
+    if (!typeBon) { try { const rb = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle.replace('BONSIGNE_', 'BON_')]); typeBon = String(((rb.rows[0] || {}).donnees || {}).type || 'RESTOCO').toUpperCase(); } catch (e) { typeBon = 'RESTOCO'; } }
+    const service = /FTBE|SERVICE/.test(typeBon) ? 'traiteur' : 'restoco';
     if ((m.nbEmails || 0) >= 5) return res.status(429).json({ ok: false, erreur: "trop d'envois pour ce bon" });
     let b64 = m.pdf || '';
     if (!b64) {
@@ -181,24 +213,11 @@ app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
     const html = `<p>Bonjour,</p><p>Veuillez trouver ci-joint le bon de livraison signÃ© du <b>${jour}</b> (${m.client}).</p>` +
       (m.signataire ? `<p>SignÃ© par ${m.signataire} le ${m.signeA || ''}.</p>` : '') + (m.temperature ? `<p>TempÃ©rature Ã  la livraison : ${m.temperature}.</p>` : '') +
       `<p>Cordialement,<br>${FROM_NOM}</p>`;
-    if (SMTP) {
-      // envoi DIRECT depuis la boÃ®te mail de l'entreprise (aucun service extÃ©rieur)
-      const nodemailer = require('nodemailer');
-      const tr = SMTP === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({
-        host: SMTP, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465',
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
-      await tr.sendMail({ from: `"${FROM_NOM}" <${process.env.SMTP_USER && SMTP !== 'test' ? (process.env.EXPEDITEUR || process.env.SMTP_USER) : FROM}>`, to: email,
-        subject: `Bon de livraison signÃ© â€” ${m.client} â€” ${jour}`, html, attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] });
-      m.emailEnvoye = new Date().toISOString(); m.emailA = email; m.nbEmails = (m.nbEmails || 0) + 1;
-      await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
-      return res.json({ ok: true, par: 'smtp' });
-    }
-    const r3 = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': BREVO, 'Content-Type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ sender: { name: FROM_NOM, email: FROM }, to: [{ email }], subject: `Bon de livraison signÃ© â€” ${m.client} â€” ${jour}`, htmlContent: html, attachment: [{ content: b64, name: nomF }] }) });
-    if (!r3.ok) return res.status(502).json({ ok: false, erreur: 'Brevo : ' + (await r3.text()).slice(0, 200) });
+    try { await envoyerMail(service, { to: email, subject: `Bon de livraison signÃ© â€” ${m.client} â€” ${jour}`, html, attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] }); }
+    catch (e) { return res.status(e.code === 404 ? 404 : 500).json({ ok: false, erreur: String(e.message || e) }); }
     m.emailEnvoye = new Date().toISOString(); m.emailA = email; m.nbEmails = (m.nbEmails || 0) + 1;
     await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
-    res.json({ ok: true });
+    return res.json({ ok: true, par: 'smtp', service });
   } catch (e) { res.status(500).json({ ok: false, erreur: String(e.message || e) }); }
 });
 
@@ -210,8 +229,6 @@ app.post('/api/envoyer-commande', verifCle, async (req, res) => {
     const A = [].concat(a || []).map(x => String(x).trim()).filter(okMail), CC = [].concat(cc || []).map(x => String(x).trim()).filter(okMail);
     if (!cle || !/^CMDLC_|^PREP_/.test(cle)) return res.status(400).json({ ok: false, erreur: 'commande inconnue' });
     if (!A.length) return res.status(400).json({ ok: false, erreur: 'aucune adresse email valide pour Lecourtier (RÃ©glages)' });
-    const SMTP = process.env.SMTP_HOST, BREVO = process.env.BREVO_API_KEY;
-    if (!SMTP && !BREVO) return res.status(404).json({ ok: false, erreur: "l'envoi automatique n'est pas encore configurÃ© (SMTP_HOST dans Scalingo)" });
     const r1 = await pool.query('SELECT donnees FROM planning WHERE date = $1', [cle]);
     if (!r1.rows.length) return res.status(404).json({ ok: false, erreur: 'commande introuvable' });
     const m = r1.rows[0].donnees || {};
@@ -220,16 +237,8 @@ app.post('/api/envoyer-commande', verifCle, async (req, res) => {
     const parts = []; r2.rows.forEach(x => { const o = x.donnees || {}; parts[o.i] = o.d; });
     if (!cles.length || parts.length !== cles.length || parts.some(p => typeof p !== 'string')) return res.status(500).json({ ok: false, erreur: 'PDF incomplet' });
     const b64 = parts.join(''), nomF = (m.fichier || 'Commande_Lecourtier') + '.pdf';
-    const FROM_NOM = process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
-    if (SMTP) {
-      const nodemailer = require('nodemailer');
-      const tr = SMTP === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({ host: SMTP, port: +(process.env.SMTP_PORT || 587), secure: String(process.env.SMTP_PORT) === '465', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
-      await tr.sendMail({ from: `"${FROM_NOM}" <${process.env.EXPEDITEUR || process.env.SMTP_USER || 'logistique@latabledecana-marseille.com'}>`, to: A, cc: CC, subject: sujet || 'Commande de matÃ©riel', html: html || '<p>Bonjour,</p><p>Veuillez trouver ci-joint notre commande.</p>', attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] });
-    } else {
-      const r3 = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': BREVO, 'Content-Type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ sender: { name: FROM_NOM, email: process.env.EXPEDITEUR || 'logistique@latabledecana-marseille.com' }, to: A.map(email => ({ email })), cc: CC.length ? CC.map(email => ({ email })) : undefined, subject: sujet, htmlContent: html, attachment: [{ content: b64, name: nomF }] }) });
-      if (!r3.ok) return res.status(502).json({ ok: false, erreur: 'Brevo : ' + (await r3.text()).slice(0, 200) });
-    }
+    try { await envoyerMail('logistique', { to: A, cc: CC, subject: sujet || 'Commande de matÃ©riel', html: html || '<p>Bonjour,</p><p>Veuillez trouver ci-joint notre commande.</p>', attachments: [{ filename: nomF, content: Buffer.from(b64, 'base64'), contentType: 'application/pdf' }] }); }
+    catch (e) { return res.status(e.code === 404 ? 404 : 500).json({ ok: false, erreur: String(e.message || e) }); }
     m.envoyeLe = new Date().toISOString(); m.envoyeA = A.join(', ');
     await pool.query('UPDATE planning SET donnees = $2, updated_at = now() WHERE date = $1', [cle, JSON.stringify(m)]);
     res.json({ ok: true });
