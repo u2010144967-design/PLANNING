@@ -3225,6 +3225,7 @@ function AccueilPro({ch,planning,onNavigate}){
         <button onClick={()=>onNavigate('alertes')} style={{position:'relative',background:'rgba(255,255,255,.14)',border:'none',color:'#fff',borderRadius:12,width:44,height:44,fontSize:20}}>🔔{nAl>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',borderRadius:10,fontSize:11,fontWeight:900,padding:'1px 6px'}}>{nAl}</span>}</button></div>
       <div style={{fontSize:24,fontWeight:900,marginTop:2}}>Bonjour {ch.display} 👋</div>
       <div style={{fontSize:18,fontWeight:800,color:'#fff',marginTop:4}}>🚚 {d.truck||ch.truck||'Camion'}{hj&&!off&&hj.d?' · '+hj.d+(hj.f?' → '+hj.f:''):(d.start?' · début '+d.start:'')}</div>
+      <HeuresJour hj={hj} debutPlanning={d.start}/>
       {off&&<div style={{marginTop:10,background:'#f59e0b',color:'#1c1917',borderRadius:14,padding:'12px 14px',fontSize:20,fontWeight:900}}>🏖️ Aujourd’hui : {HOR_LIB[hj.s]||hj.s}</div>}
     </div>
     <div className="scroll" style={{padding:'4px 16px 100px'}}>
@@ -3644,6 +3645,23 @@ function CompteurCamion({ch,camion}){
       <div style={{fontSize:13,fontWeight:900,marginTop:8,color:PRO.gris}}>⛽ Niveau d’essence</div>
       <div style={{display:'flex',gap:5,marginTop:4,flexWrap:'wrap'}}>{['Plein','3/4','1/2','1/4','Réserve'].map(x=><button key={x} onClick={()=>setEss(x)} style={{flex:1,padding:'10px 4px',borderRadius:10,border:'none',fontWeight:900,background:ess===x?(/1\/4|Réserve/.test(x)?'#dc2626':'#2563eb'):'#f1f5f9',color:ess===x?'#fff':PRO.txt}}>{x}</button>)}</div>
       <div style={{display:'flex',gap:8,marginTop:10}}><button onClick={()=>{setSaisie(null);setPhoto(null);}} style={Object.assign({},bt,{background:'#f1f5f9',color:PRO.txt})}>Annuler</button><button disabled={envoi} onClick={valider} style={Object.assign({},bt,{background:'#16a34a',color:'#fff'})}>✅ Valider</button></div></div>}
+  </div>;}
+
+/* ═══ ⏱️ Heures travaillées aujourd'hui (d'après les horaires saisis au bureau) ═══ */
+function HeuresJour({hj,debutPlanning}){
+  const[now,setNow]=useState(Date.now());useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(t);},[]);
+  const enMin=h=>{const m=String(h||'').match(/(\d{1,2})[:hH](\d{2})/);return m?(+m[1])*60+(+m[2]):null;};
+  const off=hj&&hj.s&&hj.s!=='T'&&hj.s!=='RET';if(off)return null;
+  let deb=enMin(hj&&hj.d),fin=enMin(hj&&hj.f);if(deb===null)deb=enMin(debutPlanning);if(deb===null)return null;if(fin===null)fin=deb+7*60;if(fin<=deb)fin+=1440;
+  const d=new Date(now);const n=d.getHours()*60+d.getMinutes();const total=fin-deb;const fait=Math.max(0,Math.min(total,n-deb));const reste=total-fait;
+  const f=m=>Math.floor(m/60)+' h '+String(m%60).padStart(2,'0');const hh=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  const termine=n>=fin;const avant=n<deb;const pc=Math.round(fait*100/Math.max(1,total));
+  return <div style={{marginTop:10,background:termine?'#16a34a':'rgba(255,255,255,.14)',borderRadius:14,padding:'10px 12px',border:termine?'none':'1px solid rgba(255,255,255,.25)'}}>
+    {avant?<div style={{fontWeight:900,fontSize:16}}>⏰ Ta journée commence à {hh(deb)} · {f(total)} prévues</div>:
+     termine?<div style={{fontWeight:900,fontSize:18}}>✅ Journée terminée — {f(total)} travaillées</div>:
+     <><div style={{display:'flex',alignItems:'baseline',gap:8}}><span style={{fontSize:26,fontWeight:900}}>⏱️ {f(fait)}</span><span style={{fontSize:15,fontWeight:700,opacity:.9}}>travaillées sur {f(total)}</span></div>
+       <div style={{height:8,background:'rgba(255,255,255,.25)',borderRadius:6,marginTop:6,overflow:'hidden'}}><div style={{height:'100%',width:pc+'%',background:'#4ade80'}}/></div>
+       <div style={{fontSize:14,fontWeight:800,marginTop:6,color:'#fde68a'}}>Encore {f(reste)} — ta journée finit à {hh(fin)}. Ne pars pas avant.</div></>}
   </div>;}
 
 function App(){
