@@ -1248,6 +1248,12 @@ body.px2:not(.menu-reduit){padding-left:238px!important}body:not(.menu-reduit) #
 .v53d{display:flex;flex-wrap:wrap;gap:4px 6px;max-width:520px}.v53c{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:3px 8px;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .v53c input{margin:0}.v53all{background:#ecfdf5;border-color:#a7f3d0;font-weight:700}.v53lec{background:#fef3c7;border-color:#fde68a}
 .v53d{min-width:420px}
+/* ===== v54 : différences entre ancien et nouveau BL ===== */
+.v54res{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}.v54res span{border-radius:10px;padding:4px 10px;font-weight:700;font-size:12.5px}.v54res .q{background:#fef3c7;color:#92400e}.v54res .m{background:#ede9fe;color:#5b21b6}.v54res .a{background:#dcfce7;color:#166534}.v54res .s{background:#fee2e2;color:#991b1b}
+.v54l{border:1px solid #eceef2;border-left:5px solid #94a3b8;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13.5px}.v54l.q{border-left-color:#f59e0b}.v54l.m{border-left-color:#7c3aed}.v54l.a{border-left-color:#16a34a}.v54l.s{border-left-color:#dc2626}.v54l small{color:#6b7280}
+.v54 ins{background:#bbf7d0;text-decoration:none;font-weight:800;padding:0 2px;border-radius:3px}.v54 del{background:#fecaca;color:#991b1b;padding:0 2px;border-radius:3px}
+.v54av,.v54ap{margin-top:3px}.v54nv{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important;font-weight:800!important}.v54btn{background:#ede9fe!important;color:#5b21b6!important;border-color:#ddd6fe!important;font-weight:800!important}
+.v54r{margin-top:6px;font-size:12.5px;font-weight:700;color:#5b21b6}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5832,6 +5838,49 @@ function v53Lecture(i,v){var u=US.liste[i];u.role=v?'lecture':'commercial';v53Sa
 // ce que le collègue voit : ses rubriques, et la page Stockage seulement s'il l'a
 var _v49AppliquerV53=v49AppliquerDroits;v49AppliquerDroits=function(){_v49AppliquerV53();if(!localStorage.getItem('cana_user_id'))return;var R=V49.droits||{};document.querySelectorAll('#pxSide .sd-it').forEach(function(b){if(/Stockage/.test(b.textContent))b.style.display=R.stk===false?'none':'';});};
 CL_VERSION='v53 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 47 : « 🔍 Ce qui a changé » entre l'ancien BL et le nouveau =================
+async function v54Lignes(cle){var by=new Uint8Array(await (await bnPdf(cle)).arrayBuffer());var pdf=await pdfjsLib.getDocument({data:by}).promise;var L=[];
+  for(var i=1;i<=pdf.numPages;i++){(await lcLignesTexte(await pdf.getPage(i))).forEach(function(l){var t=String(l).replace(/\s+/g,' ').replace(/Edition du \d{1,2}\/\d{1,2}\/\d{4}( à \d{1,2}:\d{2})?/i,'').replace(/Modifi[ée] le [^-]*par \S+/i,'').trim();if(!t)return;if(/^Edition du|^\d+\/\d+N°|^\d+\/\d+$|Bon d.Exp[ée]dition \(suite\)/i.test(t))return;L.push(t);});}return L;}
+function v54Lcs(a,b){var n=a.length,m=b.length;var T=[];for(var i=0;i<=n;i++){T.push(new Uint16Array(m+1));}
+  for(i=n-1;i>=0;i--)for(var j=m-1;j>=0;j--)T[i][j]=a[i]===b[j]?T[i+1][j+1]+1:Math.max(T[i+1][j],T[i][j+1]);
+  var out=[];i=0;j=0;while(i<n&&j<m){if(a[i]===b[j]){out.push({t:'=',a:a[i]});i++;j++;}else if(T[i+1][j]>=T[i][j+1]){out.push({t:'-',a:a[i]});i++;}else{out.push({t:'+',b:b[j]});j++;}}
+  while(i<n)out.push({t:'-',a:a[i++]});while(j<m)out.push({t:'+',b:b[j++]});return out;}
+function v54Mots(s){return String(s).match(/\d+(?:[.,]\d+)?|[A-Za-zÀ-ÿ'’]+|[^\sA-Za-zÀ-ÿ0-9]/g)||[];}
+function v54Sans(s){return String(s).replace(/^\d+(?:[.,]\d+)?\s*[-–—~]*\s*/,'').trim();}
+function v54Proche(x,y){var A=v54Mots(x),B=v54Mots(y);if(!A.length||!B.length)return 0;var c=0;var S={};A.forEach(function(w){S[w]=(S[w]||0)+1;});B.forEach(function(w){if(S[w]){c++;S[w]--;}});return 2*c/(A.length+B.length);}
+function v54Detail(x,y){var A=v54Mots(x),B=v54Mots(y);var d=v54Lcs(A,B);var av='',ap='',quoi=[];
+  d.forEach(function(o){if(o.t==='=')return;if(o.t==='-')quoi.push('« '+o.a+' » enlevé');else quoi.push('« '+o.b+' » ajouté');});
+  var html=function(side){return d.map(function(o){if(o.t==='=')return esc(o.a);if(side==='a'&&o.t==='-')return '<del>'+esc(o.a)+'</del>';if(side==='b'&&o.t==='+')return '<ins>'+esc(o.b)+'</ins>';return '';}).join(' ').replace(/\s+([,.;:!?)])/g,'$1');};
+  var ponct=d.filter(function(o){return o.t!=='='&&/^[^\wÀ-ÿ]$/.test(o.a||o.b||'');}).length;
+  return {av:html('a'),ap:html('b'),quoi:quoi,ponct:ponct};}
+async function v54Comparer(ancien,nouveau,titre){
+  var ov=v32Ov();ov.innerHTML='<div class="cam-b v47dos"><div class="cam-h"><span>🔍</span><b>Ce qui a changé — '+esc(titre||'')+'</b><button onclick="v32Fermer()">✕</button></div><p>⏳ Je lis l’ancien BL et le nouveau, ligne par ligne…</p></div>';ov.style.display='flex';
+  var A=[],B=[];try{A=await v54Lignes(ancien);B=await v54Lignes(nouveau);}catch(e){ov.querySelector('p').textContent='❌ Lecture impossible : '+e.message;return;}
+  var d=v54Lcs(A,B);var C=[];var moins=[],plus=[];
+  var vider=function(){
+    // on rapproche les lignes enlevées / ajoutées qui parlent de la même chose (même article, autre quantité ; même phrase modifiée)
+    moins.forEach(function(m){var best=-1,bs=0;plus.forEach(function(p,pi){if(p.pris)return;var s=v54Sans(m)===v54Sans(p.t)?1:v54Proche(m,p.t);if(s>bs){bs=s;best=pi;}});
+      if(best>=0&&bs>=0.5){var p=plus[best];p.pris=true;var qa=(m.match(/^(\d+(?:[.,]\d+)?)\s/)||[])[1],qb=(p.t.match(/^(\d+(?:[.,]\d+)?)\s/)||[])[1];
+        if(qa&&qb&&qa!==qb&&v54Sans(m)===v54Sans(p.t))C.push({k:'q',art:v54Sans(m),a:qa,b:qb});else C.push(Object.assign({k:'m',a:m,b:p.t},v54Detail(m,p.t)));}
+      else C.push({k:'-',a:m});});
+    plus.forEach(function(p){if(!p.pris)C.push({k:'+',b:p.t});});moins=[];plus=[];};
+  d.forEach(function(o){if(o.t==='='){vider();return;}if(o.t==='-')moins.push(o.a);else plus.push({t:o.b});});vider();
+  var nq=C.filter(function(c){return c.k==='q';}).length,nm=C.filter(function(c){return c.k==='m';}).length,na=C.filter(function(c){return c.k==='+';}).length,ns=C.filter(function(c){return c.k==='-';}).length;
+  var h='<div class="cam-b v47dos v54"><div class="cam-h"><span>🔍</span><b>Ce qui a changé — '+esc(titre||'')+'</b><button onclick="v32Fermer()">✕</button></div>';
+  if(!C.length)h+='<div class="v47todo ok">✅ Aucune différence de texte entre l’ancien et le nouveau BL (seule la mise en page ou l’heure d’édition a changé).</div>';
+  else{h+='<div class="v54res">'+(nq?'<span class="q">🔢 '+nq+' quantité(s) changée(s)</span>':'')+(nm?'<span class="m">✏️ '+nm+' ligne(s) modifiée(s)</span>':'')+(na?'<span class="a">➕ '+na+' ligne(s) ajoutée(s)</span>':'')+(ns?'<span class="s">➖ '+ns+' ligne(s) enlevée(s)</span>':'')+'</div>';
+    h+=C.map(function(c){if(c.k==='q')return '<div class="v54l q"><b>🔢 Quantité changée</b><div>'+esc(c.art)+' : <del>'+esc(c.a)+'</del> → <ins>'+esc(c.b)+'</ins> <small>('+(parseFloat(String(c.b).replace(',','.'))>parseFloat(String(c.a).replace(',','.'))?'+':'')+(Math.round((parseFloat(String(c.b).replace(',','.'))-parseFloat(String(c.a).replace(',','.')))*100)/100)+')</small></div></div>';
+      if(c.k==='+')return '<div class="v54l a"><b>➕ Ajouté sur le nouveau BL</b><div><ins>'+esc(c.b)+'</ins></div></div>';
+      if(c.k==='-')return '<div class="v54l s"><b>➖ Enlevé du nouveau BL</b><div><del>'+esc(c.a)+'</del></div></div>';
+      return '<div class="v54l m"><b>✏️ Modifié'+(c.ponct&&c.quoi.length===c.ponct?' (ponctuation : '+c.quoi.join(', ')+')':'')+'</b><div class="v54av">Avant : '+c.av+'</div><div class="v54ap">Après : '+c.ap+'</div><small>'+esc(c.quoi.slice(0,6).join(' · '))+'</small></div>';}).join('');}
+  h+='<div class="v47btns" style="margin-top:10px"><button onclick="v35Panneau([\''+ancien+'\',\''+nouveau+'\'],\'Ancien / nouveau BL\')">👁 Voir les deux BL côte à côte</button></div></div>';ov.innerHTML=h;
+  try{var m=await bnMeta(nouveau);m.resumeChangement=(nq?nq+' quantité(s) · ':'')+(nm?nm+' modif. · ':'')+(na?na+' ajout(s) · ':'')+(ns?ns+' retrait(s)':'');await _bnPostV49({date:nouveau,donnees:m,updated_at:new Date().toISOString()});}catch(e){}}
+// dans « 🔄 BL remplacés » : l'ancien et le NOUVEAU BL côte à côte + le bouton « Ce qui a changé »
+var _v50ListeV54=v50ListeRemplaces;v50ListeRemplaces=function(L,fam){var h=_v50ListeV54(L,fam);
+  L.forEach(function(b){if(!b.ancienCle)return;h=h.replace('<button onclick="v35Panneau([\''+b.date+'\'],\'Nouvelle version\')">👁 Nouvelle</button>','<button class="v54nv" onclick="v35Panneau([\''+b.date+'\'],\'NOUVEAU BL\')">🆕 NOUVEAU BL</button><button class="v54btn" onclick="v54Comparer(\''+b.ancienCle+'\',\''+b.date+'\',\''+esc(b.client).replace(/'/g,'')+'\')">🔍 Ce qui a changé</button>');
+    if(b.resumeChangement)h=h.replace('🔄 v'+(b.version||2)+'</span></div>','🔄 v'+(b.version||2)+'</span></div><div class="v54r">🔍 '+esc(b.resumeChangement)+'</div>');});return h;};
+CL_VERSION='v54 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
