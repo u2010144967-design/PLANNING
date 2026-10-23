@@ -1258,6 +1258,7 @@ body.px2:not(.menu-reduit){padding-left:238px!important}body:not(.menu-reduit) #
 .v55z li.kq,.v55ol li.kq{color:#92400e;font-weight:700}.v55z li.km,.v55ol li.km{color:#5b21b6}.v55z li.k\+,.v55ol li.k\+{color:#166534;font-weight:700}.v55z li.k-,.v55ol li.k-{color:#991b1b;font-weight:700}
 .v55ol{margin:6px 0 0 20px;padding:0;font-size:14px;line-height:1.5}
 .v56b{background:#fef2f2!important;color:#b91c1c!important;border:1px solid #fecaca!important;font-weight:700!important;border-radius:10px!important}
+.v57z{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.v57z button{font-size:12px!important;padding:5px 9px!important;border-radius:9px!important;background:#ede9fe!important;color:#5b21b6!important;border:1px solid #ddd6fe!important;font-weight:700!important}.v57z button.v56b{background:#fef2f2!important;color:#b91c1c!important;border-color:#fecaca!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -5943,6 +5944,20 @@ var _v55RemplirV56=v55Remplir;v55Remplir=async function(){
 // et dans la fenêtre « Vérifier »
 var _v55VerifierV56=v55Verifier;v55Verifier=async function(k,fam){await _v55VerifierV56(k,fam);var z=document.querySelector('#v32Ov .v47btns');if(z&&!z.querySelector('.v56b'))z.insertAdjacentHTML('beforeend','<button class="v56b" onclick="v32Fermer();v56Effacer(\''+k+'\',\''+fam+'\')">🗑 Effacer l’ancien</button>');};
 CL_VERSION='v56 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 50 : les anciennes versions ne s'affichent plus comme des bons + boutons dans la fenêtre « Bons à placer » =================
+// « BON_ » lisait aussi « BONOLD_… » (anciennes versions) et « BONPDF_… » : on ne garde que les vrais bons
+var _bnLireV57=bnLire;bnLire=async function(prefix){var l=await _bnLireV57.apply(this,arguments);if(prefix==='BON_')return l.filter(function(b){return /^BON_\d/.test(b.date);});return l;};
+if(BP.L)BP.L=BP.L.filter(function(b){return /^BON_\d/.test(b.date);});
+// dans la fenêtre « Bons à placer » : sur un BL remplacé, les boutons « Voir les changements » et « Effacer l'ancien »
+var _bpDessinerV57=bpDessiner;bpDessiner=function(){_bpDessinerV57();var box=document.getElementById('bpL');if(!box)return;
+  box.querySelectorAll('.bp-i.rp').forEach(function(el){if(el.querySelector('.v57z'))return;var k=el.getAttribute('data-k');var b=(BP.L||[]).find(function(x){return x.date===k;})||{};var fam=(bnCat(b)==='FTBE'||bnCat(b)==='SERVICE')?'tr':'rc';
+    var z=document.createElement('div');z.className='v57z';z.innerHTML='<button onclick="event.stopPropagation();v55Verifier(\''+k+'\',\''+fam+'\')">🔍 Voir les changements</button><button class="v56b" onclick="event.stopPropagation();v57Effacer(\''+k+'\',\''+fam+'\')">🗑 Effacer l’ancien</button>';
+    var t=el.querySelector('.bp-t');if(t)t.appendChild(z);});};
+async function v57Effacer(k,fam){await v56Effacer(k,fam);try{await bpCharger(true);bpDessiner();}catch(e){}}
+// après « C'est bon, j'ai vérifié » ou « Effacer », la fenêtre des bons se met à jour aussi
+var _v50VerifieV57=v50Verifie;v50Verifie=async function(k,fam){await _v50VerifieV57(k,fam);try{if(document.getElementById('bpWin')&&document.getElementById('bpWin').style.display!=='none'){await bpCharger(true);bpDessiner();}}catch(e){}};
+CL_VERSION='v57 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
