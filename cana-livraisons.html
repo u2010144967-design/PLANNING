@@ -6817,5 +6817,21 @@ var _v61TamponnerV67=v61Tamponner;v61Tamponner=async function(by,info){var pl=in
   return await doc.save();};
 CL_VERSION='v67 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
+// ================= CANA LIVRAISONS 61 : sur le BL imprimé, seulement le NOM du camion (« JUMPY ») et le PRÉNOM (« OTMANE ») =================
+function v68Camion(t){var s=String(t||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(!s.trim())return '';
+  // un camion connu dans le texte ? (fiches camions + liste du planning) — le nom le plus long gagne (« VIVARO 2 » plutôt que « VIVARO »)
+  var connus=[];try{connus=connus.concat(CAM_LIST||[]);}catch(e){}try{connus=connus.concat(Object.keys((typeof CF!=='undefined'&&CF.fiches)||{}));}catch(e){}
+  connus=connus.map(function(x){return String(x).toUpperCase();}).filter(function(x){return x&&x!=='M/H';}).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<connus.length;i++){if(s.indexOf(connus[i])>=0)return connus[i]==='FRAIKIN'||connus[i]==='LOCATION'?(s.match(/LOCATION\s*FRAIKIN|FRAIKIN|LOCATION/)||[connus[i]])[0]:connus[i];}
+  // sinon : on enlève les heures (7h00, 07:30, 7H) et ce qui n'est pas le nom
+  return s.replace(/\b\d{1,2}\s*[:hH]\s*\d{0,2}\b/g,' ').replace(/\b(DEPART|DEBUT|A|DE|DES|LE|LA)\b/g,' ').replace(/[^A-Z0-9 \-]/g,' ').replace(/\s+/g,' ').trim();}
+function v68Prenom(t){var s=String(t||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');var d=[];try{d=(V32.eq.drivers||[]).map(function(e){return String(e.name||'').toUpperCase();});}catch(e){}try{d=d.concat(DRIVERS||[]);}catch(e){}
+  d=d.filter(function(x){return x&&x!=='M/H'&&x!=='MAITRE_HOTEL';}).sort(function(a,b){return b.length-a.length;});for(var i=0;i<d.length;i++){if(new RegExp('\\b'+d[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b').test(s))return d[i];}
+  return s.replace(/\b\d{1,2}\s*[:hH]\s*\d{0,2}\b/g,' ').replace(/[^A-Z \-]/g,' ').replace(/\s+/g,' ').trim().split(' ')[0]||'';}
+var _v61InfoV68=v61Info;v61Info=async function(key){var r=await _v61InfoV68(key);if(r&&r.place){var p=r.place;p.camion=v68Camion(p.camion);p.chauffeur=p.mh?v68Prenom(p.chauffeur):v68Prenom(p.chauffeur)||p.chauffeur;if(p.mhNom)p.mhNom=v68Prenom(p.mhNom)||p.mhNom;p.plaque=p.camion&&typeof pqDe==='function'?pqDe(p.camion):'';}return r;};
+// même chose sur les pages de garde « Bons + livreurs »
+var _v61IndexV68=v61Index;v61Index=function(d){var I=_v61IndexV68(d);Object.keys(I).forEach(function(k){var x=I[k];x.camion=v68Camion(x.camion);x.chauffeur=v68Prenom(x.chauffeur)||x.chauffeur;});return I;};
+CL_VERSION='v68 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
 </script>
 </body></html>
