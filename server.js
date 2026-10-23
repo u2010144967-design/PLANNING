@@ -171,7 +171,7 @@ async function envoyerMail(service, msg) {
   const c = compteSmtp(R.compte || 'DEFAUT');
   if (!c) { const e = new Error("aucune boÃ®te mail n'est encore rÃ©glÃ©e dans Scalingo (SMTP_HOST, SMTP_USER, SMTP_PASS)"); e.code = 404; throw e; }
   const nodemailer = require('nodemailer');
-  const tr = c.host === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({ host: c.host, port: c.port, secure: c.port === 465, auth: { user: c.user, pass: c.pass } });
+  const tr = c.host === 'test' ? nodemailer.createTransport({ jsonTransport: true }) : nodemailer.createTransport({ host: c.host, port: c.port, secure: c.port === 465, requireTLS: c.port !== 465, auth: { user: c.user, pass: String(c.pass || '').trim() }, connectionTimeout: 20000, greetingTimeout: 20000, socketTimeout: 30000 });
   const nomAff = R.nom || process.env.EXPEDITEUR_NOM || 'La Table de Cana Marseille';
   const cc = [].concat(msg.cc || [], String(R.cc || '').split(/[,;\s]+/)).map(x => String(x).trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
   const html = (msg.html || '') + (R.signature ? '<p>' + String(R.signature).replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</p>' : '');
@@ -183,7 +183,7 @@ app.post('/api/email-test', verifCle, async (req, res) => {
   try { const { service, a } = req.body || {}; if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(a || ''))) return res.status(400).json({ ok: false, erreur: 'adresse invalide' });
     const r = await envoyerMail(service || 'logistique', { to: a, subject: 'Test HB Logistique â€” envoi des emails (' + (service || 'logistique') + ')', html: '<p>Bonjour,</p><p>Ceci est un email de test : lâ€™envoi automatique fonctionne âœ…</p>' });
     res.json({ ok: true, compte: r.compte, from: r.from });
-  } catch (e) { const m = String(e.message || e); res.status(e.code === 404 ? 404 : 500).json({ ok: false, erreur: m + (/auth|535|534|Invalid login/i.test(m) ? ' â†’ identifiant ou mot de passe refusÃ© par la boÃ®te mail' : /ENOTFOUND|getaddrinfo/i.test(m) ? ' â†’ le nom du serveur SMTP est faux' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' â†’ le port ne rÃ©pond pas (essaie 587 ou 465)' : '') }); }
+  } catch (e) { console.error('[email-test]', e && (e.response || e.message || e)); const m = String((e && (e.response || e.message)) || e); res.status(e.code === 404 ? 404 : 500).json({ ok: false, erreur: m + (/auth|535|534|Invalid login/i.test(m) ? ' â†’ identifiant ou mot de passe refusÃ© par la boÃ®te mail' : /ENOTFOUND|getaddrinfo/i.test(m) ? ' â†’ le nom du serveur SMTP est faux' : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(m) ? ' â†’ le port ne rÃ©pond pas (essaie 587 ou 465)' : '') }); }
 });
 
 app.post('/functions/v1/envoyer-bon', verifCle, async (req, res) => {
