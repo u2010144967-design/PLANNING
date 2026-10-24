@@ -1376,6 +1376,17 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v70i{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:13px}.v70i:hover{background:#f8fafc}.v70i small{display:block;color:#6b7280}.v70h{font-weight:800;width:44px;color:#0f172a}.v70i button{background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:8px!important;padding:3px 8px!important}
 .v70ok{background:#dcfce7;color:#166534;border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}.v70np{margin:6px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;font-size:12.5px}.v70np button{margin-left:6px}
 #grid td.v70flash{animation:v70f .5s ease-in-out 5;outline:3px solid #f59e0b}@keyframes v70f{50%{box-shadow:inset 0 0 0 9999px rgba(245,158,11,.35)}}
+.v71tel{display:inline-block;background:#dcfce7;color:#166534!important;border:1px solid #86efac;border-radius:9px;padding:2px 9px;font-weight:800;font-size:12.5px;text-decoration:none!important;white-space:nowrap}.v71tel:hover{background:#bbf7d0}.v71tel.p{font-size:12px}
+.v71cp{background:#fff!important;border:1px solid #e5e7eb!important;border-radius:7px!important;padding:1px 6px!important;font-size:11px!important;margin-left:3px;cursor:pointer}
+.v71no{font-size:11px;color:#b45309;background:#fff7ed;border-radius:8px;padding:1px 7px}.v71l{margin-top:4px}
+.v65h .v71z .v71tel{background:rgba(255,255,255,.92)}.v65h .v71z .v71no{background:rgba(255,255,255,.85)}.v65h .v71z .v71cp{background:rgba(255,255,255,.85)!important}
+/* ===== v72 : absences & remplacements ===== */
+.v72w{width:min(620px,94vw)!important}.v72s{margin-top:10px;border-top:1px solid #eef0f4;padding-top:8px}.v72s>b{display:block;margin-bottom:6px;font-size:14px}
+.v72ch{display:flex;flex-wrap:wrap;gap:6px}.v72ch.col{flex-direction:column}.v72ch label{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:7px 10px;font-size:13.5px;cursor:pointer}.v72ch label.off{opacity:.45}.v72ch label small{color:#6b7280;margin-left:auto}
+.v72ch input[type=text],.v72ch input:not([type]),.v72ch input[type=date]{border:1px solid #cbd5e1;border-radius:8px;padding:4px 7px}.v72ret{align-items:center;gap:6px;margin-top:6px;font-size:13px}
+.v72b{font-size:10.5px;font-weight:600;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:0 5px;margin-top:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v72fb{background:rgba(255,255,255,.22)!important;color:#fff!important;border:0!important;border-radius:7px!important;padding:2px 7px!important}
+.v72i{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px}.v72i small{display:block;color:#6b7280}.v72i.ret{background:#fff7ed}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -6983,6 +6994,100 @@ var _v69AnalyseV70=v69Analyse;v69Analyse=function(q){var s=v69N(q);var R=_v69Ana
 V69_F.unshift([['recherche','rechercher','qui livre','ou est'],'🔎','Fenêtre Recherche (qui livre / où est placé)','Fenêtre',function(){v70Fenetre('A');}]);
 V64_OUTILS.splice(2,0,['🔎','Recherche : qui livre / où est placé',function(){v70Fenetre('A');}]);
 CL_VERSION='v70 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 64 : le TÉLÉPHONE du chauffeur partout (recherche, fenêtres chauffeurs, grande recherche) =================
+function v71Tel(nom){try{var id=v32Id(clClean(nom||''));if(id<0){var n=v69N(String(nom||'').split(/\s+/)[0]);id=(V32.eq.drivers||[]).findIndex(function(e){return v69N(e.name)===n;});}var e=id>=0?V32.eq.drivers[id]:null;return e&&e.tel?String(e.tel).trim():'';}catch(x){return '';}}
+function v71Bouton(nom,petit){var t=v71Tel(nom);if(!t)return '<span class="v71no" title="Numéro à remplir dans 👥 Chauffeurs / Véhicules">📞 pas de numéro</span>';var tt=t.replace(/\s/g,'');
+  return '<a class="v71tel'+(petit?' p':'')+'" href="tel:'+esc(tt)+'" onclick="event.stopPropagation()" title="Appeler">📞 '+esc(t)+'</a><button class="v71cp" onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText(\''+esc(t)+'\').catch(function(){});this.textContent=\'✅\'" title="Copier le numéro">📋</button>';}
+// 1) dans la fenêtre « Recherche » : sous chaque résultat, le numéro du chauffeur
+var _v70LigneV71=v70Ligne;v70Ligne=function(x,ev){var h=_v70LigneV71(x,ev);var nom=String(x.qui||'').replace(/^M\/H\s*·?\s*/,'');var mh=/M\/H|MAITRE/i.test(x.qui)?String(x.quoi||'').split(/\s+/)[0]:'';return h.replace('</small></div>','</small><div class="v71l">'+v71Bouton(mh||nom,true)+'</div></div>');};
+// 2) dans chaque fenêtre chauffeur : le numéro dans la barre du haut
+var _fcDessinerV71=fcDessiner;fcDessiner=function(w){_fcDessinerV71(w);var el=document.getElementById('fc'+w.id);if(!el)return;var nom=el.querySelector('.v65n');if(!nom)return;var z=el.querySelector('.v71z');if(!z){z=document.createElement('span');z.className='v71z';el.querySelector('.v65h').insertBefore(z,el.querySelector('.v65h button'));}z.innerHTML=v71Bouton(nom.textContent,true);};
+// 3) dans la grande recherche : le numéro à côté du chauffeur
+var _v69AnalyseV71=v69Analyse;v69Analyse=function(q){var R=_v69AnalyseV71(q);R.forEach(function(r){var m=String(r.t).match(/^(?:Colonne|Fiche|Horaires) de (\S+)/);if(m){var t=v71Tel(m[1]);if(t)r.s=(r.s||'')+' · 📞 '+t;}});return R;};
+// 4) dans « Chauffeurs aujourd'hui » de l'accueil
+var _hbRemplirV71=hbRemplir;hbRemplir=async function(On,resp){await _hbRemplirV71(On,resp);document.querySelectorAll('#hbc_chauffeurs .hbch2').forEach(function(l){if(l.querySelector('.v71tel,.v71no'))return;var b=l.querySelector('b');if(b)l.insertAdjacentHTML('beforeend','<span style="margin-left:6px">'+v71Bouton(b.textContent,true)+'</span>');});};
+// 5) dans « Qui conduit » de la grande recherche (camion) : le numéro du conducteur
+CL_VERSION='v71 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 65 : 🚫 ABSENT / 🔁 REMPLACER — et la fenêtre « Absences & remplacements » =================
+// Aucun prénom n'est écrit d'avance dans le logiciel : c'est toujours toi qui choisis ou tapes le prénom du remplaçant.
+function v72NomCol(d,c){var day=store[d];return day?clClean(((day.ch||[])[c]||{}).t||''):'';}
+function v72Absent(d,c){var day=store[d];var x=day&&day.ch[c]&&day.ch[c].rempl;return x?x.absent:v72NomCol(d,c);}
+function v72Livraisons(d,c){var day=store[d];if(!day)return 0;return Object.keys(day.cells).filter(function(k){var o=day.cells[k];return +k.split('_')[1]===c&&o&&o.t;}).length;}
+// ---------- la fenêtre « Absent / Remplacer » ----------
+function v72Ouvrir(c,d){d=d||cur;ensure(d);var nom=v72Absent(d,c);if(!nom){alert('Cette colonne n’a pas encore de chauffeur.');return;}var deja=store[d].ch[c].rempl;
+  var eq=[];try{eq=(V32.eq.drivers||[]).map(function(e,i){return {e:e,i:i};}).filter(function(x){return x.e.name&&x.e.actif!==false&&v69N(x.e.name)!==v69N(nom)&&x.e.name!=='MAITRE_HOTEL';});}catch(e){}
+  var dispo=eq.map(function(x){var h=horDe(x.i,d);var off=h&&h.s&&h.s!=='T'&&h.s!=='RET';var col=store[d].ch.findIndex(function(y){return v69N(clClean(y.t||''))===v69N(x.e.name);});return {nom:x.e.name,off:off,nb:col>=0?v72Livraisons(d,col):0,st:off?(STATUTS[h.s]||[h.s])[0]:''};});
+  var moi=v49Moi();var moiNom=/^responsable$/i.test(moi.nom||'')?'':moi.nom;
+  var ov=v32Ov();ov.innerHTML='<div class="cam-b v72w"><div class="cam-h"><span>🚫</span><b>'+esc(nom)+' — absent / remplacé</b><button onclick="v32Fermer()">✕</button></div>'+
+    (deja?'<div class="v47todo">Aujourd’hui, <b>'+esc(deja.par)+'</b> remplace déjà <b>'+esc(deja.absent)+'</b> ('+esc(deja.motif)+'). <button onclick="v32Fermer();v72Revenu('+c+',\''+d+'\')">↩️ '+esc(deja.absent)+' est revenu</button></div>':'')+
+    '<div class="v72s"><b>1. Quoi ?</b><div class="v72ch">'+[['ABS','🚫 Absent'],['A','🤒 Arrêt maladie'],['RET','⏰ Retard'],['C','🏖️ Congé'],['F','🎓 Formation']].map(function(m,i){return '<label><input type="radio" name="v72m" value="'+m[0]+'"'+(i===0?' checked':'')+' onchange="document.getElementById(\'v72ret\').style.display=this.value===\'RET\'?\'flex\':\'none\'"> '+m[1]+'</label>';}).join('')+'</div>'+
+    '<div id="v72ret" class="v72ret" style="display:none">Retard de <input type="number" id="v72min" value="30" min="5" step="5" style="width:70px"> minutes <small>(pas besoin de remplaçant si le retard est court)</small></div></div>'+
+    '<div class="v72s"><b>2. Quand ?</b><div class="v72ch"><label><input type="radio" name="v72q" value="1" checked> Aujourd’hui ('+esc(dayLabel(d))+')</label><label><input type="radio" name="v72q" value="2"> Aujourd’hui et demain</label><label><input type="radio" name="v72q" value="p"> Du <input type="date" id="v72de" value="'+d+'"> au <input type="date" id="v72a" value="'+v59Plus(d,2)+'"></label></div></div>'+
+    '<div class="v72s"><b>3. Qui fait la tournée de '+esc(nom)+' ?</b><div class="v72ch col">'+
+      dispo.map(function(x){return '<label class="'+(x.off?'off':'')+'"><input type="radio" name="v72r" value="'+esc(x.nom)+'"'+(x.off?' disabled':'')+'> 🚚 <b>'+esc(x.nom)+'</b> <small>'+(x.off?x.st:x.nb+' livraison(s) déjà ce jour')+'</small></label>';}).join('')+
+      '<label><input type="radio" name="v72r" value="__moi"> 🧑‍💼 <b>Moi, le responsable</b> — prénom : <input id="v72moi" value="'+esc(moiNom)+'" placeholder="ton prénom" style="width:140px" onfocus="document.querySelector(\'input[name=v72r][value=__moi]\').checked=true"></label>'+
+      '<label><input type="radio" name="v72r" value="__autre"> 👤 <b>Une autre personne</b> (extra, intérimaire…) — prénom : <input id="v72autre" placeholder="prénom" style="width:140px" onfocus="document.querySelector(\'input[name=v72r][value=__autre]\').checked=true"></label>'+
+      '<label><input type="radio" name="v72r" value="__repartir"> 🧩 <b>Répartir sa tournée</b> entre plusieurs chauffeurs (fenêtres flottantes)</label>'+
+      '<label><input type="radio" name="v72r" value="__personne"> ⛔ <b>Personne</b> pour l’instant (je verrai plus tard)</label></div></div>'+
+    '<button class="clsend" style="width:100%;margin-top:10px" onclick="v72Valider('+c+',\''+d+'\')">✅ Valider</button></div>';ov.style.display='flex';}
+async function v72Valider(c,d){var g=function(n){var x=document.querySelector('input[name='+n+']:checked');return x?x.value:'';};var motif=g('v72m'),quand=g('v72q'),r=g('v72r');var nom=v72Absent(d,c);
+  var J=[d];if(quand==='2')J.push(v59Plus(d,1));if(quand==='p'){var a=document.getElementById('v72de').value,b=document.getElementById('v72a').value;if(!a||!b||b<a){alert('Vérifie les dates.');return;}J=[];for(var x=a;x<=b;x=v59Plus(x,1))J.push(x);}
+  var par='';if(r==='__moi'){par=(document.getElementById('v72moi').value||'').trim().toUpperCase();if(!par){alert('Écris ton prénom (il sera noté comme conducteur, pour la traçabilité du camion).');return;}}
+  else if(r==='__autre'){par=(document.getElementById('v72autre').value||'').trim().toUpperCase();if(!par){alert('Écris le prénom de la personne.');return;}}else if(r&&r.indexOf('__')!==0)par=r;
+  if(motif!=='RET'&&!r){alert('Choisis qui fait la tournée (ou « Personne pour l’instant »).');return;}
+  // 1) les horaires du chauffeur absent (planning, appli, rapport)
+  try{await v32Horaires();var id=v32Id(nom);if(id>=0){V32.hor[id]=V32.hor[id]||{};J.forEach(function(x){var old=V32.hor[id][x]||{};V32.hor[id][x]=motif==='RET'?Object.assign({},old,{s:'RET',retard:+(document.getElementById('v72min').value||0)}):{s:motif};});await horSauver();}}catch(e){}
+  if(motif==='RET'&&(!r||r==='__personne')){v32Fermer();v49Log('planning','⏰ '+nom+' en retard de '+(document.getElementById('v72min').value||'?')+' min le '+dayLabel(d));v59Toast('⏰ Retard noté pour '+nom,'var(--green)');try{render();}catch(e){}return;}
+  // 2) la colonne : « REMPLAÇANT ⇄ remplace ABSENT » (camion et livraisons gardés)
+  try{snapshot();}catch(e){}var moi=v49Moi();
+  J.forEach(function(x){ensure(x);var day=store[x];var ch=day.ch[c];var absent=(ch.rempl&&ch.rempl.absent)||clClean(ch.t||'')||nom;
+    if(par){ch.rempl={absent:absent,par:par,motif:(STATUTS[motif]||[motif])[0],qui:moi.nom,quand:new Date().toISOString(),camion:clClean((day.cam[c]||{}).t||'')};ch.t=par;}
+    else if(r==='__personne'){ch.rempl={absent:absent,par:'',motif:(STATUTS[motif]||[motif])[0],qui:moi.nom,quand:new Date().toISOString(),camion:clClean((day.cam[c]||{}).t||'')};}
+    try{_bnPostV49({date:'REMPL_'+x+'_'+c,donnees:Object.assign({jour:x,col:c},ch.rempl||{absent:absent,par:'',motif:(STATUTS[motif]||[motif])[0]}),updated_at:new Date().toISOString()});}catch(e){}
+    try{clQueue(x);}catch(e){}});
+  V49.local=Date.now();lsSave();try{clFlush();}catch(e){}try{render();}catch(e){}v32Fermer();
+  v49Log('planning','🔁 '+nom+' '+((STATUTS[motif]||[motif])[0]).toLowerCase()+' ('+J.map(function(x){return x.split('-').reverse().join('/').slice(0,5);}).join(', ')+')'+(par?' — remplacé par '+par:' — sans remplaçant')+' · camion '+clClean((store[d].cam[c]||{}).t||''),{jourPlanning:d});
+  if(r==='__repartir'){fcToutDetacher();v59Toast('🧩 Glisse les livraisons de '+nom+' vers les autres chauffeurs','var(--green)');return;}
+  // 3) un remplaçant sans appli : on propose d'imprimer sa feuille de route et ses bons
+  var aAppli=false;try{aAppli=(V32.eq.drivers||[]).some(function(e){return v69N(e.name)===v69N(par);});}catch(e){}
+  if(par&&!aAppli){if(confirm(par+' n’a pas l’appli chauffeur.\nImprimer sa feuille de route et ses bons (avec « Livreur : '+par+' ») ?'))v72Imprimer(d,c);}else if(par)v59Toast('📲 La tournée part sur le téléphone de '+par,'var(--green)');}
+// ↩️ il est revenu : tout est remis comme avant
+async function v72Revenu(c,d){d=d||cur;var day=store[d];var x=day&&day.ch[c]&&day.ch[c].rempl;if(!x)return;if(!confirm(x.absent+' est revenu : remettre son nom dans la colonne et enlever son absence du '+dayLabel(d)+' ?'))return;
+  try{snapshot();}catch(e){}day.ch[c].t=x.absent;delete day.ch[c].rempl;try{await v32Horaires();var id=v32Id(x.absent);if(id>=0&&V32.hor[id]){var h=V32.hor[id][d];if(h&&h.s!=='T'){var t=v59TypeDe&&v59TypeDe(id,((new Date(d+'T12:00').getDay()+6)%7)+1);if(t&&t.s==='T')V32.hor[id][d]={s:'T',d:t.d,f:t.f};else delete V32.hor[id][d];}await horSauver();}}catch(e){}
+  try{await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.REMPL_'+d+'_'+c,{method:'DELETE',headers:clH()},1);}catch(e){}V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}render();v49Log('planning','↩️ '+x.absent+' est revenu le '+dayLabel(d)+(x.par?' (fin du remplacement par '+x.par+')':''),{jourPlanning:d});}
+// impression pour un remplaçant sans appli : sa page de garde + ses bons (avec son prénom dans « Livreur : »)
+async function v72Imprimer(d,c){var I=v61Index(d);var garde={};Object.keys(I).forEach(function(k){if(I[k].c!==c)delete I[k];});var keys=Object.keys(I);if(!keys.length){alert('Aucun bon placé dans cette colonne.');return;}
+  var _ix=v61Index;v61Index=function(dd){var A=_ix(dd);if(dd===d)Object.keys(A).forEach(function(k){if(A[k].c!==c)delete A[k];});return A;};try{await v61Journee(d);}finally{v61Index=_ix;}}
+// ---------- l'affichage dans le planning : « ⇄ remplace X » sous le nom ----------
+function v72Badges(){var g=document.querySelector('#grid table');if(!g||!store[cur])return;var ligne=null;for(var i=0;i<Math.min(g.rows.length,5);i++){var c0=g.rows[i].cells[0];if(c0&&/CHAUFF/i.test(c0.textContent)){ligne=g.rows[i];break;}}if(!ligne)return;
+  [].slice.call(ligne.cells).slice(1).forEach(function(td,c){var x=(store[cur].ch[c]||{}).rempl;var b=td.querySelector('.v72b');if(!x){if(b)b.remove();return;}if(!b){b=document.createElement('div');b.className='v72b';b.contentEditable='false';td.appendChild(b);}
+    b.innerHTML=x.par?'⇄ remplace <b>'+esc(x.absent)+'</b> <small>('+esc(x.motif).toLowerCase()+')</small>':'🚫 <b>'+esc(x.absent)+'</b> '+esc(x.motif).toLowerCase()+' — <i>pas de remplaçant</i>';b.title='Clic : gérer l’absence';b.onclick=function(e){e.stopPropagation();v72Ouvrir(c,cur);};});}
+var _renderV72=render;render=function(){var r=_renderV72.apply(this,arguments);try{v72Badges();}catch(e){}return r;};
+// clic droit sur le nom d'un chauffeur dans le planning
+document.addEventListener('contextmenu',function(e){var td=e.target.closest&&e.target.closest('#grid td');if(!td)return;var tr=td.parentNode;var c0=tr&&tr.cells[0];if(!c0||!/CHAUFF/i.test(c0.textContent)||td===c0)return;var c=[].slice.call(tr.cells).indexOf(td)-1;if(c<0)return;
+  e.preventDefault();e.stopImmediatePropagation();var m=document.getElementById('v59M');if(!m){m=document.createElement('div');m.id='v59M';document.body.appendChild(m);document.addEventListener('mousedown',function(ev){if(!ev.target.closest('#v59M'))m.style.display='none';});}
+  var x=(store[cur].ch[c]||{}).rempl;m.innerHTML='<div class="v59mt">'+esc(v72Absent(cur,c)||('Colonne '+(c+1)))+'</div><button onclick="document.getElementById(\'v59M\').style.display=\'none\';v72Ouvrir('+c+',cur)"><span>🚫</span>Absent / remplacer…</button>'+(x?'<button onclick="document.getElementById(\'v59M\').style.display=\'none\';v72Revenu('+c+',cur)"><span>↩️</span>'+esc(x.absent)+' est revenu</button>':'')+'<button onclick="document.getElementById(\'v59M\').style.display=\'none\';fcDetacher('+c+')"><span>⇱</span>Détacher la colonne</button><button onclick="document.getElementById(\'v59M\').style.display=\'none\';chFiche(v72NomCol(cur,'+c+'))"><span>👤</span>Fiche (téléphone)</button><button onclick="document.getElementById(\'v59M\').style.display=\'none\';v72Liste()"><span>📋</span>Absences & remplacements</button>';
+  m.style.cssText='display:block;left:'+Math.min(e.clientX,window.innerWidth-260)+'px;top:'+Math.min(e.clientY,window.innerHeight-240)+'px';},true);
+// le bouton dans chaque fenêtre chauffeur
+var _fcCreerV72=fcCreer;fcCreer=function(w){var el=_fcCreerV72(w);if(!el.querySelector('.v72fb')){var b=document.createElement('button');b.className='v72fb';b.textContent='🚫';b.title='Absent / remplacer';b.onclick=function(){v72Ouvrir(w.c,fcJours(w)[0]);};var h=el.querySelector('.v65h');h.insertBefore(b,h.querySelector('button[data-a="mini"]'));}return el;};
+// ---------- la fenêtre « Absences & remplacements » ----------
+async function v72Liste(){var w=document.getElementById('v72W');
+  if(!w){w=document.createElement('div');w.id='v72W';w.className='bpw2';w.style.cssText='left:'+Math.max(260,window.innerWidth-640)+'px;top:90px;width:600px;height:'+Math.min(700,window.innerHeight-120)+'px';
+    w.innerHTML='<div class="bp-h" id="v72H" style="background:linear-gradient(90deg,#b91c1c,#ea580c)"><b>📋 Absences & remplacements</b><span style="flex:1"></span><button onclick="v39Coller2(\'v72W\',\'d\')">⇥</button><button onclick="document.getElementById(\'v72W\').classList.toggle(\'mini\')">▁</button><button onclick="document.getElementById(\'v72W\').style.display=\'none\'">✕</button></div><div class="bp-l" id="v72L"></div>';document.body.appendChild(w);v39Deplacable(w,w.querySelector('#v72H'));}
+  w.style.display='flex';w.style.zIndex=++V48.z;var box=document.getElementById('v72L');box.innerHTML='<div class="bp-v">⏳</div>';var auj=v59Auj();var l=horLundi(auj);var J=[];for(var i=0;i<7;i++)J.push(v59Plus(l,i));
+  await v32Equipe();await v32Horaires();var lig=[];
+  J.forEach(function(d){(V32.eq.drivers||[]).forEach(function(e,i){if(!e.name||e.actif===false)return;var h=horDe(i,d);if(!h||!h.s||h.s==='T'||h.s==='R'||h.s==='CP')return;var day=store[d];var c=day?day.ch.findIndex(function(y){return y.rempl&&v69N(y.rempl.absent)===v69N(e.name);}):-1;var x=c>=0?day.ch[c].rempl:null;
+    lig.push({d:d,nom:e.name,st:h.s,lib:(STATUTS[h.s]||[h.s])[0]+(h.retard?' (+'+h.retard+' min)':''),par:x?x.par:'',c:c});});});
+  var H=[];try{H=(await v63Rows('date=like.REMPL_'+auj.slice(0,7)+'*&select=date,donnees&limit=500'));}catch(e){}var cpt={};H.forEach(function(x){if(x.par){var k=x.par+' ⇄ '+x.absent;cpt[k]=(cpt[k]||0)+1;}});
+  box.innerHTML='<div class="v70s">Cette semaine</div>'+(lig.length?lig.map(function(x){return '<div class="v72i '+(x.st==='RET'?'ret':'')+'"><div class="v70h">'+esc(new Date(x.d+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}))+'</div><div style="flex:1"><b>'+esc(x.nom)+'</b> — '+esc(x.lib)+'<small>'+(x.par?'remplacé par <b>'+esc(x.par)+'</b>':(x.st==='RET'?'':'<span style="color:#b45309">pas de remplaçant</span>'))+'</small></div>'+(x.c>=0?'<button onclick="v72Revenu('+x.c+',\''+x.d+'\').then(v72Liste)">↩️ Revenu</button>':'')+'</div>';}).join(''):'<div class="bp-v">Aucune absence ni retard cette semaine.</div>')+
+    '<div class="v70s">Remplacements du mois</div>'+(Object.keys(cpt).length?Object.keys(cpt).map(function(k){return '<div class="v72i"><div style="flex:1">'+esc(k)+'</div><b>'+cpt[k]+' jour(s)</b></div>';}).join(''):'<div class="bp-v">Aucun remplacement ce mois-ci.</div>');}
+V64_OUTILS.splice(3,0,['📋','Absences & remplacements',function(){v72Liste();}]);
+V69_F.unshift([['absences','absents','remplacements','remplacement','qui est absent'],'📋','Absences & remplacements','Fenêtre',function(){v72Liste();}]);
+// dans la grande recherche : « anthony absent », « remplacer anthony »
+var _v69AnalyseV72=v69Analyse;v69Analyse=function(q){var R=_v69AnalyseV72(q);var s=v69N(q);if(/\b(absent|remplac|arret|malade)/.test(s)){var D=v69Date(s);var d=D?D.d:cur;ensure(d);store[d].ch.forEach(function(ch,c){var n=clClean(ch.t||'');if(n&&s.split(' ').some(function(m){return v69Proche(m,n);}))R.unshift({ic:'🚫',t:n+' absent / remplacer — '+(D?D.lu:'aujourd’hui'),s:'Action — tu choisis le remplaçant',sc:400,fn:function(){v72Ouvrir(c,d);}});});}return R;};
+CL_VERSION='v72 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
