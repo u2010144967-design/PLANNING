@@ -1433,6 +1433,7 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v75li.v77li .v75cp{grid-auto-rows:min-content!important;align-items:start!important}.v75li.v77li .v75cp button{height:auto!important;min-height:0!important;line-height:1.2!important}
 .v75li.v77li{height:auto!important;min-height:0!important;flex:none!important}.v75li.v77li .v75cp,.v75li.v77li .v76cl{flex:none!important}
 .v75li.v77li .v75cp{display:flex!important;flex-wrap:wrap!important;width:100%!important;gap:6px!important}.v75li.v77li .v75cp button{flex:1 1 110px!important;max-width:180px}
+.v78b{background:#0f766e!important;color:#fff!important;border:0!important;border-radius:10px!important;padding:6px 12px!important;font-weight:700!important;margin-left:auto}.ftOng .v78b{margin-left:8px}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -7364,6 +7365,21 @@ var _amRepartirV77=amRepartir;amRepartir=function(c,d){_amRepartirV77(c,d);var r
   var m=r.querySelector('.v75modes');if(m&&!r.querySelector('.v77lien'))m.insertAdjacentHTML('afterend','<div class="v77lien">Seuls les <b>chauffeurs</b> sont proposés. Un nom manque ou un maître d’hôtel apparaît ? <a href="#" onclick="event.preventDefault();v77Roles()">👥 Régler qui est chauffeur</a></div>');};
 V64_OUTILS.push(['👥','Qui est chauffeur ? (rôles)',function(){v77Roles();}]);
 CL_VERSION='v77 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 71 : « 📨 Demande à la logistique » aussi dans les parties Traiteur et Resto-Co =================
+function v78Demande(type){dmFenetre();setTimeout(function(){var t=document.getElementById('dmT');if(t&&type){[].slice.call(t.options).forEach(function(o){if(o.text===type)t.value=o.value||o.text;});}var c=document.getElementById('dmC');if(c)c.focus();},200);}
+// 1) dans le menu de gauche : un bouton dans la rubrique Traiteur et un dans la rubrique Resto-Co
+function v78Menu(){[['.v47g1','Camion + chauffeur'],['.v47g2','Livraison supplémentaire']].forEach(function(x){var g=document.querySelector('#pxSide '+x[0]+' .v47gb');if(!g||g.querySelector('.v78m'))return;var b=document.createElement('button');b.className='sd-it v47in v78m';b.innerHTML='<span>📨</span>Demande à la logistique';b.onclick=function(){v78Demande(x[1]);};g.appendChild(b);});}
+setInterval(v78Menu,1500);
+// 2) dans les pages : Traiteur FTBE, Prestations (calendrier), Bons Resto-Co, Répartition
+function v78Bouton(type){var bar=document.querySelector('#clBox .clbar')||document.querySelector('#clBox .ftOng');if(!bar||bar.querySelector('.v78b'))return;var b=document.createElement('button');b.className='v78b';b.textContent='📨 Demande à la logistique';b.title='Besoin d’un camion, d’un chauffeur, d’une livraison en plus ? Écris ta demande ici';b.onclick=function(){v78Demande(type);};bar.appendChild(b);}
+var _ftbePanelV78=ftbePanel;ftbePanel=async function(){var r=await _ftbePanelV78.apply(this,arguments);v78Bouton('Camion + chauffeur');return r;};
+var _prestPanelV78=prestPanel;prestPanel=async function(){var r=await _prestPanelV78.apply(this,arguments);v78Bouton('Camion + chauffeur');return r;};
+var _rcPanelV78=rcPanel;rcPanel=async function(){var r=await _rcPanelV78.apply(this,arguments);v78Bouton('Livraison supplémentaire');return r;};
+var _repPanelV78=repPanel;repPanel=async function(){var r=await _repPanelV78.apply(this,arguments);v78Bouton('Livraison supplémentaire');return r;};
+// 3) la recherche : « demande »
+V69_F.unshift([['demande a la logistique','demander','demande camion','demande chauffeur','livraison en plus'],'📨','Demande à la logistique','Fenêtre',function(){v78Demande();}]);
+CL_VERSION='v78 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
