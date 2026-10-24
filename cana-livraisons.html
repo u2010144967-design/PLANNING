@@ -1392,6 +1392,16 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v73f{width:min(460px,92vw)!important}.v73pl{display:inline-block;font:800 22px/1 'Courier New',monospace;letter-spacing:2px;border:3px solid #1e3a8a;border-radius:8px;padding:8px 14px;background:#fff;margin:4px 0 10px;box-shadow:inset 18px 0 0 #1d4ed8;padding-left:28px}
 .v73g{display:grid;grid-template-columns:1fr 1fr;gap:6px}.v73g div{background:#f8fafc;border:1px solid #eef0f4;border-radius:10px;padding:6px 9px}.v73g small{display:block;color:#6b7280;font-size:11px}.v73g b{font-size:14px}
 .v73p{font-size:10px;font-weight:700;color:#1e3a8a;background:#eef2ff;border:1px solid #c7d2fe;border-radius:5px;padding:0 5px;margin-top:1px;display:inline-block;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:.5px}
+/* ===== v74 : le matin ===== */
+.amintro{font-size:13px;color:#475569;margin:6px 10px}.amg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;padding:6px}
+.amc{border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;background:#fff}.amc.off{background:#fff7ed;border-color:#fed7aa}.amn b{font-size:15px}.amn small{display:block;color:#6b7280;font-size:11.5px}
+.amb{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center}.amb button{background:#f8fafc!important;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:3px 7px!important;font-size:11.5px!important;font-weight:600!important;cursor:pointer}.amb button:hover{background:#fee2e2!important;border-color:#fecaca!important}
+.amok{font-size:11.5px;font-weight:700;color:#166534;background:#dcfce7;border-radius:8px;padding:3px 7px}.ams{margin-top:6px;font-weight:800;color:#b91c1c}.ams small{display:block;font-weight:500;color:#9a3412}.amr{margin-top:6px;background:#dcfce7!important;color:#166534!important;border:1px solid #86efac!important;border-radius:8px!important;font-weight:700!important}
+.amrep{width:min(820px,95vw)!important}.amcols{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}.amsrc{border:2px dashed #fca5a5;border-radius:12px;padding:8px;min-height:120px;max-height:52vh;overflow:auto;background:#fff5f5}
+.amit{background:#fff;border:1px solid #fecaca;border-radius:9px;padding:7px 9px;margin:4px 0;cursor:grab;font-size:13px}.amit.drag{opacity:.4}.amit b{color:#b91c1c;margin-right:6px}
+.amdst{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.amz{border:2px solid #c7d2fe;border-radius:12px;padding:8px 10px;background:#eef2ff;transition:.15s}.amz.sur{background:#c7d2fe;transform:scale(1.02)}.amz b{font-size:15px}.amz small{display:block;color:#475569;font-size:11.5px;margin:2px 0 4px}
+.amz button{background:#312e81!important;color:#fff!important;border:0!important;border-radius:8px!important;padding:4px 9px!important;font-size:12px!important;font-weight:700!important}.amz.moi{background:#fefce8;border-color:#fde68a}.amz.moi input{border:1px solid #fde68a;border-radius:8px;padding:4px 8px;margin:4px 0}.amz.moi button{background:#92400e!important}
+.amcarte{border:2px solid #fbbf24!important;background:linear-gradient(180deg,#fffbeb,#fff)!important}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -7121,6 +7131,73 @@ var _renderV73=render;render=function(){var r=_renderV73.apply(this,arguments);t
 // 5) sur l'accueil, « Chauffeurs aujourd'hui » : la plaque aussi
 var _hbRemplirV73=hbRemplir;hbRemplir=async function(On,resp){await camCharger();await _hbRemplirV73(On,resp);document.querySelectorAll('#hbc_chauffeurs .hbch2 small').forEach(function(s){var m=s.textContent.match(/🚚\s*(.+)$/);if(!m||s.querySelector('.v73c'))return;var i=v73Info(m[1]);if(i)s.innerHTML=s.innerHTML.replace(/🚚\s*.+$/,v73Puce(m[1]));});};
 CL_VERSION='v73 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 67 : ☀️ LE MATIN — qui est là, qui est absent, et sa tournée donnée en quelques secondes =================
+STATUTS.RECUP=STATUTS.RECUP||['Récup','#0d9488'];
+var AM={d:null};
+function amJour(){return AM.d||v59Auj();}
+function amChauffeurs(d){ensure(d);var day=store[d];var L=[];day.ch.forEach(function(ch,c){var nom=clClean(ch.t||'');var abs=ch.abs||null;if(!nom&&!abs)return;if(/^M\/H$/i.test(nom))return;var id=-1;try{id=v32Id(abs?abs.nom:nom);}catch(e){}var h=id>=0?horDe(id,d):null;
+  L.push({c:c,nom:abs?abs.nom:nom,cam:clClean((day.cam[c]||{}).t||''),nb:v72Livraisons(d,c),abs:abs,h:h,id:id});});return L;}
+// ---------- la carte « ☀️ Le matin » (accueil) et la fenêtre (planning) ----------
+function amHtml(d){var L=amChauffeurs(d);var st=[['ABS','🚫 Absent'],['C','🏖️ Congé'],['RECUP','🔄 Récup'],['A','🤒 Arrêt'],['RET','⏰ Retard']];
+  return '<div class="amg">'+L.map(function(x){var off=x.abs||(x.h&&x.h.s&&x.h.s!=='T'&&x.h.s!=='RET');var lib=x.abs?(STATUTS[x.abs.s]||[x.abs.s])[0]:(off?(STATUTS[x.h.s]||[x.h.s])[0]:'');
+    return '<div class="amc'+(off?' off':'')+'"><div class="amn"><b>'+esc(x.nom)+'</b><small>'+(x.cam?'🚚 '+esc(v68Camion(x.cam)):'')+' · '+x.nb+' livraison(s)</small></div>'+
+      (off?'<div class="ams">'+esc(lib)+(x.abs&&x.abs.donne?'<small>tournée donnée à '+esc(x.abs.donne.join(', '))+'</small>':'')+'</div><button class="amr" onclick="amRevenu('+x.c+',\''+d+'\')">↩️ Il est là</button>':
+      '<div class="amb"><span class="amok">✅ Présent</span>'+st.map(function(s){return '<button onclick="amMarquer('+x.c+',\''+d+'\',\''+s[0]+'\')">'+s[1]+'</button>';}).join('')+'</div>')+'</div>';}).join('')+'</div>';}
+function amFenetre(d){AM.d=d||v59Auj();var w=document.getElementById('amW');
+  if(!w){w=document.createElement('div');w.id='amW';w.className='bpw2';w.style.cssText='left:'+Math.max(250,Math.round(window.innerWidth/2-420))+'px;top:80px;width:840px;height:'+Math.min(760,window.innerHeight-110)+'px';
+    w.innerHTML='<div class="bp-h" id="amH" style="background:linear-gradient(90deg,#f59e0b,#ea580c)"><b>☀️ Le matin — qui est là ?</b><span id="amD" style="margin-left:8px;font-size:12px"></span><span style="flex:1"></span><button onclick="document.getElementById(\'amW\').classList.toggle(\'mini\')">▁</button><button onclick="document.getElementById(\'amW\').style.display=\'none\'">✕</button></div><div class="bp-l" id="amB"></div>';document.body.appendChild(w);v39Deplacable(w,w.querySelector('#amH'));}
+  w.style.display='flex';w.style.zIndex=++V48.z;amDessiner();}
+function amDessiner(){var b=document.getElementById('amB');if(b){document.getElementById('amD').textContent=dayLabel(amJour());b.innerHTML='<p class="amintro">Clique sur <b>Absent</b>, <b>Congé</b>, <b>Récup</b>… : sa colonne se vide, son téléphone affiche son absence, et tu donnes sa tournée en la <b>glissant</b> sur les autres chauffeurs.</p>'+amHtml(amJour());}
+  var c=document.getElementById('hbc_matin');if(c)c.querySelector('.amzone').innerHTML=amHtml(v59Auj());}
+// ---------- marquer absent : statut + ouverture de la répartition ----------
+async function amMarquer(c,d,s){var day=store[d];var nom=clClean(day.ch[c].t||'');if(!nom)return;var min=0;if(s==='RET'){var m=prompt('Retard de combien de minutes ?','30');if(m===null)return;min=+m||0;}
+  try{await v32Horaires();var id=v32Id(nom);if(id>=0){V32.hor[id]=V32.hor[id]||{};var old=V32.hor[id][d]||{};V32.hor[id][d]=s==='RET'?Object.assign({},old,{s:'RET',retard:min}):{s:s};await horSauver();}}catch(e){}
+  v49Log('planning',(s==='RET'?'⏰ ':'🚫 ')+nom+' : '+(STATUTS[s]||[s])[0].toLowerCase()+(s==='RET'?' (+'+min+' min)':'')+' le '+dayLabel(d),{jourPlanning:d});
+  if(s==='RET'){v59Toast('⏰ Retard noté pour '+nom,'var(--green)');amDessiner();return;}
+  day.ch[c].abs={nom:nom,s:s,quand:new Date().toISOString(),qui:v49Moi().nom,moves:[],donne:[]};V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}
+  amDessiner();if(v72Livraisons(d,c))amRepartir(c,d);else{day.ch[c].t='';lsSave();try{render();}catch(e){}}}
+// ---------- la répartition : glisser les livraisons sur les autres chauffeurs ----------
+function amRepartir(c,d){var day=store[d];var a=day.ch[c].abs;var cases=Object.keys(day.cells).filter(function(k){var o=day.cells[k];return +k.split('_')[1]===c&&o&&o.t;}).sort(function(x,y){return +x.split('_')[0]-+y.split('_')[0];});
+  var cibles=amChauffeurs(d).filter(function(x){return x.c!==c&&!x.abs&&!(x.h&&x.h.s&&x.h.s!=='T'&&x.h.s!=='RET');});
+  var ex=document.querySelector('.amrep');var ov=ex?ex.parentNode:v32Ov();ov.innerHTML='<div class="cam-b amrep"><div class="cam-h"><span>🔀</span><b>Donner la tournée de '+esc(a.nom)+'</b><button onclick="v32Fermer();amFinRepartition('+c+',\''+d+'\')">✕</button></div>'+
+    '<p class="amintro"><b>Glisse</b> chaque livraison sur un chauffeur (elle garde son heure), ou clique <b>« Tout donner »</b>. Chaque livraison part <b>tout de suite</b> sur le téléphone du chauffeur.</p><div class="amcols"><div class="amsrc" id="amSrc">'+
+    cases.map(function(k){var o=day.cells[k];var r=+k.split('_')[0];return '<div class="amit" draggable="true" data-k="'+k+'"><b>'+esc(TIMES[r])+'</b> '+esc(o.t)+'</div>';}).join('')+(cases.length?'':'<div class="bp-v">✅ Toute la tournée est donnée.</div>')+'</div>'+
+    '<div class="amdst">'+cibles.map(function(x){return '<div class="amz" data-c="'+x.c+'"><b>'+esc(x.nom)+'</b><small>🚚 '+esc(v68Camion(x.cam))+' · '+x.nb+' livraison(s)</small><button onclick="amTout('+c+',\''+d+'\','+x.c+')">Tout donner à '+esc(x.nom)+'</button></div>';}).join('')+
+      '<div class="amz moi" data-c="moi"><b>🧑‍💼 Moi, le responsable</b><input id="amMoi" placeholder="ton prénom" value="'+esc(/^responsable$/i.test(v49Moi().nom||'')?'':v49Moi().nom)+'"><small>Tu prends sa colonne et son camion (traçabilité du conducteur)</small><button onclick="amMoi('+c+',\''+d+'\')">Je fais sa tournée</button></div></div></div>'+
+    '<button class="clsend" style="width:100%;margin-top:10px" onclick="v32Fermer();amFinRepartition('+c+',\''+d+'\')">✅ Terminé</button></div>';ov.style.display='flex';
+  ov.querySelectorAll('.amit').forEach(function(it){it.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',it.getAttribute('data-k'));it.classList.add('drag');});it.addEventListener('dragend',function(){it.classList.remove('drag');});});
+  ov.querySelectorAll('.amz:not(.moi)').forEach(function(z){z.addEventListener('dragover',function(e){e.preventDefault();z.classList.add('sur');});z.addEventListener('dragleave',function(){z.classList.remove('sur');});
+    z.addEventListener('drop',function(e){e.preventDefault();z.classList.remove('sur');var k=e.dataTransfer.getData('text/plain');if(k)amDeplacer(c,d,k,+z.getAttribute('data-c'));});});}
+function amDeplacer(c,d,k,cible,silence){var day=store[d];var o=day.cells[k];if(!o||!o.t)return;var r=+k.split('_')[0];var rr=r;while(rr<TIMES.length-1&&day.cells[rr+'_'+cible]&&day.cells[rr+'_'+cible].t)rr++;
+  day.cells[rr+'_'+cible]=o;day.cells[k]=cel('');var a=day.ch[c].abs;var nomC=clClean(day.ch[cible].t||'');a.moves.push({from:k,to:rr+'_'+cible});if(a.donne.indexOf(nomC)<0)a.donne.push(nomC);
+  if(!silence){V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}try{render();}catch(e){}v49Log('planning','🔀 '+TIMES[r]+' '+o.t+' : de '+a.nom+' à '+nomC,{jourPlanning:d,case:rr+'_'+cible,avant:'',apres:o.t});amRepartir(c,d);}}
+function amTout(c,d,cible){var day=store[d];Object.keys(day.cells).filter(function(k){var o=day.cells[k];return +k.split('_')[1]===c&&o&&o.t;}).forEach(function(k){amDeplacer(c,d,k,cible,true);});
+  V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}try{render();}catch(e){}v49Log('planning','🔀 Toute la tournée de '+day.ch[c].abs.nom+' donnée à '+clClean(day.ch[cible].t||''),{jourPlanning:d});amRepartir(c,d);}
+function amMoi(c,d){var p=(document.getElementById('amMoi').value||'').trim().toUpperCase();if(!p){alert('Écris ton prénom : il sera noté comme conducteur (preuve en cas de souci avec le camion).');return;}var day=store[d];var a=day.ch[c].abs;
+  a.parMoi=p;a.donne.push(p);day.ch[c].t=p;day.ch[c].rempl={absent:a.nom,par:p,motif:(STATUTS[a.s]||[a.s])[0],qui:v49Moi().nom,quand:new Date().toISOString(),camion:clClean((day.cam[c]||{}).t||'')};
+  V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}try{_bnPostV49({date:'REMPL_'+d+'_'+c,donnees:Object.assign({jour:d,col:c},day.ch[c].rempl),updated_at:new Date().toISOString()});}catch(e){}
+  v49Log('planning','🧑‍💼 '+p+' conduit à la place de '+a.nom+' le '+dayLabel(d)+' · camion '+clClean((day.cam[c]||{}).t||''),{jourPlanning:d});v32Fermer();try{render();}catch(e){}amDessiner();v59Toast('🧑‍💼 C’est noté : '+p+' conduit le '+v68Camion((day.cam[c]||{}).t||'')+' à la place de '+a.nom,'var(--green)');}
+// à la fin : la colonne de l'absent est vide (son nom est gardé en mémoire pour « Il est là »)
+function amFinRepartition(c,d){var day=store[d];var a=day.ch[c].abs;if(!a)return;if(!a.parMoi&&!v72Livraisons(d,c)){day.ch[c].t='';}V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}try{render();}catch(e){}amDessiner();}
+// ↩️ il est là : son nom revient, ses livraisons reviennent dans sa colonne, son absence est enlevée
+async function amRevenu(c,d){var day=store[d];var a=day.ch[c].abs;if(!a){try{v72Revenu(c,d);}catch(e){}return;}if(!confirm(a.nom+' est là : lui rendre sa colonne et sa tournée ?'))return;
+  (a.moves||[]).slice().reverse().forEach(function(m){var o=day.cells[m.to];if(o&&o.t&&!(day.cells[m.from]&&day.cells[m.from].t)){day.cells[m.from]=o;day.cells[m.to]=cel('');}});day.ch[c].t=a.nom;delete day.ch[c].abs;delete day.ch[c].rempl;
+  try{await v32Horaires();var id=v32Id(a.nom);if(id>=0&&V32.hor[id]){var t=typeof v59TypeDe==='function'?v59TypeDe(id,((new Date(d+'T12:00').getDay()+6)%7)+1):null;if(t&&t.s==='T')V32.hor[id][d]={s:'T',d:t.d,f:t.f};else delete V32.hor[id][d];await horSauver();}}catch(e){}
+  try{await clFetch(CL_SUPA+'/rest/v1/planning?date=eq.REMPL_'+d+'_'+c,{method:'DELETE',headers:clH()},1);}catch(e){}V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}try{render();}catch(e){}amDessiner();v49Log('planning','↩️ '+a.nom+' est là ('+dayLabel(d)+') : colonne et tournée rendues',{jourPlanning:d});}
+// dans le planning : la colonne vide affiche « 🚫 ANTHONY — Absent »
+var _v72BadgesV74=v72Badges;v72Badges=function(){_v72BadgesV74();var g=document.querySelector('#grid table');if(!g||!store[cur])return;var ligne=null;for(var i=0;i<Math.min(g.rows.length,5);i++){var c0=g.rows[i].cells[0];if(c0&&/CHAUFF/i.test(c0.textContent)){ligne=g.rows[i];break;}}if(!ligne)return;
+  [].slice.call(ligne.cells).slice(1).forEach(function(td,c){var a=(store[cur].ch[c]||{}).abs;var b=td.querySelector('.v74b');if(!a||(store[cur].ch[c]||{}).rempl){if(b)b.remove();return;}if(!b){b=document.createElement('div');b.className='v72b v74b';b.contentEditable='false';td.appendChild(b);}
+    b.innerHTML='🚫 <b>'+esc(a.nom)+'</b> — '+esc((STATUTS[a.s]||[a.s])[0]).toLowerCase()+(a.donne&&a.donne.length?' <small>(→ '+esc(a.donne.join(', '))+')</small>':'');b.onclick=function(e){e.stopPropagation();amFenetre(cur);};});};
+// ---------- où le trouver : une grande carte en haut de l'accueil + un bouton dans le planning + la recherche ----------
+var _hbRemplirV74=hbRemplir;hbRemplir=async function(On,resp){await _hbRemplirV74(On,resp);var mid=document.getElementById('hbMid');if(!mid||document.getElementById('hbc_matin'))return;try{await v32Equipe();await v32Horaires();}catch(e){}
+  mid.insertAdjacentHTML('afterbegin','<div class="hbc amcarte" id="hbc_matin"><div class="hbch"><b>☀️ Le matin — qui est là aujourd’hui ?</b><button class="hblink" onclick="amFenetre()">Agrandir →</button></div><div class="amzone">'+amHtml(v59Auj())+'</div></div>');};
+setTimeout(function(){var o=document.getElementById('pxOutils');if(o&&!document.getElementById('amBtn')){var b=document.createElement('button');b.id='amBtn';b.className='po-b';b.style.cssText='background:linear-gradient(90deg,#f59e0b,#ea580c)!important;color:#fff!important;font-weight:800!important';b.textContent='☀️ Qui est là ?';b.title='Présents / absents du jour et répartition des tournées';b.onclick=function(){amFenetre(cur);};var ap=document.getElementById('mmBtn');o.insertBefore(b,ap?ap.nextSibling:o.firstChild);}},3300);
+V64_OUTILS.unshift(['☀️','Le matin : qui est là ?',function(){amFenetre(cur);}]);
+V69_F.unshift([['qui est la','le matin','matin','presents','absents du jour','absent','appel'],'☀️','Le matin : qui est là ?','Fenêtre',function(d){amFenetre(d||cur);}]);
+// le clic droit sur un nom propose aussi la méthode rapide
+document.addEventListener('contextmenu',function(){setTimeout(function(){var m=document.getElementById('v59M');if(!m||m.style.display==='none'||m.querySelector('.v74rc'))return;var b0=m.querySelector('button');if(!b0||!/Absent/.test(b0.textContent))return;var b=document.createElement('button');b.className='v74rc';b.innerHTML='<span>☀️</span>Qui est là ? (absent + donner sa tournée)';b.onclick=function(){m.style.display='none';amFenetre(cur);};m.insertBefore(b,b0);},0);},true);
+CL_VERSION='v74 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>

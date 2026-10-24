@@ -3145,7 +3145,7 @@ function livAnnuler(ch,ds,client,heure){try{localStorage.removeItem(livCle(ch,ds
 function Pouce({fait,onClick}){return <button onClick={e=>{e.stopPropagation();onClick();}} title={fait?'Livré':'Toucher quand c’est livré'} style={{width:46,height:46,borderRadius:23,border:'none',flexShrink:0,background:fait?'#16a34a':'#dc2626',color:'#fff',fontSize:22,boxShadow:'0 3px 8px rgba(0,0,0,.2)',transform:fait?'none':'rotate(180deg)'}}>👍</button>;}
 let _horCache=null,_horT=0;
 async function horChargerApp(){if(_horCache&&Date.now()-_horT<60000)return _horCache;try{const r=await sGet('planning?date=eq.HORAIRES&select=donnees&limit=1');let d=r&&r[0]&&r[0].donnees;if(typeof d==='string')d=JSON.parse(d);_horCache=d||{};_horT=Date.now();}catch(e){_horCache=_horCache||{};}return _horCache;}
-const HOR_LIB={T:'Travail',R:'Repos',CP:'Congé payé',C:'Congé',A:'Arrêt maladie',ABS:'Absent',RET:'Retard',F:'Formation'};
+const HOR_LIB={T:'Travail',R:'Repos',CP:'Congé payé',C:'Congé',A:'Arrêt maladie',ABS:'Absent',RET:'Retard',F:'Formation',RECUP:'Récup'};
 function proMissionsJour(planning,ch){
   if(!planning||!ch)return [];const ds=jourLocal();
   let L=[];try{L=getMissions(planning,ch.id,ds).map(m=>({...m,_date:ds}));}catch(e){}
