@@ -1387,6 +1387,11 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v72b{font-size:10.5px;font-weight:600;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:0 5px;margin-top:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v72fb{background:rgba(255,255,255,.22)!important;color:#fff!important;border:0!important;border-radius:7px!important;padding:2px 7px!important}
 .v72i{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px}.v72i small{display:block;color:#6b7280}.v72i.ret{background:#fff7ed}
+.v73c{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;color:#312e81!important;border-radius:8px;padding:0 7px;font-size:12px;text-decoration:none!important;white-space:nowrap}.v73c:hover{background:#e0e7ff}
+.v73cw{color:#fff!important;text-decoration:underline dotted;font-weight:700}
+.v73f{width:min(460px,92vw)!important}.v73pl{display:inline-block;font:800 22px/1 'Courier New',monospace;letter-spacing:2px;border:3px solid #1e3a8a;border-radius:8px;padding:8px 14px;background:#fff;margin:4px 0 10px;box-shadow:inset 18px 0 0 #1d4ed8;padding-left:28px}
+.v73g{display:grid;grid-template-columns:1fr 1fr;gap:6px}.v73g div{background:#f8fafc;border:1px solid #eef0f4;border-radius:10px;padding:6px 9px}.v73g small{display:block;color:#6b7280;font-size:11px}.v73g b{font-size:14px}
+.v73p{font-size:10px;font-weight:700;color:#1e3a8a;background:#eef2ff;border:1px solid #c7d2fe;border-radius:5px;padding:0 5px;margin-top:1px;display:inline-block;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:.5px}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -7088,6 +7093,34 @@ V69_F.unshift([['absences','absents','remplacements','remplacement','qui est abs
 // dans la grande recherche : « anthony absent », « remplacer anthony »
 var _v69AnalyseV72=v69Analyse;v69Analyse=function(q){var R=_v69AnalyseV72(q);var s=v69N(q);if(/\b(absent|remplac|arret|malade)/.test(s)){var D=v69Date(s);var d=D?D.d:cur;ensure(d);store[d].ch.forEach(function(ch,c){var n=clClean(ch.t||'');if(n&&s.split(' ').some(function(m){return v69Proche(m,n);}))R.unshift({ic:'🚫',t:n+' absent / remplacer — '+(D?D.lu:'aujourd’hui'),s:'Action — tu choisis le remplaçant',sc:400,fn:function(){v72Ouvrir(c,d);}});});}return R;};
 CL_VERSION='v72 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 66 : le CAMION partout avec sa plaque et sa fiche complète =================
+setTimeout(function(){try{camCharger();}catch(e){}},2000);
+function v73Info(nom){var n=typeof v68Camion==='function'?v68Camion(nom):String(nom||'').toUpperCase();if(!n)return null;var f={};try{f=(V28.cam||{})[norm(n)]||{};if(!f.nom){var k=Object.keys(V28.cam||{}).find(function(x){return norm(n).indexOf(x)>=0||x.indexOf(norm(n))>=0;});if(k)f=V28.cam[k];}}catch(e){}
+  var pl=(typeof pqDe==='function'?pqDe(n):'')||f.plaque||'';return {nom:n,plaque:pl,hauteur:f.hauteur,largeur:f.largeur,longueur:f.longueur,volume:f.volume,ptac:f.ptac,charge:f.charge,permis:f.permis,notes:f.notes};}
+function v73Puce(nom){var i=v73Info(nom);if(!i)return '';return '<a href="#" class="v73c" title="Fiche complète du camion" onclick="event.preventDefault();event.stopPropagation();v73Fiche(\''+esc(i.nom).replace(/'/g,'')+'\')">🚚 '+esc(i.nom)+(i.plaque?' · <b>'+esc(i.plaque)+'</b>':'')+'</a>';}
+// la fiche « la totale », en lecture, avec « copier pour le client »
+function v73Texte(i){return 'Camion : '+i.nom+(i.plaque?'\nPlaque : '+i.plaque:'')+(i.hauteur?'\nHauteur : '+i.hauteur+' m':'')+(i.largeur?'\nLargeur : '+i.largeur+' m':'')+(i.longueur?'\nLongueur : '+i.longueur+' m':'')+(i.volume?'\nVolume utile : '+i.volume+' m3':'')+(i.ptac?'\nPoids total (PTAC) : '+i.ptac+' kg':'')+(i.charge?'\nCharge utile : '+i.charge+' kg':'')+(i.notes?'\nRemarques : '+i.notes:'');}
+async function v73Fiche(nom){await camCharger();var i=v73Info(nom);if(!i)return;var qui=[];try{var d=store[cur];d.cam.forEach(function(x,c){if(v68Camion(x.t)===i.nom)qui.push(v68Prenom(d.ch[c].t)||clClean(d.ch[c].t||''));});}catch(e){}
+  var L=[['Plaque d’immatriculation',i.plaque],['Hauteur',i.hauteur&&i.hauteur+' m'],['Largeur',i.largeur&&i.largeur+' m'],['Longueur',i.longueur&&i.longueur+' m'],['Volume utile',i.volume&&i.volume+' m³'],['Poids total (PTAC)',i.ptac&&i.ptac+' kg'],['Charge utile',i.charge&&i.charge+' kg'],['Permis',i.permis],['Remarques',i.notes]];
+  var ov=v32Ov();ov.innerHTML='<div class="cam-b v73f"><div class="cam-h"><span>🚚</span><b>'+esc(i.nom)+'</b><button onclick="v32Fermer()">✕</button></div>'+(i.plaque?'<div class="v73pl">'+esc(i.plaque)+'</div>':'<div class="v47todo">Plaque pas encore remplie.</div>')+
+    '<div class="v73g">'+L.filter(function(x){return x[1];}).map(function(x){return '<div><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>';}).join('')+'</div>'+
+    '<div class="v47l" style="margin-top:8px">Aujourd’hui : '+(qui.length?'conduit par <b>'+qui.map(esc).join(', ')+'</b> '+qui.map(function(n){return v71Bouton(n,true);}).join(' '):'<span style="color:#94a3b8">pas utilisé</span>')+'</div>'+
+    '<div class="v47btns" style="margin-top:10px"><button class="lc" onclick="navigator.clipboard&&navigator.clipboard.writeText('+JSON.stringify(v73Texte(i)).replace(/"/g,'&quot;')+').catch(function(){});this.textContent=\'✅ Copié\'">📋 Copier les infos pour le client</button>'+(ROLE==='responsable'?'<button onclick="v32Fermer();camFiche(\''+esc(i.nom).replace(/'/g,'')+'\')">✏️ Modifier la fiche</button>':'')+'</div></div>';ov.style.display='flex';}
+// 1) dans la fenêtre « Recherche » : camion + plaque cliquables
+var _v70LigneV73=v70Ligne;v70Ligne=function(x,ev){var h=_v70LigneV73(x,ev);if(x.cam)h=h.replace(' · 🚚 '+esc(x.cam),' · '+v73Puce(x.cam));return h;};
+// 2) dans chaque fenêtre chauffeur : la plaque à côté du camion (clic = fiche)
+var _fcDessinerV73=fcDessiner;fcDessiner=function(w){_fcDessinerV73(w);var el=document.getElementById('fc'+w.id);if(!el)return;var i=el.querySelector('.v65i');if(!i)return;var cam=clClean((store[fcJours(w)[0]].cam[w.c]||{}).t||'');if(!cam)return;var inf=v73Info(cam);if(!inf)return;
+  i.innerHTML=i.textContent.replace(/🚚 [^·]*·\s*/,'')&&('<a href="#" class="v73cw" onclick="event.preventDefault();event.stopPropagation();v73Fiche(\''+esc(inf.nom).replace(/'/g,'')+'\')">🚚 '+esc(inf.nom)+(inf.plaque?' · '+esc(inf.plaque):'')+'</a> · '+esc(i.textContent.replace(/^.*?🚚[^·]*·\s*/,'')));};
+// 3) dans la grande recherche : le camion avec sa plaque, et la fiche complète
+var _v69AnalyseV73=v69Analyse;v69Analyse=function(q){var R=_v69AnalyseV73(q);R.forEach(function(r){var m=String(r.t).match(/^(\S+(?: \d)?) — (conduit|personne)/);if(m&&r.ic==='🚚'){var i=v73Info(m[1]);if(i){if(i.plaque)r.t=r.t.replace(m[1],m[1]+' ('+i.plaque+')');r.fn=function(){v73Fiche(i.nom);};r.s='Camion · fiche complète';}}});return R;};
+// 4) dans le planning : la plaque sous le nom du camion (clic = fiche complète)
+function v73Plaques(){var g=document.querySelector('#grid table');if(!g||!store[cur])return;var ligne=null;for(var k=0;k<Math.min(g.rows.length,5);k++){var c0=g.rows[k].cells[0];if(c0&&/CAMION/i.test(c0.textContent)){ligne=g.rows[k];break;}}if(!ligne)return;
+  [].slice.call(ligne.cells).slice(1).forEach(function(td,c){var cam=clClean((store[cur].cam[c]||{}).t||'');var b=td.querySelector('.v73p');var i=cam?v73Info(cam):null;if(!i||!i.plaque){if(b)b.remove();return;}if(!b){b=document.createElement('div');b.className='v73p';b.contentEditable='false';td.appendChild(b);}b.textContent=i.plaque;b.title='Fiche complète du camion';b.onclick=function(e){e.stopPropagation();v73Fiche(i.nom);};});}
+var _renderV73=render;render=function(){var r=_renderV73.apply(this,arguments);try{v73Plaques();}catch(e){}return r;};setTimeout(function(){camCharger().then(v73Plaques);},2600);
+// 5) sur l'accueil, « Chauffeurs aujourd'hui » : la plaque aussi
+var _hbRemplirV73=hbRemplir;hbRemplir=async function(On,resp){await camCharger();await _hbRemplirV73(On,resp);document.querySelectorAll('#hbc_chauffeurs .hbch2 small').forEach(function(s){var m=s.textContent.match(/🚚\s*(.+)$/);if(!m||s.querySelector('.v73c'))return;var i=v73Info(m[1]);if(i)s.innerHTML=s.innerHTML.replace(/🚚\s*.+$/,v73Puce(m[1]));});};
+CL_VERSION='v73 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
