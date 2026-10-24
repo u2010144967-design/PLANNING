@@ -1367,6 +1367,7 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .hbz{display:flex;align-items:center;gap:4px;margin:6px 8px;background:#fff;border:1px solid #eceef2;border-radius:10px;padding:4px 8px;font-size:12px;color:#6b7280}.hbz span{flex:1}.hbz button{background:#fff!important;border:1px solid #e5e7eb!important;border-radius:7px!important;padding:2px 7px!important;font-size:11.5px!important;font-weight:700!important}.hbz button.on{background:#111827!important;color:#fff!important}
 /* ⇱ détacher une colonne */
 .hbdet{position:absolute;left:3px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85)!important;border:1px solid #c7d2fe!important;border-radius:6px!important;padding:0 5px!important;font-size:11px!important;color:#312e81!important;cursor:pointer;line-height:16px;opacity:.55}.hbdet:hover{opacity:1}.hbdet.tous{left:auto;right:2px;font-size:9px!important}
+.v69d{font-size:12px;font-weight:700;background:rgba(255,255,255,.25);border-radius:8px;padding:2px 8px;cursor:pointer;white-space:nowrap;text-transform:capitalize}.v69d:hover{background:rgba(255,255,255,.4)}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -6832,6 +6833,98 @@ var _v61InfoV68=v61Info;v61Info=async function(key){var r=await _v61InfoV68(key)
 // même chose sur les pages de garde « Bons + livreurs »
 var _v61IndexV68=v61Index;v61Index=function(d){var I=_v61IndexV68(d);Object.keys(I).forEach(function(k){var x=I[k];x.camion=v68Camion(x.camion);x.chauffeur=v68Prenom(x.chauffeur)||x.chauffeur;});return I;};
 CL_VERSION='v68 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 62 : 🔎 LA BARRE QUI COMPREND TOUT =================
+function v69N(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim();}
+function v69Lev(a,b){if(a===b)return 0;var m=a.length,n=b.length;if(!m||!n)return m||n;var d=[];for(var i=0;i<=m;i++){d[i]=[i];}for(var j=1;j<=n;j++)d[0][j]=j;for(i=1;i<=m;i++)for(j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n];}
+function v69Proche(mot,nom){mot=v69N(mot);nom=v69N(nom);if(!mot||!nom)return false;if(nom.indexOf(mot)===0&&mot.length>=2)return true;if(mot.length>=4&&v69Lev(mot,nom)<=(nom.length>=6?2:1))return true;return false;}
+// ---------- les dates écrites en français ----------
+var V69_JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];var V69_MOIS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+function v69Date(q){var s=v69N(q);var auj=v59Auj();var r=null,lu='';
+  if(/\bapres[- ]demain\b/.test(s)){r=v59Plus(auj,2);lu='après-demain';}else if(/\bdemain\b/.test(s)){r=v59Plus(auj,1);lu='demain';}else if(/\bhier\b/.test(s)){r=v59Plus(auj,-1);lu='hier';}else if(/\b(aujourd hui|aujourdhui|ce jour)\b/.test(s)){r=auj;lu='aujourd’hui';}
+  if(!r){var m=s.match(/\b(\d{1,2})[\/\.\-](\d{1,2})(?:[\/\.\-](\d{2,4}))?\b/);if(m){var y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):+auj.slice(0,4);var d=new Date(y,+m[2]-1,+m[1],12);if(d.getDate()===+m[1]){r=fmtD(d);lu=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}}}
+  if(!r){var m8=s.match(/\b(\d{2})(\d{2})(\d{4})\b/);if(m8){var d8=new Date(+m8[3],+m8[2]-1,+m8[1],12);if(d8.getDate()===+m8[1]){r=fmtD(d8);lu=d8.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}}}
+  if(!r){var mm=s.match(/\b(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);if(mm){var mo=V69_MOIS.indexOf(mm[2]);var yy=+auj.slice(0,4);var dd=new Date(yy,mo,+mm[1],12);if(fmtD(dd)<v59Plus(auj,-60))dd=new Date(yy+1,mo,+mm[1],12);r=fmtD(dd);lu=dd.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}}
+  if(!r){for(var i=0;i<7;i++){if(new RegExp('\\b'+V69_JOURS[i]+'\\b').test(s)){var x=new Date(auj+'T12:00');var diff=(i-x.getDay()+7)%7;if(diff===0&&/prochain/.test(s))diff=7;x.setDate(x.getDate()+diff);r=fmtD(x);lu=V69_JOURS[i]+' '+x.getDate();break;}}}
+  if(!r){var mj=s.match(/(?:^|\s)(?:le\s)?(\d{1,2})(?:\s|$)/);if(mj&&+mj[1]>=1&&+mj[1]<=31&&!/\d{4,}/.test(s)){var b=new Date(auj+'T12:00');var c=new Date(b.getFullYear(),b.getMonth(),+mj[1],12);if(fmtD(c)<auj)c=new Date(b.getFullYear(),b.getMonth()+1,+mj[1],12);r=fmtD(c);lu='le '+c.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}}
+  return r?{d:r,lu:lu}:null;}
+// ---------- ouvrir la colonne d'un chauffeur en fenêtre, à la date voulue ----------
+function v69ColDe(nom,d){ensure(d);var day=store[d];var n=v69N(nom);for(var i=0;i<day.ch.length;i++){if(v69N(clClean(day.ch[i].t||'')).indexOf(n)===0)return i;}var k=(typeof DRIVERS!=='undefined'?DRIVERS:[]).findIndex(function(x){return v69N(x)===n;});return k>=0?k:0;}
+function fcColonne(c,d,vue){FC.ouvert=true;var w=FC.w.find(function(x){return x.c===c;});if(!w){w={id:++FC.seq,c:c,vue:vue||'jour',date:d,x:280+c*30,y:120+c*24,wd:vue==='semaine'?760:400,ht:Math.min(640,window.innerHeight-150)};FC.w.push(w);}else{w.date=d;w.vue=vue||w.vue;w.mini=false;}
+  var el=fcCreer(w);el.style.zIndex=++V48.z;fcDessiner(w);fcSauver();fcPilote();}
+// ---------- les fenêtres et pages (avec toutes les façons de les appeler) ----------
+var V69_F=[[['rendez vous','rendez-vous','rdv','rendezvous','visite medicale'],'📅','Rendez-vous','Fenêtre',function(){rdvFenetre();}],
+  [['bons a placer','placer mes bons','placer les bons','placer','a placer','bp'],'📥','Bons à placer','Fenêtre',function(){bpOuvrirFenetre();}],
+  [['hors carte','achats','achat','courses'],'🛒','Hors carte','Fenêtre',function(){hcFenetre();}],
+  [['importer','importer des bons','deposer','deposer des bons','depot','nouveaux bons'],'📥','Importer des bons','Fenêtre',function(){v50Depot();}],
+  [['mon mois','mois','planning du mois','vue mois'],'🗓️','Mon mois','Fenêtre',function(){mmOuvrir();}],
+  [['fenetres','fenetres chauffeurs','tous les chauffeurs','detacher','tout detacher','colonnes'],'🧩','Les 6 fenêtres chauffeurs','Fenêtre',function(){fcToutDetacher();}],
+  [['suivi','retards','retard','suivi des tournees','en retard'],'🚦','Suivi des tournées','Fenêtre',function(){v63Suivi();}],
+  [['demandes','demande','demandes des services'],'📨','Demandes des services','Fenêtre',function(){dmFenetre();}],
+  [['activite','qui a modifie','journal du jour','modifications'],'🕵️','Activité des autres services','Fenêtre',function(){v49FilFenetre();}],
+  [['placer comme d habitude','comme d habitude','habitude','placement auto'],'🪄','Placer comme d’habitude','Action',function(d){v62Proposer(d||cur);}],
+  [['imprimer les bons','imprimer les bons du jour','bons du jour imprimer','bons livreurs','imprimer'],'🖨️','Imprimer les bons du jour (avec livreurs)','Action',function(d){v61Journee(d||cur);}],
+  [['envoyer la semaine','envoyer semaine','envoi semaine'],'📤','Envoyer la semaine aux chauffeurs','Action',function(d){if(d){MM.debut=horLundi(d);}mmOuvrir();setTimeout(mmEnvoyer,700);}],
+  [['modeles','modele','modeles de planning'],'📋','Modèles de planning','Fenêtre',function(){mmModeles();}],
+  [['accueil','home'],'🏠','Accueil','Page',function(){v47Ouvrir('accueil',accueilPanel);}],
+  [['ma journee','point du jour'],'📰','Ma journée','Page',function(){v47Ouvrir('journee',journeePanel);}],
+  [['grand ecran','tele'],'📺','Grand écran','Fenêtre',function(){try{svGrandEcran();}catch(e){var b=[].slice.call(document.querySelectorAll('#pxOutils button')).find(function(x){return /Grand/.test(x.textContent);});if(b)b.click();}}]];
+function v69Pages(s){var R=[];PX3_DEF.forEach(function(d){var lab=v69N(d[2]);var ok=lab.indexOf(s)>=0||s.split(' ').every(function(m){return m.length>=3&&lab.indexOf(m)>=0;})||s.split(' ').some(function(m){return m.length>=4&&lab.split(' ').some(function(w){return v69Lev(m,w)<=1;});});if(ok)R.push({ic:d[1],t:d[2],s:'Page',sc:40,fn:function(){v47Ouvrir(d[0],d[3]);}});});return R;}
+// ---------- l'analyse de ce qui est tapé ----------
+function v69Analyse(q){var s=v69N(q);var R=[];if(!s)return R;var D=v69Date(s);var dt=D?D.d:cur;var dl=D?D.lu:'aujourd’hui';
+  // raccourcis personnels
+  var RC=v69Rac();if(RC[s]){var f=V69_F.find(function(x){return x[2]===RC[s];});if(f)R.push({ic:f[1],t:f[2],s:'Ton raccourci « '+s+' »',sc:200,fn:function(){f[4](D&&D.d);}});}
+  if(s==='?'||s==='aide'){return v69Aide();}
+  var mots=s.split(' ');
+  // 1) un chauffeur
+  var noms=[];try{noms=(V32.eq.drivers||[]).map(function(e){return e.name;}).filter(function(n){return n&&n!=='MAITRE_HOTEL';});}catch(e){}noms=noms.concat((typeof DRIVERS!=='undefined'?DRIVERS:[]).filter(function(n){return n!=='M/H';})).filter(function(n,i,a){return a.indexOf(n)===i;});
+  noms.forEach(function(n){if(!mots.some(function(m){return v69Proche(m,n);}))return;var semaine=/\bsemaine\b/.test(s);
+    if(/\bhoraire|\bheures?\b/.test(s))R.push({ic:'🕐',t:'Horaires de '+n,s:'Chauffeur',sc:150,fn:function(){v47Ouvrir('horaires',horPanel);}});
+    if(/\bfiche|telephone|tel\b|appeler/.test(s))R.push({ic:'👤',t:'Fiche de '+n,s:'Chauffeur',sc:150,fn:function(){chFiche(n);}});
+    if(/\bconge|cp\b|absence|arret/.test(s)){var m2=s.match(/du\s+(\d{1,2}(?:[\/\.]\d{1,2})?)\s+au\s+(\d{1,2}(?:[\/\.]\d{1,2})?)/);R.push({ic:'🏖️',t:'Préparer un congé pour '+n+(m2?' du '+m2[1]+' au '+m2[2]:''),s:'Action — tu confirmes ensuite',sc:160,fn:function(){v69Conge(n,m2);}});}
+    R.push({ic:'🧩',t:'Colonne de '+n+' — '+(semaine?'sa semaine ('+dl+')':dl),s:'Fenêtre flottante',sc:140,fn:function(){fcColonne(v69ColDe(n,dt),dt,semaine?'semaine':'jour');}});});
+  // 2) les fenêtres, pages et actions connues
+  V69_F.forEach(function(f){var best=0;f[0].forEach(function(k){if(s===k)best=Math.max(best,130);else if(s.indexOf(k)>=0)best=Math.max(best,110+k.length);else if(k.indexOf(s)===0&&s.length>=3)best=Math.max(best,90);else if(s.length>=5&&k.length>=5&&v69Lev(s,k)<=2)best=Math.max(best,85);});if(best)R.push({ic:f[1],t:f[2]+(D&&f[3]==='Action'?' — '+dl:''),s:f[3],sc:best,fn:function(){f[4](D&&D.d);}});});
+  // 3) un numéro de bon
+  var nb=s.match(/\bc?\s?(\d{6,9})\b/);if(nb){(V47.bons||[]).filter(function(b){return String(b.no||'').indexOf(nb[1])>=0;}).slice(0,4).forEach(function(b){R.push({ic:'📁',t:'Bon '+b.no+' — '+b.client+' ('+dayLabel(b.jour)+')',s:'Dossier',sc:170,fn:function(){if(bnCat(b)==='FTBE')dossierPrestation(b.date);else v63Dossier(b.date);}});R.push({ic:'⚖️',t:'Dossier de litige — '+b.client,s:'Bon '+b.no,sc:120,fn:function(){v63Dossier(b.date);}});});}
+  // 4) un client
+  var quiLivre=/^qui livre\s+/.test(s);var sc=s.replace(/^qui livre\s+/,'').replace(/^(nouvelle\s+)?consigne\s+/,'');
+  if(sc.length>=3&&!nb){var vus={};var cands=[];Object.keys(clFiches||{}).forEach(function(k){cands.push((clFiches[k]||{}).nom||k);});(V47.bons||[]).forEach(function(b){cands.push(b.client);});
+    cands.forEach(function(nom){var n=v69N(nom);if(!n||vus[n])return;var ok=n.indexOf(sc)>=0||sc.split(' ').every(function(m){return m.length>=3&&n.indexOf(m)>=0;})||(sc.length>=5&&n.split(' ').some(function(w){return v69Lev(sc,w)<=1;}));if(!ok)return;vus[n]=1;
+      if(quiLivre)R.push({ic:'🚚',t:'Qui livre '+nom+' ?',s:'Aujourd’hui',sc:150,fn:function(){var i=document.getElementById('qlIn');if(i){i.value=nom;i.dispatchEvent(new Event('input',{bubbles:true}));try{qlChercher();}catch(e){}i.focus();}}});
+      else if(/^(nouvelle\s+)?consigne/.test(s))R.push({ic:'📌',t:'Nouvelle consigne pour '+nom,s:'Consignes',sc:150,fn:function(){CSG.jour=dt;v47Ouvrir('consignes',csgPanel);setTimeout(function(){var c=document.getElementById('csgC');if(c){c.value=nom;var t=document.getElementById('csgT');if(t)t.focus();}},900);}});
+      else{R.push({ic:'📇',t:nom,s:'Fiche client',sc:70,fn:function(){client360(nom);}});var pr=(V47.bons||[]).filter(function(b){return bnCat(b)==='FTBE'&&v69N(b.client)===n&&b.jour>=v59Auj();})[0];if(pr)R.push({ic:'📁',t:'Prestation '+nom+' — '+dayLabel(pr.jour),s:'Dossier',sc:72,fn:function(){dossierPrestation(pr.date);}});}});}
+  // 5) un camion
+  var cams=[];try{cams=(CAM_LIST||[]).filter(function(c){return c!=='M/H';});}catch(e){}cams.forEach(function(c){if(!mots.some(function(m){return v69Proche(m,c.split(' ')[0]);}))return;var d=store[dt]||(ensure(dt),store[dt]);var qui=[];d.cam.forEach(function(x,i){if(v69N(clClean(x.t||'')).indexOf(v69N(c))===0)qui.push(clClean(d.ch[i].t||'')||('colonne '+(i+1)));});
+    R.push({ic:'🚚',t:c+(qui.length?' — conduit par '+qui.join(', ')+' ('+dl+')':' — personne ne l’a '+dl),s:'Camion · fiche',sc:100,fn:function(){camFiche(c);}});});
+  // 6) une date seule
+  if(D)R.push({ic:'📅',t:'Planning du '+dayLabel(D.d),s:'Aller à ce jour',sc:R.length?60:150,fn:function(){cur=D.d;ensure(cur);V30.action=Date.now();render();px2Ecran(0);}});
+  // 7) le rapport d'un mois
+  var mr=s.match(/rapport\s*(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)?/);if(mr){var mo=mr[1]?V69_MOIS.indexOf(mr[1]):new Date().getMonth();var y=new Date().getFullYear();R.push({ic:'📈',t:'Rapport de '+V69_MOIS[mo],s:'Action',sc:150,fn:function(){RP.mois=y+'-'+String(mo+1).padStart(2,'0');v47Ouvrir('rapport',rapportPanel);}});}
+  // 8) les pages
+  R=R.concat(v69Pages(s));
+  var vu={};R=R.filter(function(r){if(vu[r.t])return false;vu[r.t]=1;return true;}).sort(function(a,b){return b.sc-a.sc;});return R.slice(0,14);}
+function v69Aide(){return [['otmane','La colonne d’Otmane aujourd’hui (fenêtre)'],['otmane demain','… ou demain, « jeudi », « 28 », « 2 novembre »'],['otmane semaine','Sa semaine en fenêtre'],['rdv','La fenêtre des rendez-vous'],['placer','Bons à placer'],['mairie','La fiche du client'],['qui livre mairie','Qui le livre aujourd’hui'],['C26091006','Le dossier d’un bon'],['jumpy','Qui conduit le Jumpy'],['demain','Le planning de demain'],['consigne mairie','Nouvelle consigne'],['conge otmane du 3 au 7','Préparer un congé'],['rapport octobre','Le rapport du mois']].map(function(x){return {ic:'💡',t:x[0],s:x[1],sc:1,fn:function(){var i=document.getElementById('v47Ki');i.value=x[0];cmdKMaj();i.focus();}};});}
+function v69Conge(nom,m){v47Ouvrir('horaires',horPanel);setTimeout(function(){var i=document.getElementById('v59cqI');if(!i)return;var o=[].slice.call(i.options).find(function(x){return v69N(x.text)===v69N(nom);});if(o)i.value=o.value;document.getElementById('v59cqS').value='CP';
+  if(m){var y=+v59Auj().slice(0,4),mo=+v59Auj().slice(5,7);var f=function(t){var p=t.split(/[\/\.]/);var d=new Date(y,(p[1]?+p[1]:mo)-1,+p[0],12);return fmtD(d);};var a=document.getElementById('v59cqD'),b=document.getElementById('v59cqF');a.value=f(m[1]);b.value=f(m[2]);[a,b].forEach(function(x){x.dispatchEvent(new Event('change'));var t=x.parentNode.querySelector('.v44t');if(t)t.value=x.value.split('-').reverse().join('/');});}
+  i.scrollIntoView({behavior:'smooth',block:'center'});v59Toast('🏖️ Congé préparé : vérifie, puis clique « ✅ Appliquer »');},1500);}
+// ---------- récents et raccourcis personnels ----------
+function v69Rac(){try{return JSON.parse(localStorage.getItem('cana_raccourcis')||'{}');}catch(e){return {};}}
+function v69Recents(){try{return JSON.parse(localStorage.getItem('cana_recherches')||'[]');}catch(e){return [];}}
+function v69Noter(q){if(!q)return;var L=v69Recents().filter(function(x){return x!==q;});L.unshift(q);localStorage.setItem('cana_recherches',JSON.stringify(L.slice(0,8)));}
+function v69Raccourcis(){var R=v69Rac();var ov=v32Ov();ov.innerHTML='<div class="cam-b"><div class="cam-h"><span>⚡</span><b>Mes raccourcis de recherche</b><button onclick="v32Fermer()">✕</button></div><p style="font-size:13px;color:#6b7280">Exemple : quand j’écris <b>pp</b>, ouvrir <b>Bons à placer</b>.</p>'+
+  Object.keys(R).map(function(k){return '<div class="v47l"><b>'+esc(k)+'</b> → '+esc(R[k])+' <button onclick="var r=v69Rac();delete r[\''+k+'\'];localStorage.setItem(\'cana_raccourcis\',JSON.stringify(r));v32Fermer();v69Raccourcis()">🗑</button></div>';}).join('')+
+  '<div class="csgF" style="padding:6px 0"><input id="v69k" placeholder="ce que je tape (ex. pp)" style="width:140px"><select id="v69a">'+V69_F.map(function(f){return '<option>'+esc(f[2])+'</option>';}).join('')+'</select><button class="clsend" onclick="var k=v69N(document.getElementById(\'v69k\').value);if(!k)return;var r=v69Rac();r[k]=document.getElementById(\'v69a\').value;localStorage.setItem(\'cana_raccourcis\',JSON.stringify(r));v32Fermer();v69Raccourcis()">➕ Ajouter</button></div></div>';ov.style.display='flex';}
+// ---------- branchement sur Ctrl + K et sur la barre de l'accueil ----------
+cmdKMaj=function(){var i=document.getElementById('v47Ki');var q=i.value||'';var R;if(!q.trim()){R=v69Recents().map(function(x){return {ic:'🕘',t:x,s:'Recherche récente',fn:function(){i.value=x;cmdKMaj();}};});if(!R.length)R=v69Aide().slice(0,6);}else R=v69Analyse(q);
+  window._kR=R.map(function(r){var f=r.fn;return Object.assign({},r,{fn:function(){if(q.trim()&&r.s!=='Recherche récente')v69Noter(q.trim());f();}});});window._kI=0;cmdKDess();};
+var _cmdKV69=cmdK;cmdK=async function(){await _cmdKV69.apply(this,arguments);var h=document.querySelector('#v47K .v47kh');if(h&&!h.querySelector('.v69r'))h.insertAdjacentHTML('beforeend',' · <a href="#" class="v69r" onclick="event.preventDefault();document.getElementById(\'v47K\').style.display=\'none\';v69Raccourcis()">⚡ Mes raccourcis</a> · tape <b>?</b> pour des exemples');document.getElementById('v47Ki').placeholder='🔎 Un chauffeur, un client, une fenêtre, une date, un n° de bon… (? = exemples)';};
+// la barre de l'accueil : dès qu'on tape, la grande recherche s'ouvre avec le texte
+document.addEventListener('input',function(e){if(e.target&&e.target.id==='hbQ'){var v=e.target.value;e.target.value='';cmdK().then(function(){var i=document.getElementById('v47Ki');i.value=v;cmdKMaj();i.focus();try{i.setSelectionRange(v.length,v.length);}catch(x){}});}},true);
+// ---------- la date bien visible sur chaque fenêtre chauffeur ----------
+var _fcDessinerV69=fcDessiner;fcDessiner=function(w){_fcDessinerV69(w);var el=document.getElementById('fc'+w.id);if(!el)return;var n=el.querySelector('.v65n');if(!n)return;var J=fcJours(w);var t=w.vue==='jour'?new Date(J[0]+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'semaine du '+new Date(J[0]+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  var b=el.querySelector('.v69d');if(!b){b=document.createElement('span');b.className='v69d';b.title='Changer la date';b.onclick=function(){var i=el.querySelector('.v65b2 .v44t')||el.querySelector('.v65d');if(i){i.focus();try{i.select();}catch(x){}}};n.insertAdjacentElement('afterend',b);}b.textContent='📅 '+t;};
+CL_VERSION='v69 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
