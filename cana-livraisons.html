@@ -1368,6 +1368,14 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 /* ⇱ détacher une colonne */
 .hbdet{position:absolute;left:3px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85)!important;border:1px solid #c7d2fe!important;border-radius:6px!important;padding:0 5px!important;font-size:11px!important;color:#312e81!important;cursor:pointer;line-height:16px;opacity:.55}.hbdet:hover{opacity:1}.hbdet.tous{left:auto;right:2px;font-size:9px!important}
 .v69d{font-size:12px;font-weight:700;background:rgba(255,255,255,.25);border-radius:8px;padding:2px 8px;cursor:pointer;white-space:nowrap;text-transform:capitalize}.v69d:hover{background:rgba(255,255,255,.4)}
+/* ===== v70 : fenêtre Recherche ===== */
+.v70z{padding:8px 12px;border-bottom:1px solid #eef0f4}.v70z label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}.v70z input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;font-size:15px;font-weight:600;outline:none}
+.v70z.vert{background:#ecfdf5}.v70z.vert input{border:2px solid #10b981;background:#fff}.v70z.vert label{color:#047857}.v70z.bleu{background:#eff6ff}.v70z.bleu input{border:2px solid #3b82f6;background:#fff}.v70z.bleu label{color:#1d4ed8}
+.v70t{padding:8px 12px;font-weight:800;font-size:13px}.v70t.vert{color:#047857;background:#f0fdf4}.v70t.bleu{color:#1d4ed8;background:#f5f9ff}.v70s{padding:8px 12px 2px;font-weight:800;color:#334155;font-size:12.5px}
+.v70j{padding:6px 12px;font-size:12px;font-weight:700;color:#475569;background:#f8fafc;border-top:1px solid #eef0f4;text-transform:capitalize}.v70j.auj{background:#dbeafe;color:#1d4ed8}
+.v70i{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:13px}.v70i:hover{background:#f8fafc}.v70i small{display:block;color:#6b7280}.v70h{font-weight:800;width:44px;color:#0f172a}.v70i button{background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:8px!important;padding:3px 8px!important}
+.v70ok{background:#dcfce7;color:#166534;border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}.v70np{margin:6px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;font-size:12.5px}.v70np button{margin-left:6px}
+#grid td.v70flash{animation:v70f .5s ease-in-out 5;outline:3px solid #f59e0b}@keyframes v70f{50%{box-shadow:inset 0 0 0 9999px rgba(245,158,11,.35)}}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -6925,6 +6933,56 @@ document.addEventListener('input',function(e){if(e.target&&e.target.id==='hbQ'){
 var _fcDessinerV69=fcDessiner;fcDessiner=function(w){_fcDessinerV69(w);var el=document.getElementById('fc'+w.id);if(!el)return;var n=el.querySelector('.v65n');if(!n)return;var J=fcJours(w);var t=w.vue==='jour'?new Date(J[0]+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'semaine du '+new Date(J[0]+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
   var b=el.querySelector('.v69d');if(!b){b=document.createElement('span');b.className='v69d';b.title='Changer la date';b.onclick=function(){var i=el.querySelector('.v65b2 .v44t')||el.querySelector('.v65d');if(i){i.focus();try{i.select();}catch(x){}}};n.insertAdjacentElement('afterend',b);}b.textContent='📅 '+t;};
 CL_VERSION='v69 · 23/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 63 : 🔎 LA FENÊTRE « RECHERCHE » — qui livre aujourd'hui · où est placé ce client =================
+// La recherche lit directement les cases du planning (texte de la case, client du bon, clients de la tournée) : rien ne lui échappe.
+function v70Txt(o){var L=[];if(!o)return L;if(o.t)L.push(String(o.t));if(o.bon&&o.bon.client)L.push(String(o.bon.client));if(o.tournee){if(o.tournee.couleur)L.push('TOURNEE '+o.tournee.couleur);(o.tournee.clients||[]).forEach(function(c){L.push(typeof c==='string'?c:(c&&(c.client||c.nom))||'');});}return L.filter(Boolean);}
+function v70Chercher(day,d,q){var R=[];if(!day||!day.cells)return R;var Q=v69N(q);var mots=Q.split(' ').filter(function(m){return m.length>=2;});if(!mots.length)return R;
+  Object.keys(day.cells).forEach(function(k){var o=day.cells[k];var T=v70Txt(o);if(!T.length)return;var p=k.split('_');var r=+p[0],c=+p[1];
+    T.forEach(function(t,ti){var n=v69N(t);var ok=mots.every(function(m){return n.indexOf(m)>=0;})||(Q.length>=5&&n.split(' ').some(function(w){return w.length>=4&&v69Lev(Q,w)<=1;}));if(!ok)return;
+      var nom=clClean(((day.ch||[])[c]||{}).t||'')||((typeof DRIVERS!=='undefined'&&DRIVERS[c])||('Colonne '+(c+1)));var cam=clClean(((day.cam||[])[c]||{}).t||'');
+      R.push({d:d,r:r,c:c,heure:TIMES[r]||'',qui:nom,cam:cam,quoi:t,dans:ti>0&&o.tournee?(o.t||'Tournée '+(o.tournee.couleur||'')):'',cle:k});});});
+  var vu={};return R.filter(function(x){var kk=x.d+'|'+x.cle+'|'+v69N(x.quoi);if(vu[kk])return false;vu[kk]=1;return true;});}
+// tous les jours : ceux du PC + ceux du planning partagé (même ceux préparés sur un autre poste, même en décembre)
+var V70={grilles:null,t:0};
+async function v70Jours(){var J={};Object.keys(store).forEach(function(d){if(/^\d{4}-\d{2}-\d{2}$/.test(d))J[d]=store[d];});
+  if(!V70.grilles||Date.now()-V70.t>120000){try{var L=await v63Rows('date=like.GRILLE_*&select=date,donnees&limit=3000');V70.grilles={};L.forEach(function(x){var d=String(x._k).replace('GRILLE_','');if(/^\d{4}-\d{2}-\d{2}$/.test(d)&&x.jour)V70.grilles[d]=x.jour;});V70.t=Date.now();}catch(e){V70.grilles=V70.grilles||{};}}
+  Object.keys(V70.grilles||{}).forEach(function(d){if(!J[d])J[d]=V70.grilles[d];});return J;}
+// ---------- la fenêtre ----------
+function v70Fenetre(focus,texte){var w=document.getElementById('v70W');
+  if(!w){w=document.createElement('div');w.id='v70W';w.className='bpw2 v70w';w.style.cssText='left:'+Math.max(260,Math.round(window.innerWidth/2-330))+'px;top:90px;width:660px;height:'+Math.min(720,window.innerHeight-120)+'px';
+    w.innerHTML='<div class="bp-h" id="v70H" style="background:linear-gradient(90deg,#0f766e,#1d4ed8)"><b>🔎 Recherche</b><span style="flex:1"></span><button onclick="v39Coller2(\'v70W\',\'g\')">⇤</button><button onclick="v39Coller2(\'v70W\',\'d\')">⇥</button><button onclick="document.getElementById(\'v70W\').classList.toggle(\'mini\')">▁</button><button onclick="document.getElementById(\'v70W\').style.display=\'none\'">✕</button></div>'+
+      '<div class="v70z vert"><label>🚚 Qui livre <b>aujourd’hui</b> ?</label><input id="v70A" placeholder="Tape un client (ex. fontainieu)" autocomplete="off"></div>'+
+      '<div class="v70z bleu"><label>📅 Où est placé ce client ? <b>(toutes les dates, avant et après)</b></label><input id="v70B" placeholder="Tape un client (ex. mairie, pompiers…)" autocomplete="off"></div>'+
+      '<div class="bp-l" id="v70L"><div class="bp-v" style="color:#64748b">Tape dans une des deux cases.</div></div>';
+    document.body.appendChild(w);v39Deplacable(w,w.querySelector('#v70H'));
+    w.querySelector('#v70A').oninput=function(){document.getElementById('v70B').value='';clearTimeout(V70.ta);V70.ta=setTimeout(v70Aujourdhui,200);};
+    w.querySelector('#v70B').oninput=function(){document.getElementById('v70A').value='';clearTimeout(V70.tb);V70.tb=setTimeout(v70Partout,300);};}
+  w.style.display='flex';w.classList.remove('mini');w.style.zIndex=++V48.z;var i=document.getElementById(focus==='B'?'v70B':'v70A');if(texte!==undefined){i.value=texte;i.oninput();}setTimeout(function(){i.focus();},50);}
+async function v70Aujourdhui(){var q=document.getElementById('v70A').value;var box=document.getElementById('v70L');if(v69N(q).length<2){box.innerHTML='<div class="bp-v" style="color:#64748b">Tape au moins 2 lettres.</div>';return;}var auj=v59Auj();ensure(auj);
+  var R=v70Chercher(store[auj],auj,q);var E=[];try{E=(await v63Livres(auj,auj)).filter(function(e){return e.type==='livraison_confirmee';});}catch(e){}
+  box.innerHTML='<div class="v70t vert">Aujourd’hui — '+esc(dayLabel(auj))+' · '+R.length+' résultat(s)</div>'+(R.length?R.sort(function(a,b){return a.r-b.r;}).map(function(x){var ev=E.find(function(e){return v63Meme(e.client,x.quoi);});return v70Ligne(x,ev);}).join(''):'<div class="bp-v">Personne ne livre « '+esc(q)+' » aujourd’hui. <a href="#" onclick="event.preventDefault();v70Fenetre(\'B\','+JSON.stringify(q).replace(/"/g,'&quot;')+')">Chercher sur toutes les dates →</a></div>');}
+async function v70Partout(){var q=document.getElementById('v70B').value;var box=document.getElementById('v70L');if(v69N(q).length<2){box.innerHTML='<div class="bp-v" style="color:#64748b">Tape au moins 2 lettres.</div>';return;}box.innerHTML='<div class="bp-v">⏳ Je cherche dans tout le planning…</div>';
+  var J=await v70Jours();var R=[];Object.keys(J).forEach(function(d){R=R.concat(v70Chercher(J[d],d,q));});var auj=v59Auj();
+  // les bons de ce client qui ne sont pas encore placés
+  var NP=[];try{var P=bpPlaces();NP=(await v47Bons()).filter(function(b){return !P[b.date]&&v69N(b.client).indexOf(v69N(q))>=0&&b.jour>=v59Plus(auj,-7);});}catch(e){}
+  var futur=R.filter(function(x){return x.d>=auj;}).sort(function(a,b){return (a.d+a.heure).localeCompare(b.d+b.heure);}),passe=R.filter(function(x){return x.d<auj;}).sort(function(a,b){return (b.d+b.heure).localeCompare(a.d+a.heure);});
+  var grp=function(L){var h='',dc='';L.forEach(function(x){if(x.d!==dc){dc=x.d;h+='<div class="v70j'+(x.d===auj?' auj':'')+'">'+esc(dayLabel(x.d))+(x.d===auj?' — aujourd’hui':'')+'</div>';}h+=v70Ligne(x);});return h;};
+  box.innerHTML='<div class="v70t bleu">« '+esc(q)+' » — '+R.length+' fois dans le planning</div>'+(NP.length?'<div class="v70np">📥 <b>'+NP.length+' bon(s) pas encore placé(s)</b> : '+NP.map(function(b){return esc(b.client)+' ('+esc(dayLabel(b.jour))+')';}).join(', ')+' <button onclick="bpOuvrirFenetre()">Placer</button></div>':'')+
+    (futur.length?'<div class="v70s">📅 À venir ('+futur.length+')</div>'+grp(futur):'<div class="bp-v">Rien de prévu à partir d’aujourd’hui.</div>')+(passe.length?'<div class="v70s">🕘 Déjà passé ('+passe.length+')</div>'+grp(passe.slice(0,60)):'');}
+function v70Ligne(x,ev){return '<div class="v70i" onclick="v70Aller(\''+x.d+'\','+x.r+','+x.c+')"><div class="v70h">'+esc(x.heure)+'</div><div style="flex:1;min-width:0"><b>'+esc(x.quoi)+'</b><small>'+esc(x.qui)+(x.cam?' · 🚚 '+esc(x.cam):'')+(x.dans?' · dans '+esc(x.dans):'')+'</small></div>'+(ev?'<span class="v70ok">✅ livré '+esc(ev.heure||'')+'</span>':'')+'<button title="Sa colonne en fenêtre" onclick="event.stopPropagation();fcColonne('+x.c+',\''+x.d+'\',\'jour\')">🧩</button></div>';}
+// aller sur la case dans le planning (et la faire clignoter)
+function v70Aller(d,r,c){cur=d;ensure(d);V30.action=Date.now();render();try{px2Ecran(0);}catch(e){}setTimeout(function(){var td=document.getElementById('c_'+r+'_'+c);if(td){td.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});td.classList.add('v70flash');setTimeout(function(){td.classList.remove('v70flash');},2600);}},500);}
+// ---------- la barre « Qui livre aujourd'hui ? » du haut : elle ouvre la fenêtre et marche vraiment ----------
+qlChercher=function(){var i=document.getElementById('qlIn');if(!i)return;var v=i.value;var r=document.getElementById('qlR');if(r)r.style.display='none';if(v.trim().length>=1){i.value='';v70Fenetre('A',v);}};
+document.addEventListener('focusin',function(e){if(e.target&&e.target.id==='qlIn'){var v=e.target.value;e.target.blur();v70Fenetre('A',v||undefined);}},true);
+// et depuis la grande recherche (Ctrl + K) : « qui livre … », « où est … », « recherche »
+var _v69AnalyseV70=v69Analyse;v69Analyse=function(q){var s=v69N(q);var R=_v69AnalyseV70(q);var m=s.match(/^(qui livre|ou est|ou est place|chercher|recherche)\s*(.*)$/);
+  if(m){var t=m[2]||'';R.unshift({ic:'🔎',t:(m[1]==='qui livre'?'Qui livre « '+t+' » aujourd’hui':'Où est placé « '+t+' » (toutes dates)'),s:'Fenêtre Recherche',sc:300,fn:function(){v70Fenetre(m[1]==='qui livre'?'A':'B',t);}});}
+  else if(s.length>=3)R.push({ic:'🔎',t:'Où est placé « '+q+' » dans tout le planning',s:'Fenêtre Recherche',sc:35,fn:function(){v70Fenetre('B',q);}});return R;};
+V69_F.unshift([['recherche','rechercher','qui livre','ou est'],'🔎','Fenêtre Recherche (qui livre / où est placé)','Fenêtre',function(){v70Fenetre('A');}]);
+V64_OUTILS.splice(2,0,['🔎','Recherche : qui livre / où est placé',function(){v70Fenetre('A');}]);
+CL_VERSION='v70 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
