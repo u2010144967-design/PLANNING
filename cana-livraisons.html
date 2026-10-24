@@ -1419,6 +1419,13 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v75s{margin:8px 0}.v75s>b{display:block;margin-bottom:5px}.v75ch5{display:flex;flex-direction:column;gap:5px}.v75ch5 label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:7px 10px;font-size:13.5px;cursor:pointer}.v75ch5 small{flex-basis:100%;color:#6b7280;font-size:11.5px;padding-left:22px}
 .v75li{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}.v75cp{display:flex;gap:4px;flex-wrap:wrap}.v75cp button{background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:8px!important;padding:3px 8px!important;font-size:12px!important;font-weight:700!important;color:#312e81!important}.v75cp button:hover{background:#312e81!important;color:#fff!important}
 .v75zs{flex-direction:row!important;flex-wrap:wrap;margin-top:8px}.v75zs .amz{flex:1;min-width:120px}
+/* ===== v76 ===== */
+.v76rec{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:10px}
+.v76etape{display:flex;align-items:center;gap:8px;margin:12px 0 6px}.v76etape span{width:24px;height:24px;border-radius:50%;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}.v76etape b{font-size:14.5px}
+.v76grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}.v76grille.deux{grid-template-columns:1fr 1fr}
+.v76c{display:block;background:#f8fafc;border:2px solid #e5e7eb;border-radius:12px;padding:8px 10px;cursor:pointer;position:relative}.v76c:hover{border-color:#fdba74}.v76c input[type=radio]{position:absolute;top:10px;right:10px}.v76c b{display:block;font-size:14px;padding-right:22px}.v76c small{display:block;color:#6b7280;font-size:11.5px;margin-top:2px}
+.v76c:has(input:checked){border-color:#ea580c;background:#fff7ed}.v76c.off{background:#f8fafc;opacity:.85}
+.v76cl{flex:1;min-width:180px}.v75cp button.off{opacity:.6}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -7293,6 +7300,45 @@ var _v72BadgesV75=v72Badges;v72Badges=function(){_v72BadgesV75();var g=document.
 // la carte « Le matin » se met à jour quand on change quelque chose
 var _amDessinerV75=amDessiner;amDessiner=function(){_amDessinerV75();};
 CL_VERSION='v75 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 69 : « qui fait la tournée ? » — les 5 chauffeurs toujours proposés, et tout est cliquable =================
+// (bug corrigé : un samedi, la semaine type met tout le monde en « Repos », donc aucun chauffeur n'était proposé)
+function v76Cinq(d,c){ensure(d);var day=store[d];var abs=day.ch[c]&&day.ch[c].abs?day.ch[c].abs.nom:clClean((day.ch[c]||{}).t||'');var L=[];var vus={};
+  var add=function(nom){var n=clClean(nom||'').toUpperCase();if(!n||vus[n]||/M\/H|MAITRE/i.test(n)||v69N(n)===v69N(abs))return;vus[n]=1;var col=day.ch.findIndex(function(y,i){return i!==c&&v69N(clClean(y.t||''))===v69N(n);});var id=-1;try{id=v32Id(n);}catch(e){}var h=id>=0?horDe(id,d):null;var off=h&&h.s&&h.s!=='T'&&h.s!=='RET';
+    L.push({nom:n,c:col,cam:col>=0?v68Camion((day.cam[col]||{}).t||''):'',nb:col>=0?v72Livraisons(d,col):0,off:off?(STATUTS[h.s]||[h.s])[0]:''});};
+  try{(V32.eq.drivers||[]).forEach(function(e){if(e.actif!==false)add(e.name);});}catch(e){}day.ch.forEach(function(y,i){if(i!==c&&!y.abs)add(y.t);});return L;}
+// la colonne d'un chauffeur ce jour-là (s'il n'en a pas, on lui donne une colonne libre)
+function v76Colonne(d,nom){var day=store[d];var i=day.ch.findIndex(function(y){return v69N(clClean(y.t||''))===v69N(nom);});if(i>=0)return i;
+  var libre=day.ch.findIndex(function(y,k){return !clClean(y.t||'')&&!y.abs&&!v72Livraisons(d,k);});if(libre<0){alert('Plus de colonne libre ce jour-là pour '+nom+'.');return -1;}day.ch[libre].t=nom;return libre;}
+function v76Donner(c,d,k,nom){var col=v76Colonne(d,nom);if(col<0)return;amDeplacer(c,d,k,col);}
+function v76Tout(c,d,nom){var col=v76Colonne(d,nom);if(col<0)return;amTout(c,d,col);}
+amRepartir=function(c,d){var day=store[d];var a=day.ch[c].abs;var camA=v68Camion((day.cam[c]||{}).t||'');var L=v76Cinq(d,c);var cases=Object.keys(day.cells).filter(function(k){var o=day.cells[k];return +k.split('_')[1]===c&&o&&o.t;}).sort(function(x,y){return +x.split('_')[0]-+y.split('_')[0];});
+  var mode=AM.mode||'un';var ex=document.querySelector('.amrep');var ov=ex?ex.parentNode:v32Ov();var moiNom=/^responsable$/i.test(v49Moi().nom||'')?'':v49Moi().nom;
+  var puce=function(x,sel){return '<label class="v76c'+(x.off?' off':'')+'"><input type="radio" name="v75c" value="'+esc(x.nom)+'"'+(sel?' checked':'')+'><b>'+esc(x.nom)+'</b><small>'+(x.off?'🏖️ '+esc(x.off)+' aujourd’hui (tu peux quand même le choisir)':(x.cam?'🚚 '+esc(x.cam)+' · ':'')+x.nb+' livraison(s) aujourd’hui')+'</small></label>';};
+  var h='<div class="cam-b amrep"><div class="cam-h"><span>🔀</span><b>'+esc(a.nom)+' est '+esc((STATUTS[a.s]||[a.s])[0]).toLowerCase()+' — qui fait sa tournée ?</b><button onclick="v32Fermer();amFinRepartition('+c+',\''+d+'\')">✕</button></div>'+
+    '<div class="v76rec"><b>Sa tournée :</b> '+(cases.length?cases.map(function(k){return esc(TIMES[+k.split('_')[0]])+' '+esc(day.cells[k].t);}).join(' · '):'✅ déjà toute donnée')+(camA?' — <b>camion : '+esc(camA)+'</b>':'')+'</div>'+
+    '<div class="v75modes"><button class="'+(mode==='un'?'on':'')+'" onclick="AM.mode=\'un\';amRepartir('+c+',\''+d+'\')">① 👤 Un chauffeur prend <b>toute</b> la tournée</button><button class="'+(mode==='dispatch'?'on':'')+'" onclick="AM.mode=\'dispatch\';amRepartir('+c+',\''+d+'\')">② 🔀 Je répartis <b>client par client</b></button><button class="'+(mode==='moi'?'on':'')+'" onclick="AM.mode=\'moi\';amRepartir('+c+',\''+d+'\')">③ 🧑‍💼 <b>Moi</b> ou une autre personne</button></div>';
+  if(!cases.length&&!a.parMoi)h+='<div class="v47todo ok">✅ Toute la tournée de '+esc(a.nom)+' est donnée.'+(camA?' Le '+esc(camA)+' reste <b>sans livraison</b>.':'')+'</div>';
+  else if(mode==='un'){h+='<div class="v76etape"><span>1</span><b>Choisis le chauffeur</b></div><div class="v76grille">'+(L.length?L.map(function(x,i){return puce(x,i===0);}).join(''):'<div class="v47todo">Aucun chauffeur dans la liste. Ajoute-les dans 👥 Chauffeurs / Véhicules.</div>')+'</div>'+
+      '<div class="v76etape"><span>2</span><b>Avec quel camion ?</b></div><div class="v76grille deux"><label class="v76c"><input type="radio" name="v75k" value="absent" checked><b>🚚 Le camion de '+esc(a.nom)+' ('+esc(camA||'?')+')</b><small>Il prend sa colonne. C’est écrit : « '+esc(a.nom)+' absent · X le remplace aujourd’hui · '+esc(camA)+' »</small></label><label class="v76c"><input type="radio" name="v75k" value="sien"><b>🚚 Il garde son propre camion</b><small>Les livraisons vont dans sa colonne. Le '+esc(camA||'camion')+' reste sans livraison.</small></label></div>'+
+      '<div class="v76etape"><span>3</span><b>Valide</b></div><button class="clsend" style="width:100%" onclick="v76Un('+c+',\''+d+'\')">✅ Donner toute la tournée ('+cases.length+' livraison(s))</button>';}
+  else if(mode==='dispatch'){h+='<p class="amintro">Pour <b>chaque client</b>, clique sur le <b>prénom du chauffeur</b> qui le prend. Ça part <b>tout de suite</b> sur son téléphone, et le client disparaît de la liste. Le '+esc(camA||'camion')+' d’'+esc(a.nom)+' restera <b>sans livraison</b>.</p>'+
+      cases.map(function(k){var o=day.cells[k];var r=+k.split('_')[0];return '<div class="v75li"><span class="v76cl"><b>'+esc(TIMES[r])+'</b> '+esc(o.t)+'</span><span class="v75cp">'+L.map(function(x){return '<button class="'+(x.off?'off':'')+'" title="'+(x.off?esc(x.off)+' aujourd’hui':esc(x.cam||''))+'" onclick="v76Donner('+c+',\''+d+'\',\''+k+'\',\''+esc(x.nom)+'\')">'+esc(x.nom)+'</button>';}).join('')+'</span></div>';}).join('')+
+      (L.length?'':'<div class="v47todo">Aucun chauffeur dans la liste. Ajoute-les dans 👥 Chauffeurs / Véhicules.</div>');}
+  else{h+='<div class="v76etape"><span>1</span><b>Qui conduit ?</b></div><div class="v76grille deux"><label class="v76c" style="cursor:default"><b>Prénom</b><input id="amMoi" value="'+esc(moiNom)+'" placeholder="tape le prénom (toi ou un extra)" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;margin-top:4px"></label></div>'+
+      '<div class="v76etape"><span>2</span><b>Avec quel camion ?</b></div><div class="v76grille deux"><label class="v76c"><input type="radio" name="v75m" value="absent" checked><b>🚚 Le camion de '+esc(a.nom)+' ('+esc(camA||'?')+')</b></label><label class="v76c"><input type="radio" name="v75m" value="autre"><b>🚚 Un autre véhicule</b><input id="v75autre" placeholder="ex. LOCATION, voiture perso…" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:8px;margin-top:4px" onfocus="document.querySelector(\'input[name=v75m][value=autre]\').checked=true"></label></div>'+
+      '<div class="v76etape"><span>3</span><b>Valide</b></div><button class="clsend" style="width:100%" onclick="v75Moi('+c+',\''+d+'\')">✅ C’est noté : il fait la tournée d’'+esc(a.nom)+'</button>';}
+  h+='<button style="width:100%;margin-top:10px" onclick="v32Fermer();amFinRepartition('+c+',\''+d+'\')">Fermer</button></div>';ov.innerHTML=h;ov.style.display='flex';};
+function v76Un(c,d){var day=store[d];var a=day.ch[c].abs;var x=document.querySelector('input[name=v75c]:checked');if(!x){alert('Clique sur le prénom du chauffeur (étape 1).');return;}var nomC=x.value;var camMode=(document.querySelector('input[name=v75k]:checked')||{}).value;var camA=v68Camion((day.cam[c]||{}).t||'');
+  if(camMode==='absent'){var col=day.ch.findIndex(function(y,i){return i!==c&&v69N(clClean(y.t||''))===v69N(nomC);});var deja=col>=0?v72Livraisons(d,col):0;var camC=col>=0?v68Camion((day.cam[col]||{}).t||''):'';
+    if(deja&&!confirm(nomC+' a déjà '+deja+' livraison(s) avec le '+(camC||'son camion')+'.\nIl ne peut pas conduire deux camions en même temps : ses propres livraisons restent dans sa colonne (à redonner si besoin).\nContinuer ?'))return;
+    day.ch[c].t=nomC;day.ch[c].rempl={absent:a.nom,par:nomC,motif:(STATUTS[a.s]||[a.s])[0],qui:v49Moi().nom,quand:new Date().toISOString(),camion:camA};a.parMoi=nomC;a.donne=[nomC];
+    v75Trace(d,c,'🚚 '+nomC+' conduit le '+camA+' à la place de '+a.nom+' ('+(STATUTS[a.s]||[a.s])[0].toLowerCase()+') le '+dayLabel(d)+' — toute la tournée',{absent:a.nom,par:nomC,camion:camA,mode:'toute la tournée avec le camion de l’absent'});
+    V49.local=Date.now();lsSave();try{clQueue(d);clFlush();}catch(e){}}
+  else{var col2=v76Colonne(d,nomC);if(col2<0)return;var camC2=v68Camion((day.cam[col2]||{}).t||'');amTout(c,d,col2);a.camionSansLivraison=camA;v75Trace(d,c,'🔀 Toute la tournée de '+a.nom+' donnée à '+nomC+(camC2?' (avec son '+camC2+')':'')+' le '+dayLabel(d)+' — le '+camA+' reste sans livraison',{absent:a.nom,par:nomC,camion:camC2,camionAbsent:camA,mode:'toute la tournée, le chauffeur garde son camion'});}
+  try{render();}catch(e){}v32Fermer();amFinRepartition(c,d);v59Toast('✅ '+nomC+' fait la tournée de '+a.nom+(camMode==='absent'?' avec le '+camA:''),'var(--green)');}
+v75Un=v76Un;
+CL_VERSION='v76 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
