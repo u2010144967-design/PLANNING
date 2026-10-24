@@ -1426,6 +1426,13 @@ body.v60seul>*:not(#mmW):not(#acBox):not(.v48w):not(#v59M):not(#v59H):not(.v46t)
 .v76c{display:block;background:#f8fafc;border:2px solid #e5e7eb;border-radius:12px;padding:8px 10px;cursor:pointer;position:relative}.v76c:hover{border-color:#fdba74}.v76c input[type=radio]{position:absolute;top:10px;right:10px}.v76c b{display:block;font-size:14px;padding-right:22px}.v76c small{display:block;color:#6b7280;font-size:11.5px;margin-top:2px}
 .v76c:has(input:checked){border-color:#ea580c;background:#fff7ed}.v76c.off{background:#f8fafc;opacity:.85}
 .v76cl{flex:1;min-width:180px}.v75cp button.off{opacity:.6}
+.v77r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 4px;border-bottom:1px solid #f1f5f9}.v77r select{border:1px solid #cbd5e1;border-radius:8px;padding:4px 8px}
+.v77lien{font-size:12px;color:#6b7280;margin:-4px 0 8px}.v77lien a{color:#ea580c;font-weight:700}
+.v75li.v77li{flex-direction:column;align-items:stretch;gap:6px;background:#fff;border:1px solid #fed7aa;border-radius:12px;padding:8px 10px;margin:8px 0}
+.v75li.v77li .v76cl{font-size:15px}.v75li.v77li .v75cp{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}.v75li.v77li .v75cp button{padding:9px 6px!important;font-size:14px!important;border-radius:10px!important}
+.v75li.v77li .v75cp{grid-auto-rows:min-content!important;align-items:start!important}.v75li.v77li .v75cp button{height:auto!important;min-height:0!important;line-height:1.2!important}
+.v75li.v77li{height:auto!important;min-height:0!important;flex:none!important}.v75li.v77li .v75cp,.v75li.v77li .v76cl{flex:none!important}
+.v75li.v77li .v75cp{display:flex!important;flex-wrap:wrap!important;width:100%!important;gap:6px!important}.v75li.v77li .v75cp button{flex:1 1 110px!important;max-width:180px}
 
 .bnrev td{vertical-align:top}.bnrev select,.bnrev input[type=date]{font-family:inherit;font-size:13px;padding:5px;border:1px solid #d6dbe6;border-radius:7px}
 @media print{#clPanel,#clModeBadge,#clAutoBadge{display:none!important}td.clok::before,td.clph2::before{display:none}td.clok{box-shadow:none}}
@@ -7339,6 +7346,24 @@ function v76Un(c,d){var day=store[d];var a=day.ch[c].abs;var x=document.querySel
   try{render();}catch(e){}v32Fermer();amFinRepartition(c,d);v59Toast('✅ '+nomC+' fait la tournée de '+a.nom+(camMode==='absent'?' avec le '+camA:''),'var(--green)');}
 v75Un=v76Un;
 CL_VERSION='v76 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
+
+// ================= CANA LIVRAISONS 70 : seulement les VRAIS CHAUFFEURS dans la répartition (pas les maîtres d'hôtel) =================
+// Rôle de chaque personne : Chauffeur / Maître d'hôtel / Extra. Réglable ; sinon le logiciel le devine :
+// est « chauffeur » celui qui a eu sa propre colonne (hors M/H) dans le planning ces 90 derniers jours.
+function v77Role(nom){var n=v69N(nom);var e=null;try{e=(V32.eq.drivers||[]).find(function(x){return v69N(x.name)===n;});}catch(x){}if(e&&e.role)return e.role;if(/^(m\/h|maitre hotel|maitre_hotel)$/.test(n))return 'mh';
+  var d0=v59Plus(v59Auj(),-90);var vu=Object.keys(store).some(function(d){if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||d<d0)return false;var day=store[d];return (day.ch||[]).some(function(y){var t=v69N(clClean(y.t||''));return t&&t===n&&!/m\/h/.test(t);});});return vu?'chauffeur':'mh';}
+var _v76CinqV77=v76Cinq;v76Cinq=function(d,c){return _v76CinqV77(d,c).filter(function(x){return v77Role(x.nom)==='chauffeur';});};
+// régler les rôles (une fois)
+async function v77Roles(){await v32Equipe();var L=(V32.eq.drivers||[]).filter(function(e){return e.name&&e.name!=='MAITRE_HOTEL';});var ov=v32Ov();
+  ov.innerHTML='<div class="cam-b"><div class="cam-h"><span>👥</span><b>Qui est chauffeur ?</b><button onclick="v32Fermer()">✕</button></div><p style="font-size:13px;color:#475569">Seuls les <b>chauffeurs</b> sont proposés quand on donne la tournée d’un absent. Les maîtres d’hôtel et les extras n’y apparaissent pas.</p>'+
+    L.map(function(e,i){var r=e.role||v77Role(e.name);return '<div class="v77r"><b>'+esc(e.name)+'</b><select data-n="'+esc(e.name)+'"><option value="chauffeur"'+(r==='chauffeur'?' selected':'')+'>🚚 Chauffeur</option><option value="mh"'+(r==='mh'?' selected':'')+'>🎩 Maître d’hôtel</option><option value="extra"'+(r==='extra'?' selected':'')+'>👤 Extra</option></select></div>';}).join('')+
+    '<button class="clsend" style="width:100%;margin-top:10px" onclick="v77RolesOk()">💾 Enregistrer</button></div>';ov.style.display='flex';}
+async function v77RolesOk(){document.querySelectorAll('#v32Ov select[data-n]').forEach(function(s){var e=(V32.eq.drivers||[]).find(function(x){return x.name===s.getAttribute('data-n');});if(e)e.role=s.value;});try{await v28Ecrire('EQUIPE',V32.eq);v49Log('acces','Rôles de l’équipe mis à jour (chauffeurs / maîtres d’hôtel)');}catch(e){alert('❌ '+e.message);return;}v32Fermer();var r=document.querySelector('.amrep');if(r)v59Toast('✅ Enregistré — rouvre la répartition','var(--green)');}
+// la répartition client par client : le client, puis EN DESSOUS les chauffeurs (gros boutons) + lien « Qui est chauffeur ? »
+var _amRepartirV77=amRepartir;amRepartir=function(c,d){_amRepartirV77(c,d);var r=document.querySelector('.amrep');if(!r)return;r.querySelectorAll('.v75li').forEach(function(l){l.classList.add('v77li');});
+  var m=r.querySelector('.v75modes');if(m&&!r.querySelector('.v77lien'))m.insertAdjacentHTML('afterend','<div class="v77lien">Seuls les <b>chauffeurs</b> sont proposés. Un nom manque ou un maître d’hôtel apparaît ? <a href="#" onclick="event.preventDefault();v77Roles()">👥 Régler qui est chauffeur</a></div>');};
+V64_OUTILS.push(['👥','Qui est chauffeur ? (rôles)',function(){v77Roles();}]);
+CL_VERSION='v77 · 24/10';try{document.getElementById('clVer').textContent=CL_VERSION;}catch(e){}
 
 </script>
 </body></html>
